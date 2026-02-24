@@ -1,33 +1,22 @@
-/* frontend-angular21/src/app/ventas/pages/detalle-venta/detalle-venta.ts */
-
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  signal,
-  computed,
-  inject,
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule, Location } from '@angular/common';
 import { Subscription } from 'rxjs';
 
-import { Card }          from 'primeng/card';
-import { Button }        from 'primeng/button';
-import { Divider }       from 'primeng/divider';
-import { Tag }           from 'primeng/tag';
-import { TableModule }   from 'primeng/table';
-import { Skeleton }      from 'primeng/skeleton';
-import { Tooltip }       from 'primeng/tooltip';
-import { Toast }         from 'primeng/toast';
+import { Card } from 'primeng/card';
+import { Button } from 'primeng/button';
+import { Divider } from 'primeng/divider';
+import { Tag } from 'primeng/tag';
+import { TableModule } from 'primeng/table';
+import { Skeleton } from 'primeng/skeleton';
+import { Tooltip } from 'primeng/tooltip';
+import { Toast } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 
 import { VentasApiService } from '../../services/ventas-api.service';
 
 import type {
   SalesReceiptWithHistoryDto,
-  SalesReceiptResponseDto,
-  CustomerPurchaseHistoryDto,
   CustomerPurchaseStatistics,
   RecentPurchase,
 } from '../../interfaces/ventas-historial.interface';
@@ -35,107 +24,98 @@ import type {
 // ─── VIEW MODELS ──────────────────────────────────────────────────────────────
 
 interface DetalleItem {
-  cod_prod:    string;
+  cod_prod: string;
   descripcion: string;
-  cantidad:    number;
-  valor_unit:  number;
-  pre_uni:     number;
-  total:       number;
+  cantidad: number;
+  valor_unit: number;
+  pre_uni: number;
+  total: number;
 }
 
 interface ComprobanteVM {
-  id:                    number;
-  id_cliente:            string;
-  id_sede:               number;
-  sede_nombre:           string;
-  serie:                 string;
-  numero:                number;
-  tipo_comprobante:      string;   // '01' | '03' | '07' | '08'
-  fec_emision:           string;
-  fec_venc:              string;
-  cliente_nombre:        string;
-  cliente_doc:           string;
-  cliente_tipo_doc:      string;
-  cliente_direccion:     string;
-  cliente_email:         string;
-  cliente_telefono:      string;
-  responsable:           string;
-  medio_pago:            string;
-  subtotal:              number;
-  igv:                   number;
-  isc:                   number;
-  total:                 number;
-  moneda:                string;
-  estado:                boolean;
-  estadoLabel:           string;
-  detalles:              DetalleItem[];
+  id: number;
+  id_cliente: string;
+  id_sede: number;
+  sede_nombre: string;
+  serie: string;
+  numero: number;
+  tipo_comprobante: string;
+  fec_emision: string;
+  fec_venc: string;
+  cliente_nombre: string;
+  cliente_doc: string;
+  cliente_tipo_doc: string;
+  cliente_direccion: string;
+  cliente_email: string;
+  cliente_telefono: string;
+  responsable: string;
+  medio_pago: string;
+  subtotal: number;
+  igv: number;
+  isc: number;
+  total: number;
+  moneda: string;
+  estado: boolean;
+  estadoLabel: string;
+  detalles: DetalleItem[];
 }
 
 interface HistorialItem {
-  id:               number;
-  serie:            string;
-  numero:           number;
-  fec_emision:      string;
-  responsable:      string;
+  id: number;
+  serie: string;
+  numero: number;
+  fec_emision: string;
+  responsable: string;
   tipo_comprobante: string;
-  total:            number;
-  estado:           string;
+  total: number;
+  estado: string;
 }
 
-// ─── TIPO MAP ────────────────────────────────────────────────────────────────
+// ─── MAPS ─────────────────────────────────────────────────────────────────────
 
 const TIPO_MAP: Record<string, string> = {
   'FACTURA DE VENTA': '01',
-  'FACTURA':          '01',
-  'BOLETA DE VENTA':  '03',
-  'BOLETA':           '03',
-  'NOTA DE CREDITO':  '07',
-  'NOTA DE DEBITO':   '08',
+  FACTURA: '01',
+  'BOLETA DE VENTA': '03',
+  BOLETA: '03',
+  'NOTA DE CREDITO': '07',
+  'NOTA DE DEBITO': '08',
 };
 
 const ICONO_PAGO: Record<string, string> = {
-  EFECTIVO:      'pi pi-money-bill',
-  TARJETA:       'pi pi-credit-card',
-  YAPE:          'pi pi-mobile',
-  PLIN:          'pi pi-mobile',
+  EFECTIVO: 'pi pi-money-bill',
+  TARJETA: 'pi pi-credit-card',
+  YAPE: 'pi pi-mobile',
+  PLIN: 'pi pi-mobile',
   TRANSFERENCIA: 'pi pi-arrow-right-arrow-left',
 };
 
 // ─── COMPONENT ────────────────────────────────────────────────────────────────
 
 @Component({
-  selector:    'app-detalle-venta',
-  standalone:  true,
-  imports:     [CommonModule, Card, Button, Divider, Tag, TableModule, Skeleton, Tooltip, Toast],
-  providers:   [MessageService],
+  selector: 'app-detalle-venta',
+  standalone: true,
+  imports: [CommonModule, Card, Button, Divider, Tag, TableModule, Skeleton, Tooltip, Toast],
+  providers: [MessageService],
   templateUrl: './detalle-venta.html',
-  styleUrls:   ['./detalle-venta.css'],
+  styleUrls: ['./detalle-venta.css'],
 })
 export class DetalleVenta implements OnInit, OnDestroy {
-
-  // ─── INYECCIONES ────────────────────────────────────────────────────────────
-
-  private readonly route          = inject(ActivatedRoute);
-  private readonly router         = inject(Router);
-  private readonly location       = inject(Location);
-  private readonly ventasApi      = inject(VentasApiService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly ventasApi = inject(VentasApiService);
   private readonly messageService = inject(MessageService);
 
-  // ─── CONSTANTES ─────────────────────────────────────────────────────────────
-
-  readonly tituloKicker    = 'VENTAS - HISTORIAL DE VENTAS - DETALLE DE VENTA';
+  readonly tituloKicker = 'VENTAS - HISTORIAL DE VENTAS - DETALLE DE VENTA';
   readonly subtituloKicker = 'DETALLE DE VENTA';
-  readonly iconoCabecera   = 'pi pi-file-edit';
+  readonly iconoCabecera = 'pi pi-file-edit';
 
-  // ─── SIGNALS CORE ───────────────────────────────────────────────────────────
-
-  comprobante  = signal<ComprobanteVM | null>(null);
+  comprobante = signal<ComprobanteVM | null>(null);
   estadisticas = signal<CustomerPurchaseStatistics | null>(null);
-  historial    = signal<HistorialItem[]>([]);
-  loading      = signal(true);
-  returnUrl    = signal('/ventas/historial-ventas');
-
-  // ─── COMPUTED ───────────────────────────────────────────────────────────────
+  historial = signal<HistorialItem[]>([]);
+  loading = signal(true);
+  returnUrl = signal('/ventas/historial-ventas');
 
   tipoLabel = computed(() => {
     const t = this.comprobante()?.tipo_comprobante;
@@ -150,9 +130,7 @@ export class DetalleVenta implements OnInit, OnDestroy {
     this.comprobante()?.estado ? 'success' : 'danger',
   );
 
-  estadoLabel = computed(() =>
-    this.comprobante()?.estado ? 'EMITIDO' : 'ANULADO',
-  );
+  estadoLabel = computed(() => (this.comprobante()?.estado ? 'EMITIDO' : 'ANULADO'));
 
   numeroFormateado = computed(() => {
     const c = this.comprobante();
@@ -160,15 +138,9 @@ export class DetalleVenta implements OnInit, OnDestroy {
     return `${c.serie}-${c.numero.toString().padStart(8, '0')}`;
   });
 
-  totalHistorial = computed(() =>
-    this.historial().reduce((s, h) => s + h.total, 0),
-  );
-
-  // ─── SUBS ───────────────────────────────────────────────────────────────────
+  totalHistorial = computed(() => this.historial().reduce((s, h) => s + h.total, 0));
 
   private subs = new Subscription();
-
-  // ─── LIFECYCLE ──────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.subs.add(
@@ -189,8 +161,6 @@ export class DetalleVenta implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  // ─── CARGA ──────────────────────────────────────────────────────────────────
-
   cargarDetalle(id: number): void {
     this.loading.set(true);
     this.comprobante.set(null);
@@ -200,16 +170,16 @@ export class DetalleVenta implements OnInit, OnDestroy {
     this.subs.add(
       this.ventasApi.obtenerVentaConHistorial(id).subscribe({
         next: (res: SalesReceiptWithHistoryDto) => {
-          this.comprobante.set(this.mapReceipt(res.receipt));
-          this.mapearHistorial(res.customerHistory);
+          this.comprobante.set(this.mapReceipt(res)); // ← res directamente
+          this.mapearHistorial(res); // ← res directamente
           this.loading.set(false);
         },
         error: () => {
           this.messageService.add({
             severity: 'error',
-            summary:  'Error',
-            detail:   'No se pudo cargar el detalle de la venta',
-            life:     3000,
+            summary: 'Error',
+            detail: 'No se pudo cargar el detalle de la venta',
+            life: 3000,
           });
           this.loading.set(false);
           setTimeout(() => this.volver(), 2000);
@@ -218,68 +188,75 @@ export class DetalleVenta implements OnInit, OnDestroy {
     );
   }
 
-  // ─── MAPPERS ────────────────────────────────────────────────────────────────
+  // ─── MAPPERS ──────────────────────────────────────────────────────────────
 
-  private mapReceipt(r: SalesReceiptResponseDto): ComprobanteVM {
+  private mapReceipt(r: SalesReceiptWithHistoryDto): ComprobanteVM {
     return {
-      id:               r.idComprobante,
-      id_cliente:       r.cliente.id,
-      id_sede:          r.sede.id,
-      sede_nombre:      r.sede.nombre,
-      serie:            r.serie,
-      numero:           r.numero,
-      tipo_comprobante: r.tipoComprobante.codigoSunat,
-      fec_emision:      r.fecEmision,
-      fec_venc:         r.fecVenc,
-      cliente_nombre:   r.cliente.name,
-      cliente_doc:      r.cliente.documentValue,
-      cliente_tipo_doc: r.cliente.documentTypeDescription,
-      cliente_direccion: r.cliente.address || '—',
-      cliente_email:    r.cliente.email    || '—',
-      cliente_telefono: r.cliente.phone    || '—',
-      responsable:      r.responsable.nombreCompleto,
-      medio_pago:       r.metodoPago?.descripcion || 'N/A',
-      subtotal:         r.subtotal,
-      igv:              r.igv,
-      isc:              r.isc,
-      total:            r.total,
-      moneda:           r.moneda.codigo,
-      estado:           r.estado === 'EMITIDO',
-      estadoLabel:      r.estado,
-      detalles: r.items.map((item) => ({
-        cod_prod:    item.codigoProducto?.toString() || item.productId,
-        descripcion: item.productName,
-        cantidad:    item.quantity,
-        valor_unit:  item.unitValue  || item.unitPrice,
-        pre_uni:     item.unitPrice,
-        total:       item.total,
+      id: Number(r.id_comprobante),
+      id_cliente: String(r.cliente.id_cliente),
+      id_sede: r.responsable.sede,
+      sede_nombre: r.responsable.nombreSede || '—',
+      serie: r.serie,
+      numero: r.numero,
+      tipo_comprobante: TIPO_MAP[r.tipo_comprobante?.toUpperCase()] ?? '03',
+      fec_emision: r.fec_emision,
+      fec_venc: '',
+      cliente_nombre: r.cliente.nombre || '—',
+      cliente_doc: r.cliente.documento || '—',
+      cliente_tipo_doc: r.cliente.tipo_documento || '—', // ← AQUÍ
+      cliente_direccion: r.cliente.direccion || '—',
+      cliente_email: r.cliente.email || '—',
+      cliente_telefono: r.cliente.telefono || '—',
+      responsable: r.responsable.nombre || '—', // ← AQUÍ
+      medio_pago: r.metodo_pago || 'N/A',
+      subtotal: Number(r.subtotal),
+      igv: Number(r.igv),
+      isc: 0,
+      total: Number(r.total),
+      moneda: 'PEN',
+      estado: r.estado === 'EMITIDO',
+      estadoLabel: r.estado,
+      detalles: r.productos.map((p) => ({
+        cod_prod: p.cod_prod,
+        descripcion: p.descripcion,
+        cantidad: Number(p.cantidad),
+        valor_unit: Number(p.precio_unit),
+        pre_uni: Number(p.precio_unit),
+        total: Number(p.total),
       })),
     };
   }
 
-  private mapearHistorial(history?: CustomerPurchaseHistoryDto): void {
-    if (!history) return;
+  private mapearHistorial(r: SalesReceiptWithHistoryDto): void {
+    const cantidad = r.cliente.cantidad_compras ?? 0;
+    const monto = r.cliente.total_gastado_cliente ?? 0;
 
-    this.estadisticas.set(history.statistics);
+    this.estadisticas.set({
+      totalCompras: cantidad,
+      montoTotal: monto,
+      promedioCompra: cantidad > 0 ? monto / cantidad : 0,
+    });
 
     this.historial.set(
-      history.recentPurchases.map((p: RecentPurchase) => {
-        const [serie, num] = p.numeroCompleto.split('-');
+      (r.historial_cliente ?? []).map((p) => {
+        const [serie, num] = p.numero_completo.split('-');
+        const tipoKey = serie?.charAt(0) === 'F' ? 'FACTURA' : 'BOLETA';
+
         return {
-          id:               p.idComprobante,
-          serie:            serie  || '',
-          numero:           parseInt(num || '0', 10),
-          fec_emision:      p.fecha,
-          responsable:      p.responsableNombre,
-          tipo_comprobante: TIPO_MAP[p.tipoComprobante?.toUpperCase()] ?? '03',
-          total:            p.total,
-          estado:           p.estado,
+          id: Number(p.id_comprobante),
+          serie: serie || '',
+          numero: parseInt(num || '0', 10),
+          fec_emision: p.fec_emision,
+          responsable: p.responsable || '—', // ← ahora tipado
+          tipo_comprobante: TIPO_MAP[tipoKey] ?? '03',
+          total: Number(p.total),
+          estado: p.estado,
         };
       }),
     );
   }
 
-  // ─── NAVEGACIÓN ─────────────────────────────────────────────────────────────
+  // ─── NAVEGACIÓN ───────────────────────────────────────────────────────────
 
   volver(): void {
     this.location.back();
@@ -311,26 +288,24 @@ export class DetalleVenta implements OnInit, OnDestroy {
 
   enviarEmailHistorial(item: HistorialItem): void {
     const email = this.comprobante()?.cliente_email;
-
     if (!email || email === '—') {
       this.messageService.add({
         severity: 'warn',
-        summary:  'Sin email',
-        detail:   'El cliente no tiene un correo electrónico registrado',
-        life:     3000,
+        summary: 'Sin email',
+        detail: 'El cliente no tiene un correo electrónico registrado',
+        life: 3000,
       });
       return;
     }
-
     this.messageService.add({
       severity: 'success',
-      summary:  'Email enviado',
-      detail:   `Comprobante enviado a: ${email}`,
-      life:     3000,
+      summary: 'Email enviado',
+      detail: `Comprobante enviado a: ${email}`,
+      life: 3000,
     });
   }
 
-  // ─── HELPERS UI ─────────────────────────────────────────────────────────────
+  // ─── HELPERS UI ───────────────────────────────────────────────────────────
 
   getIconoPago(medio: string): string {
     return ICONO_PAGO[medio.toUpperCase()] ?? 'pi pi-wallet';
@@ -342,8 +317,8 @@ export class DetalleVenta implements OnInit, OnDestroy {
 
   getSeverityEstadoHistorial(estado: string): 'success' | 'warn' | 'danger' | 'info' {
     const map: Record<string, 'success' | 'warn' | 'danger' | 'info'> = {
-      EMITIDO:   'success',
-      ANULADO:   'warn',
+      EMITIDO: 'success',
+      ANULADO: 'warn',
       RECHAZADO: 'danger',
     };
     return map[estado] ?? 'info';

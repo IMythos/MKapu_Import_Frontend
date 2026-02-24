@@ -500,8 +500,8 @@ export class GenerarVenta implements OnInit, AfterViewInit {
         console.warn('No se pudieron cargar las familias');
       },
     });
-  }
-  // ─── Paso 1: lógica cliente ──────────────────────────────────────────────
+  } 
+
   onTipoComprobanteChange(nuevoTipo: number): void {
     this.tipoComprobante.set(nuevoTipo);
     this.limpiarCliente();
