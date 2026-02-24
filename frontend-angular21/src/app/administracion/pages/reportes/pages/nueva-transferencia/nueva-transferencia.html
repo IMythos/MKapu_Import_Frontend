@@ -83,10 +83,10 @@
               [(ngModel)]="almacenOrigenId"
               (onChange)="onAlmacenOrigenChange()"
             ></p-select>
-            @if (sedeOrigen && productoSeleccionado) {
+            @if (sedeOrigen && almacenOrigenId && productoSeleccionado) {
               <p-card class="stock-mini-card">
                 <div class="stock-mini-row">
-                  <span class="stock-mini-label">Stock disponible</span>
+                  <span class="stock-mini-label">Stock disponible en almacen origen</span>
                   <span class="stock-badge" [ngClass]="getStockClassForSede(productoSeleccionado, sedeOrigen)">
                     {{ stockDisponible }} un.
                   </span>
@@ -154,6 +154,7 @@
               (onClear)="onClearProducto()"
               [forceSelection]="true"
               [dropdown]="true"
+              [disabled]="!sedeOrigen || !almacenOrigenId"
               optionLabel="nombre"
               placeholder="Buscar por codigo o nombre"
               emptyMessage="Sin resultados"
@@ -203,13 +204,13 @@
             </div>
             <div class="transfer-panel-helper">
               <i class="pi pi-database"></i>
-              <span>Disponible: {{ stockDisponible }} uds</span>
+              <span>Stock disponible en almacen origen: {{ stockDisponible }} uds</span>
             </div>
             <div class="transfer-qty-row flex flex-column md:flex-row align-items-stretch md:align-items-center gap-3">
               <div class="flex justify-content-center w-full md:w-auto">
                 <p-inputnumber
                   class="transfer-qty"
-                  [min]="1"
+                  [min]="stockDisponible > 0 ? 1 : 0"
                   [max]="stockDisponible"
                   [minFractionDigits]="0"
                   [maxFractionDigits]="0"

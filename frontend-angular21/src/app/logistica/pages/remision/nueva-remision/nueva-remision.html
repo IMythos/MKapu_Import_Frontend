@@ -1,142 +1,210 @@
-<p-drawer 
-    [(visible)]="abierto" 
-    position="right" 
-    [modal]="true" 
-    [style]="{'width': '600px'}"
-    (onHide)="cerrar()"
-    header="Emisión de Guía de Remisión Electrónica">
-    
-    <div class="p-2 flex flex-column gap-4">
-        
-        <div class="flex flex-column gap-2 p-3 surface-100 border-round">
-            <label class="font-bold text-sm">Paso 1: Buscar Venta de Referencia</label>
-            <div class="p-inputgroup">
-                <input type="text" pInputText #txtCorrelativo 
-                       placeholder="Serie y número (ej: F001-123)" 
-                       (keyup.enter)="buscarComprobante(txtCorrelativo.value)">
-                <p-button icon="pi pi-search" [loading]="isLoading()" 
-                          (onClick)="buscarComprobante(txtCorrelativo.value)"></p-button>
-            </div>
-            <small class="text-gray-500">La guía se generará en base a los productos de esta venta.</small>
+<p-drawer
+  [(visible)]="abierto"
+  position="right"
+  [modal]="true"
+  [style]="{ width: '600px' }"
+  (onHide)="cerrar()"
+  header="Emisión de Guía de Remisión Electrónica"
+>
+  <div class="p-2 flex flex-column gap-4">
+    <div class="flex flex-column gap-2 p-3 surface-100 border-round">
+      <label class="font-bold text-sm">Paso 1: Buscar Venta de Referencia</label>
+      <div class="p-inputgroup">
+        <input
+          type="text"
+          pInputText
+          #txtCorrelativo
+          placeholder="Serie y número (ej: F001-123)"
+          (keyup.enter)="buscarComprobante(txtCorrelativo.value)"
+        />
+        <p-button
+          icon="pi pi-search"
+          [loading]="isLoading()"
+          (onClick)="buscarComprobante(txtCorrelativo.value)"
+        ></p-button>
+      </div>
+      <small class="text-gray-500"
+        >La guía se generará en base a los productos de esta venta.</small
+      >
+    </div>
+
+    @if (saleFound()) {
+      <form [formGroup]="remissionForm" (ngSubmit)="enviar()" class="flex flex-column gap-4">
+        <div class="grid p-0 m-0">
+          <div class="col-6 pl-0">
+            <label class="font-bold text-xs block mb-1">Fecha Inicio Traslado</label>
+            <p-datepicker
+              formControlName="fecha_inicio_traslado"
+              [showIcon]="true"
+              appendTo="body"
+              styleClass="w-full"
+            ></p-datepicker>
+          </div>
+          <div class="col-6 pr-0">
+            <label class="font-bold text-xs block mb-1">Motivo</label>
+            <input pInputText formControlName="motivo_traslado" class="w-full" readonly />
+          </div>
+        </div>
+        <div class="flex flex-column gap-2">
+          <label class="font-bold text-xs block">Descripción / Observaciones</label>
+          <textarea
+            pTextarea
+            formControlName="descripcion"
+            rows="2"
+            class="w-full p-inputtext-sm"
+            placeholder="Ingrese una descripción u observación (opcional)"
+          ></textarea>
+        </div>
+        <div
+          formGroupName="datos_traslado"
+          class="p-3 border-1 surface-border border-round flex flex-column gap-3"
+        >
+          <span class="font-bold text-primary text-sm"
+            ><i class="pi pi-map-marker mr-1"></i> Punto de Llegada</span
+          >
+
+          <div class="flex flex-column gap-2">
+            <label class="text-xs">Dirección de Destino</label>
+            <input
+              pInputText
+              formControlName="direccion_destino"
+              placeholder="Ej: Av. Las Flores 123"
+              class="w-full p-inputtext-sm"
+            />
+          </div>
+
+          <div class="flex flex-column gap-2">
+            <label class="text-xs">Ubigeo Destino</label>
+            <input
+              pInputText
+              formControlName="ubigeo_destino"
+              placeholder="6 dígitos (ej: 150101)"
+              class="w-full p-inputtext-sm"
+            />
+          </div>
         </div>
 
-        @if (saleFound()) {
-            <form [formGroup]="remissionForm" (ngSubmit)="enviar()" class="flex flex-column gap-4">
-                
-                <div class="grid p-0 m-0">
-                    <div class="col-6 pl-0">
-                        <label class="font-bold text-xs block mb-1">Fecha Inicio Traslado</label>
-                        <p-datepicker formControlName="fecha_inicio_traslado" [showIcon]="true" 
-                                    appendTo="body" styleClass="w-full"></p-datepicker>
-                    </div>
-                    <div class="col-6 pr-0">
-                        <label class="font-bold text-xs block mb-1">Motivo</label>
-                        <input pInputText formControlName="motivo_traslado" class="w-full" readonly />
-                    </div>
-                </div>
-
-                <div formGroupName="datos_traslado" class="p-3 border-1 surface-border border-round flex flex-column gap-3">
-                    <span class="font-bold text-primary text-sm"><i class="pi pi-map-marker mr-1"></i> Punto de Llegada</span>
-                    
-                    <div class="flex flex-column gap-2">
-                        <label class="text-xs">Dirección de Destino</label>
-                        <input pInputText formControlName="direccion_destino" placeholder="Ej: Av. Las Flores 123" class="w-full p-inputtext-sm" />
-                    </div>
-
-                    <div class="flex flex-column gap-2">
-                        <label class="text-xs">Ubigeo Destino</label>
-                        <input pInputText formControlName="ubigeo_destino" placeholder="6 dígitos (ej: 150101)" class="w-full p-inputtext-sm" />
-                    </div>
-                </div>
-
-                <div formGroupName="datos_transporte" class="p-3 border-1 surface-border border-round flex flex-column gap-3">
-                    <div class="flex justify-content-between align-items-center">
-                        <span class="font-bold text-primary text-sm"><i class="pi pi-truck mr-1"></i> Información del Transporte</span>
-                        <p-select [options]="[{l:'Privado', v:1}, {l:'Público', v:0}]" 
-                                 formControlName="modalidad" 
-                                 optionLabel="l" optionValue="v"
-                                 pTooltip="Cambiar modalidad" 
-                                 styleClass="p-inputtext-sm"></p-select>
-                    </div>
-
-                    @if (remissionForm.get('modalidad')?.value === 1) {
-                        <div class="flex flex-column gap-2">
-                            <label class="text-xs">Nombre del Conductor</label>
-                            <input pInputText formControlName="nombre_completo" class="p-inputtext-sm w-full" />
-                        </div>
-                        <div class="grid p-0 m-0">
-                            <div class="col-6 pl-0">
-                                <label class="text-xs block mb-1">Placa Vehículo</label>
-                                <input pInputText formControlName="placa" class="p-inputtext-sm w-full" />
-                            </div>
-                            <div class="col-6 pr-0">
-                                <label class="text-xs block mb-1">Licencia</label>
-                                <input pInputText formControlName="licencia" class="p-inputtext-sm w-full" />
-                            </div>
-                        </div>
-                    } @else {
-                        <div class="flex flex-column gap-2">
-                            <label class="text-xs">RUC Transportista</label>
-                            <input pInputText formControlName="ruc" class="p-inputtext-sm w-full" />
-                        </div>
-                        <div class="flex flex-column gap-2">
-                            <label class="text-xs">Razón Social</label>
-                            <input pInputText formControlName="razon_social" class="p-inputtext-sm w-full" />
-                        </div>
-                    }
-                </div>
-
-                <div class="flex flex-column gap-2">
-                    <label class="font-bold text-sm">Productos y Pesos</label>
-                    <p-table [value]="items.controls" styleClass="p-datatable-sm shadow-1">
-                        <ng-template pTemplate="header">
-                            <tr>
-                                <th>Cód.</th>
-                                <th>Cant.</th>
-                                <th>Peso Unit (Kg)</th>
-                                <th class="text-right">Total</th>
-                            </tr>
-                        </ng-template>
-                        <ng-template pTemplate="body" let-control let-i="rowIndex">
-                            <tr [formGroup]="control">
-                                <td class="text-xs font-bold">{{control.get('cod_prod').value}}</td>
-                                <td>
-                                    <input type="number" pInputText formControlName="cantidad" 
-                                           class="w-full p-inputtext-sm" />
-                                </td>
-                                <td>
-                                    <input type="number" pInputText formControlName="peso_unitario" 
-                                           class="w-full p-inputtext-sm" placeholder="0.00" />
-                                </td>
-                                <td class="text-right text-xs font-bold">
-                                    {{control.get('peso_total').value}}
-                                </td>
-                            </tr>
-                        </ng-template>
-                    </p-table>
-                </div>
-
-                <div class="flex flex-column gap-3 mt-2 border-top-1 surface-border pt-3">
-                    <div class="flex justify-content-between align-items-center">
-                        <span class="text-lg">Peso Bruto Total:</span>
-                        <span class="text-2xl font-bold text-green-600">{{ pesoBrutoTotal() }} KGM</span>
-                    </div>
-
-                    <div class="flex gap-2">
-                        <p-button label="Cancelar" icon="pi pi-times" severity="secondary" 
-                                  [outlined]="true" class="flex-1" (onClick)="cerrar()"></p-button>
-                        <p-button label="Emitir Guía" icon="pi pi-check" severity="success" 
-                                  class="flex-1" type="submit" [disabled]="remissionForm.invalid"></p-button>
-                    </div>
-                </div>
-
-            </form>
-        } @else {
-            <div class="flex flex-column align-items-center justify-content-center p-8 text-gray-400">
-                <i class="pi pi-inbox text-6xl mb-3"></i>
-                <span>Esperando una venta válida...</span>
+        <div class="p-3 border-1 surface-border border-round flex flex-column gap-3">
+          <div
+            class="flex justify-content-between align-items-center border-bottom-1 surface-border pb-3"
+          >
+            <span class="font-bold text-primary text-sm"
+              ><i class="pi pi-truck mr-1"></i> Información del Transporte</span
+            >
+            <div class="flex align-items-center gap-2">
+              <label class="text-xs font-bold">Modalidad:</label>
+              <p-select
+                [options]="[
+                  { l: 'Privado', v: 1 },
+                  { l: 'Público', v: 0 },
+                ]"
+                formControlName="modalidad"
+                optionLabel="l"
+                optionValue="v"
+                pTooltip="Cambiar modalidad"
+                styleClass="p-inputtext-sm"
+              ></p-select>
             </div>
-        }
+          </div>
 
-    </div>
+          <div formGroupName="datos_transporte" class="flex flex-column gap-3">
+            @if (remissionForm.get('modalidad')?.value === 1) {
+              <div class="flex flex-column gap-2">
+                <label class="text-xs">Nombre del Conductor</label>
+                <input pInputText formControlName="nombre_completo" class="p-inputtext-sm w-full" />
+              </div>
+              <div class="grid p-0 m-0">
+                <div class="col-6 pl-0">
+                  <label class="text-xs block mb-1">Placa Vehículo</label>
+                  <input pInputText formControlName="placa" class="p-inputtext-sm w-full" />
+                </div>
+                <div class="col-6 pr-0">
+                  <label class="text-xs block mb-1">Licencia</label>
+                  <input pInputText formControlName="licencia" class="p-inputtext-sm w-full" />
+                </div>
+              </div>
+            } @else {
+              <div class="flex flex-column gap-2">
+                <label class="text-xs">RUC Transportista</label>
+                <input pInputText formControlName="ruc" class="p-inputtext-sm w-full" />
+              </div>
+              <div class="flex flex-column gap-2">
+                <label class="text-xs">Razón Social</label>
+                <input pInputText formControlName="razon_social" class="p-inputtext-sm w-full" />
+              </div>
+            }
+          </div>
+        </div>
+        <div class="flex flex-column gap-2">
+          <label class="font-bold text-sm">Productos y Pesos</label>
+          <p-table [value]="items.controls" styleClass="p-datatable-sm shadow-1">
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Cód.</th>
+                <th>Cant.</th>
+                <th>Peso Unit (Kg)</th>
+                <th class="text-right">Total</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-control let-i="rowIndex">
+              <tr [formGroup]="control">
+                <td class="text-xs font-bold">{{ control.get('cod_prod').value }}</td>
+                <td>
+                  <input
+                    type="number"
+                    pInputText
+                    formControlName="cantidad"
+                    class="w-full p-inputtext-sm"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    pInputText
+                    formControlName="peso_unitario"
+                    class="w-full p-inputtext-sm"
+                    placeholder="0.00"
+                  />
+                </td>
+                <td class="text-right text-xs font-bold">
+                  {{ control.get('peso_total').value }}
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+        </div>
+
+        <div class="flex flex-column gap-3 mt-2 border-top-1 surface-border pt-3">
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-lg">Peso Bruto Total:</span>
+            <span class="text-2xl font-bold text-green-600">{{ pesoBrutoTotal() }} KGM</span>
+          </div>
+
+          <div class="flex gap-2">
+            <p-button
+              label="Cancelar"
+              icon="pi pi-times"
+              severity="secondary"
+              [outlined]="true"
+              class="flex-1"
+              (onClick)="cerrar()"
+            ></p-button>
+            <p-button
+              label="Emitir Guía"
+              icon="pi pi-check"
+              severity="success"
+              class="flex-1"
+              type="submit"
+              [disabled]="remissionForm.invalid"
+            ></p-button>
+          </div>
+        </div>
+      </form>
+    } @else {
+      <div class="flex flex-column align-items-center justify-content-center p-8 text-gray-400">
+        <i class="pi pi-inbox text-6xl mb-3"></i>
+        <span>Esperando una venta válida...</span>
+      </div>
+    }
+  </div>
 </p-drawer>

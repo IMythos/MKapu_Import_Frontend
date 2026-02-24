@@ -103,6 +103,7 @@ export class VentasApiService {
   construirRequestVenta(params: {
     customerId: string;
     receiptTypeId: number;
+    serie: string;
     subtotal: number;
     igv: number;
     total: number;
@@ -118,6 +119,7 @@ export class VentasApiService {
     return {
       customerId: params.customerId,
       saleTypeId: 1,
+      serie: params.serie,
       receiptTypeId: params.receiptTypeId,
       dueDate: fechaVencimiento,
       operationType: OPERATION_TYPE_VENTA_INTERNA,

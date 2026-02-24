@@ -9,7 +9,7 @@ import { Injectable, inject } from '@angular/core';
 })
 export class RemissionService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = `${environment.apiUrl}/remission`;
+  private readonly apiUrl = `${environment.apiUrl}/logistics/remission`;
   create(dto: CreateRemissionDto): Observable<any> {
     return this.http.post<any>(this.apiUrl, dto);
   }

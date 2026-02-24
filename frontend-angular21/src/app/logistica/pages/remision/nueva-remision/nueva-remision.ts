@@ -42,15 +42,16 @@ export class NuevaRemision implements OnInit {
   onHide = output<void>();
 
   remissionForm!: FormGroup;
-  
+
   saleFound = signal<any | null>(null);
   isLoading = signal(false);
-  
+
   itemsWeights = signal<any[]>([]);
 
   pesoBrutoTotal = computed(() => {
     const weights = this.itemsWeights();
-    return parseFloat(weights.reduce((acc, curr) => acc + (curr.peso_total || 0), 0).toFixed(3));
+    const total = weights.reduce((acc, curr) => acc + (Number(curr.peso_total) || 0), 0);
+    return parseFloat(total.toFixed(3));
   });
 
   ngOnInit() {
@@ -67,10 +68,10 @@ export class NuevaRemision implements OnInit {
       fecha_inicio_traslado: [new Date(), Validators.required],
       motivo_traslado: ['VENTA', Validators.required],
       unidad_peso: ['KGM', Validators.required],
-      
+      descripcion: [''],
       datos_traslado: this.fb.group({
-        ubigeo_origen: ['', Validators.required],
-        direccion_origen: ['', Validators.required],
+        ubigeo_origen: ['150101', Validators.required],
+        direccion_origen: ['Almacén Principal', Validators.required],
         ubigeo_destino: ['', Validators.required],
         direccion_destino: ['', Validators.required],
       }),
@@ -84,18 +85,36 @@ export class NuevaRemision implements OnInit {
         ruc: [''],
         razon_social: [''],
       }),
+
       items: this.fb.array([]),
     });
 
-    this.remissionForm.get('modalidad')?.valueChanges.subscribe(val => this.ajustarValidadoresTransporte(val));
+    this.remissionForm
+      .get('modalidad')
+      ?.valueChanges.subscribe((val) => this.ajustarValidadoresTransporte(val));
+    this.items.valueChanges.subscribe(() => {
+      this.items.controls.forEach((control) => {
+        const cant = Number(control.get('cantidad')?.value) || 0;
+        const pesoU = Number(control.get('peso_unitario')?.value) || 0;
+        const nuevoTotal = cant * pesoU;
+
+        if (control.get('peso_total')?.value !== nuevoTotal) {
+          control.get('peso_total')?.setValue(nuevoTotal, { emitEvent: false });
+        }
+      });
+
+      this.itemsWeights.set(this.items.getRawValue());
+    });
   }
 
-  get items() { return this.remissionForm.get('items') as FormArray; }
+  get items(): FormArray {
+    return this.remissionForm.get('items') as FormArray;
+  }
 
   buscarComprobante(correlativo: string) {
     if (!correlativo) return;
     this.isLoading.set(true);
-    
+
     this.ventasService.getVentaByCorrelativo(correlativo).subscribe({
       next: (venta) => {
         this.saleFound.set(venta);
@@ -103,11 +122,15 @@ export class NuevaRemision implements OnInit {
         this.isLoading.set(false);
       },
       error: () => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Venta no encontrada' });
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'Venta no encontrada',
+        });
         this.isLoading.set(false);
         this.saleFound.set(null);
         this.items.clear();
-      }
+      },
     });
   }
 
@@ -117,35 +140,31 @@ export class NuevaRemision implements OnInit {
       id_almacen_origen: venta.id_almacen,
       id_sede_origen: venta.id_sede.toString(),
       datos_traslado: {
-        direccion_origen: venta.sede_direccion || 'Dirección de Sede',
-        ubigeo_origen: venta.sede_ubigeo || '150101',
         direccion_destino: venta.cliente_direccion || '',
         ubigeo_destino: venta.cliente_ubigeo || ''
-      }
+      },
     });
 
     this.items.clear();
-    venta.detalles.forEach((det: any) => {
-      const group = this.fb.group({
-        id_producto: [det.id_producto],
-        cod_prod: [det.cod_prod],
-        cantidad: [det.cantidad, [Validators.required, Validators.max(det.cantidad), Validators.min(1)]],
-        peso_unitario: [0, [Validators.required, Validators.min(0.001)]],
-        peso_total: [{ value: 0, disabled: true }]
+    if (venta.detalles && venta.detalles.length > 0) {
+      venta.detalles.forEach((d: any) => {
+        this.items.push(this.fb.group({
+          id_producto: [d.id_producto],
+          cod_prod: [d.cod_prod],
+          cantidad: [Number(d.cantidad)],
+          peso_unitario: [{ value: Number(d.peso_unitario), disabled: true }],
+          peso_total: [Number(d.peso_total)]
+        }));
       });
-
-      group.valueChanges.subscribe(() => this.calcularLinea(group));
-      this.items.push(group);
-    });
-    
-    this.sincronizarSignals();
+    }
+    this.itemsWeights.set(this.items.getRawValue());
   }
 
   calcularLinea(group: FormGroup) {
     const cant = group.get('cantidad')?.value || 0;
     const unit = group.get('peso_unitario')?.value || 0;
     const total = Number((cant * unit).toFixed(3));
-    
+
     group.get('peso_total')?.setValue(total, { emitEvent: false });
     this.sincronizarSignals();
   }
@@ -159,26 +178,33 @@ export class NuevaRemision implements OnInit {
       this.remissionForm.markAllAsTouched();
       return;
     }
-
     const formValue = this.remissionForm.getRawValue();
     const payload = {
       ...formValue,
       peso_bruto_total: this.pesoBrutoTotal(),
       id_usuario: 1,
-      fecha_inicio_traslado: formValue.fecha_inicio_traslado.toISOString()
+      fecha_inicio_traslado: formValue.fecha_inicio_traslado.toISOString(),
     };
 
     this.remissionService.create(payload).subscribe({
       next: (res) => {
-        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: `Guía ${res.serie_numero} generada` });
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: `Guía ${res.serie_numero} generada`,
+        });
         this.cerrar();
       },
       error: (err) => {
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: err.error?.message || 'Error al emitir guía' });
-      }
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: err.error?.message || 'Error al emitir guía',
+        });
+      },
     });
   }
-
+  
   private ajustarValidadoresTransporte(modalidad: number) {
     const transport = this.remissionForm.get('datos_transporte');
     if (modalidad === 1) {
@@ -204,4 +230,5 @@ export class NuevaRemision implements OnInit {
     this.remissionForm.reset();
     this.saleFound.set(null);
   }
+  
 }

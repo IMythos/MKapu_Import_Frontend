@@ -3,6 +3,7 @@ import {
   HttpClient,
   HttpErrorResponse,
   HttpHeaders,
+  HttpParams,
 } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
@@ -15,6 +16,12 @@ import {
   TransferApiError,
   TransferByIdResponseDto,
   TransferConflictInfo,
+  TransferProductAutocompleteQuery,
+  TransferProductAutocompleteResponse,
+  TransferProductDetailWithStockResponse,
+  TransferProductsStockQuery,
+  TransferProductsStockResponse,
+  TransferProductStockQuery,
   TransferListResponseDto,
   TransferResponseDto,
   TransferRole,
@@ -31,6 +38,7 @@ export class TransferApiService {
   private readonly logisticsApi =
     environment.apiLogistics || environment.apiUrl || 'http://localhost:3005';
   private readonly transferBase = `${this.logisticsApi}/warehouse/transfer`;
+  private readonly productsBase = `${this.logisticsApi}/products`;
 
   requestAggregated(
     dto: RequestTransferAggregatedDto,
@@ -142,6 +150,53 @@ export class TransferApiService {
     return this.getById(id);
   }
 
+  getProductsStock(query: TransferProductsStockQuery): Observable<TransferProductsStockResponse> {
+    return this.http
+      .get<TransferProductsStockResponse>(`${this.productsBase}/productos_stock`, {
+        params: this.buildProductsStockParams(query),
+        headers: this.buildHeaders(),
+      })
+      .pipe(catchError((error) => this.handleHttpError(error, 'No se pudo cargar productos con stock')));
+  }
+
+  getProductsAutocomplete(
+    query: TransferProductAutocompleteQuery,
+  ): Observable<TransferProductAutocompleteResponse> {
+    return this.http
+      .get<TransferProductAutocompleteResponse>(`${this.productsBase}/autocomplete`, {
+        params: this.buildProductsAutocompleteParams(query),
+        headers: this.buildHeaders(),
+      })
+      .pipe(catchError((error) => this.handleHttpError(error, 'No se pudo buscar productos')));
+  }
+
+  getProductStockById(
+    idProducto: number,
+    query: TransferProductStockQuery,
+  ): Observable<TransferProductDetailWithStockResponse> {
+    return this.http
+      .get<TransferProductDetailWithStockResponse>(`${this.productsBase}/${idProducto}/stock`, {
+        params: this.buildProductStockParams(query),
+        headers: this.buildHeaders(),
+      })
+      .pipe(catchError((error) => this.handleHttpError(error, 'No se pudo cargar stock del producto')));
+  }
+
+  getProductStockByCode(
+    codigo: string,
+    query: TransferProductStockQuery,
+  ): Observable<TransferProductDetailWithStockResponse> {
+    return this.http
+      .get<TransferProductDetailWithStockResponse>(
+        `${this.productsBase}/code/${encodeURIComponent(codigo)}/stock`,
+        {
+          params: this.buildProductStockParams(query),
+          headers: this.buildHeaders(),
+        },
+      )
+      .pipe(catchError((error) => this.handleHttpError(error, 'No se pudo cargar stock por código')));
+  }
+
   private buildHeaders(role?: TransferRole, mode?: string): HttpHeaders {
     let headers = new HttpHeaders({
       'Content-Type': 'application/json',
@@ -160,6 +215,46 @@ export class TransferApiService {
     }
 
     return headers;
+  }
+
+  private buildProductsStockParams(query: TransferProductsStockQuery): HttpParams {
+    let params = new HttpParams().set('id_sede', query.id_sede);
+    params = this.setParamIfDefined(params, 'id_almacen', query.id_almacen);
+    params = this.setParamIfDefined(params, 'page', query.page);
+    params = this.setParamIfDefined(params, 'size', query.size);
+    params = this.setParamIfDefined(params, 'codigo', query.codigo);
+    params = this.setParamIfDefined(params, 'nombre', query.nombre);
+    params = this.setParamIfDefined(params, 'id_categoria', query.id_categoria);
+    params = this.setParamIfDefined(params, 'categoria', query.categoria);
+    params = this.setParamIfDefined(params, 'activo', query.activo);
+    return params;
+  }
+
+  private buildProductsAutocompleteParams(query: TransferProductAutocompleteQuery): HttpParams {
+    let params = new HttpParams()
+      .set('search', query.search)
+      .set('id_sede', query.id_sede);
+    params = this.setParamIfDefined(params, 'id_almacen', query.id_almacen);
+    params = this.setParamIfDefined(params, 'id_categoria', query.id_categoria);
+    return params;
+  }
+
+  private buildProductStockParams(query: TransferProductStockQuery): HttpParams {
+    let params = new HttpParams().set('id_sede', query.id_sede);
+    params = this.setParamIfDefined(params, 'id_almacen', query.id_almacen);
+    return params;
+  }
+
+  private setParamIfDefined(
+    params: HttpParams,
+    key: string,
+    value: string | number | boolean | null | undefined,
+  ): HttpParams {
+    if (value === undefined || value === null || value === '') {
+      return params;
+    }
+
+    return params.set(key, String(value));
   }
 
   private handleHttpError(

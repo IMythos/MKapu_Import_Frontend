@@ -210,3 +210,24 @@ export interface AdminUserFullResponse {
     rolNombre: string;
   };
 }
+
+
+
+// ─── AUTOCOMPLETE ─────────────────────────────────────────────────────────────
+export interface SalesReceiptAutocompleteItem {
+  clienteId:       number;
+  documento:       string;
+  nombres:         string | null;
+  apellidos:       string | null;
+  razonSocial:     string | null;
+  tipoComprobante: string;
+  ultimaCompra:    string;
+  totalCompras:    number;
+}
+
+// ─── ANULACIÓN / ELIMINACIÓN ─────────────────────────────────────────────────
+export interface SalesReceiptDeletedResponseDto {
+  receiptId:  number;
+  message:    string;
+  deletedAt:  string | Date;
+}

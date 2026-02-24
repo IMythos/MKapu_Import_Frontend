@@ -1,43 +1,55 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { Component, OnInit, Output, EventEmitter, inject } from '@angular/core';
+import { Router, NavigationEnd, RouterLink } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { ButtonModule } from 'primeng/button';
 import { ToolbarModule } from 'primeng/toolbar';
 import { InputTextModule } from 'primeng/inputtext';
-import { FloatLabel } from 'primeng/floatlabel';
+import { RoleService } from '../../core/services/role.service';
+import { CashboxSocketService } from '../../ventas/services/cashbox-socket.service';
+import { UserRole } from '../../core/constants/roles.constants';
 import { ThemeService } from '../../core/services/theme.service';
-import { NavigationEnd, Router } from '@angular/router';
-import { filter } from 'rxjs';
-import { RouterLink } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-header',
   imports: [CommonModule, ToolbarModule, ButtonModule, InputTextModule, RouterLink],
   templateUrl: './header.html',
   styleUrl: './header.css',
+  standalone: true,
 })
 export class Header implements OnInit {
-  value1: string = "";
+  private router         = inject(Router);
+  private roleService    = inject(RoleService);
+  protected cashboxSocket= inject(CashboxSocketService);
+  protected themeService = inject(ThemeService);
 
-  notifCount = 0;
-
-  constructor(public themeService: ThemeService, private router: Router) {}
   @Output() toggleSidebar = new EventEmitter<void>();
+
+  readonly isVentas  = this.roleService.getCurrentUserRole() === UserRole.VENTAS;
+  notifCount = this.loadNotifCount();
+
+  readonly caja = this.cashboxSocket.caja;
+
+  ngOnInit(): void {
+    this.router.events
+      .pipe(filter((e) => e instanceof NavigationEnd))
+      .subscribe(() => (this.notifCount = this.loadNotifCount()));
+
+    if (this.isVentas) {
+      const id_sede = this.roleService.getCurrentUser()?.idSede;
+      if (id_sede) {
+        this.cashboxSocket.checkActiveSession(id_sede);
+      }
+    }
+  }
+
   toggleTheme(): void {
     this.themeService.toggleTheme();
   }
 
-  ngOnInit(): void {
-    this.cargarNotifCount();
-    this.router.events
-      .pipe(filter((event) => event instanceof NavigationEnd))
-      .subscribe(() => {
-        this.cargarNotifCount();
-      });
-  }
-
-  private cargarNotifCount(): void {
-    const raw = localStorage.getItem('transferencia_notif_count');
+  private loadNotifCount(): number {
+    const raw   = localStorage.getItem('transferencia_notif_count');
     const count = raw ? Number(raw) : 0;
-    this.notifCount = Number.isFinite(count) && count > 0 ? count : 0;
+    return Number.isFinite(count) && count > 0 ? count : 0;
   }
 }

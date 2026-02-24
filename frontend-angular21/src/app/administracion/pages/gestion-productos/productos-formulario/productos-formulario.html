@@ -137,9 +137,9 @@
     </div>
 
     <div class="field col-12 mb-4">
-      <label for="familia" class="font-semibold text-900 mb-2 block">Almacen *</label>
+      <label for="almacen" class="font-semibold text-900 mb-2 block">Almacen *</label>
       <p-select id="almacen" formControlName="almacen" [options]="almacenes()" optionLabel="nombre"
-        optionValue="id_almacen" placeholder="Seleccionar almacén" styleClass="w-full border-1 border-300">
+        optionValue="id" placeholder="Seleccionar almacén" styleClass="w-full border-1 border-300">
       </p-select>
 
       @if (productoForm.get('almacen')?.invalid && productoForm.get('almacen')?.touched) {

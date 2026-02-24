@@ -1,3 +1,5 @@
+// src/app/core/services/mock-data.service.ts
+
 import { Injectable } from '@angular/core';
 
 export interface ClienteMock {
@@ -32,6 +34,7 @@ export interface CotizacionMock {
   estado: 'BORRADOR' | 'ENVIADA' | 'ACEPTADA' | 'RECHAZADA';
   detalles: CotizacionMockDetalle[];
   total: number;
+  revision?: number; // undefined en creación, definido en revisiones
 }
 
 @Injectable({
@@ -129,6 +132,7 @@ export class MockDataService {
         estado: 'BORRADOR',
         detalles: [det1, det3],
         total: det1.subtotal + det3.subtotal,
+        revision: undefined, // creado, sin revisión
       },
       {
         id_cotizacion: 2,
@@ -139,6 +143,7 @@ export class MockDataService {
         estado: 'ENVIADA',
         detalles: [det2],
         total: det2.subtotal,
+        revision: undefined, // enviado una sola vez, aún sin revisión
       },
     ];
   }

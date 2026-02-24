@@ -96,6 +96,14 @@ export class ProductosFormulario implements OnInit {
     this.productoForm.get('stockInicial')?.valueChanges.subscribe(valor => {
       this.stockAgregado.set(valor || 0);
     });
+
+    this.productoForm.get('almacen')?.valueChanges.subscribe(v => {
+  console.log('ALMACEN VALUE:', v, typeof v);
+
+  console.log("almacenes", this.almacenes)
+
+});
+
   }
 
   private cargarDatosIniciales() {
@@ -109,8 +117,12 @@ export class ProductosFormulario implements OnInit {
     });
 
     this.almacenService.loadAlmacen().subscribe({
-      error: (err) => console.error('Error cargando almacenes', err)
-    });
+  next: () => {
+    console.log('ALMACENES CARGADOS:', this.almacenes());
+  },
+  error: (err) => console.error(err)
+});
+
   }
 
   private setSedePorDefecto() {

@@ -8,22 +8,24 @@ export interface ItemVenta {
 }
 
 export interface RegistroVentaRequest {
-  customerId: string;
-  saleTypeId: number;
-  receiptTypeId: number;
-  dueDate: string;
-  operationType: string;
-  subtotal: number;
-  igv: number;
-  isc: number;
-  total: number;
-  currencyCode: string;
-  responsibleId: string;
-  branchId: number;
+  customerId:      string;
+  saleTypeId:      number;
+  receiptTypeId:   number;
+  serie:           string;   // ✅ AGREGAR — ej: 'B001' o 'F001'
+  dueDate:         string;
+  operationType:   string;
+  subtotal:        number;
+  igv:             number;
+  isc:             number;
+  total:           number;
+  currencyCode:    string;
+  responsibleId:   string;
+  branchId:        number;
   paymentMethodId: number;
   operationNumber: string | null;
-  items: ItemVenta[];
+  items:           ItemVenta[];
 }
+
 
 export interface RegistroVentaResponse {
   success: boolean;

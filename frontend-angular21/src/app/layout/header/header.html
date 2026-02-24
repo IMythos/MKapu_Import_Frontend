@@ -7,7 +7,17 @@
         text
         severity="secondary"
         (onClick)="toggleSidebar.emit()"
-      ></p-button>
+      />
+
+      @if (isVentas) {
+        <span
+          class="caja-status-dot"
+          [ngClass]="caja() ? 'caja-abierta' : 'caja-cerrada'"
+        ></span>
+        <span class="caja-status-label">
+          {{ caja() ? 'Caja abierta' : 'Caja cerrada' }}
+        </span>
+      }
     </ng-template>
 
     <ng-template pTemplate="end">
@@ -18,17 +28,18 @@
           text
           severity="secondary"
           [routerLink]="['/admin/notificaciones']"
-        ></p-button>
-        <span class="header-bell-badge" *ngIf="notifCount > 0">{{ notifCount }}</span>
+        />
+        @if (notifCount > 0) {
+          <span class="header-bell-badge">{{ notifCount }}</span>
+        }
       </div>
-
       <p-button
         [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
         class="mr-2"
         text
         severity="secondary"
         (click)="toggleTheme()"
-      ></p-button>
+      />
     </ng-template>
   </p-toolbar>
 </div>

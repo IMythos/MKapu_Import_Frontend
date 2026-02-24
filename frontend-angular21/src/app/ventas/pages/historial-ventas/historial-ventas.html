@@ -183,10 +183,15 @@
         <h3><i class="pi pi-list"></i> Listado de comprobantes</h3>
       </div>
 
+      <!-- ✅ CLAVE: lazy=true delega la paginación al servidor -->
+      <!-- ✅ [rows] y [first] se sincronizan con las señales del componente -->
+      <!-- ✅ (onLazyLoad) dispara la carga del servidor al cambiar página o rows -->
       <p-table
         [value]="comprobantesFiltrados()"
+        [lazy]="true"
         [paginator]="true"
-        [rows]="10"
+        [rows]="currentLimit()"
+        [first]="(currentPage() - 1) * currentLimit()"
         [totalRecords]="totalRecords()"
         [loading]="loading()"
         [tableStyle]="{ 'min-width': '70rem' }"
@@ -194,19 +199,35 @@
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
         [showCurrentPageReport]="true"
         paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        [rowsPerPageOptions]="[10, 20, 50, 100]"
+        (onLazyLoad)="onPageChange($event)"
       >
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
-            <th pSortableColumn="tipo_comprobante">Tipo <p-sortIcon field="tipo_comprobante" /></th>
-            <th pSortableColumn="fec_emision">Fecha Emisión <p-sortIcon field="fec_emision" /></th>
+            <th pSortableColumn="numero">
+              N° Comprobante <p-sortIcon field="numero" />
+            </th>
+            <th pSortableColumn="tipo_comprobante">
+              Tipo <p-sortIcon field="tipo_comprobante" />
+            </th>
+            <th pSortableColumn="fec_emision">
+              Fecha Emisión <p-sortIcon field="fec_emision" />
+            </th>
             <th pSortableColumn="cliente_nombre">Cliente</th>
             <th pSortableColumn="cliente_doc">Documento</th>
-            <th pSortableColumn="tipo_pago">Tipo Pago <p-sortIcon field="tipo_pago" /></th>
-            <th pSortableColumn="responsable" class="text-right" style="min-width: 155px; width: 140px">
+            <th pSortableColumn="tipo_pago">
+              Tipo Pago <p-sortIcon field="tipo_pago" />
+            </th>
+            <th
+              pSortableColumn="responsable"
+              class="text-right"
+              style="min-width: 155px; width: 140px"
+            >
               Responsable <p-sortIcon field="responsable" />
             </th>
-            <th pSortableColumn="total" class="text-right">Total <p-sortIcon field="total" /></th>
+            <th pSortableColumn="total" class="text-right">
+              Total <p-sortIcon field="total" />
+            </th>
             <th>Estado</th>
             <th class="text-center">Acciones</th>
           </tr>

@@ -149,6 +149,95 @@ export interface TransferApiError {
   conflict?: TransferConflictInfo;
 }
 
+export interface TransferProductsStockQuery {
+  id_sede: number;
+  id_almacen?: number;
+  page?: number;
+  size?: number;
+  codigo?: string;
+  nombre?: string;
+  id_categoria?: number;
+  categoria?: string;
+  activo?: boolean;
+}
+
+export interface TransferProductAutocompleteQuery {
+  search: string;
+  id_sede: number;
+  id_almacen?: number;
+  id_categoria?: number;
+}
+
+export interface TransferProductStockQuery {
+  id_sede: number;
+  id_almacen?: number;
+}
+
+export interface TransferProductStockBase {
+  id_producto: number;
+  codigo: string;
+  nombre: string;
+  stock: number;
+}
+
+export interface TransferProductStockListItem extends TransferProductStockBase {
+  familia: string;
+  sede: string;
+}
+
+export interface TransferProductsStockResponse {
+  data: TransferProductStockListItem[];
+  pagination: {
+    page: number;
+    size: number;
+    total_records: number;
+    total_pages: number;
+  };
+}
+
+export interface TransferProductAutocompleteResponse {
+  data: TransferProductStockBase[];
+}
+
+export interface TransferProductDetailCategory {
+  id_categoria: number;
+  nombre: string;
+}
+
+export interface TransferProductDetailUnit {
+  id: number | null;
+  nombre: string;
+}
+
+export interface TransferProductDetail {
+  id_producto: number;
+  codigo: string;
+  nombre: string;
+  descripcion: string;
+  categoria: TransferProductDetailCategory;
+  precio_compra: number;
+  precio_unitario: number;
+  precio_mayor: number;
+  precio_caja: number;
+  unidad_medida: TransferProductDetailUnit;
+  estado: number;
+  fecha_creacion: string;
+  fecha_edicion: string;
+}
+
+export interface TransferProductStockDetail {
+  id_sede: number;
+  sede: string;
+  id_almacen: number | null;
+  cantidad: number;
+  estado: string;
+}
+
+export interface TransferProductDetailWithStockResponse {
+  producto: TransferProductDetail;
+  stock: TransferProductStockDetail;
+}
+
 // Alias para compatibilidad con código existente
 export type TransferRequestItemDto = RequestTransferAggregatedItemDto;
 export type TransferRequestDto = RequestTransferAggregatedDto;

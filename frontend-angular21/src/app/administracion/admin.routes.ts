@@ -282,16 +282,12 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
   {
     path: 'generar-ventas-administracion',
     loadComponent: () =>
-      import('./pages/generar-ventas-administracion/generar-ventas-administracion').then(
-        (m) => m.GenerarVentasAdministracion,
-      ),
+      import('../ventas/pages/generar-venta/generar-venta').then((m) => m.GenerarVenta),
   },
   {
     path: 'historial-ventas-administracion',
     loadComponent: () =>
-      import('./pages/historial-ventas-administracion/historial-ventas-administracion').then(
-        (m) => m.HistorialVentasAdministracion,
-      ),
+      import('../ventas/pages/historial-ventas/historial-ventas').then((m) => m.HistorialVentas),
   },
   {
     path: 'detalles-ventas-administracion/:id',

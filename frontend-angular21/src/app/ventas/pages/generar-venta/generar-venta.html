@@ -63,6 +63,7 @@
         </div>
 
         <div class="content-centrado">
+          <!-- Comprobante -->
           <div class="comprobante-section">
             <label class="section-label">
               <i class="pi pi-file-edit"></i>
@@ -89,12 +90,14 @@
 
           <p-divider styleClass="section-divider" />
 
+          <!-- Cliente -->
           <div class="cliente-section">
             <label class="section-label">
               <i class="pi pi-users"></i>
               Datos del Cliente
             </label>
 
+            <!-- Buscador de cliente -->
             <div class="buscar-cliente-section">
               <label class="input-label">{{ tipoComprobante() === 2 ? 'DNI' : 'RUC' }}</label>
 
@@ -169,6 +172,7 @@
               </div>
             </div>
 
+            <!-- Cliente encontrado -->
             <div *ngIf="clienteEncontrado()" class="cliente-encontrado-card mt-3">
               <p-card styleClass="cliente-card-success">
                 <div class="cliente-content">
@@ -181,6 +185,7 @@
                         <i class="pi pi-check-circle"></i>
                         {{ clienteEncontrado()!.status ? 'Activo' : 'Inactivo' }}
                       </span>
+
                       <p-button
                         icon="pi pi-times-circle"
                         [text]="true"
@@ -190,11 +195,23 @@
                         pTooltip="Cambiar cliente"
                         tooltipPosition="left"
                         styleClass="btn-close-cliente"
-                      />
+                      ></p-button>
+
+                      <p-button
+                        icon="pi pi-pencil"
+                        [text]="true"
+                        severity="primary"
+                        size="small"
+                        class="ml-2"
+                        pTooltip="Editar datos del cliente"
+                        tooltipPosition="left"
+                        (onClick)="iniciarEdicionCliente()"
+                      ></p-button>
                     </div>
                   </div>
 
-                  <div class="cliente-row mt-3">
+                  <!-- Vista normal -->
+                  <div class="cliente-row mt-3" *ngIf="!editandoCliente()">
                     <span class="info-badge dni">
                       <i class="pi pi-id-card"></i>
                       {{ formatearDocumentoCompleto() }}
@@ -205,18 +222,94 @@
                     </span>
                   </div>
 
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.email">
+                  <div
+                    class="cliente-row mt-3"
+                    *ngIf="!editandoCliente() && clienteEncontrado()!.email"
+                  >
                     <span class="info-badge email">
                       <i class="pi pi-envelope"></i>
                       {{ clienteEncontrado()!.email }}
                     </span>
                   </div>
 
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.address">
+                  <div
+                    class="cliente-row mt-3"
+                    *ngIf="!editandoCliente() && clienteEncontrado()!.address"
+                  >
                     <span class="info-badge direccion">
                       <i class="pi pi-map-marker"></i>
                       {{ clienteEncontrado()!.address }}
                     </span>
+                  </div>
+
+                  <!-- Edición en 2 columnas -->
+                  <div *ngIf="editandoCliente()" class="mt-3">
+                    <div class="grid gap-3">
+                      <div class="col-12 md:col-6 flex flex-column gap-1">
+                        <label class="font-medium text-sm">Nombre</label>
+                        <input
+                          pInputText
+                          [(ngModel)]="editarClienteForm.name"
+                          class="w-full"
+                          placeholder="Nombre completo"
+                        />
+                      </div>
+
+                      <div class="col-12 md:col-6 flex flex-column gap-1">
+                        <label class="font-medium text-sm">
+                          Teléfono
+                          <span class="text-color-secondary">(opcional)</span>
+                        </label>
+                        <input
+                          pInputText
+                          [(ngModel)]="editarClienteForm.phone"
+                          class="w-full"
+                          placeholder="9XXXXXXXX"
+                        />
+                      </div>
+
+                      <div class="col-12 md:col-6 flex flex-column gap-1">
+                        <label class="font-medium text-sm">
+                          Dirección
+                          <span class="text-color-secondary">(opcional)</span>
+                        </label>
+                        <input
+                          pInputText
+                          [(ngModel)]="editarClienteForm.address"
+                          class="w-full"
+                          placeholder="Av. Ejemplo 123"
+                        />
+                      </div>
+
+                      <div class="col-12 md:col-6 flex flex-column gap-1">
+                        <label class="font-medium text-sm">
+                          Email
+                          <span class="text-color-secondary">(opcional)</span>
+                        </label>
+                        <input
+                          pInputText
+                          [(ngModel)]="editarClienteForm.email"
+                          class="w-full"
+                          placeholder="correo@ejemplo.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div class="flex justify-content-end gap-2 mt-3">
+                      <p-button
+                        label="Cancelar"
+                        icon="pi pi-times"
+                        [text]="true"
+                        severity="secondary"
+                        (onClick)="cancelarEdicionCliente()"
+                      ></p-button>
+                      <p-button
+                        label="Guardar cambios"
+                        icon="pi pi-check"
+                        [loading]="actualizandoCliente()"
+                        (onClick)="guardarCambiosCliente()"
+                      ></p-button>
+                    </div>
                   </div>
                 </div>
               </p-card>
@@ -227,13 +320,101 @@
               class="cliente-no-encontrado mt-3"
             >
               <p-card styleClass="cliente-card-success">
-                <div class="text-center">
+                <div class="text-center mb-3">
                   <i class="pi pi-exclamation-triangle text-orange-500" style="font-size: 2rem"></i>
                   <h4 class="mt-3 mb-2">Cliente no encontrado</h4>
                   <p class="text-600">El documento ingresado no está registrado en el sistema.</p>
-                  <small class="text-500"
-                    >Contacte al administrador para registrar nuevos clientes.</small
-                  >
+                  <small class="text-500">
+                    Complete los datos para registrar y usar este cliente en la venta.
+                  </small>
+                </div>
+
+                <div class="grid mt-3">
+                  <!-- Tipo documento -->
+                  <div class="col-12 md:col-6 flex flex-column gap-1">
+                    <label class="font-medium text-sm">Tipo de Documento *</label>
+                    <p-select
+                      [options]="tiposDocumento()"
+                      [(ngModel)]="nuevoClienteForm.documentTypeId"
+                      optionLabel="description"
+                      optionValue="documentTypeId"
+                      placeholder="Seleccionar tipo"
+                      styleClass="w-full"
+                    ></p-select>
+                  </div>
+
+                  <!-- N° Documento -->
+                  <div class="col-12 md:col-6 flex flex-column gap-1">
+                    <label class="font-medium text-sm">N° Documento *</label>
+                    <input
+                      pInputText
+                      [(ngModel)]="nuevoClienteForm.documentValue"
+                      placeholder="Número de documento"
+                      class="w-full"
+                    />
+                  </div>
+
+                  <!-- Nombre -->
+                  <div class="col-12 md:col-6 flex flex-column gap-1">
+                    <label class="font-medium text-sm">Nombre *</label>
+                    <input
+                      pInputText
+                      [(ngModel)]="nuevoClienteForm.name"
+                      placeholder="Nombre completo"
+                      class="w-full"
+                    />
+                  </div>
+
+                  <!-- Teléfono -->
+                  <div class="col-12 md:col-6 flex flex-column gap-1">
+                    <label class="font-medium text-sm">
+                      Teléfono
+                      <span class="text-color-secondary">(opcional)</span>
+                    </label>
+                    <input
+                      pInputText
+                      [(ngModel)]="nuevoClienteForm.phone"
+                      placeholder="9XXXXXXXX"
+                      class="w-full"
+                    />
+                  </div>
+
+                  <!-- Dirección -->
+                  <div class="col-12 md:col-6 flex flex-column gap-1">
+                    <label class="font-medium text-sm">
+                      Dirección
+                      <span class="text-color-secondary">(opcional)</span>
+                    </label>
+                    <input
+                      pInputText
+                      [(ngModel)]="nuevoClienteForm.address"
+                      placeholder="Av. Ejemplo 123"
+                      class="w-full"
+                    />
+                  </div>
+
+                  <!-- Email -->
+                  <div class="col-12 md:col-6 flex flex-column gap-1">
+                    <label class="font-medium text-sm">
+                      Email
+                      <span class="text-color-secondary">(opcional)</span>
+                    </label>
+                    <input
+                      pInputText
+                      [(ngModel)]="nuevoClienteForm.email"
+                      placeholder="correo@ejemplo.com"
+                      class="w-full"
+                    />
+                  </div>
+                </div>
+
+                <div class="flex justify-content-end mt-3">
+                  <p-button
+                    label="Registrar y usar cliente"
+                    icon="pi pi-check"
+                    [loading]="creandoCliente()"
+                    (onClick)="crearNuevoCliente()"
+                  ></p-button>
                 </div>
               </p-card>
             </div>
@@ -258,7 +439,7 @@
                   (ngModelChange)="productoSeleccionadoBusqueda.set($event)"
                   [suggestions]="productosSugeridos()"
                   (completeMethod)="buscarProductos($event)"
-                  (onSelect)="onProductoSeleccionado($event)"
+                  (onSelect)="onProductoSeleccionado($event.value)"
                   (onClear)="onLimpiarBusqueda()"
                   [dropdown]="true"
                   placeholder="Buscar por nombre o código"
@@ -278,7 +459,6 @@
                           styleClass="suggestion-tag-nuevo"
                         />
                       </div>
-
                       <div class="suggestion-row-2">
                         <span class="suggestion-nombre-nuevo">{{ producto.nombre }}</span>
                         <div class="flex align-items-center gap-2">
@@ -331,9 +511,10 @@
               <div class="columna-header">
                 <h4>
                   <i class="pi pi-box"></i>
-                  Productos Disponibles ({{ productosFiltrados().length }})
+                  Productos Disponibles
                 </h4>
               </div>
+
               <div class="columna-scroll">
                 <div
                   *ngFor="let producto of productosFiltrados()"
@@ -369,9 +550,37 @@
                   </div>
                 </div>
 
-                <div *ngIf="productosFiltrados().length === 0" class="no-productos">
+                <div
+                  *ngIf="productosFiltrados().length === 0 && !productosLoading()"
+                  class="no-productos"
+                >
                   <i class="pi pi-inbox"></i>
                   <p>No se encontraron productos</p>
+                </div>
+
+                <div *ngIf="productosLoading()" class="no-productos">
+                  <i class="pi pi-spin pi-spinner"></i>
+                  <p>Cargando productos...</p>
+                </div>
+
+                <div *ngIf="hayMasPaginas()" class="text-center mt-3 pb-2">
+                  <p-button
+                    label="Ver más productos"
+                    icon="pi pi-chevron-down"
+                    [outlined]="true"
+                    [loading]="cargandoMas()"
+                    (onClick)="cargarMasProductos()"
+                    styleClass="w-full"
+                  />
+                </div>
+
+                <div
+                  *ngIf="productosFiltrados().length > 0 && totalRegistros() > 0"
+                  class="text-center mt-2 pb-2"
+                >
+                  <small class="text-500">
+                    Mostrando {{ productosCargados().length }} de {{ totalRegistros() }} productos
+                  </small>
                 </div>
               </div>
             </div>
@@ -420,9 +629,9 @@
                       [showButtons]="true"
                       styleClass="w-full"
                     />
-                    <small class="text-600 mt-1 block"
-                      >Máximo: {{ productoTemp()!.stock }} unidades</small
-                    >
+                    <small class="text-600 mt-1 block">
+                      Máximo: {{ productoTemp()!.stock }} unidades
+                    </small>
                   </div>
 
                   <div class="precio-display mb-3">
@@ -538,12 +747,10 @@
                       <span class="label">Subtotal (Base imponible):</span>
                       <span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
                     </div>
-
                     <div class="total-line">
                       <span class="label">IGV (18%):</span>
                       <span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
                     </div>
-
                     <div class="total-line total-final">
                       <span class="label">TOTAL A PAGAR:</span>
                       <span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
@@ -628,10 +835,10 @@
 
               <div class="promociones-footer">
                 <i class="pi pi-info-circle"></i>
-                <small
-                  >Las promociones estarán disponibles próximamente. Podrás aplicar descuentos
-                  especiales usando códigos promocionales.</small
-                >
+                <small>
+                  Las promociones estarán disponibles próximamente. Podrás aplicar descuentos
+                  especiales usando códigos promocionales.
+                </small>
               </div>
             </div>
 
@@ -716,9 +923,7 @@
                     <i class="pi pi-user"></i>
                     Cliente:
                   </span>
-                  <strong class="resumen-value">
-                    {{ clienteEncontrado()?.name }}
-                  </strong>
+                  <strong class="resumen-value">{{ clienteEncontrado()?.name }}</strong>
                 </div>
 
                 <div class="resumen-item">

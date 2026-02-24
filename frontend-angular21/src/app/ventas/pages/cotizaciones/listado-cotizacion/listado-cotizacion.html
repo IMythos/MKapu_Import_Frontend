@@ -1,7 +1,7 @@
 <!-- src/app/ventas/pages/cotizaciones/cotizaciones.html -->
 
 <div class="p-2">
-  <p-card styleClass="cotiz-header-card mb-4 cotiz-header-bordered">
+  <p-card styleClass="cotiz-header-card mb-4">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="cotiz-title-icon">
@@ -28,20 +28,65 @@
   <div *ngIf="!isRutaHija()">
     <div class="surface-card border-round-xl shadow-1 mb-4">
       <div class="p-3">
-        <div class="grid gap-3 align-items-end">
-          <div class="col-12 md:col-5">
-            <label class="font-medium mb-2 block">Buscar</label>
-            <input
-              pInputText
-              [(ngModel)]="buscarValue"
-              (keyup.enter)="cargarCotizaciones()"
-              placeholder="N° cotización, cliente o RUC..."
-            />
+        <div class="cotiz-filtros-row">
+          <div class="cotiz-filtro-buscar">
+            <label class="cotiz-filtro-label">Buscar</label>
+            <p-autocomplete
+              [(ngModel)]="buscarModelo"
+              [suggestions]="buscarSugeridos"
+              (completeMethod)="buscarSugerencias($event)"
+              (onSelect)="onBuscarSeleccionado($event.value)"
+              placeholder="N° cotización, cliente o RUC/DNI..."
+              styleClass="cotiz-input cotiz-autocomplete"
+              [forceSelection]="false"
+              appendTo="body"
+              (keyup.enter)="onBuscarEnter()"
+              field="label"
+            >
+              <ng-template let-s pTemplate="item">
+                <div class="cotiz-sug-item">
+                  <div class="cotiz-sug-main">
+                    <span class="cotiz-sug-numero">{{ s.numero }}</span>
+                    <span class="cotiz-sug-cliente">{{ s.cliente }}</span>
+                  </div>
+                  <div class="cotiz-sug-meta">
+                    <span class="cotiz-sug-ruc">RUC {{ s.ruc }}</span>
+                    <span class="cotiz-sug-estado">{{ s.estado }}</span>
+                  </div>
+                </div>
+              </ng-template>
+            </p-autocomplete>
           </div>
 
-          <div class="col-6 md:col-3">
-            <label class="font-medium mb-2 block">Estado</label>
+          <div class="cotiz-filtro-fechas">
+            <label class="cotiz-filtro-label">Rango de Fechas</label>
+            <div class="cotiz-fecha-wrap">
+              <p-datepicker
+                [(ngModel)]="fechaInicio"
+                placeholder="Fecha Inicio"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+                styleClass="cotiz-datepicker"
+                (onSelect)="cargarCotizaciones()"
+                (onClearClick)="cargarCotizaciones()"
+              ></p-datepicker>
+              <span class="cotiz-fecha-sep">-</span>
+              <p-datepicker
+                [(ngModel)]="fechaFin"
+                placeholder="Fecha Fin"
+                dateFormat="dd/mm/yy"
+                [showIcon]="true"
+                styleClass="cotiz-datepicker"
+                (onSelect)="cargarCotizaciones()"
+                (onClearClick)="cargarCotizaciones()"
+              ></p-datepicker>
+            </div>
+          </div>
+
+          <div class="cotiz-filtro-estado">
+            <label class="cotiz-filtro-label">Estado</label>
             <p-select
+              class="cotiz-select"
               [(ngModel)]="estadoFiltro"
               [options]="estadosOptions"
               optionLabel="label"
@@ -51,17 +96,14 @@
             ></p-select>
           </div>
 
-          <div class="col-6 md:col-3 flex align-items-end justify-content-end gap-2">
-            <p-button
-              icon="pi pi-search"
-              label="Buscar"
-              (onClick)="cargarCotizaciones()"
-            ></p-button>
+          <div class="cotiz-filtro-acciones">
+            <label class="cotiz-filtro-label" style="visibility: hidden">_</label>
             <p-button
               icon="pi pi-filter-slash"
               label="Limpiar"
               severity="danger"
               (onClick)="limpiarFiltros()"
+              size="small"
             ></p-button>
           </div>
         </div>
@@ -81,21 +123,36 @@
       >
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 10%">N°</th>
+            <th style="width: 12%">N°</th>
             <th style="width: 12%">Fecha</th>
-            <th style="width: 28%">Cliente</th>
-            <th style="width: 15%">RUC</th>
-            <th style="width: 15%">Total</th>
-            <th style="width: 10%">Estado</th>
+            <th style="width: 26%">Cliente</th>
+            <th style="width: 17%">Documento</th>
+            <th style="width: 12%">Total</th>
+            <th style="width: 11%">Estado</th>
             <th style="width: 10%">Acciones</th>
           </tr>
         </ng-template>
+
         <ng-template pTemplate="body" let-c>
           <tr>
-            <td class="font-semibold">{{ c.numero }}</td>
+            <td class="font-semibold">
+              {{ c.numero }}
+              <span
+                *ngIf="c.revision !== undefined && c.revision > 0"
+                class="ml-1 text-xs text-orange-600 font-semibold"
+              >
+                (Rev {{ c.revision | number:'2.0-0' }})
+              </span>
+            </td>
             <td>{{ c.fecha | date: 'dd/MM/yyyy' }}</td>
             <td>{{ c.cliente.razon_social }}</td>
-            <td>{{ c.cliente.ruc }}</td>
+            <td>
+              <span class="doc-badge">
+                <strong>{{ c.cliente.ruc?.length === 11 ? 'RUC' : 'DNI' }}</strong>
+                <span class="doc-separator">•</span>
+                <span>{{ c.cliente.ruc }}</span>
+              </span>
+            </td>
             <td>{{ c.total | currency: 'PEN':'S/ ' }}</td>
             <td>
               <p-tag
@@ -105,12 +162,12 @@
               ></p-tag>
             </td>
             <td>
-              <div class="flex align-items-center gap-2">
+              <div class="flex align-items-center gap-2 justify-content-center">
                 <p-button
                   icon="pi pi-eye"
                   text
                   severity="secondary"
-                  pTooltip="Ver Detalle"
+                  pTooltip="Ver detalle"
                   (onClick)="irDetalle(c.id_cotizacion)"
                 ></p-button>
 
@@ -118,20 +175,39 @@
                   icon="pi pi-pencil"
                   text
                   severity="secondary"
-                  pTooltip="Editar"
+                  pTooltip="Editar cotización"
                   (onClick)="irEditar(c.id_cotizacion)"
+                ></p-button>
+
+                <p-button
+                  icon="pi pi-envelope"
+                  text
+                  severity="secondary"
+                  pTooltip="Enviar por correo"
+                  (onClick)="enviarCorreo(c.id_cotizacion)"
+                ></p-button>
+
+                <p-button
                   *ngIf="c.estado === 'BORRADOR'"
+                  icon="pi pi-check"
+                  text
+                  severity="success"
+                  pTooltip="Marcar como enviada"
+                  (onClick)="marcarComoEnviada(c.id_cotizacion)"
                 ></p-button>
               </div>
             </td>
           </tr>
         </ng-template>
+
         <ng-template pTemplate="emptymessage">
           <tr>
             <td colspan="7" class="text-center py-6">
               <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
               <p class="text-900 font-medium mb-0">No se encontraron cotizaciones</p>
-              <p class="text-600 mt-2">Ajusta los filtros o crea una nueva cotización</p>
+              <p class="text-600 mt-2">
+                Ajusta los filtros o crea una nueva cotización
+              </p>
             </td>
           </tr>
         </ng-template>
@@ -140,7 +216,7 @@
 
     <div
       *ngIf="cotizacionesPaginadas.length > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl"
+      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl flex-wrap"
     >
       <div class="text-600 font-medium">
         Mostrando {{ first + 1 }}-{{ getLast() }} de {{ totalRecords }} cotizaciones

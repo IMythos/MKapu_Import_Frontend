@@ -56,3 +56,39 @@ html.p-dark :host ::ng-deep .app-toolbar.p-toolbar,
 html.p-dark :host ::ng-deep .app-toolbar {
   background: #1f1f1f !important;
 }
+
+/* ----------- CAJA STATUS DOT ----------- */
+.caja-status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.caja-abierta {
+  background: #37d857; /* verde */
+}
+.caja-cerrada {
+  background: #d83746; /* rojo */
+}
+.caja-status-label {
+  font-size: 0.92em;
+  margin-right: 12px;
+  color: #aaa;
+}
+
+.caja-status-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.caja-abierta { background: #37d857; }
+.caja-cerrada { background: #d83746; }
+.caja-status-label {
+  font-weight: 500;
+  margin-right: 14px;
+}

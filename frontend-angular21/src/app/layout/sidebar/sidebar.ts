@@ -165,12 +165,6 @@
         icon: 'pi pi-tag',
       },
       {
-        path: '/admin/conteo-inventario',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Conteo Inventario',
-        icon: 'pi pi-folder',
-      },
-      {
         path: '/admin/proveedores',
         allowedRoles: [UserRole.ADMIN],
         label: 'Proveedores',
@@ -179,34 +173,46 @@
 
       // ==================== VENTAS ====================
       {
+        path: '/ventas/caja',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Estado Caja',
+        icon: 'pi pi-wallet',
+      },
+      {
         path: '/ventas/dashboard-ventas',
         allowedRoles: [UserRole.VENTAS],
         label: 'Dashboard',
-        icon: 'pi pi-bookmark',
+        icon: 'pi pi-chart-line',
       },
       {
         path: '/ventas/generar-ventas',
         allowedRoles: [UserRole.VENTAS],
         label: 'Generar Venta',
-        icon: 'pi pi-bookmark',
+        icon: 'pi pi-plus-circle',
       },
       {
         path: '/ventas/historial-ventas',
         allowedRoles: [UserRole.VENTAS],
         label: 'Historial Ventas',
-        icon: 'pi pi-bookmark',
+        icon: 'pi pi-list',
       },
       {
         path: '/ventas/reclamos-listado',
         allowedRoles: [UserRole.VENTAS],
         label: 'Reclamos y Garantías',
-        icon: 'pi pi-shield',
+        icon: 'pi pi-exclamation-circle',
       },
-          {
+      {
         path: '/ventas/cotizaciones',
         allowedRoles: [UserRole.VENTAS],
         label: 'Cotizaciones',
         icon: 'pi pi-file',
+      },
+      {
+        path: '/ventas/remates',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Remates',
+        icon: 'pi pi-tag',
       },
 
       // ==================== ALMACÉN ====================
@@ -224,13 +230,13 @@
     },
     {
       path: '/logistica/conteo-inventario',
-      allowedRoles: [UserRole.ADMIN],
+      allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN],
       label: 'Conteo inventario',
       icon: 'pi pi-bookmark',
     },
     {
       path: '/logistica/remision',
-      allowedRoles: [UserRole.ADMIN],
+      allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN],
       label: 'Remision',
       icon: 'pi pi-truck',
     }
