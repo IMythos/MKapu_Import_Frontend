@@ -3,243 +3,61 @@
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="productos-title-icon">
-          <i class="pi pi-clipboard"></i>
+          <i class="pi pi-history"></i>
         </span>
         <div>
           <p class="productos-kicker mb-0">ALMACÉN</p>
-          <h2 class="productos-title mb-0">Conteo de Inventario</h2>
+          <h2 class="productos-title mb-0">Historial de Conteos</h2>
         </div>
       </div>
       <div class="flex gap-2">
         <p-button
-          *ngIf="conteoIniciado"
-          label="Pausar / Guardar"
-          icon="pi pi-pause"
-          [outlined]="true"
-          severity="secondary"
-          styleClass="productos-pill productos-pill-secondary"
-          (onClick)="detenerConteo()"
-        >
-        </p-button>
-
-        <p-button
-          *ngIf="!conteoIniciado"
-          label="Iniciar Conteo"
-          icon="pi pi-play"
-          styleClass="productos-pill productos-pill-warning"
-          (onClick)="iniciarConteo()"
-          [loading]="loading"
-        >
-        </p-button>
-
-        <p-button
-          *ngIf="conteoIniciado"
-          label="Finalizar Conteo"
-          icon="pi pi-check-circle"
-          severity="success"
+          label="Nuevo Conteo"
+          icon="pi pi-plus"
           styleClass="productos-pill"
-          (onClick)="guardarProgreso()"
-        >
-        </p-button>
+          (onClick)="irACrearConteo()"
+        ></p-button>
       </div>
     </div>
   </p-card>
 
-  <div class="grid mb-4" *ngIf="conteoIniciado">
-    <div class="col-12 md:col-4">
-      <div class="surface-card p-3 shadow-1 border-round-xl border-left-3 border-blue-500 flex align-items-center justify-content-between">
-        <div>
-          <span class="block text-500 font-medium mb-1">Total Items</span>
-          <div class="text-900 font-bold text-xl">{{ inventario.length }}</div>
-        </div>
-        <div
-          class="flex align-items-center justify-content-center bg-blue-100 border-round"
-          style="width: 2.5rem; height: 2.5rem"
-        >
-          <i class="pi pi-box text-blue-500 text-xl"></i>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 md:col-4">
-      <div
-        class="surface-card p-3 shadow-1 border-round-xl border-left-3 border-orange-500 flex align-items-center justify-content-between"
-      >
-        <div>
-          <span class="block text-500 font-medium mb-1">Pendientes</span>
-          <div class="text-900 font-bold text-xl">
-            {{ totalPendientes }}
-          </div>
-        </div>
-        <div
-          class="flex align-items-center justify-content-center bg-orange-100 border-round"
-          style="width: 2.5rem; height: 2.5rem"
-        >
-          <i class="pi pi-clock text-orange-500 text-xl"></i>
-        </div>
-      </div>
-    </div>
-    <div class="col-12 md:col-4">
-      <div
-        class="surface-card p-3 shadow-1 border-round-xl border-left-3 border-green-500 flex align-items-center justify-content-between"
-      >
-        <div>
-          <span class="block text-500 font-medium mb-1">Cuadrados</span>
-          <div class="text-900 font-bold text-xl">
-            {{ totalCuadrados }}
-          </div>
-        </div>
-        <div
-          class="flex align-items-center justify-content-center bg-green-100 border-round"
-          style="width: 2.5rem; height: 2.5rem"
-        >
-          <i class="pi pi-check text-green-500 text-xl"></i>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-    <p-table
-      [value]="inventario"
-      [loading]="loading"
-      [rowHover]="true"
-      styleClass="productos-table-nativa productos-table-hover"
-      responsiveLayout="scroll"
-    >
+    <p-table [value]="historialConteos()" [loading]="loading()" [rowHover]="true" styleClass="productos-table-nativa">
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 15%">Código</th>
-          <th style="width: 25%">Producto</th>
-          <th style="width: 15%">Ubicación</th>
-          <th style="width: 10%" class="text-center">Stock Sistema</th>
-          <th style="width: 15%" class="text-center bg-yellow-50">Conteo Físico</th>
-          <th style="width: 10%" class="text-center">Diferencia</th>
-          <th style="width: 10%">Estado</th>
-          <th style="width: 5%"></th>
+          <th>ID Conteo</th>
+          <th>Fecha Inicio</th>
+          <th>Sede</th>
+          <th class="text-center">Total Items</th>
+          <th class="text-center">Diferencias</th>
+          <th class="text-center">Estado</th>
+          <th style="width: 5%">Acciones</th>
         </tr>
       </ng-template>
-
-      <ng-template pTemplate="body" let-item>
-        <tr [ngClass]="{ 'bg-red-50': item.estado === 'DESVIACION' && item.conteoFisico !== null }">
-          <td class="font-semibold">{{ item.codigo }}</td>
-          <td>
-            <div class="flex flex-column">
-              <span>{{ item.nombre }}</span>
-              <small class="text-500">{{ item.familia }}</small>
-            </div>
-          </td>
-          <td>
-            <span class="text-600"><i class="pi pi-map-marker mr-1 text-400"></i>{{ item.ubicacion }}</span>
-          </td>
-          <td class="text-center font-bold text-600">
-            {{ item.stockSistema }}
-          </td>
-          <td class="text-center" [ngClass]="{ 'bg-yellow-50': conteoIniciado }">
-            <p-inputNumber
-              *ngIf="conteoIniciado"
-              [(ngModel)]="item.conteoFisico"
-              (onInput)="actualizarDiferencia(item)"
-              [min]="0"
-              [showButtons]="true"
-              buttonLayout="horizontal"
-              inputStyleClass="w-full text-center font-bold"
-              styleClass="w-full"
-              decrementButtonClass="p-button-secondary p-button-text"
-              incrementButtonClass="p-button-secondary p-button-text"
-            ></p-inputNumber>
-            <span *ngIf="!conteoIniciado" class="text-400 font-italic">--</span>
-          </td>
+      <ng-template pTemplate="body" let-conteo>
+        <tr>
+          <td class="font-bold">#{{ conteo.idConteo | number:'3.0' }}</td>
+          <td>{{ conteo.fechaInicio | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ conteo.sede }}</td>
+          <td class="text-center font-semibold">{{ conteo.totalItems }}</td>
           <td class="text-center">
-            <span
-              *ngIf="item.conteoFisico !== null"
-              class="font-bold text-lg"
-              [ngClass]="{
-                'text-green-600': item.diferencia === 0,
-                'text-red-600': item.diferencia !== 0,
-              }"
-            >
-              {{ item.diferencia > 0 ? '+' : '' }}{{ item.diferencia }}
+            <span [ngClass]="{'text-red-500 font-bold': conteo.totalDiferencias !== 0, 'text-green-500': conteo.totalDiferencias === 0}">
+              {{ conteo.totalDiferencias }}
             </span>
           </td>
-          <td>
-            <p-tag
-              [value]="item.estado"
-              [severity]="getEstadoSeverity(item.estado)"
-              [rounded]="true"
-            ></p-tag>
+          <td class="text-center">
+            <p-tag [value]="conteo.estado" [severity]="getEstadoSeverity(conteo.estado)" [rounded]="true"></p-tag>
           </td>
           <td>
-            <p-button
-              icon="pi pi-eye"
-              text
-              severity="secondary"
-              pTooltip="Ver Detalle"
-              tooltipPosition="left"
-              (onClick)="verDetalle(item)"
-            ></p-button>
+            <p-button icon="pi pi-eye" text severity="secondary" pTooltip="Ver Detalle" (onClick)="verDetalleConteo(conteo)"></p-button>
           </td>
         </tr>
       </ng-template>
-
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="8" class="text-center py-6">
-            <i class="pi pi-box text-4xl text-400 mb-3 block"></i>
-            <span class="text-600">No hay items asignados para este conteo.</span>
-          </td>
+          <td colspan="7" class="text-center py-6 text-500">No hay conteos registrados.</td>
         </tr>
       </ng-template>
     </p-table>
   </div>
 </div>
-
-<p-dialog
-  [(visible)]="mostrarDialogDetalle"
-  [header]="'Detalle: ' + itemSeleccionado?.nombre"
-  [modal]="true"
-  [style]="{ width: '450px' }"
-  styleClass="border-round-xl"
-  [draggable]="false"
-  [resizable]="false"
->
-  <div class="flex flex-column gap-3" *ngIf="itemSeleccionado">
-    <div class="surface-100 p-3 border-round-lg flex align-items-center gap-3">
-      <i class="pi pi-info-circle text-2xl text-primary"></i>
-      <div>
-        <span class="block font-bold text-900">Código: {{ itemSeleccionado.codigo }}</span>
-        <span class="text-600 text-sm">Familia: {{ itemSeleccionado.familia }}</span>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="col-6">
-        <label class="text-500 text-sm">Último Conteo</label>
-        <p class="font-medium m-0">{{ itemSeleccionado.ultimoConteo | date: 'dd/MM/yyyy' }}</p>
-      </div>
-      <div class="col-6">
-        <label class="text-500 text-sm">Ubicación</label>
-        <p class="font-medium m-0">{{ itemSeleccionado.ubicacion }}</p>
-      </div>
-    </div>
-
-    <div class="divider border-top-1 surface-border my-2"></div>
-
-    <div class="flex justify-content-between align-items-center bg-yellow-50 p-3 border-round">
-      <span class="font-bold text-orange-800">Conteo Actual</span>
-      <span class="text-2xl font-bold text-orange-800">
-        {{ itemSeleccionado.conteoFisico ?? '---' }}
-      </span>
-    </div>
-  </div>
-
-  <ng-template pTemplate="footer">
-    <p-button
-      label="Cerrar"
-      icon="pi pi-times"
-      (onClick)="mostrarDialogDetalle = false"
-      [text]="true"
-    ></p-button>
-  </ng-template>
-</p-dialog>
-
-<p-toast></p-toast>

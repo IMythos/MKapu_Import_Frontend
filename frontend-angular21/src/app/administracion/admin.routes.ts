@@ -85,12 +85,37 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
       ],
     },
 
-
-
-
   /* =======================
     TRANSFERENCIAS
   ======================= */
+
+  {
+    path: 'usuarios',
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/usuarios/pages/administracion-crear-usuario/administracion-crear-usuario').then(
+            (m) => m.AdministracionCrearUsuario,
+          ),
+      },
+      {
+        path: 'crear-usuario',
+        loadComponent: () =>
+          import('./pages/usuarios/pages/administracion/administracion').then(
+            (m) => m.Administracion,
+          ),
+      },
+      {
+        path: 'editar-usuario/:id',
+        loadComponent: () =>
+          import('./pages/usuarios/pages/administracion-editar-usuario/administracion-editar-usuario').then(
+            (m) => m.AdministracionEditarUsuario,
+          ),
+      },
+    ],
+  },
+
   {
     path: 'transferencia',
     loadComponent: () =>
@@ -148,6 +173,7 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
     loadComponent: () => import('./pages/gestion-productos/productos-listado/gestion-listado')
       .then((m) => m.GestionListado),
   },
+
   {
     path: 'gestion-productos/crear-producto',
     loadComponent: () => import('./pages/gestion-productos/productos-formulario/productos-formulario')

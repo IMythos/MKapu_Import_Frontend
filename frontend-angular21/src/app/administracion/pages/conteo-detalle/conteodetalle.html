@@ -1,11 +1,10 @@
 <div class="detalle-page">
 
-    <!-- HEADER -->
     <div class="flex justify-content-between align-items-center mb-4">
   
       <div>
         <h2 class="mb-1">DETALLE DE CONTEO FINALIZADO</h2>
-        <small>{{ conteo?.fecha }} - {{ conteo?.detalle }}</small>
+        <small>{{ conteo()?.fecha }} - {{ conteo()?.detalle }}</small>
       </div>
   
       <div class="flex gap-2">
@@ -27,21 +26,21 @@
   
         <div class="col-12 md:col-3">
           <h4>Total Sistema</h4>
-          <h2>{{ totalSistema }}</h2>
+          <h2>{{ totalSistema() }}</h2>
         </div>
   
         <div class="col-12 md:col-3">
           <h4>Total Real</h4>
-          <h2>{{ totalReal }}</h2>
+          <h2>{{ totalReal() }}</h2>
         </div>
   
         <div class="col-12 md:col-3">
           <h4>Diferencia Neta</h4>
           <h2 [ngClass]="{
-            'text-green-500': diferenciaNeta > 0,
-            'text-red-500': diferenciaNeta < 0
+            'text-green-500': diferenciaNeta() > 0,
+            'text-red-500': diferenciaNeta() < 0
           }">
-            {{ diferenciaNeta }}
+            {{ diferenciaNeta() }}
           </h2>
         </div>
   
@@ -57,7 +56,7 @@
     <!-- TABLA -->
     <p-card>
   
-      <p-table [value]="productos">
+      <p-table [value]="productos()">
   
         <ng-template pTemplate="header">
           <tr>

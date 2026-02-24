@@ -1,0 +1,101 @@
+<div class="p-2">
+  <p-card styleClass="productos-header-card mb-4 border-left-3 border-orange-500">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="productos-title-icon bg-orange-100 text-orange-600">
+          <i class="pi pi-box"></i>
+        </span>
+        <div>
+          <p class="productos-kicker mb-0">OPERACIÓN EN CURSO</p>
+          <h2 class="productos-title mb-0">Ejecución de Conteo de Inventario</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button label="Cancelar" icon="pi pi-times" [outlined]="true" severity="secondary" (onClick)="cancelarYSalir()"></p-button>
+        <p-button label="Finalizar y Ajustar Stock" icon="pi pi-check" severity="success" (onClick)="finalizarConteo()" [loading]="loading()"></p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <div class="grid mb-4">
+    <div class="col-12 md:col-4">
+      <div class="surface-card p-3 shadow-1 border-round-xl border-left-3 border-orange-500 flex justify-content-between">
+        <div>
+          <span class="block text-500 font-medium mb-1">Pendientes</span>
+          <div class="text-900 font-bold text-xl">{{ totalPendientes() }}</div>
+        </div>
+        <i class="pi pi-clock text-orange-500 text-2xl"></i>
+      </div>
+    </div>
+    <div class="col-12 md:col-4">
+      <div class="surface-card p-3 shadow-1 border-round-xl border-left-3 border-green-500 flex justify-content-between">
+        <div>
+          <span class="block text-500 font-medium mb-1">Cuadrados</span>
+          <div class="text-900 font-bold text-xl">{{ totalCuadrados() }}</div>
+        </div>
+        <i class="pi pi-check-circle text-green-500 text-2xl"></i>
+      </div>
+    </div>
+    <div class="col-12 md:col-4">
+      <div class="surface-card p-3 shadow-1 border-round-xl border-left-3 border-red-500 flex justify-content-between">
+        <div>
+          <span class="block text-500 font-medium mb-1">Desviaciones</span>
+          <div class="text-900 font-bold text-xl">{{ totalDesviaciones() }}</div>
+        </div>
+        <i class="pi pi-exclamation-triangle text-red-500 text-2xl"></i>
+      </div>
+    </div>
+  </div>
+
+  <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+    <p-table [value]="inventario()" dataKey="id" [loading]="loading()" styleClass="productos-table-nativa">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Código</th>
+          <th>Producto</th>
+          <th>Ubicación</th>
+          <th class="text-center">Stock Sistema</th>
+          <th class="text-center bg-yellow-50">Conteo Físico</th>
+          <th class="text-center">Diferencia</th>
+          <th>Estado</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-item>
+        <tr [ngClass]="{ 'bg-red-50': item.estado === 'DESVIACION' }">
+          <td class="font-semibold">{{ item.codigo }}</td>
+          <td>
+            <div class="flex flex-column">
+              <span>{{ item.nombre }}</span>
+              <small class="text-500">{{ item.familia }}</small>
+            </div>
+          </td>
+          <td><i class="pi pi-map-marker mr-1 text-400"></i>{{ item.ubicacion }}</td>
+          <td class="text-center font-bold text-600">{{ item.stockSistema }}</td>
+          
+          <td class="text-center bg-yellow-50">
+            <p-inputNumber
+              [ngModel]="item.conteoFisico"
+              (ngModelChange)="actualizarDiferencia(item, $event)"
+              [min]="0" [showButtons]="true" buttonLayout="horizontal"
+              inputStyleClass="w-full text-center font-bold" styleClass="w-full"
+            ></p-inputNumber>
+          </td>
+
+          <td class="text-center">
+            <span *ngIf="item.conteoFisico !== null" class="font-bold text-lg"
+                  [ngClass]="{'text-green-600': item.diferencia === 0, 'text-red-600': item.diferencia !== 0}">
+              {{ item.diferencia > 0 ? '+' : '' }}{{ item.diferencia }}
+            </span>
+            <span *ngIf="item.conteoFisico === null" class="text-400 font-italic">--</span>
+          </td>
+
+          <td>
+            <p-tag [value]="item.estado" [severity]="getEstadoSeverity(item.estado)" [rounded]="true"></p-tag>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </div>
+</div>
+<p-toast></p-toast>

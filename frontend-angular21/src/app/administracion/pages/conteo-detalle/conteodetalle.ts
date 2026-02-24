@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { CardModule } from 'primeng/card';
@@ -31,53 +31,57 @@ interface ProductoDetalle {
 })
 export class ConteoDetalle implements OnInit {
 
-  conteo: any;
-  productos: ProductoDetalle[] = [];
+  private router = inject(Router);
 
-  totalSistema = 0;
-  totalReal = 0;
-  diferenciaNeta = 0;
-  exactitud = 92;
+  conteo = signal<any>(null);
+  productos = signal<ProductoDetalle[]>([]);
+  exactitud = signal<number>(92); // Si en el futuro lo calculas, puede pasar a ser un computed()
 
-  constructor(private router: Router) {}
+  
+  totalSistema = computed(() => 
+    this.productos().reduce((acc, item) => acc + item.stockSistema, 0)
+  );
+  
+  totalReal = computed(() => 
+    this.productos().reduce((acc, item) => acc + item.conteoReal, 0)
+  );
+  
+  diferenciaNeta = computed(() => 
+    this.totalReal() - this.totalSistema()
+  );
+
 
   ngOnInit() {
-    this.conteo = history.state.conteo;
+    const estadoConteo = history.state.conteo;
 
-    if (!this.conteo) {
-      this.router.navigate(['/admin/conteo-inventario']);
+    if (!estadoConteo) {
+      this.router.navigate(['/administracion/conteo-inventario']);
+    } else {
+      this.conteo.set(estadoConteo);
     }
 
     this.cargarDetalleMock();
   }
 
   cargarDetalleMock() {
-    this.productos = [
+    this.productos.set([
       { codigo: 'MK-7721', producto: 'Licuadora Industrial 2L', stockSistema: 45, conteoReal: 45 },
       { codigo: 'MK-8816', producto: 'Freidora Aire Digital', stockSistema: 12, conteoReal: 10 },
       { codigo: 'MK-1022', producto: 'Hervidor Eléctrico 1.7L', stockSistema: 30, conteoReal: 31 },
       { codigo: 'MK-5541', producto: 'Cafetera Expreso Duo', stockSistema: 8, conteoReal: 8 }
-    ];
-
-    this.calcularTotales();
+    ]);
   }
 
-  calcularDiferencia(row: ProductoDetalle) {
+
+  calcularDiferencia(row: ProductoDetalle): number {
     return row.conteoReal - row.stockSistema;
   }
 
-  calcularTotales() {
-    this.totalSistema = this.productos.reduce((a, b) => a + b.stockSistema, 0);
-    this.totalReal = this.productos.reduce((a, b) => a + b.conteoReal, 0);
-    this.diferenciaNeta = this.totalReal - this.totalSistema;
-  }
-
   regresar() {
-    this.router.navigate(['/admin/conteo-inventario']);
+    this.router.navigate(['/conteo-inventario']);
   }
 
   descargarPDF() {
-    console.log('Descargar PDF');
+    console.log('Descargar PDF de:', this.conteo());
   }
-
 }

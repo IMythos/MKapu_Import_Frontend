@@ -10,5 +10,8 @@ export const LOGISTICA_ROUTES:Routes = [
     },
     {
         path:'remision', loadComponent: () => import('./pages/remision/remision').then((m)=> m.Remision)
+    },
+    {
+        path:'conteo-crear', loadComponent: () => import('./pages/conteo-inventario-crear/conteo-inventario-crear').then((m)=>m.ConteoInventarioCrear)
     }
 ]

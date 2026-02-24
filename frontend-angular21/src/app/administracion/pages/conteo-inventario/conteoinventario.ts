@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -11,8 +11,10 @@ import { TagModule } from 'primeng/tag';
 import { DatePickerModule } from 'primeng/datepicker';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { InputTextModule } from 'primeng/inputtext';
+import { ConteoInventarioService } from '../../../logistica/services/conteo-inventario.service';
 
-interface ConteoInventario {
+// Cambiamos el nombre para que no choque con la interfaz real de tu backend
+interface ConteoInventarioLocal {
   fecha: string;
   detalle: string;
   estado: string;
@@ -32,26 +34,33 @@ interface ConteoInventario {
     DatePickerModule,
     AutoCompleteModule,
     InputTextModule,
-    RouterModule
+    RouterModule,
   ],
   templateUrl: './conteoinventario.html',
-  styleUrls: ['./conteoinventario.css']
+  styleUrls: ['./conteoinventario.css'],
 })
 export class ConteoInventarios implements OnInit {
+  private router = inject(Router);
+  private conteosService = inject(ConteoInventarioService);
 
-  // ================= DATA =================
-  conteos: ConteoInventario[] = [];
-  conteosFiltrados: ConteoInventario[] = [];
+  // CORRECCIÓN 1: Definimos la señal localmente para poder usar .set() con la data Mock.
+  // (Cuando conectes el backend real, eliminarás cargarData() y usarás la señal del service).
+  conteos = signal<ConteoInventarioLocal[]>([]);
 
-  // ================= FILTROS =================
-  filtroBusqueda: string = '';
-  fechaSeleccionada: Date | null = null;
+  // Mantenemos el loading conectado al servicio por si hace peticiones
+  loading = this.conteosService.loading;
+
+  idSedeSeleccionada = signal<number>(1);
+  filtroBusqueda = signal<string>('');
+  fechaSeleccionada = signal<Date | null>(null);
+  estadoSeleccionado = signal<{ nombre: string }>({ nombre: 'Todos' });
+  familiaSeleccionada = signal<{ nombre: string }>({ nombre: 'Todas' });
 
   estados = [
     { nombre: 'Todos' },
     { nombre: 'Inicio' },
     { nombre: 'Finalizado' },
-    { nombre: 'Anulado' }
+    { nombre: 'Anulado' },
   ];
 
   familias = [
@@ -59,121 +68,100 @@ export class ConteoInventarios implements OnInit {
     { nombre: 'Licuadoras' },
     { nombre: 'Freidoras' },
     { nombre: 'Refris' },
-    { nombre: 'Cocinas' }
+    { nombre: 'Cocinas' },
   ];
 
-  estadosFiltrados: any[] = [];
-  familiasFiltradas: any[] = [];
+  estadosFiltrados = signal<any[]>([]);
+  familiasFiltradas = signal<any[]>([]);
 
-  estadoSeleccionado: any = this.estados[0];
-  familiaSeleccionada: any = this.familias[0];
+  conteosFiltrados = computed(() => {
+    const listado = this.conteos();
+    const busqueda = this.filtroBusqueda().toLowerCase();
+    const estado = this.estadoSeleccionado()?.nombre;
+    const familia = this.familiaSeleccionada()?.nombre;
+    const fecha = this.fechaSeleccionada();
 
-  constructor(private router: Router) {}
+    let fechaFormateada = '';
+    if (fecha) {
+      fechaFormateada =
+        fecha.getDate().toString().padStart(2, '0') +
+        '/' +
+        (fecha.getMonth() + 1).toString().padStart(2, '0') +
+        '/' +
+        fecha.getFullYear();
+    }
+
+    return listado.filter((c) => {
+      // CORRECCIÓN 2: Se usa c.detalle en singular tal cual tu interfaz
+      const coincideBusqueda = c.detalle.toLowerCase().includes(busqueda);
+      const coincideEstado = estado === 'Todos' || c.estado === estado;
+      const coincideFamilia = familia === 'Todas' || c.familia === familia;
+      const coincideFecha = !fecha || c.fecha === fechaFormateada;
+
+      return coincideBusqueda && coincideEstado && coincideFamilia && coincideFecha;
+    });
+  });
 
   ngOnInit() {
+    this.conteosService.listarConteos({
+      id_sede: this.idSedeSeleccionada(),
+    });
+
     this.cargarData();
   }
 
   cargarData() {
-    this.conteos = [
+    this.conteos.set([
       {
         fecha: '08/02/2026',
         detalle: 'Conteo mensual licuadoras',
         estado: 'Inicio',
-        familia: 'Licuadoras'
+        familia: 'Licuadoras',
       },
       {
         fecha: '07/02/2026',
         detalle: 'Revisión anual freidoras',
         estado: 'Finalizado',
-        familia: 'Freidoras'
+        familia: 'Freidoras',
       },
       {
         fecha: '06/02/2026',
         detalle: 'Conteo REFRIS - Sede Norte',
         estado: 'Anulado',
-        familia: 'Refris'
+        familia: 'Refris',
       },
       {
         fecha: '05/02/2026',
         detalle: 'Stock Cocinas industriales',
         estado: 'Inicio',
-        familia: 'Cocinas'
+        familia: 'Cocinas',
       },
       {
         fecha: '04/02/2026',
         detalle: 'Inventario licuadoras portátiles',
         estado: 'Finalizado',
-        familia: 'Licuadoras'
-      }
-    ];
-
-    this.aplicarFiltros();
+        familia: 'Licuadoras',
+      },
+    ]);
   }
-
-  // ================= AUTOCOMPLETE =================
 
   filtrarEstados(event: any) {
     const query = event.query?.toLowerCase() || '';
-    this.estadosFiltrados = this.estados.filter(e =>
-      e.nombre.toLowerCase().includes(query)
-    );
+    this.estadosFiltrados.set(this.estados.filter((e) => e.nombre.toLowerCase().includes(query)));
   }
 
   filtrarFamilias(event: any) {
     const query = event.query?.toLowerCase() || '';
-    this.familiasFiltradas = this.familias.filter(f =>
-      f.nombre.toLowerCase().includes(query)
-    );
+    this.familiasFiltradas.set(this.familias.filter((f) => f.nombre.toLowerCase().includes(query)));
   }
 
-  // ================= FILTROS =================
-
-  aplicarFiltros() {
-
-    this.conteosFiltrados = this.conteos.filter(c => {
-
-      const coincideBusqueda =
-        c.detalle.toLowerCase().includes(this.filtroBusqueda.toLowerCase());
-
-      const coincideEstado =
-        this.estadoSeleccionado?.nombre === 'Todos' ||
-        c.estado === this.estadoSeleccionado?.nombre;
-
-      const coincideFamilia =
-        this.familiaSeleccionada?.nombre === 'Todas' ||
-        c.familia === this.familiaSeleccionada?.nombre;
-
-      let coincideFecha = true;
-
-      if (this.fechaSeleccionada) {
-        const fechaFormateada =
-          this.fechaSeleccionada.getDate().toString().padStart(2, '0') +
-          '/' +
-          (this.fechaSeleccionada.getMonth() + 1).toString().padStart(2, '0') +
-          '/' +
-          this.fechaSeleccionada.getFullYear();
-
-        coincideFecha = c.fecha === fechaFormateada;
-      }
-
-      return coincideBusqueda && coincideEstado && coincideFamilia && coincideFecha;
+  verDetalle(row: ConteoInventarioLocal) {
+    this.router.navigate(['/conteo-detalle'], {
+      state: { conteo: row },
     });
   }
-
-  // ================= ACCIONES =================
-
-  verDetalle(row: ConteoInventario) {
-    this.router.navigate(['/conteo-detalle'], {
-        state: { conteo: row }
-      });
-      
-      }
-      
-  
 
   crearConteo() {
     this.router.navigate(['/admin/conteo-crear']);
   }
-
 }

@@ -1,9 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 
-/* PrimeNG 21+ */
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
@@ -37,12 +36,14 @@ interface ProductoConteo {
 })
 export class ConteoCrear implements OnInit {
 
-  constructor(private router: Router) {}
+  private router = inject(Router);
 
-  /* ================= FILTROS ================= */
+  productos = signal<ProductoConteo[]>([]);
 
-  filtroCodigo: string = '';
-  filtroNombre: string = '';
+  filtroCodigo = signal<string>('');
+  filtroNombre = signal<string>('');
+  familiaSeleccionada = signal<string>('');
+  sedeSeleccionada = signal<string>('SJL');
 
   familias = [
     { label: 'Todas las familias', value: '' },
@@ -54,94 +55,60 @@ export class ConteoCrear implements OnInit {
     { label: 'Miraflores', value: 'Miraflores' }
   ];
 
-  familiaSeleccionada: string = '';
-  sedeSeleccionada: string = 'SJL';
+  
+  productosFiltrados = computed(() => {
+    const pCodigo = this.filtroCodigo().toLowerCase();
+    const pNombre = this.filtroNombre().toLowerCase();
+    const pFamilia = this.familiaSeleccionada();
+    const pSede = this.sedeSeleccionada();
 
-  /* ================= DATA ================= */
+    return this.productos().filter(p => {
+      const coincideCodigo = p.codigo.toLowerCase().includes(pCodigo);
+      const coincideNombre = p.nombre.toLowerCase().includes(pNombre);
+      const coincideFamilia = !pFamilia || p.familia === pFamilia;
+      const coincideSede = !pSede || p.sede === pSede;
 
-  productos: ProductoConteo[] = [];
-  productosFiltrados: ProductoConteo[] = [];
+      return coincideCodigo && coincideNombre && coincideFamilia && coincideSede;
+    });
+  });
+
 
   ngOnInit() {
     this.cargarProductos();
   }
 
   cargarProductos() {
-    this.productos = [
-      {
-        codigo: 'CP-1029',
-        nombre: 'Cafetera Espresso Pro',
-        familia: 'Cafeteras',
-        sede: 'SJL',
-        stockSistema: 2,
-        conteoPropio: 2
-      },
-      {
-        codigo: 'CP-1030',
-        nombre: 'Cafetera Goteo XL',
-        familia: 'Cafeteras',
-        sede: 'SJL',
-        stockSistema: 6,
-        conteoPropio: 5
-      },
-      {
-        codigo: 'CP-1035',
-        nombre: 'Prensa Francesa 1L',
-        familia: 'Cafeteras',
-        sede: 'SJL',
-        stockSistema: 13,
-        conteoPropio: 14
-      },
-      {
-        codigo: 'CP-1036',
-        nombre: 'Molinillo Eléctrico',
-        familia: 'Cafeteras',
-        sede: 'SJL',
-        stockSistema: 15,
-        conteoPropio: 15
-      }
-    ];
-
-    this.aplicarFiltros();
+    // Usamos .set() para inicializar la señal
+    this.productos.set([
+      { codigo: 'CP-1029', nombre: 'Cafetera Espresso Pro', familia: 'Cafeteras', sede: 'SJL', stockSistema: 2, conteoPropio: 2 },
+      { codigo: 'CP-1030', nombre: 'Cafetera Goteo XL', familia: 'Cafeteras', sede: 'SJL', stockSistema: 6, conteoPropio: 5 },
+      { codigo: 'CP-1035', nombre: 'Prensa Francesa 1L', familia: 'Cafeteras', sede: 'SJL', stockSistema: 13, conteoPropio: 14 },
+      { codigo: 'CP-1036', nombre: 'Molinillo Eléctrico', familia: 'Cafeteras', sede: 'SJL', stockSistema: 15, conteoPropio: 15 }
+    ]);
   }
 
-  /* ================= FILTROS ================= */
 
-  aplicarFiltros() {
-    this.productosFiltrados = this.productos.filter(p => {
-
-      const coincideCodigo =
-        p.codigo.toLowerCase().includes(this.filtroCodigo.toLowerCase());
-
-      const coincideNombre =
-        p.nombre.toLowerCase().includes(this.filtroNombre.toLowerCase());
-
-      const coincideFamilia =
-        !this.familiaSeleccionada ||
-        p.familia === this.familiaSeleccionada;
-
-      const coincideSede =
-        p.sede === this.sedeSeleccionada;
-
-      return coincideCodigo && coincideNombre && coincideFamilia && coincideSede;
-    });
+  // IMPORTANTE: Este método se debe llamar desde el HTML cuando el usuario cambia la cantidad
+  actualizarConteoFisico(codigo: string, nuevoValor: number) {
+    this.productos.update(prods =>
+      prods.map(p => 
+        p.codigo === codigo ? { ...p, conteoPropio: nuevoValor } : p
+      )
+    );
   }
-
-  /* ================= LOGICA ================= */
 
   calcularDiferencia(p: ProductoConteo): number {
-    return p.stockSistema - p.conteoPropio;
+    return p.conteoPropio - p.stockSistema;
   }
 
-  /* ================= ACCIONES ================= */
 
   cancelar() {
-    this.router.navigate(['/conteo-inventario']);
+    this.router.navigate(['/administracion/conteo-inventario']);
   }
 
   guardarConteo() {
-    console.log('Conteo guardado:', this.productosFiltrados);
-    this.router.navigate(['/conteo-inventario']);
+    console.log('Conteo guardado:', this.productosFiltrados());
+    this.router.navigate(['/administracion/conteo-inventario']);
   }
 
   exportar() {

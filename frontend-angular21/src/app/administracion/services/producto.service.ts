@@ -21,7 +21,7 @@ import { Observable } from 'rxjs';
 export class ProductoService {
   private api = environment.apiUrl;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) { }  
 
   getProductos(
     page?: number,

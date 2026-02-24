@@ -1,4 +1,4 @@
-import { Component, inject, Inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -11,20 +11,20 @@ import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-interface ItemConteo {
-  id: number;
-  codigo: string;
-  nombre: string;
-  familia: string;
-  stockSistema: number;
-  conteoFisico: number | null;
-  diferencia: number;
-  ubicacion: string;
-  estado: 'PENDIENTE' | 'CUADRADO' | 'DESVIACION';
-  ultimoConteo?: string;
+import { Router } from '@angular/router';
+
+interface ConteoResumen {
+  idConteo: number;
+  sede: string;
+  fechaInicio: Date;
+  estado: 'INICIADO' | 'FINALIZADO' | 'ANULADO';
+  totalItems: number;
+  totalDiferencias: number;
 }
+
 @Component({
   selector: 'app-conteo-inventario',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -42,153 +42,43 @@ interface ItemConteo {
   templateUrl: './conteo-inventario.html',
   styleUrl: './conteo-inventario.css',
 })
-export class ConteoInventario {
-  private messageService = inject(MessageService);
-  conteoIniciado: boolean = false;
-  loading: boolean = false;
+export class ConteoInventario implements OnInit {
+  private router = inject(Router);
 
-  inventarioOriginal: ItemConteo[] = [];
-  inventario: ItemConteo[] = [];
-  itemSeleccionado: ItemConteo | null = null;
-
-  mostrarDialogDetalle: boolean = false;
-  filtroGlobal: string = '';
+  // Signal para almacenar la lista de conteos previos
+  historialConteos = signal<ConteoResumen[]>([]);
+  loading = signal<boolean>(false);
 
   ngOnInit() {
-    this.cargarDatosMock();
+    this.cargarHistorial();
   }
-  cargarDatosMock() {
-    this.inventario = [
-      {
-        id: 1,
-        codigo: 'GRIF-001',
-        nombre: 'Grifería Monocomando Lavatorio',
-        familia: 'Grifería',
-        stockSistema: 50,
-        conteoFisico: null,
-        diferencia: 0,
-        ubicacion: 'Pasillo A-01',
-        estado: 'PENDIENTE',
-        ultimoConteo: '2024-01-15',
-      },
-      {
-        id: 2,
-        codigo: 'TUB-PVC-2',
-        nombre: 'Tubo PVC 2 Pulgadas',
-        familia: 'Tuberías',
-        stockSistema: 120,
-        conteoFisico: null,
-        diferencia: 0,
-        ubicacion: 'Patio Externo',
-        estado: 'PENDIENTE',
-        ultimoConteo: '2024-01-10',
-      },
-      {
-        id: 3,
-        codigo: 'VAL-ESF-1',
-        nombre: 'Válvula Esférica 1"',
-        familia: 'Válvulas',
-        stockSistema: 30,
-        conteoFisico: null,
-        diferencia: 0,
-        ubicacion: 'Estante B-03',
-        estado: 'PENDIENTE',
-        ultimoConteo: '2024-02-01',
-      },
-      {
-        id: 4,
-        codigo: 'CEMP-PEG',
-        nombre: 'Pegamento PVC Oatey',
-        familia: 'Químicos',
-        stockSistema: 15,
-        conteoFisico: null,
-        diferencia: 0,
-        ubicacion: 'Mostrador',
-        estado: 'PENDIENTE',
-        ultimoConteo: '2024-01-20',
-      },
-      {
-        id: 5,
-        codigo: 'LLAV-ANG',
-        nombre: 'Llave Angular Cromada',
-        familia: 'Grifería',
-        stockSistema: 200,
-        conteoFisico: null,
-        diferencia: 0,
-        ubicacion: 'Pasillo A-02',
-        estado: 'PENDIENTE',
-        ultimoConteo: '2024-01-15',
-      },
-    ];
-  }
-  iniciarConteo() {
-    this.loading = true;
+
+  cargarHistorial() {
+    this.loading.set(true);
     setTimeout(() => {
-      this.conteoIniciado = true;
-      this.loading = false;
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Conteo Iniciado',
-        detail: 'Ya puedes ingresar las cantidades físicas.',
-      });
-    }, 100);
+      this.historialConteos.set([
+        { idConteo: 1, sede: 'SJL', fechaInicio: new Date('2024-02-10'), estado: 'FINALIZADO', totalItems: 150, totalDiferencias: -2 },
+        { idConteo: 2, sede: 'SJL', fechaInicio: new Date('2024-02-15'), estado: 'ANULADO', totalItems: 150, totalDiferencias: 0 },
+        { idConteo: 3, sede: 'SJL', fechaInicio: new Date(), estado: 'INICIADO', totalItems: 155, totalDiferencias: 0 },
+      ]);
+      this.loading.set(false);
+    }, 500);
   }
-  detenerConteo() {
-    this.conteoIniciado = false;
-    this.messageService.add({
-      severity: 'warn',
-      summary: 'Conteo Pausado',
-      detail: 'Se ha deshabilitado la edición.',
-    });
+
+  irACrearConteo() {
+    this.router.navigate(['/logistica/conteo-crear']);
   }
-  actualizarDiferencia(item: ItemConteo) {
-    if (item.conteoFisico === null) {
-      item.diferencia = 0;
-      item.estado = 'PENDIENTE';
-      return;
-    }
-    item.diferencia = item.conteoFisico - item.stockSistema;
-    if (item.diferencia === 0) {
-      item.estado = 'CUADRADO';
-    } else if(item.diferencia <= 0) {
-      item.estado = 'DESVIACION';
-    }
+
+  verDetalleConteo(conteo: ConteoResumen) {
+    this.router.navigate(['/administracion/conteo-detalle', conteo.idConteo]);
   }
-  verDetalle(item: ItemConteo) {
-    this.itemSeleccionado = { ...item };
-    this.mostrarDialogDetalle = true;
-  }
-  guardarProgreso() {
-    this.messageService.add({
-      severity: 'success',
-      summary: 'Guardado',
-      detail: 'El avance del conteo se ha guardado correctamente.',
-    });
-  }
-  getEstadoSeverity(
-    estado: string,
-  ): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | undefined {
+
+  getEstadoSeverity(estado: string): 'success' | 'warn' | 'danger' | 'info' {
     switch (estado) {
-      case 'CUADRADO':
-        return 'success';
-      case 'DESVIACION':
-        return 'danger';
-      default:
-        return 'warn';
+      case 'FINALIZADO': return 'success';
+      case 'INICIADO': return 'info';
+      case 'ANULADO': return 'danger';
+      default: return 'warn';
     }
-  }
-  getStockSeverity(stock: number): 'success' | 'warning' | 'danger' {
-    if (stock > 20) return 'success';
-    if (stock > 0) return 'warning';
-    return 'danger';
-  }
-  get totalPendientes(): number {
-    return this.inventario.filter((item) => item.estado === 'PENDIENTE').length;
-  }
-  get totalCuadrados(): number {
-    return this.inventario.filter((item) => item.estado === 'CUADRADO').length;
-  }
-  get totalDesviaciones(): number {
-    return this.inventario.filter((item) => item.estado === 'DESVIACION').length;
   }
 }

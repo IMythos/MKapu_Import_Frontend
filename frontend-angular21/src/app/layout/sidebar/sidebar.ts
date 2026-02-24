@@ -97,7 +97,7 @@ export class Sidebar implements OnInit {
 
     // ==================== LOGISTICA ====================
     { path: '',                                       allowedRoles: [UserRole.ADMIN], label: 'LOGISTICA', isSection: true },
-    { path: '/logistica/conteo-inventario',           allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN], label: 'Conteo Inventario', icon: 'pi pi-bookmark' },
+    { path: '/admin/conteo-inventario',           allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN], label: 'Conteo Inventario', icon: 'pi pi-bookmark' },
     { path: '/logistica/remision',                    allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN], label: 'Remisión', icon: 'pi pi-truck' }
   ];
 
