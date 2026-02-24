@@ -1,12 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { filter, switchMap, tap, catchError, of, map } from 'rxjs';
-
-import { ConteoInventario, DetalleConteo } from '../interfaces/conteo.interface';
 import { environment } from '../../../enviroments/enviroment';
 
-// Interfaz local para manejar los filtros
 export interface FiltrosConteo {
   id_sede: number;
   fecha_inicio?: string;
@@ -17,61 +12,68 @@ export interface FiltrosConteo {
 export class ConteoInventarioService {
   private apiUrl = `${environment.apiUrl}/logistics/conteo-inventario`;
   private http = inject(HttpClient);
-  
-  private filtrosBusqueda = signal<FiltrosConteo | null>(null);
 
   public loading = signal<boolean>(false);
-  public conteoActual = signal<ConteoInventario | null>(null);
+  public conteosListado = signal<any[]>([]); 
+  public conteoOperacion = signal<any | null>(null);
 
-  public conteos = toSignal(
-    toObservable(this.filtrosBusqueda).pipe(
-      filter(filtros => filtros !== null),
-      tap(() => this.loading.set(true)),
-      switchMap(filtros => {
-        let params = new HttpParams().set('id_sede', filtros!.id_sede);
-        if (filtros!.fecha_inicio) params = params.set('fecha_inicio', filtros!.fecha_inicio);
-        if (filtros!.fecha_fin) params = params.set('fecha_fin', filtros!.fecha_fin);
-
-        return this.http.get<{ status: number, data: ConteoInventario[] }>(this.apiUrl, { params }).pipe(
-          map(res => res.data),
-          catchError((err) => {
-            console.error('Error al cargar conteos:', err);
-            return of([]); 
-          })
-        );
-      }),
-      tap(() => this.loading.set(false))
-    ),
-    { initialValue: [] }
-  );
-
-  public totalDiferencias = computed(() => {
-    const detalles = this.conteoActual()?.detalles || [];
-    return detalles.reduce((acc, det) => acc + Math.abs(det.diferencia || 0), 0);
+  public totalDiferenciasCalculado = computed(() => {
+    const detalles = this.conteoOperacion()?.detalles || [];
+    return detalles.reduce((acc: number, det: any) => acc + Math.abs(det.diferencia || 0), 0);
   });
   listarConteos(filtros: FiltrosConteo) {
-    this.filtrosBusqueda.set(filtros);
+    this.loading.set(true);
+    let params = new HttpParams().set('id_sede', filtros.id_sede);
+    if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
+    if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
+
+    this.http.get<{ status: number, data: any[] }>(this.apiUrl, { params }).subscribe({
+      next: (res) => {
+        this.conteosListado.set(res.data);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error fetching conteos', err);
+        this.loading.set(false);
+      }
+    });
   }
 
-  iniciarNuevoConteo(idSede: number, nomSede: string, idUsuario: number) {
-    return this.http.post<ConteoInventario>(this.apiUrl, { idSede, nomSede, idUsuario });
-  }
-
-  actualizarDetalleFisico(idDetalle: number, stockConteo: number, observacion: string) {
-    return this.http.patch(`${this.apiUrl}/detalle/${idDetalle}`, { stockConteo, observacion });
-  }
-
-  finalizarYajustar(idConteo: number, estado: string) {
-    const detalles = this.conteoActual()?.detalles || [];
+  obtenerDetalle(idConteo: number) {
+    this.loading.set(true);
     
-    const payloadData = detalles.map(det => ({
+    this.http.get<any>(`${this.apiUrl}/${idConteo}`).subscribe({
+      next: (res) => {
+        const dataPura = res.data ? res.data : res;
+        
+        this.conteoOperacion.set(dataPura);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error obteniendo detalle fresco:', err);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  // =====================================
+  // POST: PASO 1 - Iniciar Conteo (Snapshot)
+  // =====================================
+  iniciarNuevoConteo(payload: { idSede: number, nomSede: string, idUsuario: number,idCategoria?: number,nomCategoria?: string }) {
+    this.loading.set(true);
+    return this.http.post<any>(this.apiUrl, payload);
+  }
+  finalizarYajustar(idConteo: number, estado: 'AJUSTADO' | 'ANULADO') {
+    const detalles = this.conteoOperacion()?.detalles || [];
+    
+    const payloadData = detalles.map((det: any) => ({
       id_detalle: det.idDetalle,
       stock_conteo: det.stockConteo || 0
     }));
 
     return this.http.patch(`${this.apiUrl}/${idConteo}/finalizar`, { 
       estado, 
-      totalDiferencias: this.totalDiferencias(),
+      totalDiferencias: this.totalDiferenciasCalculado(),
       totalItems: detalles.length,
       data: payloadData
     });

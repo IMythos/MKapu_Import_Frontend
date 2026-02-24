@@ -1,148 +1,196 @@
-<div class="conteo-crear-page">
-
-    <p-card class="mb-4">
-  
-      <ng-template pTemplate="header">
-        <div class="flex align-items-center gap-2">
-          <i class="pi pi-filter text-primary text-xl"></i>
-          <span class="text-xl font-semibold">FILTROS DE BÚSQUEDA</span>
+<p-toast></p-toast>
+<div class="conteo-page">
+  <p-card class="conteo-header-card mb-4">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="sedes-title-icon bg-orange-100 text-orange-600">
+          <i class="pi pi-box"></i>
+        </span>
+        <div>
+          <p class="sedes-kicker">OPERACIÓN DE ALMACÉN</p>
+          <h2 class="sedes-title">Ejecución de Conteo de Inventario</h2>
         </div>
-      </ng-template>
-  
-      <div class="grid mt-3">
-  
-        <div class="col-12 md:col-3">
-          <label class="font-semibold">Código</label>
-          <span class="p-input-icon-left w-full">
-            <i class="pi pi-barcode"></i>
-            <input pInputText
-                   class="w-full"
-                   [(ngModel)]="filtroCodigo"
-                   placeholder="Ej: PRD-001" />
-          </span>
-        </div>
-  
-        <div class="col-12 md:col-3">
-          <label class="font-semibold">Nombre</label>
-          <span class="p-input-icon-left w-full">
-            <i class="pi pi-tag"></i>
-            <input pInputText
-                   class="w-full"
-                   [(ngModel)]="filtroNombre"
-                   placeholder="Nombre del producto" />
-          </span>
-        </div>
-  
-        <div class="col-12 md:col-3">
-          <label class="font-semibold">Familia</label>
-          <p-select
-            [options]="familias"
-            [(ngModel)]="familiaSeleccionada"
-            class="w-full">
-          </p-select>
-        </div>
-  
-        <div class="col-12 md:col-3">
-          <label class="font-semibold">Sede</label>
-          <p-select
-            [options]="sedes"
-            [(ngModel)]="sedeSeleccionada"
-            class="w-full">
-          </p-select>
-        </div>
-  
       </div>
-    </p-card>
-  
-  
-    <p-card>
-  
-      <ng-template pTemplate="header">
-        <div class="flex justify-content-between align-items-center w-full">
-  
-          <div class="flex align-items-center gap-2">
-            <i class="pi pi-box text-primary text-xl"></i>
-            <span class="text-xl font-semibold">
-              NUEVO CONTEO DE STOCK
-            </span>
+
+      <div class="flex gap-2">
+        <p-button
+          label="Cancelar"
+          icon="pi pi-times"
+          [outlined]="true"
+          severity="secondary"
+          (onClick)="cancelar()"
+        ></p-button>
+        <p-button
+          *ngIf="conteoActual()"
+          label="Finalizar y Ajustar Stock"
+          icon="pi pi-check"
+          severity="success"
+          (onClick)="guardarConteo()"
+          [loading]="loading()"
+        ></p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card *ngIf="!conteoActual()" class="mt-3">
+    <div class="flex flex-column align-items-center justify-content-center py-6">
+      <i class="pi pi-camera text-6xl text-400 mb-4"></i>
+      <h3 class="text-700 mb-2">Tomar Snapshot de Inventario</h3>
+      <p class="text-500 mb-4 text-center max-w-20rem">
+        Selecciona la sede a la que deseas hacerle el conteo. Esto bloqueará una copia del stock
+        actual.
+      </p>
+
+      <div class="flex gap-3 align-items-center">
+        <p-select
+          [options]="sedes"
+          [ngModel]="sedeSeleccionada()"
+          (ngModelChange)="sedeSeleccionada.set($event)"
+          optionLabel="label"
+          placeholder="Selecciona una sede"
+        >
+        </p-select>
+
+        <p-button
+          label="Iniciar Conteo"
+          icon="pi pi-play"
+          [disabled]="!sedeSeleccionada()"
+          (onClick)="iniciarSnapshot()"
+          [loading]="loading()"
+        >
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <ng-container *ngIf="conteoActual()">
+    <div class="grid mb-4">
+      <div class="col-12 md:col-4">
+        <p-card styleClass="border-left-3 border-orange-500 shadow-1">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-medium mb-1">Pendientes por Contar</span>
+              <div class="text-900 font-bold text-2xl">{{ totalPendientes() }}</div>
+            </div>
+            <i class="pi pi-clock text-orange-500 text-3xl"></i>
           </div>
-  
-          <div class="flex gap-2">
-            <p-button label="Cancelar"
-                      severity="danger"
-                      icon="pi pi-times"
-                      styleClass="sedes-pill"
-                      [routerLink]="['/admin/conteo-inventario']">
-                      
-            </p-button>
-  
-            <p-button label="Guardar Conteo"
-                      severity="success"
-                      icon="pi pi-save"
-                      (onClick)="guardarConteo()">
-            </p-button>
-  
-            <p-button label="Exportar"
-                      icon="pi pi-download"
-                      (onClick)="exportar()">
-            </p-button>
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="border-left-3 border-green-500 shadow-1">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-medium mb-1">Items Cuadrados</span>
+              <div class="text-900 font-bold text-2xl">{{ totalCuadrados() }}</div>
+            </div>
+            <i class="pi pi-check-circle text-green-500 text-3xl"></i>
           </div>
-  
-        </div>
-      </ng-template>
-  
-  
-      <p-table [value]="productosFiltrados()" class="mt-3">
-  
+        </p-card>
+      </div>
+      <div class="col-12 md:col-4">
+        <p-card styleClass="border-left-3 border-red-500 shadow-1">
+          <div class="flex justify-content-between align-items-center">
+            <div>
+              <span class="block text-500 font-medium mb-1">Desviaciones</span>
+              <div class="text-900 font-bold text-2xl">{{ totalDesviaciones() }}</div>
+            </div>
+            <i class="pi pi-exclamation-triangle text-red-500 text-3xl"></i>
+          </div>
+        </p-card>
+      </div>
+    </div>
+
+    <div class="mb-3 flex justify-content-end">
+      <span class="p-input-icon-left w-full md:w-25rem">
+        <i class="pi pi-search"></i>
+        <input
+          pInputText
+          type="text"
+          placeholder="Buscar producto a contar..."
+          class="w-full"
+          [ngModel]="filtroNombre()"
+          (ngModelChange)="filtroNombre.set($event)"
+        />
+      </span>
+    </div>
+
+    <p-card styleClass="tabla-card shadow-1">
+      <p-table
+        [value]="productosFiltrados()"
+        dataKey="idDetalle"
+        [loading]="loading()"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-striped"
+      >
         <ng-template pTemplate="header">
           <tr>
             <th>Código</th>
-            <th>Nombre del Producto</th>
-            <th>Familia</th>
-            <th>Sede</th>
-            <th>Stock (Sistema)</th>
-            <th>Conteo Propio</th>
-            <th>Diferencia</th>
+            <th style="width: 30%">Producto</th>
+            <th class="text-center">Stock Sistema</th>
+            <th class="text-center columna-conteo" style="width: 15%">Conteo Físico</th>
+            <th class="text-center">Diferencia</th>
+            <th class="text-center">Estado</th>
           </tr>
         </ng-template>
-  
-        <ng-template pTemplate="body" let-row>
-          <tr>
-  
-            <td>{{ row.codigo }}</td>
-            <td>{{ row.nombre }}</td>
-            <td>{{ row.familia }}</td>
-            <td>{{ row.sede }}</td>
-            <td>{{ row.stockSistema }}</td>
-  
-            <td>
-              <input pInputText
-                     type="number"
-                     [(ngModel)]="row.conteoPropio"
-                     (ngModelChange)="actualizarConteoFisico(row.codigo, $event)"
-                     style="width:80px" />
+
+        <ng-template pTemplate="body" let-p>
+          <tr [ngClass]="{ 'fila-desviacion': p.stockConteo !== null && p.diferencia < 0 }">
+            <td class="font-semibold text-color">{{ p.codProd || 'N/A' }}</td>
+            <td class="text-color">{{ p.descripcion }}</td>
+            <td class="text-center text-color-secondary font-bold">{{ p.stockSistema }}</td>
+
+            <td class="text-center columna-conteo-body">
+              <p-inputNumber
+                [ngModel]="p.stockConteo"
+                (ngModelChange)="actualizarConteoFisico(p.idDetalle, $event)"
+                [showButtons]="true"
+                buttonLayout="horizontal"
+                spinnerMode="horizontal"
+                inputStyleClass="w-full text-center font-bold text-lg"
+                [min]="0"
+              >
+              </p-inputNumber>
             </td>
-  
-            <td>
+
+            <td class="text-center">
               <span
+                *ngIf="p.stockConteo !== null"
+                class="font-bold text-xl"
                 [ngClass]="{
-                  'text-green-500': calcularDiferencia(row) > 0,
-                  'text-red-500': calcularDiferencia(row) < 0
-                }">
-                {{ calcularDiferencia(row) }}
+                  'text-green-500': p.diferencia === 0,
+                  'text-red-500': p.diferencia < 0,
+                  'text-blue-500': p.diferencia > 0,
+                }"
+              >
+                {{ p.diferencia > 0 ? '+' : '' }}{{ p.diferencia }}
               </span>
+              <span
+                *ngIf="p.stockConteo === null || p.stockConteo === undefined"
+                class="text-color-secondary font-italic"
+                >--</span
+              >
             </td>
-  
+
+            <td class="text-center">
+              <p-tag
+                *ngIf="p.stockConteo !== null"
+                [value]="p.diferencia === 0 ? 'CUADRADO' : 'DESVIACIÓN'"
+                [severity]="p.diferencia === 0 ? 'success' : 'danger'"
+              >
+              </p-tag>
+              <p-tag *ngIf="p.stockConteo === null" value="PENDIENTE" severity="warn"></p-tag>
+            </td>
           </tr>
         </ng-template>
-  
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="text-center py-5 text-color-secondary">
+              No hay productos que coincidan con la búsqueda.
+            </td>
+          </tr>
+        </ng-template>
       </p-table>
-  
-      <div class="text-right mt-3 text-sm text-color-secondary">
-        Total de registros: {{ productosFiltrados().length }} productos
-      </div>
-  
     </p-card>
-  
-  </div>
-  
+  </ng-container>
+</div>

@@ -13,5 +13,5 @@ export const LOGISTICA_ROUTES:Routes = [
     },
     {
         path:'conteo-crear', loadComponent: () => import('./pages/conteo-inventario-crear/conteo-inventario-crear').then((m)=>m.ConteoInventarioCrear)
-    }
+    },
 ]
