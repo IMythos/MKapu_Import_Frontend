@@ -1,18 +1,16 @@
-import { Component, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, OnInit, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
+
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-interface ProductoDetalle {
-  codigo: string;
-  producto: string;
-  stockSistema: number;
-  conteoReal: number;
-}
+import { ConteoInventarioService } from '../../../logistica/services/conteo-inventario.service';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
 
 @Component({
   selector: 'app-conteo-detalle',
@@ -24,64 +22,100 @@ interface ProductoDetalle {
     TableModule,
     TagModule,
     ProgressBarModule,
-    RouterModule
+    RouterModule,
+    ToastModule,
   ],
+  providers: [MessageService],
   templateUrl: './conteodetalle.html',
-  styleUrls: ['./conteodetalle.css']
+  styleUrls: ['./conteodetalle.css'],
 })
 export class ConteoDetalle implements OnInit {
-
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private conteoService = inject(ConteoInventarioService);
+  private messageService = inject(MessageService);
 
-  conteo = signal<any>(null);
-  productos = signal<ProductoDetalle[]>([]);
-  exactitud = signal<number>(92); // Si en el futuro lo calculas, puede pasar a ser un computed()
+  conteo = this.conteoService.conteoOperacion;
+  loading = this.conteoService.loading;
 
-  
-  totalSistema = computed(() => 
-    this.productos().reduce((acc, item) => acc + item.stockSistema, 0)
-  );
-  
-  totalReal = computed(() => 
-    this.productos().reduce((acc, item) => acc + item.conteoReal, 0)
-  );
-  
-  diferenciaNeta = computed(() => 
-    this.totalReal() - this.totalSistema()
-  );
+  totalSistema = computed(() => {
+    const detalles = this.conteo()?.detalles || [];
+    return detalles.reduce((acc: number, item: any) => acc + Number(item.stockSistema || 0), 0);
+  });
 
+  totalReal = computed(() => {
+    const detalles = this.conteo()?.detalles || [];
+    return detalles.reduce((acc: number, item: any) => acc + Number(item.stockConteo || 0), 0);
+  });
+
+  diferenciaNeta = computed(() => {
+    return this.totalReal() - this.totalSistema();
+  });
+
+  exactitud = computed(() => {
+    const sis = this.totalSistema();
+    if (sis === 0) return 100;
+
+    const porcentaje = (this.totalReal() / sis) * 100;
+    return porcentaje > 100 ? 100 : Math.round(porcentaje);
+  });
 
   ngOnInit() {
-    const estadoConteo = history.state.conteo;
+    const idParam = this.route.snapshot.paramMap.get('id');
 
-    if (!estadoConteo) {
-      this.router.navigate(['/administracion/conteo-inventario']);
+    if (idParam) {
+      this.conteoService.obtenerDetalle(Number(idParam));
     } else {
-      this.conteo.set(estadoConteo);
+      this.regresar();
     }
-
-    this.cargarDetalleMock();
-  }
-
-  cargarDetalleMock() {
-    this.productos.set([
-      { codigo: 'MK-7721', producto: 'Licuadora Industrial 2L', stockSistema: 45, conteoReal: 45 },
-      { codigo: 'MK-8816', producto: 'Freidora Aire Digital', stockSistema: 12, conteoReal: 10 },
-      { codigo: 'MK-1022', producto: 'Hervidor Eléctrico 1.7L', stockSistema: 30, conteoReal: 31 },
-      { codigo: 'MK-5541', producto: 'Cafetera Expreso Duo', stockSistema: 8, conteoReal: 8 }
-    ]);
-  }
-
-
-  calcularDiferencia(row: ProductoDetalle): number {
-    return row.conteoReal - row.stockSistema;
   }
 
   regresar() {
-    this.router.navigate(['/conteo-inventario']);
+    this.conteoService.conteoOperacion.set(null);
+    this.router.navigate(['/admin/conteo-inventario']);
   }
 
   descargarPDF() {
-    console.log('Descargar PDF de:', this.conteo());
+    const id = this.conteo()?.idConteo;
+    console.log(`Iniciando generación de PDF para el conteo #${id}`);
+  }
+  retomarConteo() {
+    const id = this.conteo()?.idConteo || this.conteo()?.id_conteo;
+    if (id) {
+      this.router.navigate(['/admin/conteo-crear'], { queryParams: { idRetomar: id } });
+    }
+  }
+  anularConteo() {
+    const id = this.conteo()?.idConteo || this.conteo()?.id_conteo;
+    if (!id) return;
+    const confirmar = confirm(
+      '¿Estás seguro de que deseas anular este conteo? Esta acción cerrará el registro sin modificar el stock.',
+    );
+
+    if (confirmar) {
+      this.conteoService.loading.set(true);
+
+      this.conteoService.finalizarYajustar(id, 'ANULADO').subscribe({
+        next: () => {
+          this.conteoService.loading.set(false);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Anulado',
+            detail: 'El conteo fue anulado correctamente.',
+          });
+
+          this.conteoService.obtenerDetalle(id);
+        },
+        error: () => {
+          this.conteoService.loading.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo anular el conteo.',
+          });
+        },
+      });
+    }
+    this.router.navigate(['admin/conteo-inventario']);
   }
 }

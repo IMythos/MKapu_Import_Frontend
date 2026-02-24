@@ -1,22 +1,19 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 import { InputTextModule } from 'primeng/inputtext';
+import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
 
-interface ProductoConteo {
-  codigo: string;
-  nombre: string;
-  familia: string;
-  sede: string;
-  stockSistema: number;
-  conteoPropio: number;
-}
+import { ConteoInventarioService } from '../../../logistica/services/conteo-inventario.service';
 
 @Component({
   selector: 'app-conteo-crear',
@@ -28,90 +25,143 @@ interface ProductoConteo {
     ButtonModule,
     TableModule,
     InputTextModule,
+    InputNumberModule,
     SelectModule,
+    TagModule,
+    ToastModule,
     RouterModule
   ],
+  providers: [MessageService],
   templateUrl: './conteocrear.html',
   styleUrls: ['./conteocrear.css']
 })
 export class ConteoCrear implements OnInit {
 
   private router = inject(Router);
+  private conteoService = inject(ConteoInventarioService);
+  private messageService = inject(MessageService);
+  private route = inject(ActivatedRoute);
 
-  productos = signal<ProductoConteo[]>([]);
-
-  filtroCodigo = signal<string>('');
-  filtroNombre = signal<string>('');
-  familiaSeleccionada = signal<string>('');
-  sedeSeleccionada = signal<string>('SJL');
-
-  familias = [
-    { label: 'Todas las familias', value: '' },
-    { label: 'Cafeteras', value: 'Cafeteras' }
-  ];
+  loading = this.conteoService.loading;
+  conteoActual = this.conteoService.conteoOperacion;
 
   sedes = [
-    { label: 'SJL', value: 'SJL' },
-    { label: 'Miraflores', value: 'Miraflores' }
+    { label: 'SJL - Las Flores', value: 1 },
+    { label: 'Surco - Principal', value: 2 }
   ];
+  sedeSeleccionada = signal<any>(this.sedes[0]);
+  idUsuario = signal<number>(2);
+
+  filtroNombre = signal<string>('');
 
   
   productosFiltrados = computed(() => {
-    const pCodigo = this.filtroCodigo().toLowerCase();
-    const pNombre = this.filtroNombre().toLowerCase();
-    const pFamilia = this.familiaSeleccionada();
-    const pSede = this.sedeSeleccionada();
-
-    return this.productos().filter(p => {
-      const coincideCodigo = p.codigo.toLowerCase().includes(pCodigo);
-      const coincideNombre = p.nombre.toLowerCase().includes(pNombre);
-      const coincideFamilia = !pFamilia || p.familia === pFamilia;
-      const coincideSede = !pSede || p.sede === pSede;
-
-      return coincideCodigo && coincideNombre && coincideFamilia && coincideSede;
-    });
+    const detalles = this.conteoActual()?.detalles || [];
+    const term = this.filtroNombre().toLowerCase();
+    
+    if (!term) return detalles;
+    return detalles.filter((det: any) => 
+      det.descripcion?.toLowerCase().includes(term) || 
+      det.codProd?.toLowerCase().includes(term)
+    );
   });
 
+  totalPendientes = computed(() => {
+    return (this.conteoActual()?.detalles || []).filter((d: any) => d.stockConteo === null || d.stockConteo === undefined).length;
+  });
+
+  totalCuadrados = computed(() => {
+    return (this.conteoActual()?.detalles || []).filter((d: any) => d.stockConteo !== null && d.diferencia === 0).length;
+  });
+
+  totalDesviaciones = computed(() => {
+    return (this.conteoActual()?.detalles || []).filter((d: any) => d.stockConteo !== null && d.diferencia !== 0).length;
+  });
 
   ngOnInit() {
-    this.cargarProductos();
-  }
-
-  cargarProductos() {
-    // Usamos .set() para inicializar la señal
-    this.productos.set([
-      { codigo: 'CP-1029', nombre: 'Cafetera Espresso Pro', familia: 'Cafeteras', sede: 'SJL', stockSistema: 2, conteoPropio: 2 },
-      { codigo: 'CP-1030', nombre: 'Cafetera Goteo XL', familia: 'Cafeteras', sede: 'SJL', stockSistema: 6, conteoPropio: 5 },
-      { codigo: 'CP-1035', nombre: 'Prensa Francesa 1L', familia: 'Cafeteras', sede: 'SJL', stockSistema: 13, conteoPropio: 14 },
-      { codigo: 'CP-1036', nombre: 'Molinillo Eléctrico', familia: 'Cafeteras', sede: 'SJL', stockSistema: 15, conteoPropio: 15 }
-    ]);
-  }
-
-
-  // IMPORTANTE: Este método se debe llamar desde el HTML cuando el usuario cambia la cantidad
-  actualizarConteoFisico(codigo: string, nuevoValor: number) {
-    this.productos.update(prods =>
-      prods.map(p => 
-        p.codigo === codigo ? { ...p, conteoPropio: nuevoValor } : p
-      )
-    );
-  }
-
-  calcularDiferencia(p: ProductoConteo): number {
-    return p.conteoPropio - p.stockSistema;
+    const idRetomar = this.route.snapshot.queryParamMap.get('idRetomar');
+    if (idRetomar) {
+      this.conteoService.loading.set(true);
+      this.conteoService.obtenerDetalle(Number(idRetomar));
+      this.messageService.add({ severity: 'info', summary: 'Retomando', detail: 'Has retomado un conteo pendiente.' });
+      
+    } else {
+    const idRetomar = this.route.snapshot.queryParamMap.get('idRetomar');
+    this.conteoService.conteoOperacion.set(null);
+    }
   }
 
 
-  cancelar() {
-    this.router.navigate(['/administracion/conteo-inventario']);
+  iniciarSnapshot() {
+    const sede = this.sedeSeleccionada();
+    if (!sede) return;
+
+    this.conteoService.loading.set(true);
+
+    this.conteoService.iniciarNuevoConteo({
+      idSede: sede.value,
+      nomSede: sede.label,
+      idUsuario: this.idUsuario()
+    }).subscribe({
+      next: (res) => {
+        const nuevoConteo = res.data ? res.data : res;
+        const idGenerado = nuevoConteo.idConteo; 
+        if (idGenerado) {
+          this.conteoService.obtenerDetalle(idGenerado);
+          this.messageService.add({ severity: 'info', summary: 'Iniciado', detail: 'Ya puedes registrar las cantidades físicas.' });
+        } else {
+          console.warn("No se detectó ID generado, forzando vista con la data del POST", nuevoConteo);
+          this.conteoService.conteoOperacion.set(nuevoConteo);
+          this.conteoService.loading.set(false);
+        }
+      },
+      error: (err) => {
+        this.conteoService.loading.set(false); 
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo generar el snapshot del stock.' });
+      }
+    });
+  }
+
+  actualizarConteoFisico(idDetalle: number, nuevoValor: number | null) {
+    if (nuevoValor === null) return;
+    this.conteoService.conteoOperacion.update(conteo => {
+      if (!conteo) return conteo;
+      const detalle = conteo.detalles.find((d: any) => d.idDetalle === idDetalle);
+      if (detalle) {
+        detalle.stockConteo = nuevoValor;
+        detalle.diferencia = nuevoValor - Number(detalle.stockSistema || 0);
+      }
+      return { ...conteo }; 
+    });
   }
 
   guardarConteo() {
-    console.log('Conteo guardado:', this.productosFiltrados());
-    this.router.navigate(['/administracion/conteo-inventario']);
+    const id = this.conteoActual()?.idConteo;
+    if (!id) return;
+
+    if (this.totalPendientes() > 0) {
+      if(!confirm('Aún hay ítems sin contar. Se asumirá cantidad 0 para ellos. ¿Deseas continuar?')) return;
+    }
+
+    this.conteoService.loading.set(true); 
+
+    this.conteoService.finalizarYajustar(id, 'AJUSTADO').subscribe({
+      next: () => {
+        this.conteoService.loading.set(false); 
+
+        this.messageService.add({ severity: 'success', summary: 'Completado', detail: 'Stock ajustado correctamente.' });
+        setTimeout(() => this.router.navigate(['/admin/conteo-inventario']), 1500);
+      },
+      error: () => {
+        this.conteoService.loading.set(false); 
+
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Fallo al procesar los ajustes de stock.' });
+      }
+    });
+    this.router.navigate(['admin/conteo-inventario']);
   }
 
-  exportar() {
-    console.log('Exportar conteo');
+  cancelar() {
+    this.router.navigate(['/admin/conteo-inventario']);
   }
 }

@@ -1,93 +1,146 @@
-<div class="detalle-page">
-
-    <div class="flex justify-content-between align-items-center mb-4">
-  
-      <div>
-        <h2 class="mb-1">DETALLE DE CONTEO FINALIZADO</h2>
-        <small>{{ conteo()?.fecha }} - {{ conteo()?.detalle }}</small>
-      </div>
-  
-      <div class="flex gap-2">
-        <p-button label="Regresar"
-                  icon="pi pi-arrow-left"
-                  severity="secondary"
-                  (onClick)="regresar()">
-        </p-button>
-  
-       
-      </div>
-  
+<p-toast></p-toast>
+<div class="detalle-page p-3">
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-1 text-900">DETALLE DE CONTEO #{{ conteo()?.idConteo | number: '3.0' }}</h2>
+      <small class="text-600">
+        <i class="pi pi-calendar mr-1"></i> {{ conteo()?.fechaIni | date: 'dd/MM/yyyy HH:mm' }} |
+        <i class="pi pi-building mx-1"></i> Sede: {{ conteo()?.nomSede }} |
+        <p-tag
+          [value]="conteo()?.estado"
+          [severity]="conteo()?.estado === 'PENDIENTE' ? 'warn' : 'success'"
+        ></p-tag>
+      </small>
     </div>
-  
-    <!-- RESUMEN -->
-    <p-card class="mb-4">
-  
-      <div class="grid text-center">
-  
-        <div class="col-12 md:col-3">
-          <h4>Total Sistema</h4>
-          <h2>{{ totalSistema() }}</h2>
-        </div>
-  
-        <div class="col-12 md:col-3">
-          <h4>Total Real</h4>
-          <h2>{{ totalReal() }}</h2>
-        </div>
-  
-        <div class="col-12 md:col-3">
-          <h4>Diferencia Neta</h4>
-          <h2 [ngClass]="{
-            'text-green-500': diferenciaNeta() > 0,
-            'text-red-500': diferenciaNeta() < 0
-          }">
-            {{ diferenciaNeta() }}
-          </h2>
-        </div>
-  
-        <div class="col-12 md:col-3">
-          <h4>Exactitud</h4>
-          <p-progressBar [value]="exactitud"></p-progressBar>
-        </div>
-  
-      </div>
-  
-    </p-card>
-  
-    <!-- TABLA -->
-    <p-card>
-  
-      <p-table [value]="productos()">
-  
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Código</th>
-            <th>Producto</th>
-            <th>Stock Sistema</th>
-            <th>Conteo Real</th>
-            <th>Diferencia</th>
-          </tr>
-        </ng-template>
-  
-        <ng-template pTemplate="body" let-row>
-          <tr>
-            <td>{{ row.codigo }}</td>
-            <td>{{ row.producto }}</td>
-            <td>{{ row.stockSistema }}</td>
-            <td>{{ row.conteoReal }}</td>
-            <td>
-              <span [ngClass]="{
-                'text-green-500': calcularDiferencia(row) > 0,
-                'text-red-500': calcularDiferencia(row) < 0
-              }">
-                {{ calcularDiferencia(row) }}
-              </span>
-            </td>
-          </tr>
-        </ng-template>
-  
-      </p-table>
-  
-    </p-card>
-  
+
+    <div class="flex gap-2">
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        styleClass="p-button-outlined p-button-secondary"
+        (onClick)="regresar()"
+      >
+      </p-button>
+      <p-button
+        *ngIf="conteo()?.estado === 'PENDIENTE' || conteo()?.estado === 'INICIADO'"
+        label="Anular"
+        icon="pi pi-ban"
+        styleClass="p-button-outlined p-button-danger"
+        (onClick)="anularConteo()"
+        [loading]="loading()"
+      >
+      </p-button>
+      <p-button
+        *ngIf="conteo()?.estado === 'PENDIENTE' || conteo()?.estado === 'INICIADO'"
+        label="Continuar Conteo"
+        icon="pi pi-play"
+        styleClass="p-button-warning"
+        (onClick)="retomarConteo()"
+      >
+      </p-button>
+      <p-button
+        label="Exportar PDF"
+        icon="pi pi-file-pdf"
+        styleClass="p-button-danger"
+        (onClick)="descargarPDF()"
+      >
+      </p-button>
+    </div>
   </div>
-  
+
+  <div class="grid mb-4">
+    <div class="col-12 md:col-3">
+      <p-card styleClass="resumen-card">
+        <div class="text-600 font-medium mb-2">Total Stock Sistema</div>
+        <div class="text-3xl font-bold text-blue-600">{{ totalSistema() | number: '1.0-2' }}</div>
+      </p-card>
+    </div>
+    <div class="col-12 md:col-3">
+      <p-card styleClass="resumen-card">
+        <div class="text-600 font-medium mb-2">Total Conteo Físico</div>
+        <div class="text-3xl font-bold text-indigo-600">{{ totalReal() | number: '1.0-2' }}</div>
+      </p-card>
+    </div>
+    <div class="col-12 md:col-3">
+      <p-card styleClass="resumen-card">
+        <div class="text-600 font-medium mb-2">Diferencia Neta</div>
+        <div
+          class="text-3xl font-bold"
+          [ngClass]="{
+            'text-red-500': diferenciaNeta() < 0,
+            'text-green-500': diferenciaNeta() >= 0,
+          }"
+        >
+          {{ diferenciaNeta() > 0 ? '+' : '' }}{{ diferenciaNeta() | number: '1.0-2' }}
+        </div>
+      </p-card>
+    </div>
+    <div class="col-12 md:col-3">
+      <p-card styleClass="resumen-card">
+        <div class="text-600 font-medium mb-2">Exactitud de Inventario</div>
+        <div class="flex align-items-center gap-3">
+          <span class="text-3xl font-bold text-teal-600">{{ exactitud() }}%</span>
+          <p-progressBar [value]="exactitud()" [showValue]="false" class="w-full"></p-progressBar>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <p-card styleClass="tabla-card shadow-1">
+    <p-table
+      [value]="conteo()?.detalles || []"
+      [loading]="loading()"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-striped"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Código</th>
+          <th style="width: 35%">Producto</th>
+          <th class="text-center">Stock Sistema</th>
+          <th class="text-center columna-conteo">Conteo Real</th>
+          <th class="text-center">Diferencia</th>
+          <th class="text-center">Unidad</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-row>
+        <tr [ngClass]="{ 'fila-desviacion': row.diferencia * 1 < 0 }">
+          <td class="font-semibold text-color">{{ row.codProd || 'N/A' }}</td>
+          <td class="text-color">{{ row.descripcion }}</td>
+
+          <td class="text-center text-color-secondary font-bold">
+            {{ row.stockSistema | number: '1.0-2' }}
+          </td>
+
+          <td class="text-center font-bold text-lg columna-conteo-body">
+            {{ row.stockConteo | number: '1.0-2' }}
+          </td>
+
+          <td
+            class="text-center font-bold"
+            [ngClass]="{
+              'text-green-500': row.diferencia * 1 === 0,
+              'text-red-500': row.diferencia * 1 < 0,
+              'text-blue-500': row.diferencia * 1 > 0,
+            }"
+          >
+            {{ row.diferencia * 1 > 0 ? '+' : '' }}{{ row.diferencia * 1 | number: '1.0-2' }}
+          </td>
+
+          <td class="text-center">
+            <p-tag [value]="row.uniMed" severity="secondary"></p-tag>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center py-5 text-color-secondary">
+            Cargando detalles del conteo...
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>
