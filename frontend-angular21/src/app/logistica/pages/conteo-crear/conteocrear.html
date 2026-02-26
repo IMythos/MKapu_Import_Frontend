@@ -37,28 +37,43 @@
       <i class="pi pi-camera text-6xl text-400 mb-4"></i>
       <h3 class="text-700 mb-2">Tomar Snapshot de Inventario</h3>
       <p class="text-500 mb-4 text-center max-w-20rem">
-        Selecciona la sede a la que deseas hacerle el conteo. Esto bloqueará una copia del stock
-        actual.
+        Selecciona la sede y (opcionalmente) la familia de productos. Esto bloqueará una copia del stock actual.
       </p>
 
-      <div class="flex gap-3 align-items-center">
-        <p-select
-          [options]="sedes"
-          [ngModel]="sedeSeleccionada()"
-          (ngModelChange)="sedeSeleccionada.set($event)"
-          optionLabel="label"
-          placeholder="Selecciona una sede"
-        >
-        </p-select>
+      <div class="flex flex-wrap gap-3 align-items-center justify-content-center w-full max-w-30rem">
+        <div class="w-full md:w-auto">
+          <p-select
+            [options]="sedes()"
+            [ngModel]="sedeSeleccionada()"
+            (ngModelChange)="sedeSeleccionada.set($event)"
+            optionLabel="label"
+            placeholder="Selecciona una sede"
+            styleClass="w-full"
+          >
+          </p-select>
+        </div>
 
-        <p-button
-          label="Iniciar Conteo"
-          icon="pi pi-play"
-          [disabled]="!sedeSeleccionada()"
-          (onClick)="iniciarSnapshot()"
-          [loading]="loading()"
-        >
-        </p-button>
+        <div class="w-full md:w-auto">
+          <p-select
+            [options]="familias()"
+            [ngModel]="familiaSeleccionada()"
+            (ngModelChange)="familiaSeleccionada.set($event)"
+            optionLabel="label"
+            placeholder="Todas las Familias"
+            styleClass="w-full"
+          >
+          </p-select>
+        </div>
+        <div class="w-full md:w-auto flex justify-content-center mt-2 md:mt-0">
+          <p-button
+            label="Iniciar Conteo"
+            icon="pi pi-play"
+            [disabled]="!sedeSeleccionada()"
+            (onClick)="iniciarSnapshot()"
+            [loading]="loading()"
+          >
+          </p-button>
+        </div>
       </div>
     </div>
   </p-card>

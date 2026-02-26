@@ -1,6 +1,7 @@
 export enum RemissionType { REMITENTE = 0, TRANSPORTISTA = 1 }
 export enum TransportMode { PUBLICO = 0, PRIVADO = 1 }
 
+// DTO de entrada (POST)
 export interface CreateRemissionDto {
   id_comprobante_ref: number;
   id_almacen_origen: number;
@@ -12,21 +13,8 @@ export interface CreateRemissionDto {
   motivo_traslado: string;
   unidad_peso: string;
   peso_bruto_total: number;
-  datos_traslado: {
-    ubigeo_origen: string;
-    direccion_origen: string;
-    ubigeo_destino: string;
-    direccion_destino: string;
-  };
-  datos_transporte: {
-    nombre_completo?: string;
-    tipo_documento?: string;
-    numero_documento?: string;
-    licencia?: string;
-    placa?: string;
-    ruc?: string;
-    razon_social?: string;
-  };
+  datos_traslado: any;
+  datos_transporte: any;
   items: RemissionItemDto[];
 }
 
@@ -36,4 +24,34 @@ export interface RemissionItemDto {
   cantidad: number;
   peso_total: number;
   peso_unitario: number;
+}
+
+// DTOs de salida (GET del Backend)
+
+export interface RemissionResponse {
+  id_guia: string;
+  serie: string;
+  numero: number;
+  estado: number | string;
+  fecha_emision: string | Date;
+  id_comprobante_ref?: number;
+  tipo_guia: RemissionType;
+  modalidad: TransportMode;
+  fecha_inicio: string | Date;
+  motivo_traslado: string;
+  unidad_peso: string;
+  peso_total: number;
+  cantidad: number; 
+  items?: RemissionItemDto[]; 
+}
+
+export interface RemisionPaginatedResponse {
+  data: RemissionResponse[];
+  total: number;
+}
+export interface RemissionSummaryResponse {
+  totalMes: number;
+  enTransito: number;
+  entregadas: number;
+  observadas: number;
 }

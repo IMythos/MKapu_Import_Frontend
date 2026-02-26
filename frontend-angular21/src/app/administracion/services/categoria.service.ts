@@ -10,7 +10,6 @@ import { CategoriaResponse } from '../interfaces/categoria.interface';
 export class CategoriaService {
   private api = environment.apiUrl;
   constructor(private http: HttpClient) {}
-
     getCategorias(activo?: boolean, search?: string): Observable<CategoriaResponse> {
     let params = new HttpParams();
 
@@ -27,5 +26,4 @@ export class CategoriaService {
       { params }
     );
   }
-
 }

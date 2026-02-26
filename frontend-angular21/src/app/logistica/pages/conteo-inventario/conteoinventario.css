@@ -289,4 +289,73 @@
     opacity: 1;
     animation: metricShine 0.9s ease;
   }
-  
+
+/* Botón de acción con efecto de ojo */
+::ng-deep .btn-ojo-detalle {
+    background-color: rgba(103, 114, 229, 0.12) !important; /* Azul/Indigo suave */
+    color: #6772e5 !important;
+    border: none !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    transition: all 0.2s ease;
+}
+
+::ng-deep .btn-ojo-detalle:hover {
+    background-color: #6772e5 !important;
+    color: #ffffff !important;
+    transform: scale(1.1);
+}
+
+/* Ajustes de tipografía en tabla */
+.sedes-kicker {
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    color: #94a3b8;
+    margin-bottom: 0.2rem;
+}
+
+.sedes-title {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #1e293b;
+}
+
+.sedes-title-icon {
+    width: 3rem;
+    height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+::ng-deep .btn-detalle-amarillo {
+    background-color: #facc15 !important; 
+    border: none !important;
+    color: #1e293b !important;            
+    font-weight: 600 !important;
+    padding: 0.5rem 1rem !important;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 2px 4px rgba(250, 204, 21, 0.2);
+    
+    /* Propiedades clave para alinear perfectamente al centro */
+    margin: 0 auto !important; 
+    display: inline-flex !important; 
+    align-items: center;
+    justify-content: center;
+}
+
+::ng-deep .btn-detalle-amarillo:hover {
+    background-color: #eab308 !important; 
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(234, 179, 8, 0.3);
+}
+
+::ng-deep .btn-detalle-amarillo .p-button-icon {
+    margin-right: 0.5rem; 
+    font-weight: bold;
+}
+
+/* Forzar que el texto de las celdas centradas obedezca */
+.p-datatable .text-center {
+    text-align: center !important;
+}

@@ -1,11 +1,16 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
-import { CreateRemissionDto } from '../interfaces/remision.interface';
+import {
+  CreateRemissionDto,
+  RemisionPaginatedResponse,
+  RemissionResponse,
+  RemissionSummaryResponse,
+} from '../interfaces/remision.interface';
 import { Injectable, inject } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class RemissionService {
   private readonly http = inject(HttpClient);
@@ -25,7 +30,33 @@ export class RemissionService {
   }
 
   findSaleForRemission(correlativo: string): Observable<any> {
-    // Asumiendo que el backend tiene un endpoint para validar la venta antes de remitir
     return this.http.get<any>(`${this.apiUrl}/sale/${correlativo}`);
+  }
+  getRemisiones(
+    page: number = 1,
+    limit: number = 10,
+    search?: string,
+    estado?: number | null,
+    startDate?: string,
+    endDate?: string,
+  ): Observable<RemisionPaginatedResponse> {
+    let params = new HttpParams().set('page', page.toString()).set('limit', limit.toString());
+    if (search) params = params.set('search', search);
+    if (estado !== null && estado !== undefined) params = params.set('estado', estado.toString());
+    if (startDate) params = params.set('startDate', startDate);
+    if (endDate) params = params.set('endDate', endDate);
+
+    if (search) {
+      params = params.set('search', search);
+    }
+
+    return this.http.get<RemisionPaginatedResponse>(this.apiUrl, { params });
+  }
+
+  getRemisionById(id: string): Observable<RemissionResponse> {
+    return this.http.get<RemissionResponse>(`${this.apiUrl}/${id}`);
+  }
+  getRemissionSummary(): Observable<RemissionSummaryResponse> {
+    return this.http.get<RemissionSummaryResponse>(`${this.apiUrl}/summary`);
   }
 }
