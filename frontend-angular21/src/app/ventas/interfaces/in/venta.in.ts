@@ -2,6 +2,8 @@
 
 import { ReceiptStatus } from '../shared/catalogos';
 
+
+
 // ─── Crear venta ──────────────────────────────────────────────────
 export interface RegistroVentaResponse {
   success: boolean;

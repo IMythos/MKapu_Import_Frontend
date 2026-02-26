@@ -79,49 +79,55 @@ const RECEIPT_TYPE_ID_MAP: Record<string, number> = {
   selector: 'app-historial-ventas',
   standalone: true,
   imports: [
-    CommonModule, FormsModule,
-    Card, Button, Select, TableModule,
-    Tag, Toast, ConfirmDialog, DatePicker,
-    Tooltip, AutoComplete,
+    CommonModule,
+    FormsModule,
+    Card,
+    Button,
+    Select,
+    TableModule,
+    Tag,
+    Toast,
+    ConfirmDialog,
+    DatePicker,
+    Tooltip,
+    AutoComplete,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './historial-ventas.html',
   styleUrls: ['./historial-ventas.css'],
 })
 export class HistorialVentas implements OnInit, OnDestroy {
-
-  private readonly router              = inject(Router);
-  private readonly ventaService        = inject(VentaService);
-  private readonly authService         = inject(AuthService);
-  private readonly sedeService         = inject(SedeService);
+  private readonly router = inject(Router);
+  private readonly ventaService = inject(VentaService);
+  private readonly authService = inject(AuthService);
+  private readonly sedeService = inject(SedeService);
   private readonly comprobantesService = inject(ComprobantesService);
-  private readonly posService          = inject(PosService);
-  private readonly messageService      = inject(MessageService);
+  private readonly posService = inject(PosService);
+  private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  readonly tituloKicker    = 'VENTAS - HISTORIAL DE VENTAS';
+  readonly tituloKicker = 'VENTAS - HISTORIAL DE VENTAS';
   readonly subtituloKicker = 'CONSULTA Y GESTIÓN DE VENTAS';
-  readonly iconoCabecera   = 'pi pi-list';
+  readonly iconoCabecera = 'pi pi-list';
 
-  comprobantes  = signal<ComprobanteVentaVM[]>([]);
-  totalRecords  = signal(0);
-  loading       = signal(false);
-  firstRow      = signal(0);
-  currentLimit  = signal<10 | 20 | 50 | 100>(10);
-  currentPage   = computed(() => Math.floor(this.firstRow() / this.currentLimit()) + 1);
-
+  comprobantes = signal<ComprobanteVentaVM[]>([]);
+  totalRecords = signal(0);
+  loading = signal(false);
+  firstRow = signal(0);
+  currentLimit = signal<10 | 20 | 50 | 100>(10);
+  currentPage = computed(() => Math.floor(this.firstRow() / this.currentLimit()) + 1);
   // Opciones para el selector de filas por página
   rowsPerPageOptions = [
     { label: '10', value: 10 },
     { label: '20', value: 20 },
     { label: '50', value: 50 },
-    { label: '100', value: 100 }
+    { label: '100', value: 100 },
   ];
 
-  sedes              = signal<Sede[]>([]);
-  tiposComprobante   = signal<any[]>([]);
+  sedes = signal<Sede[]>([]);
+  tiposComprobante = signal<any[]>([]);
   estadosComprobante = signal<any[]>([]);
-  tiposPago          = signal<any[]>([]);
+  tiposPago = signal<any[]>([]);
 
   sugerenciasBusqueda = signal<string[]>([]);
 
@@ -130,21 +136,21 @@ export class HistorialVentas implements OnInit, OnDestroy {
     for (const c of this.comprobantes()) {
       set.add(this.getNumeroFormateado(c));
       if (c.cliente_nombre?.trim()) set.add(c.cliente_nombre.trim());
-      if (c.cliente_doc?.trim())    set.add(c.cliente_doc.trim());
+      if (c.cliente_doc?.trim()) set.add(c.cliente_doc.trim());
     }
     return [...set].sort();
   });
 
-  private currentUser     = signal<User | null>(null);
+  private currentUser = signal<User | null>(null);
   private sedeRefEmpleado = signal<number | null>(null);
 
-  kpiSede          = signal<SalesReceiptKpiDto | null>(null);
-  kpiTotalVentas   = computed(() => this.kpiSede()?.total_ventas    ?? 0);
-  kpiNumeroVentas  = computed(() => this.kpiSede()?.cantidad_ventas ?? 0);
-  kpiTotalBoletas  = computed(() => this.kpiSede()?.total_boletas   ?? 0);
-  kpiTotalFacturas = computed(() => this.kpiSede()?.total_facturas  ?? 0);
-  kpiSemanaDesde   = computed(() => this.kpiSede()?.semana_desde    ?? '');
-  kpiSemanaHasta   = computed(() => this.kpiSede()?.semana_hasta    ?? '');
+  kpiSede = signal<SalesReceiptKpiDto | null>(null);
+  kpiTotalVentas = computed(() => this.kpiSede()?.total_ventas ?? 0);
+  kpiNumeroVentas = computed(() => this.kpiSede()?.cantidad_ventas ?? 0);
+  kpiTotalBoletas = computed(() => this.kpiSede()?.total_boletas ?? 0);
+  kpiTotalFacturas = computed(() => this.kpiSede()?.total_facturas ?? 0);
+  kpiSemanaDesde = computed(() => this.kpiSede()?.semana_desde ?? '');
+  kpiSemanaHasta = computed(() => this.kpiSede()?.semana_hasta ?? '');
 
   filtros = signal<FiltroVentas>({
     tipoComprobante: null,
@@ -157,7 +163,14 @@ export class HistorialVentas implements OnInit, OnDestroy {
 
   hayFiltrosActivos = computed(() => {
     const f = this.filtros();
-    return !!(f.tipoComprobante || f.estado || f.fechaInicio || f.fechaFin || f.busqueda?.trim() || f.tipoPago);
+    return !!(
+      f.tipoComprobante ||
+      f.estado ||
+      f.fechaInicio ||
+      f.fechaFin ||
+      f.busqueda?.trim() ||
+      f.tipoPago
+    );
   });
 
   private subs = new Subscription();
@@ -202,23 +215,27 @@ export class HistorialVentas implements OnInit, OnDestroy {
     const current = this.currentPage();
     const delta = 2; // Mostrar 2 páginas a cada lado
     const range: number[] = [];
-    
-    for (let i = Math.max(2, current - delta); i <= Math.min(totalPages - 1, current + delta); i++) {
+
+    for (
+      let i = Math.max(2, current - delta);
+      i <= Math.min(totalPages - 1, current + delta);
+      i++
+    ) {
       range.push(i);
     }
-    
+
     if (current - delta > 2) {
       range.unshift(-1); // Representa "..."
     }
     if (current + delta < totalPages - 1) {
       range.push(-1); // Representa "..."
     }
-    
+
     range.unshift(1);
     if (totalPages > 1) {
       range.push(totalPages);
     }
-    
+
     return range.filter((v, i, a) => a.indexOf(v) === i && v !== -1);
   }
 
@@ -231,14 +248,14 @@ export class HistorialVentas implements OnInit, OnDestroy {
 
   goToPrevPage(): void {
     if (!this.isFirstPage()) {
-      this.firstRow.update(f => f - this.currentLimit());
+      this.firstRow.update((f) => f - this.currentLimit());
       this.cargarHistorial();
     }
   }
 
   goToNextPage(): void {
     if (!this.isLastPage()) {
-      this.firstRow.update(f => f + this.currentLimit());
+      this.firstRow.update((f) => f + this.currentLimit());
       this.cargarHistorial();
     }
   }
@@ -273,43 +290,58 @@ export class HistorialVentas implements OnInit, OnDestroy {
     this.sedeRefEmpleado.set(user?.idSede ?? null);
 
     if (!user) {
-      this.messageService.add({ severity: 'error', summary: 'Error de autenticación', detail: 'No hay usuario autenticado.', life: 3000 });
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error de autenticación',
+        detail: 'No hay usuario autenticado.',
+        life: 3000,
+      });
       return;
     }
 
-    this.messageService.add({ severity: 'info', summary: 'Sede actual', detail: `Mostrando ventas de: ${user.sedeNombre ?? 'Sede'}`, life: 2000 });
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Sede actual',
+      detail: `Mostrando ventas de: ${user.sedeNombre ?? 'Sede'}`,
+      life: 2000,
+    });
   }
 
   cargarHistorial(): void {
     this.loading.set(true);
 
-    const f      = this.filtros();
+    const f = this.filtros();
     const dateTo = f.fechaFin ? new Date(f.fechaFin) : null;
     if (dateTo) dateTo.setHours(23, 59, 59, 999);
 
     const pagina = this.currentPage();
 
     const query: SalesReceiptsQuery = {
-      page:            pagina,
-      limit:           this.currentLimit(),
-      status:          f.estado          ?? undefined,
-      search:          f.busqueda?.trim() || undefined,
-      dateFrom:        f.fechaInicio      ? this.toDateStr(f.fechaInicio) : undefined,
-      dateTo:          dateTo             ? this.toDateStr(dateTo)        : undefined,
-      receiptTypeId:   f.tipoComprobante  ? RECEIPT_TYPE_ID_MAP[f.tipoComprobante] : undefined,
-      paymentMethodId: f.tipoPago         ?? undefined,
-      sedeId:          this.sedeRefEmpleado() ?? undefined,
+      page: pagina,
+      limit: this.currentLimit(),
+      status: f.estado ?? undefined,
+      search: f.busqueda?.trim() || undefined,
+      dateFrom: f.fechaInicio ? this.toDateStr(f.fechaInicio) : undefined,
+      dateTo: dateTo ? this.toDateStr(dateTo) : undefined,
+      receiptTypeId: f.tipoComprobante ? RECEIPT_TYPE_ID_MAP[f.tipoComprobante] : undefined,
+      paymentMethodId: f.tipoPago ?? undefined,
+      sedeId: this.sedeRefEmpleado() ?? undefined,
     };
 
     const sub = this.ventaService.listarHistorialVentas(query).subscribe({
       next: (res: SalesReceiptSummaryListResponse) => {
-        this.comprobantes.set(res.receipts.map(r => this.toVM(r)));
+        this.comprobantes.set(res.receipts.map((r) => this.toVM(r)));
         this.totalRecords.set(res.total);
         this.loading.set(false);
       },
       error: () => {
         this.loading.set(false);
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el historial de ventas.', life: 3000 });
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar el historial de ventas.',
+          life: 3000,
+        });
       },
     });
 
@@ -318,29 +350,36 @@ export class HistorialVentas implements OnInit, OnDestroy {
 
   cargarKpiSede(): void {
     const sub = this.ventaService.getKpiSemanal().subscribe({
-      next:  kpi => this.kpiSede.set(kpi),
-      error: ()  => {},
+      next: (kpi) => this.kpiSede.set(kpi),
+      error: () => {},
     });
     this.subs.add(sub);
   }
 
-  cargarOpcionesFiltros(): void {
-    this.tiposComprobante.set(this.comprobantesService.getTiposComprobanteOptions());
-    this.estadosComprobante.set(this.comprobantesService.getEstadosComprobanteOptions());
-    this.tiposPago.set(this.posService.getTiposPagoOptions());
-  }
+cargarOpcionesFiltros(): void {
+  this.tiposComprobante.set(this.comprobantesService.getTiposComprobanteOptions());
+  this.estadosComprobante.set(this.comprobantesService.getEstadosComprobanteOptions());
+  
+  // PRUEBA MANUAL: Asegúrate de que los IDs coincidan con tu BD (1: Efectivo, 2: Tarjeta, etc.)
+  this.tiposPago.set([
+    { label: 'Efectivo', value: 1 },
+    { label: 'DEPÓSITO EN CUENTA', value: 2 },
+    { label: 'TRANSFERENCIA DE FONDOS', value: 3 }
+  ]);
+}
+
 
   cargarSedes(): void {
     const sub = this.sedeService.getSedes().subscribe({
-      next:  s  => this.sedes.set(s),
+      next: (s) => this.sedes.set(s),
       error: () => {},
     });
     this.subs.add(sub);
   }
 
   onPageChange(event: any): void {
-    const newFirst = event.first  ?? 0;
-    const newLimit = (event.rows  ?? 10) as 10 | 20 | 50 | 100;
+    const newFirst = event.first ?? 0;
+    const newLimit = (event.rows ?? 10) as 10 | 20 | 50 | 100;
 
     if (newFirst === this.firstRow() && newLimit === this.currentLimit()) return;
 
@@ -355,42 +394,53 @@ export class HistorialVentas implements OnInit, OnDestroy {
   }
 
   limpiarFiltros(): void {
-    this.filtros.set({ tipoComprobante: null, estado: null, fechaInicio: null, fechaFin: null, busqueda: '', tipoPago: null });
+    this.filtros.set({
+      tipoComprobante: null,
+      estado: null,
+      fechaInicio: null,
+      fechaFin: null,
+      busqueda: '',
+      tipoPago: null,
+    });
     this.firstRow.set(0);
     this.cargarHistorial();
-    this.messageService.add({ severity: 'info', summary: 'Filtros limpiados', detail: 'Se restablecieron todos los filtros.', life: 2000 });
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Filtros limpiados',
+      detail: 'Se restablecieron todos los filtros.',
+      life: 2000,
+    });
   }
 
   actualizarFiltroBusqueda(valor: string): void {
-    this.filtros.update(f => ({ ...f, busqueda: valor }));
+    this.filtros.update((f) => ({ ...f, busqueda: valor }));
   }
 
   actualizarFiltroFechaInicio(valor: Date | null): void {
-    this.filtros.update(f => ({ ...f, fechaInicio: valor }));
+    this.filtros.update((f) => ({ ...f, fechaInicio: valor }));
   }
 
   actualizarFiltroFechaFin(valor: Date | null): void {
-    this.filtros.update(f => ({ ...f, fechaFin: valor }));
+    this.filtros.update((f) => ({ ...f, fechaFin: valor }));
   }
 
   actualizarFiltroTipoComprobante(valor: string | null): void {
-    this.filtros.update(f => ({ ...f, tipoComprobante: valor }));
+    this.filtros.update((f) => ({ ...f, tipoComprobante: valor }));
   }
 
   actualizarFiltroTipoPago(valor: number | null): void {
-    this.filtros.update(f => ({ ...f, tipoPago: valor }));
+    this.filtros.update((f) => ({ ...f, tipoPago: valor }));
   }
 
   actualizarFiltroEstado(valor: ReceiptStatus | null): void {
-    this.filtros.update(f => ({ ...f, estado: valor }));
+    this.filtros.update((f) => ({ ...f, estado: valor }));
   }
 
   buscarSugerencias(event: any): void {
-    const q    = (event.query ?? '').toLowerCase().trim();
+    const q = (event.query ?? '').toLowerCase().trim();
     const pool = this.sugerenciasPool();
     this.sugerenciasBusqueda.set(
-      q ? pool.filter(s => s.toLowerCase().includes(q)).slice(0, 15)
-        : pool.slice(0, 10)
+      q ? pool.filter((s) => s.toLowerCase().includes(q)).slice(0, 15) : pool.slice(0, 10),
     );
   }
 
@@ -422,7 +472,9 @@ export class HistorialVentas implements OnInit, OnDestroy {
 
   getSeverityEstado(estado: string): 'success' | 'danger' | 'warn' | 'info' {
     const map: Record<string, 'success' | 'danger' | 'warn' | 'info'> = {
-      EMITIDO: 'success', ANULADO: 'warn', RECHAZADO: 'danger',
+      EMITIDO: 'success',
+      ANULADO: 'warn',
+      RECHAZADO: 'danger',
     };
     return map[estado] ?? 'info';
   }
@@ -433,22 +485,22 @@ export class HistorialVentas implements OnInit, OnDestroy {
 
   private toVM(r: SalesReceiptSummaryDto): ComprobanteVentaVM {
     return {
-      id:               r.idComprobante,
-      id_sede:          r.idSede,
-      serie:            r.serie,
-      numero:           r.numero,
-      fec_emision:      r.fecEmision,
+      id: r.idComprobante,
+      id_sede: r.idSede,
+      serie: r.serie,
+      numero: r.numero,
+      fec_emision: r.fecEmision,
       tipo_comprobante: TIPO_MAP[r.tipoComprobante?.toUpperCase()] ?? '03',
-      tipo_pago:        r.metodoPago || 'N/A',
-      idCliente:        r.clienteNombre || '',
+      tipo_pago: r.metodoPago || 'N/A',
+      idCliente: r.clienteNombre || '',
       idResponsableRef: Number(r.idResponsable),
-      cliente_nombre:   r.clienteNombre    || '—',
-      cliente_doc:      r.clienteDocumento || '—',
-      responsable:      r.responsableNombre || '—',
-      sede_nombre:      r.sedeNombre        || '—',
-      total:            r.total,
-      estadoSunat:      r.estado,
-      estado:           r.estado === 'EMITIDO',
+      cliente_nombre: r.clienteNombre || '—',
+      cliente_doc: r.clienteDocumento || '—',
+      responsable: r.responsableNombre || '—',
+      sede_nombre: r.sedeNombre || '—',
+      total: r.total,
+      estadoSunat: r.estado,
+      estado: r.estado === 'EMITIDO',
     };
   }
 

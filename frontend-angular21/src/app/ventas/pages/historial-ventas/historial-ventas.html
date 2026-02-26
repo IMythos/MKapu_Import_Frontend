@@ -138,6 +138,7 @@
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
+            [showClear]="true"
             styleClass="w-full"
           />
         </div>
@@ -192,20 +193,12 @@
       >
         <ng-template pTemplate="header">
           <tr>
-            <th pSortableColumn="numero">
-              N° Comprobante <p-sortIcon field="numero" />
-            </th>
-            <th pSortableColumn="tipo_comprobante">
-              Tipo <p-sortIcon field="tipo_comprobante" />
-            </th>
-            <th pSortableColumn="fec_emision">
-              Fecha Emisión <p-sortIcon field="fec_emision" />
-            </th>
+            <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
+            <th pSortableColumn="tipo_comprobante">Tipo <p-sortIcon field="tipo_comprobante" /></th>
+            <th pSortableColumn="fec_emision">Fecha Emisión <p-sortIcon field="fec_emision" /></th>
             <th>Cliente</th>
             <th>Documento</th>
-            <th pSortableColumn="tipo_pago">
-              Tipo Pago <p-sortIcon field="tipo_pago" />
-            </th>
+            <th pSortableColumn="tipo_pago">Tipo Pago <p-sortIcon field="tipo_pago" /></th>
             <th
               pSortableColumn="responsable"
               class="text-right"
@@ -213,9 +206,7 @@
             >
               Responsable <p-sortIcon field="responsable" />
             </th>
-            <th pSortableColumn="total" class="text-right">
-              Total <p-sortIcon field="total" />
-            </th>
+            <th pSortableColumn="total" class="text-right">Total <p-sortIcon field="total" /></th>
             <th>Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
@@ -296,7 +287,8 @@
 
         <ng-template pTemplate="paginatorleft">
           <span class="p-paginator-current">
-            Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de {{ totalRecords() }} registros
+            Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de
+            {{ totalRecords() }} registros
           </span>
         </ng-template>
 
@@ -324,7 +316,7 @@
               pTooltip="Página anterior"
               tooltipPosition="top"
             />
-            
+
             <div class="p-paginator-pages">
               <p-button
                 *ngFor="let page of getPageNumbers()"
