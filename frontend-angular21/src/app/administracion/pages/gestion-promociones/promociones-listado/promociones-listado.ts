@@ -5,27 +5,23 @@ import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
-// PrimeNG
-import { CardModule } from 'primeng/card';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
+import { CardModule }          from 'primeng/card';
+import { ButtonModule }        from 'primeng/button';
+import { InputTextModule }     from 'primeng/inputtext';
+import { SelectModule }        from 'primeng/select';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { ToastModule } from 'primeng/toast';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
-import { TooltipModule } from 'primeng/tooltip';
-import { DatePickerModule } from 'primeng/datepicker';
-
+import { ToastModule }         from 'primeng/toast';
+import { TableModule }         from 'primeng/table';
+import { TagModule }           from 'primeng/tag';
+import { TooltipModule }       from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { PromocionesService, Promocion } from '../../../services/promociones.service';
+
+import { PromotionsService, Promotion } from '../../../services/promotions.service';
 
 interface Filtros {
-  busqueda: string;
-  fechaInicio: Date | null;
-  fechaFin: Date | null;
-  tipo: string;
-  estado: string;
+  busqueda:       string;
+  tipo:           string;
+  estado:         string;
   rangoDescuento: string;
 }
 
@@ -33,156 +29,101 @@ interface Filtros {
   selector: 'app-promociones-listado',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    CardModule,
-    ButtonModule,
-    InputTextModule,
-    SelectModule,
-    ConfirmDialogModule,
-    ToastModule,
-    TableModule,
-    TagModule,
-    TooltipModule,
-    DatePickerModule,
+    CommonModule, FormsModule,
+    CardModule, ButtonModule, InputTextModule, SelectModule,
+    ConfirmDialogModule, ToastModule, TableModule, TagModule, TooltipModule,
   ],
   templateUrl: './promociones-listado.html',
-  styleUrl: './promociones-listado.css',
+  styleUrl:    './promociones-listado.css',
   providers: [ConfirmationService, MessageService],
 })
 export class PromocionesListado implements OnInit, OnDestroy {
-  // Signals
-  promocionesSignal = signal<Promocion[]>([]);
-  filteredPromociones = signal<Promocion[]>([]);
-  loading = signal(false);
-  itemsPorPagina = signal(10);
-  paginaActual = signal(0);
-  totalItems = signal(0);
+  private readonly promotionsService  = inject(PromotionsService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly messageService     = inject(MessageService);
+  private readonly router             = inject(Router);
+  private destroy$ = new Subject<void>();
 
-  // Filtros
-  filtros: Filtros = {
-    busqueda: '',
-    fechaInicio: null,
-    fechaFin: null,
-    tipo: '',
-    estado: '',
-    rangoDescuento: '',
-  };
+  filtros: Filtros = { busqueda: '', tipo: '', estado: '', rangoDescuento: '' };
 
   tiposPromocion = [
-    { label: 'Porcentaje', value: 'Porcentaje' },
-    { label: 'Monto', value: 'Monto' },
+    { label: 'Porcentaje', value: 'PORCENTAJE' },
+    { label: 'Monto fijo', value: 'MONTO' },
   ];
 
   estadosPromocion = [
-    { label: 'Activa', value: 'Activa' },
+    { label: 'Activa',   value: 'Activa' },
     { label: 'Inactiva', value: 'Inactiva' },
-    { label: 'Expirada', value: 'Expirada' },
   ];
 
   rangosDescuento = [
-    { label: 'Hasta 10%', value: '0-10' },
+    { label: 'Hasta 10%',    value: '0-10' },
     { label: 'De 10% a 25%', value: '10-25' },
     { label: 'De 25% a 50%', value: '25-50' },
-    { label: 'Más de 50%', value: '50-100' },
+    { label: 'Más de 50%',   value: '50-100' },
   ];
 
-  private destroy$ = new Subject<void>();
+  itemsPorPagina = signal(10);
+  paginaActual   = signal(0);
 
-  // Computed KPIs
-  kpiPromocionesActivas = computed(() => {
-    return this.promocionesSignal().filter((p) => p.estado === 'Activa').length;
-  });
+  readonly promociones = this.promotionsService.promociones;
+  readonly loading     = this.promotionsService.loading;
+  readonly totalItems  = this.promotionsService.total;
 
-  kpiTotalPromociones = computed(() => this.promocionesSignal().length);
-
-  kpiProximasExpirar = computed(() => {
-    const hoy = new Date();
-    const proximosMeses = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
-    return this.promocionesSignal().filter(
-      (p) =>
-        p.estado === 'Activa' &&
-        new Date(p.fechaFin) <= proximosMeses &&
-        new Date(p.fechaFin) > hoy,
-    ).length;
-  });
-
-  kpiExpiradas = computed(() => {
-    const hoy = new Date();
-    return this.promocionesSignal().filter((p) => new Date(p.fechaFin) < hoy).length;
-  });
-
-  constructor(
-    private promocionesService: PromocionesService,
-    private confirmationService: ConfirmationService,
-    private messageService: MessageService,
-    private router: Router,
-  ) {}
-
-  ngOnInit(): void {
-    this.cargarPromociones();
-  }
-
-  cargarPromociones(): void {
-    this.loading.set(true);
-    const pagina = this.paginaActual() + 1;
-
-    this.promocionesService
-      .getPromociones(pagina, this.itemsPorPagina())
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (data) => {
-          this.promocionesSignal.set(data.promociones);
-          this.totalItems.set(data.total);
-          this.aplicarFiltros();
-          this.loading.set(false);
-        },
-        error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al cargar promociones' });
-          this.loading.set(false);
-        },
-      });
-  }
-
-  aplicarFiltros(): void {
-    let filtradas = [...this.promocionesSignal()];
+  readonly filteredPromociones = computed(() => {
+    let filtradas = this.promociones();
 
     if (this.filtros.busqueda) {
-      const termino = this.filtros.busqueda.toLowerCase();
-      filtradas = filtradas.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(termino) ||
-          p.codigo.toLowerCase().includes(termino)
+      const t = this.filtros.busqueda.trim().toLowerCase();
+      filtradas = filtradas.filter(p =>
+        p.concepto.toLowerCase().includes(t) ||
+        p.tipo.toLowerCase().includes(t) ||
+        String(p.valor).includes(t)
       );
     }
 
     if (this.filtros.tipo) {
-      filtradas = filtradas.filter((p) => p.tipo === this.filtros.tipo);
+      filtradas = filtradas.filter(p => p.tipo === this.filtros.tipo);
     }
 
     if (this.filtros.estado) {
-      filtradas = filtradas.filter((p) => p.estado === this.filtros.estado);
+      filtradas = filtradas.filter(p => this.obtenerEstado(p) === this.filtros.estado);
     }
 
-    this.filteredPromociones.set(filtradas);
+    if (this.filtros.rangoDescuento) {
+      const [min, max] = this.filtros.rangoDescuento.split('-').map(Number);
+      filtradas = filtradas.filter(p => p.valor >= min && p.valor <= max);
+    }
+
+    return filtradas;
+  });
+
+  // ─── KPIs ────────────────────────────────────────────────────────────────────
+
+  readonly kpiActivas  = computed(() => this.promociones().filter(p => p.activo).length);
+  readonly kpiTotal    = computed(() => this.promociones().length);
+  readonly kpiInactivas = computed(() => this.promociones().filter(p => !p.activo).length);
+
+  // ─── Lifecycle ───────────────────────────────────────────────────────────────
+
+  ngOnInit(): void { this.cargarPromociones(); }
+
+  ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
+
+  // ─── Acciones ────────────────────────────────────────────────────────────────
+
+  cargarPromociones(): void {
+    this.promotionsService
+      .loadPromotions(this.paginaActual() + 1, this.itemsPorPagina())
+      .pipe(takeUntil(this.destroy$))
+      .subscribe();
   }
 
+  aplicarFiltros(): void { /* computed reacciona automático */ }
+
   limpiarFiltros(): void {
-    this.filtros = {
-      busqueda: '',
-      fechaInicio: null,
-      fechaFin: null,
-      tipo: '',
-      estado: '',
-      rangoDescuento: '',
-    };
-    this.paginaActual.set(0);
-    this.aplicarFiltros();
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Filtros limpiados',
-      detail: 'Se han limpiado todos los filtros',
-    });
+    this.filtros = { busqueda: '', tipo: '', estado: '', rangoDescuento: '' };
+    this.messageService.add({ severity: 'info', summary: 'Filtros limpiados', detail: 'Se han limpiado todos los filtros' });
   }
 
   onPageChange(event: any): void {
@@ -191,42 +132,36 @@ export class PromocionesListado implements OnInit, OnDestroy {
     this.cargarPromociones();
   }
 
-  verPromocion(id: number): void {
-    if (!id) return;
-    this.router.navigate(['/admin/promociones/ver-detalle', id]);
-  }
+  irANueva():              void { this.router.navigate(['/admin/promociones/crear']); }
+  verPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/ver-detalle', id]); }
+  editarPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/editar', id]); }
 
-  editarPromocion(id: number): void {
-    if (!id) return;
-    this.router.navigate(['/admin/promociones/editar', id]);
-  }
-
-  irANueva(): void {
-    this.router.navigate(['/admin/promociones/crear']);
-  }
-
-  eliminarPromocion(id: number, nombre: string): void {
+  eliminarPromocion(id: number, concepto: string): void {
     this.confirmationService.confirm({
-      message: `¿Deseas eliminar la promoción "${nombre}"?`,
-      header: 'Confirmar eliminación',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        this.loading.set(true);
-        this.promocionesService.deletePromocion(id).subscribe(() => {
-          this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Promoción eliminada' });
-          this.cargarPromociones();
+      message: `¿Deseas eliminar la promoción "${concepto}"?`,
+      header:  'Confirmar eliminación',
+      icon:    'pi pi-exclamation-triangle',
+      accept:  () => {
+        this.promotionsService.deletePromotion(id).subscribe({
+          next:  () => this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Promoción eliminada' }),
+          error: () => this.messageService.add({ severity: 'error',   summary: 'Error', detail: 'No se pudo eliminar' }),
         });
       },
     });
   }
 
-  obtenerSeveridadEstado(estado: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null | undefined {
-    switch (estado) {
-      case 'Activa': return 'success';
-      case 'Inactiva': return 'warn';
-      case 'Expirada': return 'danger';
-      default: return 'info';
-    }
+  // ─── Helpers de vista ────────────────────────────────────────────────────────
+
+  obtenerEstado(p: Promotion): 'Activa' | 'Inactiva' {
+    return p.activo ? 'Activa' : 'Inactiva';
+  }
+
+  severidadEstado(estado: string): 'success' | 'warn' | 'danger' | 'info' {
+    return estado === 'Activa' ? 'success' : 'warn';
+  }
+
+  formatearDescuento(p: Promotion): string {
+    return p.tipo === 'PORCENTAJE' ? `${p.valor}%` : `S/. ${p.valor.toFixed(2)}`;
   }
 
   getFirstRecord(): number {
@@ -236,14 +171,5 @@ export class PromocionesListado implements OnInit, OnDestroy {
   getLastRecord(): number {
     const last = (this.paginaActual() + 1) * this.itemsPorPagina();
     return last > this.totalItems() ? this.totalItems() : last;
-  }
-
-  obtenerValorDescuento(promo: Promocion): number {
-    return promo.porcentaje || promo.monto || 0;
-  }
-
-  ngOnDestroy(): void {
-    this.destroy$.next();
-    this.destroy$.complete();
   }
 }

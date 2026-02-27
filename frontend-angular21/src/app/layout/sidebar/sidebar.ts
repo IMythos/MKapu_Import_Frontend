@@ -46,13 +46,7 @@ export class Sidebar implements OnInit {
 
   private readonly SIDEBAR_ROUTES: RouteConfig[] = [
     // ==================== ADMIN ====================
-    {
-      path: '/admin/dashboard',
-      allowedRoles: [UserRole.ADMIN],
-      label: 'Dashboard',
-      icon: 'pi pi-home',
-    },
-
+    { path: '/admin/dashboard-admin',allowedRoles: [UserRole.ADMIN],label: 'Dashboard',icon: 'pi pi-home',},
     { path: '',                                       allowedRoles: [UserRole.ADMIN],  label: 'VENTAS', isSection: true },
     { path: '/admin/dashboard-ventas',                allowedRoles: [UserRole.ADMIN],  label: 'Dashboard Ventas', icon: 'pi pi-chart-line' },
     { path: '/admin/generar-ventas-administracion',   allowedRoles: [UserRole.ADMIN], label: 'Crear Venta Administración', icon: 'pi pi-plus-circle' },
@@ -60,10 +54,8 @@ export class Sidebar implements OnInit {
     { path: '/admin/nota-credito',                    allowedRoles: [UserRole.ADMIN], label: 'Notas de Crédito', icon: 'pi pi-credit-card' },
     { path: '/admin/descuentos',                       allowedRoles: [UserRole.ADMIN], label: 'Descuentos', icon: 'pi pi-tag' },
     { path: '/admin/promociones',                     allowedRoles: [UserRole.ADMIN], label: 'Promociones', icon: 'pi pi-percentage' },
-    { path: '/admin/libro-ventas',                    allowedRoles: [UserRole.ADMIN], label: 'Libro de Ventas', icon: 'pi pi-book' },
     { path: '/admin/reporte-ventas',                  allowedRoles: [UserRole.ADMIN], label: 'Reporte de Ventas', icon: 'pi pi-chart-bar' },
     { path: '/admin/ventas-por-cobrar',               allowedRoles: [UserRole.ADMIN], label: 'Ventas por Cobrar', icon: 'pi pi-wallet' },
-    { path: '/admin/movimientos',                     allowedRoles: [UserRole.ADMIN], label: 'Movimientos', icon: 'pi pi-book' },  
     { path: '/admin/clientes',                        allowedRoles: [UserRole.ADMIN],  label: 'Clientes', icon: 'pi pi-users' },
     { path: '/admin/cotizaciones',                    allowedRoles: [UserRole.ADMIN],  label: 'Cotizaciones', icon: 'pi pi-id-card' },
 
