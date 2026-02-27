@@ -38,13 +38,13 @@ interface Filtros {
   providers: [ConfirmationService, MessageService],
 })
 export class PromocionesListado implements OnInit, OnDestroy {
-  private readonly promotionsService  = inject(PromotionsService);
+  private readonly promotionsService   = inject(PromotionsService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly messageService     = inject(MessageService);
-  private readonly router             = inject(Router);
+  private readonly messageService      = inject(MessageService);
+  private readonly router              = inject(Router);
   private destroy$ = new Subject<void>();
 
-  filtros: Filtros = { busqueda: '', tipo: '', estado: '', rangoDescuento: '' };
+  filtros = signal<Filtros>({ busqueda: '', tipo: '', estado: 'Activa', rangoDescuento: '' });
 
   tiposPromocion = [
     { label: 'Porcentaje', value: 'PORCENTAJE' },
@@ -71,10 +71,11 @@ export class PromocionesListado implements OnInit, OnDestroy {
   readonly totalItems  = this.promotionsService.total;
 
   readonly filteredPromociones = computed(() => {
+    const f = this.filtros();
     let filtradas = this.promociones();
 
-    if (this.filtros.busqueda) {
-      const t = this.filtros.busqueda.trim().toLowerCase();
+    if (f.busqueda) {
+      const t = f.busqueda.trim().toLowerCase();
       filtradas = filtradas.filter(p =>
         p.concepto.toLowerCase().includes(t) ||
         p.tipo.toLowerCase().includes(t) ||
@@ -82,36 +83,35 @@ export class PromocionesListado implements OnInit, OnDestroy {
       );
     }
 
-    if (this.filtros.tipo) {
-      filtradas = filtradas.filter(p => p.tipo === this.filtros.tipo);
+    if (f.tipo) {
+      filtradas = filtradas.filter(p => p.tipo === f.tipo);
     }
 
-    if (this.filtros.estado) {
-      filtradas = filtradas.filter(p => this.obtenerEstado(p) === this.filtros.estado);
+    if (f.estado) {
+      filtradas = filtradas.filter(p => this.obtenerEstado(p) === f.estado);
     }
 
-    if (this.filtros.rangoDescuento) {
-      const [min, max] = this.filtros.rangoDescuento.split('-').map(Number);
+    if (f.rangoDescuento) {
+      const [min, max] = f.rangoDescuento.split('-').map(Number);
       filtradas = filtradas.filter(p => p.valor >= min && p.valor <= max);
     }
 
-    return filtradas;
+    return [...filtradas].sort((a, b) => {
+      if (a.activo === b.activo) return 0;
+      return a.activo ? -1 : 1;
+    });
   });
 
-  // ─── KPIs ────────────────────────────────────────────────────────────────────
-
-  readonly kpiActivas  = computed(() => this.promociones().filter(p => p.activo).length);
-  readonly kpiTotal    = computed(() => this.promociones().length);
+  // ─── KPIs ────────────────────────────────────────────────────────────────
+  readonly kpiActivas   = computed(() => this.promociones().filter(p =>  p.activo).length);
+  readonly kpiTotal     = computed(() => this.promociones().length);
   readonly kpiInactivas = computed(() => this.promociones().filter(p => !p.activo).length);
-
-  // ─── Lifecycle ───────────────────────────────────────────────────────────────
-
+  readonly kpiConReglas = computed(() => this.promociones().filter(p => p.reglas.length > 0).length);
+  // ─── Lifecycle ───────────────────────────────────────────────────────────
   ngOnInit(): void { this.cargarPromociones(); }
-
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
-  // ─── Acciones ────────────────────────────────────────────────────────────────
-
+  // ─── Carga ───────────────────────────────────────────────────────────────
   cargarPromociones(): void {
     this.promotionsService
       .loadPromotions(this.paginaActual() + 1, this.itemsPorPagina())
@@ -119,39 +119,98 @@ export class PromocionesListado implements OnInit, OnDestroy {
       .subscribe();
   }
 
-  aplicarFiltros(): void { /* computed reacciona automático */ }
+  // ─── Filtros ─────────────────────────────────────────────────────────────
+  setBusqueda(valor: string): void {
+    this.filtros.update(f => ({ ...f, busqueda: valor }));
+  }
+
+  setTipo(valor: string): void {
+    this.filtros.update(f => ({ ...f, tipo: valor ?? '' }));
+  }
+
+  setEstado(valor: string): void {
+    this.filtros.update(f => ({ ...f, estado: valor ?? '' }));
+  }
+
+  setRangoDescuento(valor: string): void {
+    this.filtros.update(f => ({ ...f, rangoDescuento: valor ?? '' }));
+  }
 
   limpiarFiltros(): void {
-    this.filtros = { busqueda: '', tipo: '', estado: '', rangoDescuento: '' };
+    this.filtros.set({ busqueda: '', tipo: '', estado: '', rangoDescuento: '' });
     this.messageService.add({ severity: 'info', summary: 'Filtros limpiados', detail: 'Se han limpiado todos los filtros' });
   }
 
+  // ─── Paginación ──────────────────────────────────────────────────────────
   onPageChange(event: any): void {
     this.paginaActual.set(event.first / event.rows);
     this.itemsPorPagina.set(event.rows);
     this.cargarPromociones();
   }
 
-  irANueva():              void { this.router.navigate(['/admin/promociones/crear']); }
+  // ─── Navegación ──────────────────────────────────────────────────────────
+  irANueva():               void { this.router.navigate(['/admin/promociones/crear']); }
   verPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/ver-detalle', id]); }
   editarPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/editar', id]); }
 
-  eliminarPromocion(id: number, concepto: string): void {
+  // ─── Toggle estado (activar / desactivar) ────────────────────────────────
+  toggleEstado(promo: Promotion): void {
+    const accion = promo.activo ? 'desactivar' : 'activar';
     this.confirmationService.confirm({
-      message: `¿Deseas eliminar la promoción "${concepto}"?`,
-      header:  'Confirmar eliminación',
+      message: `¿Deseas ${accion} la promoción "${promo.concepto}"?`,
+      header:  'Confirmar cambio de estado',
       icon:    'pi pi-exclamation-triangle',
       accept:  () => {
-        this.promotionsService.deletePromotion(id).subscribe({
-          next:  () => this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Promoción eliminada' }),
-          error: () => this.messageService.add({ severity: 'error',   summary: 'Error', detail: 'No se pudo eliminar' }),
+        // Usa updatePromotionStatus que llama al endpoint /status del backend
+        this.promotionsService.updatePromotionStatus(promo.idPromocion, !promo.activo).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary:  'Éxito',
+              detail:   `Promoción ${promo.activo ? 'desactivada' : 'activada'} correctamente`,
+            });
+            // Recargar para sincronizar estado real desde backend
+            this.cargarPromociones();
+          },
+          error: () => this.messageService.add({
+            severity: 'error',
+            summary:  'Error',
+            detail:   'No se pudo cambiar el estado',
+          }),
         });
       },
     });
   }
 
-  // ─── Helpers de vista ────────────────────────────────────────────────────────
+  // ─── Eliminar físicamente (solo inactivas) ────────────────────────────────
+  eliminarPromocion(id: number, concepto: string): void {
+    this.confirmationService.confirm({
+      message: `¿Deseas eliminar permanentemente la promoción "${concepto}"? Esta acción no se puede deshacer.`,
+      header:  'Eliminar permanentemente',
+      icon:    'pi pi-exclamation-triangle',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept:  () => {
+        this.promotionsService.hardDeletePromotion(id).subscribe({
+          next: () => {
+            this.messageService.add({
+              severity: 'success',
+              summary:  'Éxito',
+              detail:   'Promoción eliminada permanentemente',
+            });
+            // Recargar para sincronizar
+            this.cargarPromociones();
+          },
+          error: () => this.messageService.add({
+            severity: 'error',
+            summary:  'Error',
+            detail:   'No se pudo eliminar la promoción',
+          }),
+        });
+      },
+    });
+  }
 
+  // ─── Helpers de vista ────────────────────────────────────────────────────
   obtenerEstado(p: Promotion): 'Activa' | 'Inactiva' {
     return p.activo ? 'Activa' : 'Inactiva';
   }
