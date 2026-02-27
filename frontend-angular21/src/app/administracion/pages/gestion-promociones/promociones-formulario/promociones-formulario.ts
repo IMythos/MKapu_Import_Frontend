@@ -1,22 +1,21 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
-// PrimeNG
-import { ButtonModule } from 'primeng/button';
-import { CardModule } from 'primeng/card';
-import { InputTextModule } from 'primeng/inputtext';
-import { InputNumberModule } from 'primeng/inputnumber';
-import { SelectModule } from 'primeng/select';
-import { DatePickerModule } from 'primeng/datepicker';
-import { TextareaModule } from 'primeng/textarea';
-import { ToastModule } from 'primeng/toast';
+import { ButtonModule }        from 'primeng/button';
+import { CardModule }          from 'primeng/card';
+import { InputTextModule }     from 'primeng/inputtext';
+import { InputNumberModule }   from 'primeng/inputnumber';
+import { SelectModule }        from 'primeng/select';
+import { ToastModule }         from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { TooltipModule } from 'primeng/tooltip';
+import { TooltipModule }       from 'primeng/tooltip';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
-import { PromocionesService, Promocion } from '../../../../core/services/promociones.service';
+import { PromotionsService } from '../../../services/promotions.service';
+import { CategoriaService }  from '../../../services/categoria.service';
+import { CategoriaResponse } from '../../../interfaces/categoria.interface';
 
 @Component({
   selector: 'app-promociones-formulario',
@@ -29,133 +28,235 @@ import { PromocionesService, Promocion } from '../../../../core/services/promoci
     InputTextModule,
     InputNumberModule,
     SelectModule,
-    DatePickerModule,
-    TextareaModule,
     ToastModule,
     ConfirmDialogModule,
     TooltipModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './promociones-formulario.html',
-  styleUrl: './promociones-formulario.css',
+  styleUrl:    './promociones-formulario.css',
 })
 export class PromocionesFormulario implements OnInit {
   private fb                  = inject(FormBuilder);
   private route               = inject(ActivatedRoute);
   private router              = inject(Router);
-  private promocionesService  = inject(PromocionesService);
+  private promotionsService   = inject(PromotionsService);
+  private categoriaService    = inject(CategoriaService);
   private messageService      = inject(MessageService);
-  private confirmationService = inject(ConfirmationService);
 
-  // ── Estado ──────────────────────────────────────────────────────────────
-  isSubmitting = signal(false);
-  esModoEdicion = signal(false);
-  idPromocion = signal<string | null>(null);
+  // ── Estado ───────────────────────────────────────────────────────────────
+  isSubmitting      = signal(false);
+  esModoEdicion     = signal(false);
+  idPromocion       = signal<number | null>(null);
+  mostrarInputValor = signal(true);
 
-  // ── Opciones de Selects ──────────────────────────────────────────────────
-  tiposPromocion = signal([
+  // ── Catálogos ─────────────────────────────────────────────────────────────
+  tiposPromocion = [
     { label: 'Porcentaje (%)',  value: 'PORCENTAJE' },
-    { label: 'Monto Fijo (S/)', value: 'MONTO_FIJO' },
-  ]);
+    { label: 'Monto Fijo (S/)', value: 'MONTO' },
+  ];
 
-  tiposComprobante = signal([
-    { label: 'Cualquiera',    value: 'AMBOS' },
-    { label: 'Solo Factura',  value: '01' },
-    { label: 'Solo Boleta',   value: '03' },
-  ]);
+  tiposCondicion = [
+    { label: 'Mínimo de compra',   value: 'MINIMO_COMPRA' },
+    { label: 'Cliente nuevo',      value: 'CLIENTE_NUEVO' },
+    { label: 'Categoría',          value: 'CATEGORIA' },
+    { label: 'Código de producto', value: 'PRODUCTO' },
+  ];
+
+  categorias = signal<{ label: string; value: string }[]>([]);
 
   // ── Formulario ───────────────────────────────────────────────────────────
-  promocionForm: FormGroup = this.fb.group({
-    codigo:          ['', [Validators.required, Validators.minLength(3)]],
-    descripcion:     ['', [Validators.required]],
-    tipo_descuento:  ['PORCENTAJE', [Validators.required]],
-    valor_descuento: [null, [Validators.required, Validators.min(0.01)]],
-    fecha_inicio:    [null, [Validators.required]],
-    fecha_fin:       [null, [Validators.required]],
-    monto_minimo:    [0],
-    uso_maximo:      [null],
-    tipo_comprobante:['AMBOS'],
-    estado:          [true],
+  // NOTA: reglas y descuentosAplicados NO tienen validators en el FormArray
+  // porque son secciones opcionales; la validación se hace en guardar()
+  form: FormGroup = this.fb.group({
+    concepto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(100)]],
+    tipo:     ['PORCENTAJE', [Validators.required]],
+    valor:    [null, [Validators.required, Validators.min(0.01), Validators.max(100)]],
+    activo:   [true],
+    reglas:             this.fb.array([]),
+    descuentosAplicados: this.fb.array([]),
   });
 
-  // ── Computed ─────────────────────────────────────────────────────────────
-  tituloKicker   = computed(() => this.esModoEdicion() ? 'ADMINISTRACIÓN - CAMPAÑAS' : 'ADMINISTRACIÓN - CAMPAÑAS');
+  get reglas():    FormArray { return this.form.get('reglas') as FormArray; }
+  get descuentos():FormArray { return this.form.get('descuentosAplicados') as FormArray; }
+
+  // ── Signals ───────────────────────────────────────────────────────────────
   tituloPrincipal = computed(() => this.esModoEdicion() ? 'Editar Promoción' : 'Crear Promoción');
-  iconoCabecera  = computed(() => this.esModoEdicion() ? 'pi pi-pencil' : 'pi pi-plus');
+  iconoCabecera   = computed(() => this.esModoEdicion() ? 'pi pi-pencil' : 'pi pi-plus');
+  esModoMonto     = signal(false);
 
-  /** true cuando el tipo seleccionado es MONTO_FIJO */
-  esModoMonto = computed(() =>
-    this.promocionForm.get('tipo_descuento')?.value === 'MONTO_FIJO'
-  );
-
-  // ── Lifecycle ────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
+    this.cargarCategorias();
+
+    const id = Number(this.route.snapshot.paramMap.get('id'));
     if (id) {
       this.esModoEdicion.set(true);
       this.idPromocion.set(id);
-      this.cargarDatosPromocion(id);
+      this.cargarPromocion(id);
     }
 
-    // Resetear valor_descuento al cambiar tipo para evitar valores inválidos
-    this.promocionForm.get('tipo_descuento')?.valueChanges.subscribe(() => {
-      this.promocionForm.patchValue({ valor_descuento: null });
+    this.form.get('tipo')?.valueChanges.subscribe((tipo) => {
+      this.esModoMonto.set(tipo === 'MONTO');
+      this.reconstruirControlValor(tipo);
     });
   }
 
-  // ── Métodos ──────────────────────────────────────────────────────────────
-  cargarDatosPromocion(id: string): void {
-    const promo = this.promocionesService.getPromocionPorId(id);
+  // ── Reconstruye p-inputNumber desde cero al cambiar tipo ─────────────────
+  private reconstruirControlValor(tipo: string, valorInicial: number | null = null): void {
+    const validators = tipo === 'MONTO'
+      ? [Validators.required, Validators.min(0.01)]
+      : [Validators.required, Validators.min(0.01), Validators.max(100)];
 
-    if (promo) {
-      this.promocionForm.patchValue({
-        ...promo,
-        fecha_inicio: new Date(promo.fecha_inicio),
-        fecha_fin:    new Date(promo.fecha_fin),
-      });
-    } else {
-      this.messageService.add({
-        severity: 'error',
-        summary:  'Error',
-        detail:   'Promoción no encontrada',
-      });
-      this.cancelar();
-    }
+    this.mostrarInputValor.set(false);
+    this.form.setControl('valor', this.fb.control(valorInicial, validators));
+    setTimeout(() => this.mostrarInputValor.set(true), 0);
   }
 
-  guardarPromocion(): void {
-    if (this.promocionForm.invalid) {
-      this.promocionForm.markAllAsTouched();
-      return;
-    }
+  // ── Carga categorías ──────────────────────────────────────────────────────
+  private cargarCategorias(): void {
+    this.categoriaService.getCategorias().subscribe({
+      next: (res: CategoriaResponse) => {
+        this.categorias.set(
+          (res.categories ?? []).map(c => ({
+            label: c.nombre,
+            value: String(c.id_categoria),
+          }))
+        );
+      },
+      error: () => {}
+    });
+  }
 
-    this.isSubmitting.set(true);
-    const formValue = this.promocionForm.value;
+  // ── Carga edición ─────────────────────────────────────────────────────────
+  private cargarPromocion(id: number): void {
+    this.promotionsService.getPromotionById(id).subscribe({
+      next: promo => {
+        this.esModoMonto.set(promo.tipo === 'MONTO');
+        this.reconstruirControlValor(promo.tipo, promo.valor);
+        this.form.patchValue({
+          concepto: promo.concepto,
+          tipo:     promo.tipo,
+          activo:   promo.activo,
+        });
+        promo.reglas.forEach(r => this.agregarRegla(r.tipoCondicion, r.valorCondicion));
+        promo.descuentosAplicados.forEach(d => this.agregarDescuento(d.monto, d.idDescuento));
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la promoción' });
+        this.cancelar();
+      },
+    });
+  }
 
-    // Simula llamada asíncrona al servicio
-    setTimeout(() => {
-      if (this.esModoEdicion()) {
-        this.promocionesService.actualizarPromocion(this.idPromocion()!, formValue);
+  // ── Reglas ────────────────────────────────────────────────────────────────
+  // Sin Validators.required para no bloquear el form; se valida en guardar()
+  agregarRegla(tipoCondicion = '', valorCondicion: any = ''): void {
+    this.reglas.push(this.fb.group({
+      tipoCondicion:  [tipoCondicion],
+      valorCondicion: [valorCondicion],
+    }));
+  }
+
+  eliminarRegla(i: number): void { this.reglas.removeAt(i); }
+
+  tipoRegla(i: number): string {
+    return this.reglas.at(i).get('tipoCondicion')?.value ?? '';
+  }
+
+  onTipoCondicionChange(i: number): void {
+    this.reglas.at(i).patchValue({ valorCondicion: '' });
+  }
+
+  // ── Descuentos aplicados ──────────────────────────────────────────────────
+  agregarDescuento(monto: number | null = null, idDescuento?: number): void {
+    this.descuentos.push(this.fb.group({
+      idDescuento: [idDescuento ?? null],
+      monto:       [monto, [Validators.required, Validators.min(0.01)]],
+    }));
+  }
+
+  eliminarDescuento(i: number): void { this.descuentos.removeAt(i); }
+
+  // ── Validación manual de reglas ───────────────────────────────────────────
+  private validarReglas(): boolean {
+    for (let i = 0; i < this.reglas.length; i++) {
+      const r = this.reglas.at(i);
+      const tipo  = r.get('tipoCondicion')?.value;
+      const valor = r.get('valorCondicion')?.value;
+
+      if (!tipo) {
         this.messageService.add({
-          severity: 'success',
-          summary:  'Éxito',
-          detail:   'Promoción actualizada correctamente',
+          severity: 'warn',
+          summary: 'Regla incompleta',
+          detail: `La regla #${i + 1} no tiene tipo de condición seleccionado`,
         });
-      } else {
-        this.promocionesService.crearPromocion(formValue);
-        this.messageService.add({
-          severity: 'success',
-          summary:  'Éxito',
-          detail:   'Promoción creada correctamente',
-        });
+        return false;
       }
 
-      this.isSubmitting.set(false);
-      setTimeout(() => this.cancelar(), 1000);
-    }, 800);
+      // CLIENTE_NUEVO no necesita valor — el backend recibe 'true' automáticamente
+      if (tipo !== 'CLIENTE_NUEVO' && (valor === null || valor === '' || valor === undefined || valor === 0)) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Regla incompleta',
+          detail: `La regla #${i + 1} requiere un valor`,
+        });
+        return false;
+      }
+    }
+    return true;
   }
 
-  cancelar(): void {
-    this.router.navigate(['/administracion/promociones-listado']);
+  // ── Submit ────────────────────────────────────────────────────────────────
+  guardar(): void {
+    if (this.form.invalid) { this.form.markAllAsTouched(); return; }
+    if (!this.validarReglas()) return;
+
+    this.isSubmitting.set(true);
+
+    const v = this.form.value;
+    const payload = {
+      concepto: v.concepto,
+      tipo:     v.tipo,
+      valor:    Number(v.valor),
+      activo:   v.activo,
+      reglas: v.reglas
+        .filter((r: any) => r.tipoCondicion) // descartar reglas sin tipo
+        .map((r: any) => ({
+          tipoCondicion:  r.tipoCondicion,
+          // CLIENTE_NUEVO no tiene input pero el backend requiere un valor no vacío
+          valorCondicion: r.tipoCondicion === 'CLIENTE_NUEVO'
+            ? 'true'
+            : String(r.valorCondicion ?? ''),
+        })),
+      descuentosAplicados: v.descuentosAplicados
+        .filter((d: any) => d.monto > 0)
+        .map((d: any) => ({
+          ...(d.idDescuento ? { idDescuento: d.idDescuento } : {}),
+          monto: Number(d.monto),
+        })),
+    };
+
+    const req$ = this.esModoEdicion()
+      ? this.promotionsService.updatePromotion(this.idPromocion()!, payload)
+      : this.promotionsService.createPromotion(payload);
+
+    req$.subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: this.esModoEdicion() ? 'Promoción actualizada' : 'Promoción creada',
+        });
+        this.isSubmitting.set(false);
+        setTimeout(() => this.cancelar(), 1000);
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo guardar la promoción' });
+        this.isSubmitting.set(false);
+      },
+    });
   }
+
+  cancelar(): void { this.router.navigate(['/admin/promociones']); }
 }

@@ -24,7 +24,7 @@ import { CreateProductoDto, MovimientoInventarioDto, UpdateProductoDto, UpdatePr
 import { AlmacenService } from '../../../services/almacen.service';
 
 @Component({
-  selector: 'app-productos-form',
+  selector: 'app-cotizacion-form',
   standalone: true,
   imports: [
     CommonModule,
@@ -37,11 +37,11 @@ import { AlmacenService } from '../../../services/almacen.service';
     ConfirmDialog,
     ToastModule
   ],
-  templateUrl: './productos-formulario.html',
-  styleUrl: './productos-formulario.css',
+  templateUrl: './cotizacion-formulario.html',
+  styleUrl: './cotizacion-formulario.css',
   providers: [ConfirmationService, MessageService],
 })
-export class ProductosFormulario implements OnInit {
+export class CotizacionFormulario implements OnInit {
   private fb = inject(FormBuilder);
   private router = inject(Router);
   private route = inject(ActivatedRoute); 

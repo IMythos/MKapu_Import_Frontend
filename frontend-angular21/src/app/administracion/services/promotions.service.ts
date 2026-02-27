@@ -7,10 +7,9 @@ import { environment } from '../../../enviroments/enviroment';
 export interface Promotion {
   idPromocion: number;
   concepto: string;
-  tipo: string;              // 'PORCENTAJE' | 'MONTO'
+  tipo: string;
   valor: number;
   activo: boolean;
-  // ❌ fechaInicio / fechaFin no existen en la BD — eliminados
   reglas: ReglaPromo[];
   descuentosAplicados: DescuentoAplicado[];
 }
@@ -49,7 +48,7 @@ export class PromotionsService {
 
   constructor(private http: HttpClient) {}
 
-  // ─── Helpers ────────────────────────────────────────────────────────────────
+  // ─── Helpers ─────────────────────────────────────────────────────────────────
 
   private normalizeActivo(field: unknown): boolean {
     if (typeof field === 'boolean') return field;
@@ -118,7 +117,7 @@ export class PromotionsService {
     return this.http
       .get<any>(`${this.api}/sales/promotions/${id}`)
       .pipe(
-        map(p => this.mapPromo(p)),   // ✅ map retorna el objeto transformado
+        map(p => this.mapPromo(p)),
         catchError(err => {
           this._error.set('No se pudo cargar la promoción.');
           return throwError(() => err);
@@ -160,7 +159,7 @@ export class PromotionsService {
     const prev = this.snapshot();
 
     return this.http
-      .patch<any>(`${this.api}/sales/promotions/${id}`, payload)
+      .put<any>(`${this.api}/sales/promotions/${id}`, payload)
       .pipe(
         tap(updated => this.patchCached(id, this.mapPromo(updated))),
         catchError(err => {
@@ -172,6 +171,7 @@ export class PromotionsService {
       );
   }
 
+  // Cambia solo el estado activo/inactivo via endpoint dedicado
   updatePromotionStatus(id: number, activo: boolean): Observable<Promotion> {
     this._loading.set(true);
     this._error.set(null);
@@ -190,13 +190,14 @@ export class PromotionsService {
       );
   }
 
-  deletePromotion(id: number): Observable<any> {
+  // Borrado físico — solo para promociones inactivas
+  hardDeletePromotion(id: number): Observable<any> {
     this._loading.set(true);
     this._error.set(null);
     const prev = this.snapshot();
 
     return this.http
-      .delete<any>(`${this.api}/sales/promotions/${id}`)
+      .delete<any>(`${this.api}/sales/promotions/${id}/hard`)
       .pipe(
         tap(() => {
           if (!prev) return;
@@ -208,6 +209,25 @@ export class PromotionsService {
             totalPages: Math.ceil(newTotal / prev.limit),
           });
         }),
+        catchError(err => {
+          this._response.set(prev);
+          this._error.set('No se pudo eliminar la promoción.');
+          return throwError(() => err);
+        }),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  // Soft delete (desactiva) — mantener por compatibilidad
+  deletePromotion(id: number): Observable<any> {
+    this._loading.set(true);
+    this._error.set(null);
+    const prev = this.snapshot();
+
+    return this.http
+      .delete<any>(`${this.api}/sales/promotions/${id}`)
+      .pipe(
+        tap(()  => this.loadPromotions(prev?.page ?? 1, prev?.limit ?? 10).subscribe()),
         catchError(err => {
           this._response.set(prev);
           this._error.set('No se pudo eliminar la promoción.');
