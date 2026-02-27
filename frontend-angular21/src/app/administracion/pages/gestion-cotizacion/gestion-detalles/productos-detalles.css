@@ -1,0 +1,404 @@
+:host ::ng-deep {
+  .surface-50 {
+    border-radius: 1rem !important;
+  }
+}
+
+.productos-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.productos-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.productos-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.productos-pill {
+  border-radius: 9999px !important;
+  padding: 1.25rem 2.5rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  min-height: 56px !important;
+  box-shadow: 0 6px 12px #00000026 !important;
+  transition: all 0.2s;
+}
+
+.productos-pill-danger {
+  background: #ef4444 !important;
+  border: 3px solid #991b1b !important;
+  color: #ffffff !important;
+}
+
+.productos-pill-warning {
+  background: #F6AF33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+.productos-pill-secondary {
+  background: #64748b !important;
+  border: 2px solid #475569 !important;
+  color: #ffffff !important;
+}
+
+.productos-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #00000033 !important;
+}
+
+.estadistica-box {
+  transition: all 0.3s ease;
+}
+
+.estadistica-promedio {
+  background: #eff6ff;
+  border: 2px solid #bfdbfe;
+}
+
+.estadistica-promedio .estadistica-label {
+  color: #1e40af;
+}
+
+.estadistica-promedio .estadistica-valor {
+  color: #1d4ed8;
+}
+
+.estadistica-minimo {
+  background: #f0fdf4;
+  border: 2px solid #bbf7d0;
+}
+
+.estadistica-minimo .estadistica-label {
+  color: #15803d;
+}
+
+.estadistica-minimo .estadistica-valor {
+  color: #16a34a;
+}
+
+.estadistica-maximo {
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+}
+
+.estadistica-maximo .estadistica-label {
+  color: #991b1b;
+}
+
+.estadistica-maximo .estadistica-valor {
+  color: #dc2626;
+}
+
+.estadistica-diferencia {
+  background: #faf5ff;
+  border: 2px solid #e9d5ff;
+}
+
+.estadistica-diferencia .estadistica-label {
+  color: #6b21a8;
+}
+
+.estadistica-diferencia .estadistica-valor {
+  color: #7c3aed;
+}
+
+.comparativa-card {
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.comparativa-mas-barato {
+  border-color: #86efac;
+  background: transparent;
+}
+
+.comparativa-mas-caro {
+  border-color: #fca5a5;
+  background: transparent;
+}
+
+.comparativa-neutral {
+  border-color: #e5e7eb;
+  background: transparent;
+}
+
+.comparativa-precio-row {
+  background: #f9fafb;
+  transition: background 0.2s ease;
+}
+
+.comparativa-precio-row:hover {
+  background: #f3f4f6;
+}
+
+.comparativa-diferencia-box {
+  border: 2px solid;
+}
+
+.comparativa-diferencia-negativa {
+  background: #d1fae5;
+  border-color: #86efac;
+}
+
+.comparativa-diferencia-negativa .comparativa-diferencia-label {
+  color: #15803d;
+}
+
+.comparativa-diferencia-negativa .comparativa-diferencia-icono {
+  color: #16a34a;
+}
+
+.comparativa-diferencia-negativa .comparativa-diferencia-valor {
+  color: #15803d;
+}
+
+.comparativa-diferencia-positiva {
+  background: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.comparativa-diferencia-positiva .comparativa-diferencia-label {
+  color: #991b1b;
+}
+
+.comparativa-diferencia-positiva .comparativa-diferencia-icono {
+  color: #dc2626;
+}
+
+.comparativa-diferencia-positiva .comparativa-diferencia-valor {
+  color: #991b1b;
+}
+
+.comparativa-diferencia-neutral {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.comparativa-diferencia-neutral .comparativa-diferencia-label {
+  color: #4b5563;
+}
+
+.comparativa-diferencia-neutral .comparativa-diferencia-icono {
+  color: #6b7280;
+}
+
+.comparativa-diferencia-neutral .comparativa-diferencia-valor {
+  color: #4b5563;
+}
+
+/* ============================================ */
+/* DARK MODE */
+/* ============================================ */
+
+:host-context(.app-dark) {
+  .estadistica-promedio {
+    background: #12263f !important;
+    border-color: #1d4ed8 !important;
+  }
+
+  .estadistica-promedio .estadistica-label {
+    color: #93c5fd !important;
+  }
+
+  .estadistica-promedio .estadistica-valor {
+    color: #bfdbfe !important;
+  }
+
+  .estadistica-minimo {
+    background: #142a1f !important;
+    border-color: #16a34a !important;
+  }
+
+  .estadistica-minimo .estadistica-label {
+    color: #86efac !important;
+  }
+
+  .estadistica-minimo .estadistica-valor {
+    color: #bbf7d0 !important;
+  }
+
+  .estadistica-maximo {
+    background: #3d1f1f !important;
+    border-color: #dc2626 !important;
+  }
+
+  .estadistica-maximo .estadistica-label {
+    color: #fca5a5 !important;
+  }
+
+  .estadistica-maximo .estadistica-valor {
+    color: #fecaca !important;
+  }
+
+  .estadistica-diferencia {
+    background: #1a1228 !important;
+    border-color: #6d28d9 !important;
+  }
+
+  .estadistica-diferencia .estadistica-label {
+    color: #d8b4fe !important;
+  }
+
+  .estadistica-diferencia .estadistica-valor {
+    color: #e9d5ff !important;
+  }
+
+  .comparativa-mas-barato {
+    background: transparent !important;
+    border-color: #2d5535 !important;
+  }
+
+  .comparativa-mas-caro {
+    background: transparent !important;
+    border-color: #5a3030 !important;
+  }
+
+  .comparativa-neutral {
+    background: transparent !important;
+    border-color: #374151 !important;
+  }
+
+  .comparativa-precio-row {
+    background: #1f2937 !important;
+  }
+
+  .comparativa-precio-row:hover {
+    background: #374151 !important;
+  }
+
+  .comparativa-diferencia-negativa {
+    background: #1a3d2b !important;
+    border-color: #16a34a !important;
+  }
+
+  .comparativa-diferencia-negativa .comparativa-diferencia-label {
+    color: #86efac !important;
+  }
+
+  .comparativa-diferencia-negativa .comparativa-diferencia-icono {
+    color: #86efac !important;
+  }
+
+  .comparativa-diferencia-negativa .comparativa-diferencia-valor {
+    color: #bbf7d0 !important;
+  }
+
+  .comparativa-diferencia-positiva {
+    background: #3d1f1f !important;
+    border-color: #dc2626 !important;
+  }
+
+  .comparativa-diferencia-positiva .comparativa-diferencia-label {
+    color: #fca5a5 !important;
+  }
+
+  .comparativa-diferencia-positiva .comparativa-diferencia-icono {
+    color: #fca5a5 !important;
+  }
+
+  .comparativa-diferencia-positiva .comparativa-diferencia-valor {
+    color: #fecaca !important;
+  }
+
+  .comparativa-diferencia-neutral {
+    background: #1f2937 !important;
+    border-color: #4b5563 !important;
+  }
+
+  .comparativa-diferencia-neutral .comparativa-diferencia-label {
+    color: #9ca3af !important;
+  }
+
+  .comparativa-diferencia-neutral .comparativa-diferencia-icono {
+    color: #9ca3af !important;
+  }
+
+  .comparativa-diferencia-neutral .comparativa-diferencia-valor {
+    color: #d1d5db !important;
+  }
+}
+
+/* ============================================ */
+/* TONALIDADES DE COLORES EN DARK MODE (MÁS OSCURAS) */
+/* ============================================ */
+
+:host-context(.app-dark) ::ng-deep .bg-red-50 {
+  background: linear-gradient(135deg, #2a1515 0%, #1f1010 100%) !important;
+  background-color: #2a1515 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-green-50 {
+  background: linear-gradient(135deg, #152a1f 0%, #101f15 100%) !important;
+  background-color: #152a1f !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-blue-50 {
+  background: linear-gradient(135deg, #12223a 0%, #0d1828 100%) !important;
+  background-color: #12223a !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-cyan-50 {
+  background: linear-gradient(135deg, #122a35 0%, #0d1f28 100%) !important;
+  background-color: #122a35 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-indigo-50 {
+  background: linear-gradient(135deg, #1a1a35 0%, #131328 100%) !important;
+  background-color: #1a1a35 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-orange-50 {
+  background: linear-gradient(135deg, #2a1e12 0%, #1f150d 100%) !important;
+  background-color: #2a1e12 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-purple-50 {
+  background: linear-gradient(135deg, #1f1530 0%, #171028 100%) !important;
+  background-color: #1f1530 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-primary-50 {
+  background: linear-gradient(135deg, #12223a 0%, #0d1828 100%) !important;
+  background-color: #12223a !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-red-200 {
+  border-color: #4a2828 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-green-200 {
+  border-color: #284a2a !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-blue-200 {
+  border-color: #283a52 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-cyan-200 {
+  border-color: #284552 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-indigo-200 {
+  border-color: #353552 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-orange-200 {
+  border-color: #4a3528 !important;
+}

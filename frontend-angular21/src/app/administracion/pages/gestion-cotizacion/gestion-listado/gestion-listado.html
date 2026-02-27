@@ -1,0 +1,188 @@
+<div class="p-2">
+  <p-card class="cotizaciones-header-card mb-4 cotizaciones-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="cotizaciones-title-icon">
+          <i [class]="iconoCabecera"></i>
+        </span>
+        <div>
+          <p class="cotizaciones-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="cotizaciones-title mb-0">{{ subtituloKicker }}</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button label="Agregar Cotización" icon="pi pi-plus"
+          styleClass="cotizaciones-pill cotizaciones-pill-warning"
+          (onClick)="irCrear()">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<div class="p-2">
+  <div class="contadores-cotizaciones mb-4">
+    <div class="contador-card">
+      <i class="pi pi-check-circle"></i>
+      <div>
+        <span class="contador-label">Total Cotizaciones</span>
+        <span class="contador-valor">{{ totalRecords() }}</span>
+        <span class="contador-detalle"><i class="pi pi-bars"></i> En el sistema</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-check"></i>
+      <div>
+        <span class="contador-label">Aprobadas</span>
+        <span class="contador-valor">{{ totalAprobadas() }}</span>
+        <span class="contador-detalle">Cotizaciones</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-clock"></i>
+      <div>
+        <span class="contador-label">Pendientes</span>
+        <span class="contador-valor">{{ totalPendientes() }}</span>
+        <span class="contador-detalle">Por aprobar</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-building"></i>
+      <div>
+        <span class="contador-label">Sedes</span>
+        <span class="contador-valor">{{ sedesOptions().length }}</span>
+        <span class="contador-detalle"><i class="pi pi-map-marker"></i> Registradas</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="surface-card border-round-xl shadow-1 mb-4">
+    <div class="p-3">
+      <div class="flex flex-wrap gap-6 align-items-end h-full">
+        <div class="flex-1 p-fluid h-full min-w-20rem">
+          <label class="font-medium mb-2 block">Buscar Cotización</label>
+          <p-autocomplete
+            [ngModel]="buscarValue()"
+            (ngModelChange)="buscarValue.set($event)"
+            [suggestions]="cotizacionSugerencias()"
+            (completeMethod)="searchCotizacion($event)"
+            (onSelect)="seleccionarCotizacionBusqueda($event)"
+            (onClear)="limpiarBusquedaCotizacion()"
+            placeholder="Cliente, código o fecha..."
+            field="codigo"
+            [showClear]="true"
+            [fluid]="true"
+            styleClass="autocomplete-cotizaciones">
+            <ng-template let-item pTemplate="item">
+              <div class="autocomplete-item-custom p-2">
+                <div class="flex flex-column gap-1">
+                  <span class="font-bold text-900">{{ item.codigo }}</span>
+                  <small class="text-600 flex align-items-center gap-2">
+                    <span><i class="pi pi-user mr-1 text-primary"></i>{{ item.cliente_nombre }}</span>
+                    <span><i class="pi pi-calendar mr-1 text-primary"></i>{{ item.fec_emision | date:'shortDate' }}</span>
+                    <span><i class="pi pi-money-bill mr-1 text-primary"></i>{{ item.total | currency:'PEN' }}</span>
+                  </small>
+                </div>
+              </div>
+            </ng-template>
+          </p-autocomplete>
+        </div>
+
+        <div class="flex flex-column w-16rem h-full">
+          <label class="font-medium mb-2 block">Filtrar por Sede</label>
+          <p-select
+            name="sedeSelect"
+            [options]="sedesOptions()"
+            [ngModel]="sedeSeleccionada()"
+            (ngModelChange)="onSedeChange($event)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todas las sedes"
+            class="w-full"
+            [showClear]="true">
+          </p-select>
+        </div>
+
+        <div class="flex flex-column w-16rem h-full">
+          <label class="font-medium mb-2 block">Estado</label>
+          <p-select
+            [options]="estadosOptions"
+            [ngModel]="estadoSeleccionado()"
+            (ngModelChange)="onEstadoChange($event)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos"
+            [showClear]="true"
+            class="w-full">
+          </p-select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mb-6">
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+      <p-table
+        [value]="cotizacionesFiltradas()"
+        [paginator]="true"
+        [rows]="rows()"
+        [totalRecords]="totalRecords()"
+        [loading]="loading()"
+        [rowsPerPageOptions]="[5,10,25,50]"
+        [lazy]="true"
+        (onPage)="onPageChange($event)"
+        styleClass="cotizaciones-table-hover">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 12%">Código</th>
+            <th style="width: 20%">Cliente</th>
+            <th style="width: 13%">F. Emisión</th>
+            <th style="width: 13%">F. Vencimiento</th>
+            <th style="width: 12%">Sede</th>
+            <th style="width: 10%">Estado</th>
+            <th style="width: 10%">Total</th>
+            <th style="width: 10%">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-c>
+          <tr>
+            <td class="font-semibold">{{ c.codigo }}</td>
+            <td>{{ c.cliente_nombre }}</td>
+            <td>{{ c.fec_emision | date:'dd/MM/yy' }}</td>
+            <td>{{ c.fec_venc | date:'dd/MM/yy' }}</td>
+            <td>{{ c.sede_nombre }}</td>
+            <td>
+              <p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)"></p-tag>
+            </td>
+            <td>{{ c.total | currency:'PEN':'symbol' }}</td>
+            <td>
+              <div class="flex align-items-center gap-2">
+                <p-button icon="pi pi-eye" text pTooltip="Ver Detalles"
+                  (onClick)="irDetalle(c.id_cotizacion)">
+                </p-button>
+                <p-button icon="pi pi-pencil" text pTooltip="Editar"
+                  (onClick)="irEditar(c.id_cotizacion)">
+                </p-button>
+                <p-button icon="pi pi-trash" text severity="danger"
+                  pTooltip="Eliminar Cotización">
+                </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="text-center py-6">
+              <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
+              <p class="text-900 font-medium mb-0">No se encontraron cotizaciones</p>
+              <p class="text-600 mt-2">¡Crea tu primera cotización arriba!</p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<p-toast></p-toast>
+<p-confirmdialog></p-confirmdialog>

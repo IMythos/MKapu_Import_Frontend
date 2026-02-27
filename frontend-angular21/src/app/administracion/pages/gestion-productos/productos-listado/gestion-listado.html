@@ -73,11 +73,21 @@
           <div class="flex-1 p-fluid h-full">
             <label class="font-medium mb-2 block">Buscar Producto</label>
 
-            <p-autocomplete [ngModel]="buscarValue()" (ngModelChange)="buscarValue.set($event)"
-              [suggestions]="sugerencias()" (completeMethod)="searchBuscar($event)"
-              (onSelect)="seleccionarProductoBusqueda($event)" (onClear)="limpiarBusqueda()"
-              placeholder="Nombre o código del producto..." field="nombre" optionLabel="nombre" fluid [showClear]="true"
+            <p-autocomplete 
+              [ngModel]="buscarValue()" 
+              (ngModelChange)="buscarValue.set($event)"
+              [suggestions]="sugerencias()" 
+              (completeMethod)="searchBuscar($event)"
+              (onSelect)="seleccionarProductoBusqueda($event)" 
+              (onClear)="limpiarBusqueda()"
+              placeholder="Nombre o código del producto..." 
+              field="nombre" 
+              optionLabel="nombre" 
+              fluid [showClear]="true"
               styleClass="autocomplete-productos">
+              
+              
+              
               <ng-template let-item pTemplate="item">
                 <div class="autocomplete-item-custom p-2">
                   <div class="flex flex-column gap-1">
@@ -113,9 +123,16 @@
 
           <div class="flex flex-column w-16rem h-full">
             <label class="font-medium mb-2 block">Filtrar por Sede</label>
-            <p-select name="sedeSelect" [options]="sedesOptions()" [ngModel]="idSedeActual()"
-              (ngModelChange)="onSedeChange($event)" optionLabel="label" optionValue="value"
-              placeholder="Seleccione una sede" class="w-full" [showClear]="true">
+            <p-select 
+            name="sedeSelect" 
+            [options]="sedesOptions()" 
+            [ngModel]="idSedeActual()"
+            (ngModelChange)="onSedeChange($event)" 
+            optionLabel="label" 
+            optionValue="value"
+            placeholder="Seleccione una sede"
+            class="w-full" 
+            [showClear]="true">
             </p-select>
           </div>
 

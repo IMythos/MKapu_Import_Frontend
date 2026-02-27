@@ -14,16 +14,15 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { PaginatorModule } from 'primeng/paginator';
-import { Router, NavigationEnd, RouterModule} from '@angular/router';
+import { Router, RouterModule} from '@angular/router';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProductoService } from '../../../services/producto.service';
-import { ProductoAutocomplete, ProductoInterface, ProductoStock } from '../../../interfaces/producto.interface';
+import { ProductoAutocomplete, ProductoStock } from '../../../interfaces/producto.interface';
 import { SedeService } from '../../../services/sede.service';
 import { CategoriaService } from '../../../services/categoria.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-gestion-productos',

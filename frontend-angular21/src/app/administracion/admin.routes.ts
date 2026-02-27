@@ -443,6 +443,23 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
     ],
   },
 
+    /* =======================
+      cotizacion
+  ======================= */
+
+
+
+  {
+    path: 'cotizaciones',
+    loadComponent: () =>
+      import('./pages/gestion-cotizacion/gestion-listado/gestion-listado').then(
+        (m) => m.GestionCotizacionesComponent,
+      ),
+  },
+
+
+
+
   /* =======================
     DESPACHO PRODUCTOS
   ======================= */
