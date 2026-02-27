@@ -511,4 +511,41 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
       }
     ]
   },
+
+
+
+
+
+   /* =======================
+      DESCUENTOS
+    ======================= */
+    {
+      path: 'descuentos',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./pages/descuento/pages/descuento/descuento').then((m) => m.DescuentoPage),
+        },
+        {
+          path: 'agregar-descuento',
+          loadComponent: () =>
+            import('./pages/descuento/pages/agregar-descuento/agregar-descuento').then(
+              (m) => m.AgregarDescuento,
+            ),
+          canDeactivate: [pendingChangesGuard],
+        },
+        {
+          path: 'editar-descuento/:id',
+          loadComponent: () =>
+            import('./pages/descuento/pages/editar-descuento/editar-descuento').then(
+              (m) => m.EditarDescuento,
+            ),
+          canDeactivate: [pendingChangesGuard],
+        },
+      ],
+    },
+
+
+
 ];

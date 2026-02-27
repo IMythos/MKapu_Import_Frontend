@@ -1,0 +1,103 @@
+<div class="agregar-descuento-page">
+  <p-toast position="top-right"></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <p-card styleClass="descuento-header-card">
+    <div class="flex align-items-center gap-3">
+      <span class="descuento-title-icon"><i class="pi pi-list"></i></span>
+      <div>
+        <p class="descuento-kicker">ADMINISTRADOR - CREAR DESCUENTO</p>
+        <h2 class="descuento-title">CREAR DESCUENTO</h2>
+      </div>
+    </div>
+  </p-card>
+
+  <div class="mb-3">
+    <p-message *ngIf="loading()" severity="info" text="Procesando..."></p-message>
+    <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e"></p-message>
+  </div>
+
+  <p-card styleClass="descuento-card border-none">
+    <form #descuentoForm="ngForm" novalidate (ngSubmit)="saveDescuento(descuentoForm)">
+      <div class="descuento-section">
+        <div class="descuento-section-title">INFORMACIÓN DEL DESCUENTO:</div>
+        <p-divider></p-divider>
+      </div>
+
+      <div class="grid form-grid">
+        <!-- NOMBRE -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="nombre">NOMBRE:</label>
+          <input
+            id="nombre"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese nombre"
+            [(ngModel)]="descuento.nombre"
+            name="nombre"
+            required
+            #nombreNg="ngModel"
+            (input)="toUpperCase('nombre')"
+            (keypress)="onlyLetters($event)"
+            [ngClass]="{ 'p-invalid': (descuentoForm.submitted || nombreNg.touched) && nombreNg.invalid }"
+          />
+          <p-message
+            *ngIf="(descuentoForm.submitted || nombreNg.touched) && nombreNg.invalid"
+            severity="error"
+            text="El nombre es obligatorio y solo puede contener letras."
+          />
+        </div>
+
+        <!-- PORCENTAJE -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="porcentaje">PORCENTAJE:</label>
+          <p-inputnumber
+            class="w-full"
+            [(ngModel)]="descuento.porcentaje"
+            inputId="porcentaje"
+            placeholder="Ingrese porcentaje (0-100)"
+            [min]="0"
+            [max]="100"
+            [maxlength]="5"
+            [mode]="'decimal'"
+            [minFractionDigits]="0"
+            [maxFractionDigits]="2"
+            name="porcentaje"
+            required
+            #porcentajeNg="ngModel"
+            [inputStyleClass]="(descuentoForm.submitted || porcentajeNg.touched) && porcentajeNg.invalid ? 'p-invalid' : ''"
+          />
+          <p-message
+            *ngIf="(descuentoForm.submitted || porcentajeNg.touched) && porcentajeNg.invalid"
+            severity="error"
+            text="Porcentaje requerido (0-100)."
+          />
+        </div>
+
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex align-items-center justify-content-center gap-3 mt-3">
+        <p-button
+          label="Cancelar"
+          outlined
+          severity="secondary"
+          styleClass="descuento-btn-cancel"
+          type="button"
+          (click)="confirmCancel()"
+        ></p-button>
+
+        <p-button
+          label="Registrar Descuento"
+          icon="pi pi-check"
+          styleClass="descuento-btn-primary"
+          type="submit"
+          [disabled]="descuentoForm.invalid || loading()"
+        ></p-button>
+      </div>
+    </form>
+  </p-card>
+
+  <p-confirmdialog />
+</div>
