@@ -1,5 +1,5 @@
 <div class="clientes-page">
-    <p-card styleClass="clientes-header-card">
+    <p-card class="clientes-header-card">
         <div class="flex align-items-center justify-content-between flex-wrap gap-3">
             <div class="flex align-items-center gap-3">
                 <span class="clientes-title-icon">
@@ -19,7 +19,7 @@
 
     <div class="grid mb-4 mermas-metrics">
         <div class="col-12 md:col-4">
-            <p-card styleClass="stat-card">
+            <p-card class="stat-card">
                 <div class="stat-card-content">
                     <i class="pi pi-exclamation-triangle stat-icon"></i>
                     <div>
@@ -72,8 +72,8 @@
 
             <div class="col-12 md:col-4">
                 <label class="filter-label">Estado</label>
-                <p-autoComplete [suggestions]="tiposFiltro" [(ngModel)]="tipoFiltro" optionLabel="label" optionValue="value"
-                    placeholder="Seleccione tipo" styleClass="w-full" (onChange)="aplicarFiltros()">
+                <p-autoComplete [suggestions]="tiposFiltro" [(ngModel)]="tipoFiltro" optionLabel="label"
+                    optionValue="value" placeholder="Seleccione tipo" styleClass="w-full" (onChange)="aplicarFiltros()">
                 </p-autoComplete>
             </div>
 
@@ -160,8 +160,7 @@
                         <span *ngIf="producto.tipo === 'merma'" class="text-400">—</span>
                     </td>
                     <td class="text-center">
-                        <p-button icon="pi pi-pencil" [text]="true" severity="info" styleClass="action-btn"
-                            (onClick)="editarProducto(producto)" pTooltip="Editar" tooltipPosition="left">
+                          
                         </p-button>
                     </td>
                 </tr>

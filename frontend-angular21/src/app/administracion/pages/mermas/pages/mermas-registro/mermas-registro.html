@@ -1,0 +1,327 @@
+<!-- mermas-registro.html -->
+
+<div class="registro-page">
+  <!-- Header Card -->
+  <p-card styleClass="registro-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="registro-title-icon">
+          <i class="pi pi-exclamation-triangle"></i>
+        </span>
+        <div>
+          <p class="registro-kicker">ALMACÉN · ADMINISTRACIÓN - MERMAS</p>
+          <h2 class="registro-title">REGISTRO DE MERMA</h2>
+        </div>
+      </div>
+      <p-button
+        icon="pi pi-arrow-left"
+        label="Volver"
+        [outlined]="true"
+        severity="secondary"
+        [routerLink]="['/admin/mermas-remates']"
+      ></p-button>
+    </div>
+  </p-card>
+
+  <div class="grid">
+    <!-- PASO 1: Información del Producto -->
+    <div class="col-12">
+      <p-card styleClass="form-card">
+        <div class="section-header">
+          <div class="section-number">1</div>
+          <div>
+            <h3 class="section-title">Información del Producto</h3>
+            <p class="section-subtitle">Busque el producto por código (ej: R6602) y especifique la cantidad a dar de baja</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="col-12 md:col-8">
+            <label class="field-label" for="codigoProducto">
+              CÓDIGO DE PRODUCTO <span class="required-asterisk">*</span>
+            </label>
+
+            <div class="flex align-items-center gap-2">
+              <input
+                pInputText
+                id="codigoProducto"
+                [(ngModel)]="codigoProducto"
+                class="w-full codigo-uppercase"
+                placeholder="Ej: R6602"
+                autocomplete="off"
+                (input)="codigoProducto = (codigoProducto || '').toUpperCase()"
+                (keydown.enter)="buscarProductoPorCodigo()"
+              />
+
+              <p-button
+                type="button"
+                icon="pi pi-search"
+                label="Buscar"
+                (onClick)="buscarProductoPorCodigo()"
+              ></p-button>
+            </div>
+
+            <div class="mt-2" *ngIf="productoNoEncontrado">
+              <small class="p-error">
+                <i class="pi pi-exclamation-circle"></i>
+                No se encontró ningún producto con el código ingresado.
+              </small>
+            </div>
+
+            <!-- Información del producto encontrado -->
+            <div *ngIf="productoSeleccionado" class="producto-info-card mt-3">
+              <div class="producto-info-row">
+                <span class="info-label">Código:</span>
+                <span class="info-value">{{ productoSeleccionado.codigo }}</span>
+              </div>
+
+              <div class="producto-info-row">
+                <span class="info-label">Producto:</span>
+                <span class="info-value font-semibold">{{ productoSeleccionado.anexo }}</span>
+              </div>
+
+              <div class="producto-info-row">
+                <span class="info-label">Categoría:</span>
+                <span class="info-value">{{ productoSeleccionado.categoriaNombre }}</span>
+              </div>
+
+              <div class="producto-info-row">
+                <span class="info-label">Stock disponible:</span>
+                <span class="info-value stock-value">
+                  <i class="pi pi-box"></i>
+                  {{ (productoSeleccionado.stock ?? 0) }} unidades
+                </span>
+              </div>
+
+              <div class="producto-info-row">
+                <span class="info-label">Precio unitario:</span>
+                <span class="info-value precio-value">
+                  S/ {{ productoSeleccionado.pre_unit | number:'1.2-2' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 md:col-4">
+            <label class="field-label" for="cantidad">
+              CANTIDAD A DAR DE BAJA <span class="required-asterisk">*</span>
+            </label>
+
+            <p-inputNumber
+              [(ngModel)]="cantidad"
+              [min]="1"
+              [max]="productoSeleccionado?.stock || 999"
+              [style]="{ width: '100%' }"
+              [showButtons]="true"
+              buttonLayout="vertical"
+              incrementButtonIcon="pi pi-plus"
+              decrementButtonIcon="pi pi-minus"
+              styleClass="cantidad-input"
+              [disabled]="!productoSeleccionado"
+            ></p-inputNumber>
+
+            <small class="field-hint" *ngIf="productoSeleccionado">
+              Máximo disponible: {{ (productoSeleccionado.stock ?? 0) }} unidades
+            </small>
+            <small class="field-hint text-400" *ngIf="!productoSeleccionado">
+              Primero busque un producto
+            </small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- PASO 2: Tipo y Motivo de Merma -->
+    <div class="col-12" *ngIf="productoSeleccionado">
+      <p-card styleClass="form-card">
+        <div class="section-header">
+          <div class="section-number">2</div>
+          <div>
+            <h3 class="section-title">Tipo y Motivo de la Merma</h3>
+            <p class="section-subtitle">Clasifique el tipo de merma y especifique el motivo del descarte</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <!-- Tipo de Merma -->
+          <div class="col-12">
+            <label class="field-label" for="motivo">
+              TIPO DE MERMA <span class="required-asterisk">*</span>
+            </label>
+
+            <p-select
+              inputId="motivo"
+              [(ngModel)]="motivo"
+              [options]="motivosMerma"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccione el tipo de merma"
+              [showClear]="true"
+              styleClass="w-full">
+              <ng-template let-option pTemplate="item">
+                <div class="flex flex-column gap-1">
+                  <span class="font-semibold">{{ option.label }}</span>
+                  <small class="text-500" *ngIf="option.descripcion">{{ option.descripcion }}</small>
+                </div>
+              </ng-template>
+            </p-select>
+            
+            <small class="field-hint">
+              Seleccione la categoría que mejor describa el motivo de la merma
+            </small>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="col-12">
+            <label class="field-label" for="observaciones">
+              OBSERVACIONES / DETALLES
+            </label>
+            <textarea
+              pInputTextarea
+              id="observaciones"
+              [(ngModel)]="observaciones"
+              rows="4"
+              class="w-full"
+              placeholder="Agregue detalles adicionales sobre la merma (ej: ubicación del daño, fecha de vencimiento, etc.)"
+            ></textarea>
+            <small class="field-hint">Opcional - Información adicional que ayude a identificar la causa</small>
+          </div>
+
+          <!-- Responsable (solo lectura) -->
+          <div class="col-12">
+            <label class="field-label">
+              RESPONSABLE DEL REGISTRO
+            </label>
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-user text-500"></i>
+              <input
+                pInputText
+                class="w-full"
+                [value]="responsableNombre"
+                readonly
+                placeholder="Se obtiene del usuario en sesión"
+              />
+            </div>
+            <small class="field-hint">
+              El responsable se registra automáticamente según el usuario que realiza el registro
+            </small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- RESUMEN FINAL -->
+    <div class="col-12" *ngIf="productoSeleccionado && motivo">
+      <p-card styleClass="resumen-card">
+        <div class="flex align-items-center gap-2 mb-3">
+          <i class="pi pi-check-circle text-2xl text-primary"></i>
+          <h3 class="resumen-title mb-0">Resumen del Registro de Merma</h3>
+        </div>
+
+        <div class="resumen-grid">
+          <div class="resumen-item">
+            <span class="resumen-label">
+              <i class="pi pi-box"></i> Producto:
+            </span>
+            <span class="resumen-value">{{ productoSeleccionado.anexo }}</span>
+          </div>
+
+          <div class="resumen-item">
+            <span class="resumen-label">
+              <i class="pi pi-tag"></i> Código:
+            </span>
+            <span class="resumen-value">{{ productoSeleccionado.codigo }}</span>
+          </div>
+
+          <div class="resumen-item">
+            <span class="resumen-label">
+              <i class="pi pi-hashtag"></i> Cantidad:
+            </span>
+            <span class="resumen-value font-bold">{{ cantidad }} unidades</span>
+          </div>
+
+          <div class="resumen-item">
+            <span class="resumen-label">
+              <i class="pi pi-exclamation-triangle"></i> Tipo de merma:
+            </span>
+            <span class="resumen-value">{{ getMotivoLabel() }}</span>
+          </div>
+
+          <div class="resumen-item">
+            <span class="resumen-label">
+              <i class="pi pi-dollar"></i> Valor total:
+            </span>
+            <span class="resumen-value font-bold text-red-500">
+              S/ {{ (cantidad * productoSeleccionado.pre_unit) | number:'1.2-2' }}
+            </span>
+          </div>
+
+          <div class="resumen-item">
+            <span class="resumen-label">
+              <i class="pi pi-user"></i> Responsable:
+            </span>
+            <span class="resumen-value">{{ responsableNombre }}</span>
+          </div>
+
+          <div class="resumen-item col-span-2" *ngIf="observaciones">
+            <span class="resumen-label">
+              <i class="pi pi-file-edit"></i> Observaciones:
+            </span>
+            <span class="resumen-value">{{ observaciones }}</span>
+          </div>
+        </div>
+
+        <div class="mt-3 p-3 bg-black-50 border-round" *ngIf="cantidad > 0">
+          <div class="flex align-items-start gap-2">
+            <i class="pi pi-info-circle text-yellow-600 mt-1"></i>
+            <div class="text-sm text-700">
+              <strong class="text-yellow-800">Importante:</strong> 
+              Esta operación dará de baja {{ cantidad }} unidad(es) del producto 
+              <strong>{{ productoSeleccionado.codigo }}</strong> del inventario. 
+              El stock quedará en <strong>{{ (productoSeleccionado.stock ?? 0) - cantidad }}</strong> unidades.
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+
+    <!-- BOTONES DE ACCIÓN -->
+    <div class="col-12">
+      <p-card styleClass="actions-card">
+        <div class="flex justify-content-center gap-3">
+          <p-button
+            label="Cancelar"
+            icon="pi pi-times"
+            [outlined]="true"
+            severity="secondary"
+            styleClass="action-btn-cancel"
+            (onClick)="cancelar()"
+          ></p-button>
+
+          <p-button
+            label="Limpiar Formulario"
+            icon="pi pi-refresh"
+            [outlined]="true"
+            severity="warn"
+            styleClass="action-btn-reset"
+            (onClick)="limpiarFormulario()"
+            *ngIf="productoSeleccionado"
+          ></p-button>
+
+          <p-button
+            label="Registrar Merma"
+            icon="pi pi-check"
+            severity="danger"
+            styleClass="action-btn-submit"
+            (onClick)="registrar()"
+            [disabled]="!productoSeleccionado || !motivo || cantidad <= 0"
+            [loading]="loading()"
+          ></p-button>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <p-toast />
+</div>

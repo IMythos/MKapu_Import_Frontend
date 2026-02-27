@@ -9,7 +9,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { Router } from '@angular/router';
-import { AuthService } from '../../services/auth.service';  // ✅ auth/services
+import { AuthService } from '../../services/auth.service';  
 
 @Component({
   selector: 'app-login',

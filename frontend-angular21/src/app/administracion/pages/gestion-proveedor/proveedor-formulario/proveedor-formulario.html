@@ -1,0 +1,187 @@
+<!-- src/app/administracion/pages/proveedores/proveedor-formulario/proveedor-formulario.html -->
+
+<div class="p-2 surface-card border-1 border-300 border-round-xl shadow-2">
+  <form [formGroup]="proveedorForm" (ngSubmit)="guardar()" class="formgrid grid p-4">
+    
+    <!-- Header -->
+    <div class="col-12 mb-3">
+      <div class="flex align-items-center gap-3">
+        <span class="proveedores-title-icon">
+          <i [class]="iconoFormulario()"></i>
+        </span>
+        <h3 class="text-xl font-bold text-900 m-0">{{ tituloFormulario() }}</h3>
+      </div>
+    </div>
+
+    <!-- Información Básica -->
+    <div class="col-12 mb-3">
+      <h3 class="text-xl font-bold text-900 m-0 flex align-items-center gap-2">
+        <i class="pi pi-info-circle text-warning"></i>
+        Información Básica
+      </h3>
+    </div>
+
+    <div class="field col-12 md:col-6 mb-4">
+      <label for="razon_social" class="font-semibold text-900 mb-2 block">Razón Social *</label>
+      <input
+        pInputText
+        id="razon_social"
+        formControlName="razon_social"
+        class="w-full border-1 border-300"
+        placeholder="Ej: Distribuidora ABC S.A.C."
+      />
+      <small
+        class="text-red-500 block mt-2"
+        *ngIf="proveedorForm.get('razon_social')?.invalid && proveedorForm.get('razon_social')?.touched"
+      >
+        La razón social es requerida (mínimo 3 caracteres)
+      </small>
+    </div>
+
+    <div class="field col-12 md:col-6 mb-4">
+      <label for="ruc" class="font-semibold text-900 mb-2 block">RUC *</label>
+      <input
+        pInputText
+        id="ruc"
+        formControlName="ruc"
+        class="w-full border-1 border-300"
+        placeholder="Ej: 20123456789"
+        maxlength="11"
+      />
+      <small class="text-red-500 block mt-2" *ngIf="rucInvalido">
+        El RUC debe tener exactamente 11 dígitos
+      </small>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="border-top-1 border-300"></div>
+    </div>
+
+    <!-- Información de Contacto -->
+    <div class="col-12 mb-3">
+      <h3 class="text-xl font-bold text-900 m-0 flex align-items-center gap-2">
+        <i class="pi pi-phone text-warning"></i>
+        Información de Contacto
+      </h3>
+    </div>
+
+    <div class="field col-12 md:col-6 mb-4">
+      <label for="contacto" class="font-semibold text-900 mb-2 block">Nombre de Contacto</label>
+      <input
+        pInputText
+        id="contacto"
+        formControlName="contacto"
+        class="w-full border-1 border-300"
+        placeholder="Ej: Juan Pérez"
+      />
+    </div>
+
+    <div class="field col-12 md:col-6 mb-4">
+      <label for="telefono" class="font-semibold text-900 mb-2 block">Teléfono</label>
+      <input
+        pInputText
+        id="telefono"
+        formControlName="telefono"
+        class="w-full border-1 border-300"
+        placeholder="Ej: 987654321"
+        maxlength="15"
+      />
+      <small class="text-red-500 block mt-2" *ngIf="telefonoInvalido">
+        El teléfono debe tener entre 7 y 15 dígitos
+      </small>
+    </div>
+
+    <div class="field col-12 mb-4">
+      <label for="email" class="font-semibold text-900 mb-2 block">Email</label>
+      <input
+        pInputText
+        id="email"
+        formControlName="email"
+        type="email"
+        class="w-full border-1 border-300"
+        placeholder="Ej: contacto@proveedor.com"
+      />
+      <small class="text-red-500 block mt-2" *ngIf="emailInvalido">
+        El email no tiene un formato válido
+      </small>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="border-top-1 border-300"></div>
+    </div>
+
+    <!-- Dirección Fiscal -->
+    <div class="col-12 mb-3">
+      <h3 class="text-xl font-bold text-900 m-0 flex align-items-center gap-2">
+        <i class="pi pi-map-marker text-warning"></i>
+        Dirección Fiscal
+      </h3>
+    </div>
+
+    <div class="field col-12 mb-4">
+      <label for="dir_fiscal" class="font-semibold text-900 mb-2 block">Dirección Fiscal</label>
+      <textarea
+        id="dir_fiscal"
+        formControlName="dir_fiscal"
+        rows="3"
+        class="w-full border-1 border-300 p-3 border-round"
+        style="resize: vertical; font-family: inherit"
+        placeholder="Ej: Av. Los Olivos 123, Lima, Perú"
+      ></textarea>
+    </div>
+
+    <div class="col-12 mb-3">
+      <div class="border-top-1 border-300"></div>
+    </div>
+
+    <!-- Info Box Proveedor Original (solo edit mode) -->
+    <div class="field col-12 mb-4" *ngIf="isEditMode() && proveedorOriginal()">
+      <div class="surface-50 border-round p-3 border-1 border-300">
+        <div class="flex align-items-center gap-3">
+          <i class="pi pi-info-circle text-2xl text-warning"></i>
+          <div class="flex-1">
+            <p class="m-0 font-semibold text-900">
+              Editando proveedor: {{ proveedorOriginal()!.razon_social }}
+            </p>
+            <p class="m-0 text-sm text-600 mt-1">
+              RUC:
+              <span class="font-semibold text-warning">{{ proveedorOriginal()!.ruc }}</span> |
+              Estado:
+              <span [class]="proveedorOriginal()!.estado ? 'font-semibold text-green-600' : 'font-semibold text-red-600'">
+                {{ proveedorOriginal()!.estado ? 'Activo' : 'Inactivo' }}
+              </span>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="field col-12 flex gap-3 justify-content-end pt-3">
+      <p-button
+        type="button"
+        label="Cancelar"
+        severity="secondary"
+        [outlined]="true"
+        icon="pi pi-times"
+        styleClass="w-10rem"
+        (onClick)="volver()"
+        [disabled]="loading()"
+      >
+      </p-button>
+
+      <p-button
+        type="submit"
+        [label]="labelBotonGuardar()"
+        [icon]="iconoBotonGuardar()"
+        styleClass="proveedores-pill proveedores-pill-warning w-10rem"
+        [disabled]="!proveedorForm.valid || loading()"
+        [loading]="loading()"
+      >
+      </p-button>
+    </div>
+  </form>
+</div>
+
+<p-toast></p-toast>
+<p-confirmdialog [baseZIndex]="10000"></p-confirmdialog>

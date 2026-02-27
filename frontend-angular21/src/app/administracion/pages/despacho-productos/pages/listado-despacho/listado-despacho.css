@@ -1,25 +1,27 @@
-:host {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
+/* =====================================================
+   DESPACHO - ESTILOS
+   Sigue el mismo patrón visual que gestion-listado.css
+   ===================================================== */
+
+:host ::ng-deep {
+  .surface-50 {
+    border-radius: 1rem !important;
+  }
+
+  p-paginator .p-paginator-pages .p-paginator-page {
+    margin: 0 0.125rem;
+  }
+
+  .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
-.despacho-page {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.despacho-page > p-card {
-  display: block;
-  width: 100%;
-}
-
-:host ::ng-deep .despacho-page * {
-  box-sizing: border-box;
-}
+/* =====================================================
+   CABECERA
+   ===================================================== */
 
 .despacho-header-card .p-card-body {
   padding: 1rem 1.25rem;
@@ -31,276 +33,442 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #fde68a;
+  background: #f5c34d;
   color: #1f2937;
   font-size: 18px;
 }
 
 .despacho-kicker {
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #6b7280;
-  font-weight: 600;
   margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
 }
 
 .despacho-title {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: #111827;
-  margin: 0.2rem 0 0;
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
 }
+
+/* =====================================================
+   BOTONES PILL
+   ===================================================== */
 
 .despacho-pill {
-  border-radius: 999px;
+  border-radius: 9999px !important;
+  padding: 1.25rem 2.5rem !important;
+  font-size: 1.1rem !important;
   font-weight: 600;
-  padding: 0.35rem 1rem;
-  font-size: 0.75rem;
+  min-height: 56px !important;
+  box-shadow: 0 6px 12px #00000026 !important;
+  transition: all 0.2s;
 }
 
-.despacho-pill-danger {
-  background: #fee2e2;
-  color: #b91c1c;
-  border: 1px solid #fecaca;
+.despacho-pill-warning {
+  background: #F6AF33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
 }
 
-.despacho-filter-card .p-card-body {
-  padding: 1rem 1.25rem;
+.despacho-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #00000033 !important;
 }
 
-.despacho-search-label {
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+/* =====================================================
+   TABLA
+   ===================================================== */
+
+.despacho-table-nativa .p-datatable-thead > tr > th {
+  background: var(--surface-50) !important;
+  border-bottom: 2px solid var(--surface-border) !important;
+  color: var(--text-color) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  padding: 1rem 0.75rem !important;
 }
 
-.despacho-search-input .p-inputtext {
-  width: 100%;
+.despacho-table-nativa .p-datatable-tbody > tr > td {
+  border-bottom: 1px solid var(--surface-border-light) !important;
+  padding: 1rem 0.75rem !important;
 }
 
-.despacho-section-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  background: #e0f2fe;
-  color: #075985;
+:host ::ng-deep .despacho-table-hover .p-datatable-tbody > tr:hover {
+  background-color: #F6AF3326 !important;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
 }
 
-.despacho-table-scroll {
-  overflow-x: auto;
+:host ::ng-deep .despacho-table-hover .p-datatable-tbody > tr:hover > td {
+  background-color: transparent !important;
 }
 
-:host ::ng-deep .despacho-table .p-datatable-thead > tr > th {
-  text-transform: uppercase;
-  color: #475569;
-  background: transparent;
-  border-bottom: 1px solid #e2e8f0;
-}
+/* =====================================================
+   BOTONES ICONO (acciones de tabla)
+   ===================================================== */
 
-:host ::ng-deep .despacho-table .p-datatable-tbody > tr > td {
-  vertical-align: top;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.despacho-code {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.despacho-code-main {
-  font-weight: 700;
-  color: #334155;
-}
-
-.despacho-code-meta {
-  font-size: 0.75rem;
-  color: #9ca3af;
-}
-
-.despacho-producto {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.despacho-producto-nombre {
-  font-weight: 600;
-  color: #334155;
-}
-
-.despacho-producto-meta {
-  font-size: 0.75rem;
-  color: #6b7280;
-}
-
-.despacho-cantidad {
+.despacho-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 32px;
-  height: 28px;
-  border-radius: 999px;
-  background: #f3f4f6;
-  font-weight: 600;
-  color: #111827;
 }
 
-.despacho-comprobante,
-.despacho-dato,
-.despacho-hora {
-  color: #374151;
-  font-weight: 500;
+.despacho-icon-soft {
+  background: #ecfdf3;
+  color: #15803d;
 }
 
-.despacho-agencia {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.2rem 0.5rem;
-  border-radius: 999px;
-  background: #fef3c7;
-  color: #92400e;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.despacho-tag {
-  font-size: 0.75rem;
-}
-
-.despacho-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.despacho-icon-btn {
-  border-radius: 999px;
+.despacho-icon-soft:hover {
+  background: #d1fae5 !important;
 }
 
 .despacho-icon-warn {
-  color: #0f172a;
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.despacho-icon-warn:hover {
+  background: #ffedd5 !important;
 }
 
 .despacho-icon-danger {
+  background: #fee2e2;
   color: #b91c1c;
 }
 
-.despacho-empty {
-  text-align: center;
-  padding: 2rem 1rem;
+.despacho-icon-danger:hover:not(:disabled) {
+  background: #fecaca !important;
 }
 
-.despacho-empty-inner {
+/* =====================================================
+   RESPONSABLES
+   ===================================================== */
+
+.despacho-responsables-card {
+  background: var(--surface-50);
+  border: 1px solid var(--surface-border);
+  min-width: 240px;
+}
+
+.despacho-responsable-label {
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.despacho-responsable-label strong {
+  color: #1f2937;
+}
+
+/* =====================================================
+   CONTADORES
+   ===================================================== */
+
+.contadores-despacho {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.contador-card {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  align-items: center;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-right: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-.despacho-empty-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 14px;
-  background: #f3f4f6;
-  display: grid;
-  place-items: center;
-  color: #6b7280;
-  font-size: 1.4rem;
+.contador-card:last-child {
+  border-right: none;
 }
 
-.despacho-empty-title {
+.contador-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #F6AF33 0%, #e8a424 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.contador-card:hover::before {
+  transform: scaleX(1);
+}
+
+.contador-card:hover {
+  background: #fefce8;
+  box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.1);
+}
+
+.contador-card i {
+  font-size: 2.5rem;
+  transition: all 0.3s ease;
+}
+
+.contador-card:hover i {
+  transform: scale(1.1);
+}
+
+.contador-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.contador-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.contador-valor {
+  font-size: 1.75rem;
   font-weight: 700;
-  color: #111827;
+  color: #1f2937;
+  line-height: 1;
+  letter-spacing: -0.02em;
 }
 
-.despacho-empty-text {
-  color: #6b7280;
-  font-size: 0.85rem;
+.contador-detalle {
+  font-size: 0.75rem;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.contador-detalle i {
+  font-size: 0.75rem;
+}
+
+/* Colores por contador */
+.contadores-despacho .contador-card:nth-child(1) i { color: #42A5F5; }
+.contadores-despacho .contador-card:nth-child(1):hover i { color: #1E88E5; }
+.contadores-despacho .contador-card:nth-child(1) .contador-detalle { color: #42A5F5; }
+
+.contadores-despacho .contador-card:nth-child(2) i { color: #FFA726; }
+.contadores-despacho .contador-card:nth-child(2):hover i { color: #FB8C00; }
+.contadores-despacho .contador-card:nth-child(2) .contador-detalle { color: #FFA726; }
+
+.contadores-despacho .contador-card:nth-child(3) i { color: #66BB6A; }
+.contadores-despacho .contador-card:nth-child(3):hover i { color: #4CAF50; }
+.contadores-despacho .contador-card:nth-child(3) .contador-detalle { color: #66BB6A; }
+
+.contadores-despacho .contador-card:nth-child(4) i { color: #AB47BC; }
+.contadores-despacho .contador-card:nth-child(4):hover i { color: #9C27B0; }
+.contadores-despacho .contador-card:nth-child(4) .contador-detalle { color: #AB47BC; }
+
+/* =====================================================
+   DARK MODE
+   ===================================================== */
+
+:host-context(.app-dark) .despacho-title-icon {
+  background: #e8a424 !important;
+  color: #1f2937 !important;
 }
 
 :host-context(.app-dark) .despacho-kicker {
-  color: #94a3b8;
+  color: #94a3b8 !important;
 }
 
 :host-context(.app-dark) .despacho-title {
-  color: #f8fafc;
+  color: #f1f5f9 !important;
 }
 
-:host-context(.app-dark) .despacho-title-icon {
-  background: #3a2a12;
-  color: #f8fafc;
+:host-context(.app-dark) .despacho-pill-warning {
+  background: #e8a424 !important;
+  border: 2px solid #d69520 !important;
+  color: #1f2937 !important;
 }
 
-:host-context(.app-dark) .despacho-filter-card .p-card-body,
-:host-context(.app-dark) .despacho-header-card .p-card-body {
-  background: transparent;
+:host-context(.app-dark) .despacho-icon-soft {
+  background: #1a3d2b !important;
+  color: #4ade80 !important;
 }
 
-:host-context(.app-dark) .despacho-search-label {
-  color: #94a3b8;
+:host-context(.app-dark) .despacho-icon-soft:hover {
+  background: #22543d !important;
+  color: #86efac !important;
 }
 
-:host-context(.app-dark) .despacho-section-icon {
-  background: #0b2535;
-  color: #93c5fd;
+:host-context(.app-dark) .despacho-icon-warn {
+  background: #2a2218 !important;
+  color: #fbbf24 !important;
 }
 
-:host-context(.app-dark) .despacho-agencia {
-  background: #3a2a12;
-  color: #fcd34d;
+:host-context(.app-dark) .despacho-icon-warn:hover {
+  background: #3d2e1a !important;
+  color: #fcd34d !important;
 }
 
-:host-context(.app-dark) .despacho-cantidad {
-  background: #1f2937;
-  color: #e2e8f0;
+:host-context(.app-dark) .despacho-icon-danger {
+  background: #3d1f1f !important;
+  color: #f87171 !important;
 }
 
-:host-context(.app-dark) .despacho-comprobante,
-:host-context(.app-dark) .despacho-dato,
-:host-context(.app-dark) .despacho-hora,
-:host-context(.app-dark) .despacho-code-main,
-:host-context(.app-dark) .despacho-producto-nombre {
-  color: #e2e8f0;
+:host-context(.app-dark) .despacho-icon-danger:hover:not(:disabled) {
+  background: #4a2626 !important;
+  color: #fca5a5 !important;
 }
 
-:host-context(.app-dark) .despacho-code-meta,
-:host-context(.app-dark) .despacho-producto-meta,
-:host-context(.app-dark) .despacho-empty-text {
-  color: #94a3b8;
+:host-context(.app-dark) .despacho-responsables-card {
+  background: #27272a !important;
+  border-color: #3f3f46 !important;
 }
 
-:host-context(.app-dark) .despacho-empty-icon {
-  background: #111827;
-  color: #94a3b8;
+:host-context(.app-dark) .despacho-responsable-label {
+  color: #94a3b8 !important;
 }
 
-:host-context(.app-dark) .despacho-table .p-datatable-thead > tr > th {
-  color: #cbd5f5;
-  background: #0f172a;
-  border-bottom: 1px solid #1f2937;
+:host-context(.app-dark) .despacho-responsable-label strong {
+  color: #f1f5f9 !important;
 }
 
-:host-context(.app-dark) .despacho-table .p-datatable-tbody > tr > td {
-  border-bottom: 1px solid #1f2937;
+:host-context(.app-dark) :host ::ng-deep .despacho-table-hover .p-datatable-tbody > tr:hover {
+  background-color: #3d2e1a !important;
 }
 
-:host-context(.app-dark) :host ::ng-deep .despacho-table .p-datatable-tbody > tr > td,
-:host-context(.app-dark) :host ::ng-deep .despacho-table .p-datatable-thead > tr > th {
-  border-color: #1f2937;
+:host-context(.app-dark) .contadores-despacho {
+  background: #18181B;
 }
 
-:host-context(.app-dark) :host ::ng-deep .despacho-table .p-datatable-tbody > tr {
-  border-bottom: 1px solid #1f2937;
+:host-context(.app-dark) .contador-card {
+  background: #18181B;
+  border-right-color: #27272a;
+}
+
+:host-context(.app-dark) .contador-card:hover {
+  background: #27272a;
+  box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.2);
+}
+
+:host-context(.app-dark) .contador-label { color: #a1a1aa; }
+:host-context(.app-dark) .contador-valor { color: #ffffff; }
+
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(1) i { color: #FBBF24; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(1):hover i { color: #FCD34D; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(1) .contador-detalle { color: #FBBF24; }
+
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(2) i { color: #FBBF24; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(2):hover i { color: #FCD34D; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(2) .contador-detalle { color: #FBBF24; }
+
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(3) i { color: #FBBF24; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(3):hover i { color: #FCD34D; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(3) .contador-detalle { color: #FBBF24; }
+
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(4) i { color: #FBBF24; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(4):hover i { color: #FCD34D; }
+:host-context(.app-dark) .contadores-despacho .contador-card:nth-child(4) .contador-detalle { color: #FBBF24; }
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+
+@media (max-width: 1200px) {
+  .contadores-despacho {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .contador-card:nth-child(2) {
+    border-right: none;
+  }
+
+  .contador-card:nth-child(1),
+  .contador-card:nth-child(2) {
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  :host-context(.app-dark) .contador-card:nth-child(1),
+  :host-context(.app-dark) .contador-card:nth-child(2) {
+    border-bottom-color: #27272a;
+  }
 }
 
 @media (max-width: 768px) {
-  .despacho-title {
-    font-size: 1.2rem;
+  .contadores-despacho {
+    grid-template-columns: 1fr;
+  }
+
+  .contador-card {
+    border-right: none;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 1.25rem;
+  }
+
+  :host-context(.app-dark) .contador-card {
+    border-bottom-color: #27272a;
+  }
+
+  .contador-card:last-child {
+    border-bottom: none;
+  }
+
+  .contador-valor {
+    font-size: 1.5rem;
+  }
+
+  .contador-card i {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .contador-card {
+    padding: 1rem;
+  }
+
+  .contador-label {
+    font-size: 0.6rem;
+  }
+
+  .contador-valor {
+    font-size: 1.25rem;
+  }
+
+  .contador-card i {
+    font-size: 1.65rem;
+  }
+
+  .contador-detalle {
+    font-size: 0.65rem;
+  }
+}
+
+@media (min-width: 1201px) and (max-width: 1600px) {
+  .contador-label {
+    font-size: 0.68rem;
+  }
+
+  .contador-valor {
+    font-size: 1.5rem;
+  }
+
+  .contador-card i {
+    font-size: 2.1rem;
   }
 }

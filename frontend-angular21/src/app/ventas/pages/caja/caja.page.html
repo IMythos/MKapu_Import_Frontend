@@ -1,0 +1,203 @@
+<p-confirmDialog />
+
+<!-- ── HEADER CARD ── -->
+<div class="p-2">
+  <p-card class="ventas-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="ventas-title-icon">
+          <i class="pi pi-wallet"></i>
+        </span>
+        <div>
+          <p class="ventas-kicker mb-0">VENTAS · ESTADO CAJA</p>
+          <h2 class="ventas-title mb-0">CAJA CHICA</h2>
+        </div>
+      </div>
+      @if (caja()) {
+        <p-button
+          label="Cerrar Caja"
+          icon="pi pi-lock"
+          severity="danger"
+          [loading]="loading()"
+          (onClick)="confirmarCierre()"
+        />
+      }
+    </div>
+  </p-card>
+</div>
+
+<!-- ── ESTADÍSTICAS ── -->
+<div class="p-2">
+  <div class="ventas-header-bordered mb-4">
+    @if (loading()) {
+      <div class="seccion-estadisticas">
+        <div class="estadistica-card"><p-skeleton height="60px" /></div>
+        <div class="estadistica-card"><p-skeleton height="60px" /></div>
+        <div class="estadistica-card"><p-skeleton height="60px" /></div>
+        <div class="estadistica-card"><p-skeleton height="60px" /></div>
+      </div>
+    } @else if (caja()) {
+      <div class="seccion-estadisticas">
+
+        <div class="estadistica-card">
+          <i class="pi pi-hashtag"></i>
+          <div>
+            <span class="estadistica-label">ID Sesión</span>
+            <span class="estadistica-valor mono">{{ caja().id_caja }}</span>
+          </div>
+        </div>
+
+        <div class="estadistica-card">
+          <i class="pi pi-clock"></i>
+          <div>
+            <span class="estadistica-label">Tiempo abierta</span>
+            <span class="estadistica-valor">{{ tiempoAbierta() ?? '—' }}</span>
+          </div>
+        </div>
+
+        <div class="estadistica-card">
+          <i class="pi pi-calendar"></i>
+          <div>
+            <span class="estadistica-label">Fecha apertura</span>
+            <span class="estadistica-valor fecha">
+              {{ caja().fec_apertura | date:'dd/MM/yy HH:mm' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="estadistica-card">
+          <i class="pi pi-dollar"></i>
+          <div>
+            <span class="estadistica-label">Monto inicial</span>
+            <span class="estadistica-valor">S/ {{ caja().monto_inicial ?? '—' }}</span>
+          </div>
+        </div>
+
+      </div>
+    } @else {
+      <!-- Caja cerrada: stats vacías -->
+      <div class="seccion-estadisticas">
+        <div class="estadistica-card">
+          <i class="pi pi-shopping-cart"></i>
+          <div>
+            <span class="estadistica-label">Ventas del día</span>
+            <span class="estadistica-valor">{{ resumen()?.totalVentas ?? '—' }}</span>
+          </div>
+        </div>
+        <div class="estadistica-card">
+          <i class="pi pi-money-bill"></i>
+          <div>
+            <span class="estadistica-label">Total ingresado</span>
+            <span class="estadistica-valor">
+              S/ {{ resumen()?.totalMonto ? (resumen().totalMonto | number:'1.2-2') : '—' }}
+            </span>
+          </div>
+        </div>
+        <div class="estadistica-card">
+          <i class="pi pi-chart-line"></i>
+          <div>
+            <span class="estadistica-label">Ticket promedio</span>
+            <span class="estadistica-valor">
+              S/ {{ resumen()?.ticketPromedio ? (resumen().ticketPromedio | number:'1.2-2') : '—' }}
+            </span>
+          </div>
+        </div>
+        <div class="estadistica-card">
+          <i class="pi pi-lock"></i>
+          <div>
+            <span class="estadistica-label">Estado</span>
+            <span class="estadistica-valor cerrada">SIN SESIÓN</span>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     CAJA ABIERTA — Resumen del día
+══════════════════════════════ -->
+@if (caja() && !loading()) {
+  <div class="p-2">
+    <p-card class="tarjeta-principal">
+      <div class="seccion-tabla">
+        <div class="tabla-header">
+          <h3><i class="pi pi-chart-bar"></i> Resumen del día</h3>
+        </div>
+
+        @if (resumen()) {
+          <div class="resumen-grid">
+            <div class="resumen-card">
+              <i class="pi pi-shopping-cart resumen-icon ventas"></i>
+              <div>
+                <span class="estadistica-label">Ventas realizadas</span>
+                <span class="resumen-valor">{{ resumen().totalVentas }}</span>
+              </div>
+            </div>
+            <div class="resumen-card">
+              <i class="pi pi-money-bill resumen-icon ingresos"></i>
+              <div>
+                <span class="estadistica-label">Total ingresado</span>
+                <span class="resumen-valor">S/ {{ resumen().totalMonto | number:'1.2-2' }}</span>
+              </div>
+            </div>
+            <div class="resumen-card">
+              <i class="pi pi-chart-line resumen-icon promedio"></i>
+              <div>
+                <span class="estadistica-label">Ticket promedio</span>
+                <span class="resumen-valor">S/ {{ resumen().ticketPromedio | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+        } @else {
+          <div class="mensaje-vacio">
+            <i class="pi pi-inbox"></i>
+            <p>Sin movimientos registrados hoy</p>
+          </div>
+        }
+      </div>
+    </p-card>
+  </div>
+}
+
+<!-- ══════════════════════════════
+     CAJA CERRADA — Formulario apertura
+══════════════════════════════ -->
+@if (!caja() && !loading()) {
+  <div class="p-2">
+    <div class="filtros-container mb-4">
+      <div class="seccion-filtros">
+        <h3><i class="pi pi-unlock"></i> Abrir nueva sesión de caja</h3>
+        <div class="apertura-form">
+          <div class="filtro-item">
+            <label>Monto inicial (S/)</label>
+            <p-inputNumber
+              inputId="monto"
+              [ngModel]="montoInicial()"
+              (ngModelChange)="montoInicial.set($event)"
+              mode="currency"
+              currency="PEN"
+              locale="es-PE"
+              [min]="0"
+              [disabled]="loading()"
+              placeholder="0.00"
+              styleClass="apertura-input"
+            />
+          </div>
+          <div class="filtro-item filtro-boton-abrir">
+            <label>&nbsp;</label>
+            <p-button
+              label="Abrir Caja"
+              icon="pi pi-unlock"
+              severity="success"
+              styleClass="btn-abrir-caja"
+              [disabled]="!canOpen()"
+              [loading]="loading()"
+              (onClick)="abrirCaja()"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,456 @@
+:host {
+  display: block;
+}
+
+.sedes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sedes-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.sedes-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.sedes-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.sedes-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sedes-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sedes-search-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.sedes-filter-actions {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sedes-pill {
+  border-radius: 999px;
+  padding: 0.35rem 1rem;
+  font-size: 0.75rem;
+}
+
+.sedes-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sedes-section-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(245, 195, 77, 0.12);
+  color: #f5c34d;
+  border: 1px solid rgba(245, 195, 77, 0.2);
+  font-size: 14px;
+}
+
+/* ── Tabla — igual que clientes (clases directas) ─── */
+.sedes-table .p-datatable-thead > tr > th {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  background: #111827;
+  border-color: rgba(255,255,255,0.06);
+}
+
+.sedes-table .p-datatable-tbody > tr > td {
+  padding: 0.75rem 1rem;
+  color: #cbd5e1;
+  border-color: rgba(255,255,255,0.04);
+  background: #111827;
+}
+
+.sedes-table .p-datatable-tbody > tr:hover > td {
+  background: rgba(245, 195, 77, 0.04) !important;
+}
+
+.sedes-table .p-paginator {
+  background: #111827;
+  border-color: rgba(255,255,255,0.06);
+  color: #94a3b8;
+}
+
+/* ── Dark mode ───────────────────────────── */
+:host-context(.app-dark) .sedes-kicker { color: #94a3b8; }
+:host-context(.app-dark) .sedes-title  { color: #f8fafc; }
+
+/* ── Empty state ─────────────────────────── */
+.sedes-empty-state {
+  border: 1px dashed rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  background: rgba(255,255,255,0.01);
+  color: #9aa0a6;
+}
+
+.sedes-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: #94a3b8;
+}
+
+.sedes-empty-title {
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.sedes-empty-subtitle {
+  font-size: 0.85rem;
+  max-width: 360px;
+  color: #9aa0a6;
+}
+
+/* ── Autocomplete panel ──────────────────── */
+:host ::ng-deep .p-autocomplete-panel {
+  z-index: 2500 !important;
+  background: rgba(17, 24, 39, 0.98) !important;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+:host ::ng-deep .p-autocomplete-item {
+  color: #e6e6e6 !important;
+  padding: 0.6rem 0.8rem;
+}
+
+:host ::ng-deep .sedes-search-input:focus-within {
+  box-shadow: 0 0 0 2px rgba(247, 208, 83, 0.15);
+  border-color: rgba(247, 208, 83, 0.9) !important;
+}
+
+/* ── Select filtro ───────────────────────── */
+:host {
+  --sedes-filter-height: 42px;
+}
+
+:host ::ng-deep .sedes-filter-select {
+  display: inline-flex;
+  height: var(--sedes-filter-height);
+  min-width: 140px;
+}
+
+:host ::ng-deep .sedes-filter-select .p-select {
+  height: var(--sedes-filter-height);
+  border-radius: 8px !important;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  background: rgba(17, 24, 39, 0.2) !important;
+}
+
+:host ::ng-deep .sedes-filter-select .p-select-label {
+  height: var(--sedes-filter-height);
+  line-height: calc(var(--sedes-filter-height) - 2px);
+  padding: 0 0.75rem !important;
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+:host ::ng-deep .sedes-filter-select .p-select-trigger {
+  height: var(--sedes-filter-height);
+  width: 2.5rem;
+  border-radius: 0 8px 8px 0 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ============================================
+   ALMACÉN DETAIL MODAL
+   ============================================ */
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 0 !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+:host ::ng-deep .p-dialog .p-dialog-header {
+  display: none !important;
+}
+:host ::ng-deep .p-dialog {
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.6) !important;
+}
+
+/* ── Contenedor principal ─────────────────── */
+.almacen-detail-modal {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Banner superior ─────────────────────── */
+.adm-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  position: relative;
+}
+
+.adm-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  flex-shrink: 0;
+}
+
+.adm-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-kicker {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  margin-bottom: 0.2rem;
+}
+
+.adm-nombre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #64748b;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.adm-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+/* ── Fila de código ────────────────────────── */
+.adm-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.adm-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  text-transform: uppercase;
+}
+
+.adm-code-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.adm-status-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.adm-status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.adm-status--inactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.adm-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Info grid ────────────────────────────── */
+.adm-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0.5rem 0;
+}
+
+.adm-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+
+.adm-info-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.adm-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.adm-info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.04);
+  color: #64748b;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.adm-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.adm-info-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.adm-info-value {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  word-break: break-word;
+}
+
+/* ── Footer ───────────────────────────────── */
+.adm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+:host ::ng-deep .adm-btn-edit.p-button {
+  background: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: #111827 !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .adm-btn-edit.p-button:hover {
+  background: #d97706 !important;
+}
+
+:host ::ng-deep .adm-btn-close.p-button {
+  border-radius: 8px;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #94a3b8 !important;
+}
+
+:host ::ng-deep .adm-btn-close.p-button:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+

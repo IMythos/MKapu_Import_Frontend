@@ -1,5 +1,5 @@
 <div class="p-2">
-  <p-card styleClass="ventas-header-card mb-4 ventas-header-bordered">
+  <p-card class="ventas-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="ventas-title-icon">
@@ -30,7 +30,7 @@
         <i class="pi pi-chart-line"></i>
         <div>
           <span class="estadistica-label">Total Ventas</span>
-          <span class="estadistica-valor">S/. {{ totalVentas | number: '1.2-2' }}</span>
+          <span class="estadistica-valor">S/. {{ kpiTotalVentas() | number: '1.2-2' }}</span>
         </div>
       </div>
 
@@ -38,7 +38,7 @@
         <i class="pi pi-shopping-cart"></i>
         <div>
           <span class="estadistica-label">Cantidad de Ventas</span>
-          <span class="estadistica-valor">{{ numeroVentas }}</span>
+          <span class="estadistica-valor">{{ kpiNumeroVentas() }}</span>
         </div>
       </div>
 
@@ -46,7 +46,7 @@
         <i class="pi pi-file"></i>
         <div>
           <span class="estadistica-label">Boletas</span>
-          <span class="estadistica-valor">{{ totalBoletas }}</span>
+          <span class="estadistica-valor">{{ kpiTotalBoletas() }}</span>
         </div>
       </div>
 
@@ -54,7 +54,7 @@
         <i class="pi pi-file-edit"></i>
         <div>
           <span class="estadistica-label">Facturas</span>
-          <span class="estadistica-valor">{{ totalFacturas }}</span>
+          <span class="estadistica-valor">{{ kpiTotalFacturas() }}</span>
         </div>
       </div>
     </div>
@@ -70,8 +70,9 @@
         <div class="filtro-item filtro-cliente-50">
           <label>Cliente (DNI/RUC)</label>
           <p-autocomplete
-            [(ngModel)]="filtros.busqueda"
-            [suggestions]="sugerenciasBusqueda"
+            [ngModel]="filtros().busqueda"
+            (ngModelChange)="actualizarFiltroBusqueda($event)"
+            [suggestions]="sugerenciasBusqueda()"
             (completeMethod)="buscarSugerencias($event)"
             (onSelect)="aplicarFiltros()"
             (onClear)="aplicarFiltros()"
@@ -79,36 +80,35 @@
             [dropdown]="true"
             [showClear]="true"
             styleClass="w-full"
-          >
-          </p-autocomplete>
+          />
         </div>
 
         <div class="filtro-item filtro-grupo-fechas">
           <label>Rango de Fechas</label>
           <div class="fechas-con-guion">
             <p-datepicker
-              [(ngModel)]="filtros.fechaInicio"
+              [ngModel]="filtros().fechaInicio"
+              (ngModelChange)="actualizarFiltroFechaInicio($event)"
               dateFormat="dd/mm/yy"
               placeholder="Fecha Inicio"
               (onSelect)="aplicarFiltros()"
               (onClear)="aplicarFiltros()"
               [showClear]="true"
               [showIcon]="true"
-            >
-            </p-datepicker>
+            />
 
             <span class="fecha-separador">-</span>
 
             <p-datepicker
-              [(ngModel)]="filtros.fechaFin"
+              [ngModel]="filtros().fechaFin"
+              (ngModelChange)="actualizarFiltroFechaFin($event)"
               dateFormat="dd/mm/yy"
               placeholder="Fecha Fin"
               (onSelect)="aplicarFiltros()"
               (onClear)="aplicarFiltros()"
               [showClear]="true"
               [showIcon]="true"
-            >
-            </p-datepicker>
+            />
           </div>
         </div>
       </div>
@@ -117,41 +117,44 @@
         <div class="filtro-item filtro-compacto">
           <label>Tipo</label>
           <p-select
-            [(ngModel)]="filtros.tipoComprobante"
-            [options]="tiposComprobante"
+            [ngModel]="filtros().tipoComprobante"
+            (ngModelChange)="actualizarFiltroTipoComprobante($event)"
+            [options]="tiposComprobante()"
             placeholder="Todos"
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
-          >
-          </p-select>
+          />
         </div>
+
         <div class="filtro-item filtro-compacto">
           <label>Tipo de Pago</label>
           <p-select
-            [(ngModel)]="filtros.tipoPago"
-            [options]="tiposPago"
+            [ngModel]="filtros().tipoPago"
+            (ngModelChange)="actualizarFiltroTipoPago($event)"
+            [options]="tiposPago()"
             placeholder="Todos"
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
+            [showClear]="true"
             styleClass="w-full"
-          >
-          </p-select>
+          />
         </div>
+
         <div class="filtro-item filtro-compacto">
           <label>Estado</label>
           <p-select
-            [(ngModel)]="filtros.estado"
-            [options]="estadosComprobante"
+            [ngModel]="filtros().estado"
+            (ngModelChange)="actualizarFiltroEstado($event)"
+            [options]="estadosComprobante()"
             placeholder="Todos"
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
-          >
-          </p-select>
+          />
         </div>
 
         <div class="filtro-item filtro-boton-limpiar">
@@ -162,8 +165,7 @@
             (onClick)="limpiarFiltros()"
             severity="danger"
             styleClass="btn-limpiar-filtros"
-          >
-          </p-button>
+          />
         </div>
       </div>
     </div>
@@ -171,33 +173,37 @@
 </div>
 
 <div class="p-2">
-  <p-card styleClass="tarjeta-principal">
+  <p-card class="tarjeta-principal">
     <div class="seccion-tabla">
       <div class="tabla-header">
         <h3><i class="pi pi-list"></i> Listado de comprobantes</h3>
       </div>
 
       <p-table
-        [value]="comprobantesFiltrados"
+        [value]="comprobantes()"
+        [lazy]="true"
         [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[10, 25, 50, 100]"
-        [loading]="loading"
+        [rows]="currentLimit()"
+        [first]="firstRow()"
+        [totalRecords]="totalRecords()"
+        [loading]="loading()"
         [tableStyle]="{ 'min-width': '70rem' }"
         styleClass="p-datatable-striped"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-        [showCurrentPageReport]="true"
-        paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        (onLazyLoad)="onPageChange($event)"
       >
         <ng-template pTemplate="header">
           <tr>
             <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
             <th pSortableColumn="tipo_comprobante">Tipo <p-sortIcon field="tipo_comprobante" /></th>
             <th pSortableColumn="fec_emision">Fecha Emisión <p-sortIcon field="fec_emision" /></th>
-            <th pSortableColumn="cliente_nombre">Cliente</th>
-            <th pSortableColumn="cliente_doc">Documento</th>
+            <th>Cliente</th>
+            <th>Documento</th>
             <th pSortableColumn="tipo_pago">Tipo Pago <p-sortIcon field="tipo_pago" /></th>
-            <th pSortableColumn="responsable" class="text-right" style="min-width: 155px; width: 140px">
+            <th
+              pSortableColumn="responsable"
+              class="text-right"
+              style="min-width: 155px; width: 140px"
+            >
               Responsable <p-sortIcon field="responsable" />
             </th>
             <th pSortableColumn="total" class="text-right">Total <p-sortIcon field="total" /></th>
@@ -215,19 +221,18 @@
               <p-tag
                 [value]="getTipoComprobanteLabel(comprobante.tipo_comprobante)"
                 [severity]="comprobante.tipo_comprobante === '03' ? 'info' : 'warn'"
-              ></p-tag>
+              />
             </td>
             <td>{{ comprobante.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</td>
             <td>{{ comprobante.cliente_nombre }}</td>
             <td>{{ comprobante.cliente_doc }}</td>
-
             <td>
               <div class="tipo-pago-cell">
                 <p-tag
                   [value]="getTipoPagoLabel(comprobante.tipo_pago)"
                   [severity]="getSeverityTipoPago(comprobante.tipo_pago)"
                   styleClass="tipo-pago-tag"
-                ></p-tag>
+                />
               </div>
             </td>
             <td>
@@ -238,9 +243,9 @@
             </td>
             <td>
               <p-tag
-                [value]="getEstadoComprobante(comprobante)"
-                [severity]="getSeverityEstado(getEstadoComprobante(comprobante))"
-              ></p-tag>
+                [value]="comprobante.estadoSunat"
+                [severity]="getSeverityEstado(comprobante.estadoSunat)"
+              />
             </td>
             <td class="text-center">
               <div class="acciones-tabla">
@@ -252,7 +257,8 @@
                   severity="secondary"
                   pTooltip="Ver detalle"
                   tooltipPosition="top"
-                ></p-button>
+                  styleClass="ventas-icon-btn ventas-icon-soft"
+                />
                 <p-button
                   icon="pi pi-print"
                   (onClick)="imprimirComprobante(comprobante)"
@@ -261,17 +267,8 @@
                   severity="secondary"
                   pTooltip="Imprimir"
                   tooltipPosition="top"
-                ></p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  (onClick)="anularComprobante(comprobante)"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="danger"
-                  [disabled]="!comprobante.estado"
-                  pTooltip="Anular"
-                  tooltipPosition="top"
-                ></p-button>
+                  styleClass="ventas-icon-btn ventas-icon-warn"
+                />
               </div>
             </td>
           </tr>
@@ -287,10 +284,92 @@
             </td>
           </tr>
         </ng-template>
+
+        <ng-template pTemplate="paginatorleft">
+          <span class="p-paginator-current">
+            Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de
+            {{ totalRecords() }} registros
+          </span>
+        </ng-template>
+
+        <ng-template pTemplate="paginatorcenter">
+          <div class="paginator-navigation-group">
+            <p-button
+              icon="pi pi-angle-double-left"
+              [disabled]="isFirstPage()"
+              (onClick)="goToFirstPage()"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="p-paginator-element"
+              pTooltip="Primera página"
+              tooltipPosition="top"
+            />
+            <p-button
+              icon="pi pi-angle-left"
+              [disabled]="isFirstPage()"
+              (onClick)="goToPrevPage()"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="p-paginator-element"
+              pTooltip="Página anterior"
+              tooltipPosition="top"
+            />
+
+            <div class="p-paginator-pages">
+              <p-button
+                *ngFor="let page of getPageNumbers()"
+                [label]="page.toString()"
+                (onClick)="goToPage(page)"
+                [rounded]="true"
+                [text]="currentPage() !== page"
+                styleClass="p-paginator-page"
+                [class.p-paginator-page-selected]="currentPage() === page"
+              />
+            </div>
+
+            <p-button
+              icon="pi pi-angle-right"
+              [disabled]="isLastPage()"
+              (onClick)="goToNextPage()"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="p-paginator-element"
+              pTooltip="Página siguiente"
+              tooltipPosition="top"
+            />
+            <p-button
+              icon="pi pi-angle-double-right"
+              [disabled]="isLastPage()"
+              (onClick)="goToLastPage()"
+              [rounded]="true"
+              [text]="true"
+              severity="secondary"
+              styleClass="p-paginator-element"
+              pTooltip="Última página"
+              tooltipPosition="top"
+            />
+          </div>
+        </ng-template>
+
+        <ng-template pTemplate="paginatorright">
+          <p-select
+            [options]="rowsPerPageOptions"
+            [ngModel]="currentLimit()"
+            (ngModelChange)="onRowsPerPageChange($event)"
+            optionLabel="label"
+            optionValue="value"
+            [style]="{ width: '90px' }"
+            pTooltip="Registros por página"
+            tooltipPosition="top"
+          />
+        </ng-template>
       </p-table>
     </div>
   </p-card>
 
-  <p-toast></p-toast>
-  <p-confirmDialog></p-confirmDialog>
+  <p-toast />
+  <p-confirmDialog />
 </div>

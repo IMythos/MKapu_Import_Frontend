@@ -12,6 +12,7 @@ import { LOGISTICA_ROUTES } from './logistica/logistica.routes';
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: Login },
+
   {
     path: 'admin',
     component: Main,
@@ -20,16 +21,7 @@ export const routes: Routes = [
     data: { allowedRoles: [UserRole.ADMIN] },
     children: ADMIN_ROUTES,
   },
-  {
-    path: 'dashboard-admin',
-    component: Main,
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./administracion/pages/dashboard/dashboard').then((m) => m.Dashboard),
-      }
-    ]
-  },
+
   {
     path: 'almacen',
     component: Main,
@@ -37,6 +29,7 @@ export const routes: Routes = [
     data: { allowedRoles: [UserRole.ALMACEN] },
     children: ALMACEN_ROUTES,
   },
+
   {
     path: 'ventas',
     component: Main,
@@ -44,6 +37,7 @@ export const routes: Routes = [
     data: { allowedRoles: [UserRole.VENTAS] },
     children: VENTAS_ROUTES,
   },
+  
   {
     path: 'logistica',
     component: Main,

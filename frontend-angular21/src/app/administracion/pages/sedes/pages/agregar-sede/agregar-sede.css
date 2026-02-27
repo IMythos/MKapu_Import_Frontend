@@ -1,3 +1,7 @@
+:host {
+  display: block;
+}
+
 .agregar-sede-page {
   min-height: 100%;
   padding: 4.5rem 2.5rem;
@@ -8,6 +12,7 @@
 }
 
 .sedes-header-card {
+  margin-top: -3.75rem;
   margin-bottom: 1.5rem;
 }
 
@@ -97,12 +102,127 @@
   font-weight: 600;
 }
 
-@media (max-width: 640px) {
-  .agregar-sede-page {
-    padding: 1.5rem 1rem;
-  }
+/* -----------------------------
+   DARK MODE OVERRIDES (fixed)
+   ----------------------------- */
 
-  .sede-card-title {
-    font-size: 1.2rem;
-  }
+/* target sedes classes, not clientes */
+:host-context(.app-dark) .sedes-kicker {
+  color: #94a3b8;
+}
+:host-context(.app-dark) .sedes-title {
+  color: #f8fafc;
+}
+
+/* Dark variables used below */
+:host-context(.app-dark) {
+  --surface-card: #111214;
+  --surface-border: rgba(255,255,255,0.04);
+  --text: #e6e6e6;
+  --muted: #9aa0a6;
+  --input-bg: rgba(255,255,255,0.02);
+  --input-border: rgba(255,255,255,0.06);
+}
+
+/* Card background / border */
+:host-context(.app-dark) .sede-card,
+:host-context(.app-dark) .p-card {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text);
+  box-shadow: none;
+}
+
+/* Labels and section titles */
+:host-context(.app-dark) .sede-section-title,
+:host-context(.app-dark) .field-label {
+  color: var(--muted);
+}
+
+/* Inputs (PrimeNG) */
+:host ::ng-deep .form-grid .p-inputtext,
+:host ::ng-deep input.p-inputtext,
+:host ::ng-deep .p-inputnumber input {
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--input-border) !important;
+}
+
+/* Placeholder */
+:host ::ng-deep .p-inputtext::placeholder {
+  color: rgba(230,230,230,0.38) !important;
+}
+
+/* Select / Autocomplete / Dropdown */
+:host ::ng-deep .p-select,
+:host ::ng-deep .p-autocomplete,
+:host ::ng-deep .p-inputtext.p-autocomplete-input,
+:host ::ng-deep .p-dropdown {
+  background: var(--input-bg) !important;
+  color: var(--text) !important;
+  border-radius: 8px;
+  border: 1px solid var(--input-border) !important;
+}
+
+/* Panels and suggestion lists */
+:host ::ng-deep .p-autocomplete-panel,
+:host ::ng-deep .p-select-panel,
+:host ::ng-deep .p-dropdown-panel {
+  background: var(--surface-card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--surface-border) !important;
+  z-index: 2500 !important;
+}
+
+/* Items inside suggestions */
+:host ::ng-deep .p-autocomplete-item,
+:host ::ng-deep .p-dropdown-item {
+  color: var(--text) !important;
+}
+
+/* Buttons styling for dark */
+:host-context(.app-dark) ::ng-deep .sede-btn-primary,
+:host-context(.app-dark) ::ng-deep .p-button.sede-btn-primary {
+  background: #f1a92b !important;
+  color: #111 !important;
+  border-color: #d98d1b !important;
+}
+
+/* Card border subtle */
+:host-context(.app-dark) ::ng-deep .p-card {
+  border-radius: 14px;
+  border: 1px solid var(--surface-border);
+}
+
+/* Input focus — gold outline like clientes */
+:host ::ng-deep .form-grid .p-inputtext:focus,
+:host ::ng-deep .p-inputtext:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(241,169,43,0.12) !important;
+  border-color: rgba(241,169,43,0.9) !important;
+}
+
+:host {
+  --duplicate-toast-bg: #fff4cc;
+  --duplicate-toast-border: #f1c75b;
+  --duplicate-toast-text: #6a4b00;
+}
+
+:host-context(.app-dark) {
+  --duplicate-toast-bg: #3a2a08;
+  --duplicate-toast-border: #d6a734;
+  --duplicate-toast-text: #ffd980;
+}
+
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast {
+  background: var(--duplicate-toast-bg) !important;
+  border: 1px solid var(--duplicate-toast-border) !important;
+  color: var(--duplicate-toast-text) !important;
+}
+
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-summary,
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-detail,
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-icon-close,
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-message-icon {
+  color: var(--duplicate-toast-text) !important;
 }

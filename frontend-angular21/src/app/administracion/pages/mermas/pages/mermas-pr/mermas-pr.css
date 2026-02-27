@@ -1,0 +1,525 @@
+.clientes-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.clientes-header-card .p-card-body {
+    padding: 1rem 1.25rem;
+}
+
+.clientes-header-card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.clientes-title-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #f5c34d;
+    color: #1f2937;
+    font-size: 18px;
+}
+
+.clientes-kicker {
+    margin: 0;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.clientes-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+/* ===== BOTONES PRINCIPALES ===== */
+:host ::ng-deep .mermas-btn-primary {
+    background: #f1a92b !important;
+    border: 1px solid #d98d1b !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    padding: 0.65rem 1.25rem !important;
+    border-radius: 8px !important;
+}
+:host ::ng-deep .mermas-btn-primary:hover {
+    background: #d98d1b !important;
+}
+
+/* ===== TARJETAS DE ESTADÍSTICAS ===== */
+.mermas-metrics {
+    margin: 0.75rem 0 1rem;
+    gap: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    background: #ffffff;
+}
+.mermas-metrics > [class*='col-'] { padding: 0; }
+.mermas-metrics p-card { height: 100%; display: block; }
+.mermas-metrics p-card .p-card { height: 100%; }
+
+:host ::ng-deep .stat-card {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: #ffffff;
+    border-right: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+    border-radius: 0;
+}
+:host ::ng-deep .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 4px;
+    background: linear-gradient(90deg, #F6AF33 0%, #e8a424 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+:host ::ng-deep .stat-card:hover::before { transform: scaleX(1); }
+:host ::ng-deep .stat-card:hover {
+    background: #fefce8;
+    box-shadow: inset 0 -2px 8px rgba(246,175,51,0.1);
+}
+:host ::ng-deep .stat-card .p-card-body {
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.stat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1f2937;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+.stat-change {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+}
+.stat-icon {
+    font-size: 2.5rem;
+    color: #F6AF33;
+    transition: all 0.3s ease;
+}
+:host ::ng-deep .stat-card:hover .stat-icon {
+    transform: scale(1.1);
+    color: #e8a424;
+}
+.mermas-metrics > [class*='col-']:last-child :host ::ng-deep .stat-card,
+.mermas-metrics > [class*='col-']:last-child .stat-card { border-right: none; }
+
+/* ===== FILTROS ===== */
+:host ::ng-deep .filtros-card {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+:host ::ng-deep .filtros-card .p-card-body { padding: 1.25rem 1.5rem; }
+
+.filter-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+:host ::ng-deep .filtros-card .p-inputtext,
+:host ::ng-deep .filtros-card .p-dropdown {
+    width: 100%;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+}
+:host ::ng-deep .filtros-card .p-inputtext { padding: 0.65rem 1rem; font-size: 0.9rem; }
+:host ::ng-deep .filtros-card .p-inputtext:focus,
+:host ::ng-deep .filtros-card .p-dropdown:focus {
+    border-color: #f1a92b;
+    box-shadow: 0 0 0 3px rgba(241,169,43,0.1);
+}
+:host ::ng-deep .filtros-card .p-button-outlined {
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+    border-radius: 6px !important;
+}
+:host ::ng-deep .filtros-card .p-button-outlined:hover { background: #fee2e2 !important; }
+
+.filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    align-items: end;
+}
+.filtros-actions { display: flex; justify-content: flex-end; align-items: flex-end; }
+
+/* ===== TABS ===== */
+.tabs-container {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+:host ::ng-deep .tab-button {
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    padding: 0.6rem 1rem !important;
+}
+:host ::ng-deep .tab-button.tab-active {
+    background: #f1a92b !important;
+    border-color: #d98d1b !important;
+    color: #1a1a1a !important;
+}
+:host ::ng-deep .tab-button:not(.tab-active) {
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    background: white !important;
+}
+:host ::ng-deep .tab-button:not(.tab-active):hover {
+    background: #f9fafb !important;
+    border-color: #9ca3af !important;
+}
+
+/* ===== TABLA ===== */
+:host ::ng-deep .tabla-card {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+:host ::ng-deep .tabla-card .p-card-body { padding: 1.5rem; }
+
+.tabla-icon {
+    width: 36px; height: 36px;
+    display: grid; place-items: center;
+    border-radius: 6px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 16px;
+}
+.tabla-title { font-size: 0.95rem; font-weight: 700; color: #1f2937; margin: 0; }
+
+:host ::ng-deep .mermas-table .p-datatable-thead > tr > th {
+    background: #f8f9fa;
+    color: #6b7280;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr > td {
+    padding: 1.4rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.9rem;
+}
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr { transition: background-color 0.2s; }
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr:hover { background-color: #f9fafb; }
+:host ::ng-deep .mermas-table .p-datatable-emptymessage > td {
+    padding: 3rem 1rem !important;
+    text-align: center;
+}
+
+.codigo-producto {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #1f2937;
+}
+.fecha-producto { font-size: 0.7rem; color: #9ca3af; }
+.producto-info { display: flex; flex-direction: column; gap: 0.25rem; }
+.producto-nombre { font-weight: 600; font-size: 0.9rem; color: #1f2937; }
+.producto-responsable { font-size: 0.75rem; color: #9ca3af; }
+.cantidad-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #4b5563;
+}
+.codigo-remate { font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.85rem; color: #10b981; }
+.precio-remate { font-family: 'Courier New', monospace; font-weight: 700; font-size: 0.95rem; color: #059669; }
+
+:host ::ng-deep .action-btn { margin: 0 0.15rem; padding: 0.5rem !important; }
+
+/* ===== TAGS ===== */
+:host ::ng-deep .p-tag {
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+}
+:host ::ng-deep .p-tag.p-tag-danger { background: #fee2e2; color: #dc2626; }
+:host ::ng-deep .p-tag.p-tag-success { background: #d1fae5; color: #059669; }
+:host ::ng-deep .p-tag.p-tag-info { background: #dbeafe; color: #0369a1; }
+
+/* ===== TOOLTIPS ===== */
+:host ::ng-deep .p-tooltip .p-tooltip-text { font-size: 0.8rem; padding: 0.45rem 0.7rem; }
+
+/* ===== CARDS GENERAL ===== */
+:host ::ng-deep .p-card { box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* ===== INPUT ICON ===== */
+:host ::ng-deep .p-input-icon-left > i {
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+:host ::ng-deep .p-input-icon-left > .p-inputtext { padding-left: 2.5rem; }
+:host ::ng-deep .p-inputtext::placeholder { color: #9ca3af; font-style: italic; }
+
+/* ===== MODAL MERMA ===== */
+:host ::ng-deep .mermas-dialog .p-dialog-content {
+    padding: 0 !important;
+    border-radius: 16px;
+    overflow: hidden;
+}
+:host ::ng-deep .mermas-dialog .p-dialog-header { display: none !important; }
+:host ::ng-deep .mermas-dialog {
+    border-radius: 16px !important;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    box-shadow: 0 32px 64px rgba(0,0,0,0.6) !important;
+}
+
+.merma-detail-modal { display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; }
+
+.mdm-banner { display: flex; align-items: center; gap: 1rem; padding: 1.5rem 1.5rem 1.25rem; position: relative; }
+.mdm-banner-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    font-size: 1.25rem;
+    background: rgba(239,68,68,0.12);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+    flex-shrink: 0;
+}
+.mdm-banner-info { flex: 1; min-width: 0; }
+.mdm-kicker {
+    display: block;
+    font-size: 0.65rem; font-weight: 700;
+    letter-spacing: 0.15em; text-transform: uppercase;
+    color: #f87171; margin-bottom: 0.2rem;
+}
+.mdm-nombre { margin: 0; font-size: 1.05rem; font-weight: 700; color: #f1f5f9; }
+.mdm-close-btn {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.08);
+    background: rgba(255,255,255,0.04);
+    color: #64748b; cursor: pointer;
+    display: grid; place-items: center;
+    font-size: 0.75rem; transition: all 0.15s;
+}
+.mdm-close-btn:hover { background: rgba(255,255,255,0.1); color: #f1f5f9; }
+
+.mdm-code-row {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.85rem 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.mdm-code-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 0.25rem 0.65rem; border-radius: 999px;
+    background: rgba(239,68,68,0.1); color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2); text-transform: uppercase;
+}
+.mdm-cantidad-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 0.25rem 0.65rem; border-radius: 999px;
+    background: rgba(245,158,11,0.1); color: #f59e0b;
+    border: 1px solid rgba(245,158,11,0.2);
+}
+
+.mdm-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; padding: 0.5rem 0; }
+.mdm-info-item {
+    display: flex; align-items: flex-start; gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+}
+.mdm-info-item:hover { background: rgba(255,255,255,0.02); }
+.mdm-info-item--full { grid-column: 1 / -1; }
+.mdm-info-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: grid; place-items: center; font-size: 0.8rem;
+    background: rgba(255,255,255,0.04); color: #64748b;
+    flex-shrink: 0; margin-top: 0.1rem;
+}
+.mdm-info-content { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.mdm-info-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #64748b; }
+.mdm-info-value { font-size: 0.88rem; color: #cbd5e1; word-break: break-word; }
+
+.mdm-productos { padding: 0 0 0.5rem; }
+.mdm-productos-header {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.7rem; font-weight: 700;
+    letter-spacing: 0.1em; text-transform: uppercase;
+    color: #64748b;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.mdm-productos-count {
+    background: rgba(245,158,11,0.1); color: #f59e0b;
+    border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 999px; padding: 0.1rem 0.5rem;
+    font-size: 0.7rem; font-weight: 700;
+}
+
+.mdm-footer {
+    display: flex; align-items: center; justify-content: flex-end;
+    gap: 0.75rem; padding: 1rem 1.5rem;
+    background: rgba(255,255,255,0.02);
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+:host ::ng-deep .mdm-btn-close.p-button { border-radius: 8px; border-color: rgba(255,255,255,0.12) !important; color: #94a3b8 !important; }
+:host ::ng-deep .mdm-btn-close.p-button:hover { background: rgba(255,255,255,0.06) !important; }
+
+/* ===== FORM MODAL (campo label) ===== */
+.field-label {
+    display: block; font-size: 0.8rem; font-weight: 700;
+    margin-bottom: 0.5rem; color: #4b5563;
+    text-transform: uppercase; letter-spacing: 0.03em;
+}
+.required-asterisk { color: #dc3545; margin-left: 2px; }
+:host ::ng-deep .form-grid .p-inputtext,
+:host ::ng-deep .form-grid .p-dropdown { border-radius: 6px; border: 1px solid #d1d5db; }
+:host ::ng-deep .form-grid .p-inputtext,
+:host ::ng-deep .form-grid .p-inputnumber input { padding: 0.7rem 1rem; font-size: 0.9rem; }
+:host ::ng-deep .form-grid .p-inputtext:focus,
+:host ::ng-deep .form-grid .p-dropdown:focus,
+:host ::ng-deep .form-grid .p-inputnumber:focus-within {
+    border-color: #f1a92b;
+    box-shadow: 0 0 0 3px rgba(241,169,43,0.1);
+}
+
+/* ===== STATS GRID ===== */
+.stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; align-items: stretch; }
+.stat-text { display: flex; flex-direction: column; }
+
+/* ===== DARK MODE ===== */
+:host-context(.app-dark) .clientes-title { color: #f8fafc; }
+:host-context(.app-dark) .clientes-kicker { color: #a1a1aa; }
+:host-context(.app-dark) .clientes-title-icon { background: #F6AF33; color: #111827; }
+
+:host-context(.app-dark) .mermas-metrics { background: #18181B; box-shadow: 0 4px 12px rgba(0,0,0,0.35); }
+:host-context(.app-dark) :host ::ng-deep .stat-card { background: #18181B; border-right-color: #27272a; }
+:host-context(.app-dark) :host ::ng-deep .stat-card:hover { background: #27272a; box-shadow: inset 0 -2px 8px rgba(246,175,51,0.2); }
+:host-context(.app-dark) .stat-label { color: #a1a1aa; }
+:host-context(.app-dark) .stat-value { color: #ffffff; }
+:host-context(.app-dark) .stat-change { color: #94a3b8; }
+:host-context(.app-dark) .stat-icon { color: #F6AF33; }
+
+:host-context(.app-dark) :host ::ng-deep .clientes-header-card,
+:host-context(.app-dark) :host ::ng-deep .filtros-card,
+:host-context(.app-dark) :host ::ng-deep .tabla-card {
+    background: #18181B; border-color: #27272a;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+}
+:host-context(.app-dark) :host ::ng-deep .clientes-header-card .p-card-body,
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-card-body,
+:host-context(.app-dark) :host ::ng-deep .tabla-card .p-card-body { background: #18181B; }
+
+:host-context(.app-dark) .filter-label { color: #a1a1aa; }
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-inputtext,
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-dropdown { background: #09090b; border-color: #27272a; color: #f8fafc; }
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-inputtext::placeholder { color: #71717a; font-style: normal; }
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-inputtext:focus,
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-dropdown:focus { border-color: #F6AF33; box-shadow: 0 0 0 2px rgba(246,175,51,0.15); }
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-button-outlined { border-color: #ef4444 !important; color: #fecaca !important; }
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-button-outlined:hover { background: rgba(239,68,68,0.12) !important; }
+
+:host-context(.app-dark) :host ::ng-deep .tab-button { color: #e2e8f0 !important; border-color: #27272a !important; background: #18181B !important; }
+:host-context(.app-dark) :host ::ng-deep .tab-button:not(.tab-active):hover { background: #1f2937 !important; border-color: #3f3f46 !important; }
+:host-context(.app-dark) :host ::ng-deep .tab-button.tab-active { background: #F6AF33 !important; border-color: #e8a424 !important; color: #111827 !important; }
+
+:host-context(.app-dark) :host ::ng-deep .tabla-title { color: #f8fafc; }
+:host-context(.app-dark) :host ::ng-deep .tabla-icon { background: #111827; color: #F6AF33; }
+
+:host-context(.app-dark) :host ::ng-deep .mermas-table .p-datatable-thead > tr > th { background: #12161b; color: #cbd5f5; border-bottom-color: #2f3540; }
+:host-context(.app-dark) :host ::ng-deep .mermas-table .p-datatable-tbody > tr > td { color: #e2e8f0; border-bottom-color: #2f3540; }
+:host-context(.app-dark) :host ::ng-deep .mermas-table .p-datatable-tbody > tr:hover { background-color: #1f2937; }
+
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-danger { background: rgba(248,113,113,0.2); color: #fecaca; }
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-success { background: rgba(52,211,153,0.2); color: #86efac; }
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-info { background: rgba(56,189,248,0.2); color: #bae6fd; }
+
+:host-context(.app-dark) .codigo-producto,
+:host-context(.app-dark) .producto-nombre { color: #f8fafc; }
+:host-context(.app-dark) .fecha-producto,
+:host-context(.app-dark) .producto-responsable { color: #94a3b8; }
+:host-context(.app-dark) .cantidad-badge { background: #0f172a; color: #e2e8f0; }
+:host-context(.app-dark) .codigo-remate { color: #34d399; }
+:host-context(.app-dark) .precio-remate { color: #10b981; }
+
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-header,
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-content,
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-footer { background: #18181B; border-color: #27272a; }
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-title,
+:host-context(.app-dark) .field-label { color: #f8fafc; }
+
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-inputtext,
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-dropdown,
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-inputnumber input { background: #09090b; border-color: #27272a; color: #f8fafc; }
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-inputtext::placeholder { color: #71717a; }
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 1200px) {
+    .mermas-metrics > [class*='col-']:nth-child(1) .stat-card,
+    .mermas-metrics > [class*='col-']:nth-child(2) .stat-card { border-right: none; border-bottom: 2px solid #e5e7eb; }
+    :host-context(.app-dark) .mermas-metrics > [class*='col-']:nth-child(1) .stat-card,
+    :host-context(.app-dark) .mermas-metrics > [class*='col-']:nth-child(2) .stat-card { border-bottom-color: rgba(255,255,255,0.12); }
+    .filtros-grid { grid-template-columns: repeat(2, 1fr); }
+    .stats-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 768px) {
+    .mermas-metrics > [class*='col-'] .stat-card { border-right: none; border-bottom: 2px solid #e5e7eb; }
+    .mermas-metrics > [class*='col-']:last-child .stat-card { border-bottom: none; }
+    :host-context(.app-dark) .mermas-metrics > [class*='col-'] .stat-card { border-bottom-color: rgba(255,255,255,0.12); }
+    .stat-value { font-size: 1.5rem; }
+    .tabs-container { flex-direction: column; }
+    :host ::ng-deep .tab-button { width: 100%; justify-content: center; }
+    :host ::ng-deep .mermas-table { font-size: 0.85rem; }
+    .filtros-grid { grid-template-columns: 1fr; }
+}

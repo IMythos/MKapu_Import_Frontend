@@ -1,10 +1,12 @@
+// src/app/auth/services/auth.service.ts
+
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 import { UserRole } from '../../core/constants/roles.constants';
-import { User } from '../../core/interfaces/user.interface';
+import { User } from '../../core/interfaces/user.interface'; // ✅ Asegúrate que esté
 import { EmpleadosService } from '../../core/services/empleados.service';
 import {
   AuthInterface,
@@ -56,27 +58,27 @@ export class AuthService {
     return roleId;
   }
 
-  private transformUser(account: AuthAccountBackend) {
+  private transformUser(account: AuthAccountBackend): User {
     return {
       userId: account.usuario.id_usuario,
       username: account.username,
       email: account.email_emp,
       roleId: account.roles[0]?.id_rol,
       roleName: account.roles[0]?.nombre,
-      idSede: account.id_sede,
-      sedeNombre: account.sede_nombre,
-      permisos: account.permisos.map(p => p.nombre),
-      nombres: account.usuario.nombres,
-      apellidos: `${account.usuario.ape_pat} ${account.usuario.ape_mat}`
+      idSede: account.id_sede, // ✅
+      sedeNombre: account.sede_nombre, // ✅
+      permisos: account.permisos.map((p) => p.nombre),
+      nombres: account.usuario.nombres, // ✅
+      apellidos: `${account.usuario.ape_pat} ${account.usuario.ape_mat}`, // ✅
     };
   }
 
   private redirectByRole(roleId: UserRole): void {
     const routes: Record<UserRole, string> = {
-      [UserRole.ADMIN]: '/admin/dashboard',
-      [UserRole.VENTAS]: '/ventas/dashboard-ventas',
+      [UserRole.ADMIN]: '/admin/dashboard-admin',
+      [UserRole.VENTAS]: '/ventas/caja', 
       [UserRole.ALMACEN]: '/almacen/dashboard',
-      [UserRole.LOGISTICA]: 'logistica/dashboard'
+      [UserRole.LOGISTICA]: '/logistica/dashboard'
     };
 
     const route = routes[roleId];
@@ -84,28 +86,23 @@ export class AuthService {
   }
 
   login(username: string, password: string): Observable<AuthInterfaceResponse> {
-
     const loginData: AuthInterface = { username, password };
 
-    return this.http
-      .post<AuthInterfaceResponse>(`${this.api}/auth/auth/login`, loginData)
-      .pipe(
-        tap((response) => {
+    return this.http.post<AuthInterfaceResponse>(`${this.api}/auth/auth/login`, loginData).pipe(
+      tap((response) => {
+        const account = response.account;
+        const transformedUser = this.transformUser(account);
 
-          const account = response.account;
+        this.currentUser = transformedUser;
 
-          const transformedUser = this.transformUser(account);
+        localStorage.setItem('token', response.access_token);
+        localStorage.setItem('user', JSON.stringify(transformedUser));
 
-          this.currentUser = transformedUser;
+        this.empleadosService.sincronizarDesdeAuth();
 
-          localStorage.setItem('token', response.access_token);
-          localStorage.setItem('user', JSON.stringify(transformedUser));
-
-          this.empleadosService.sincronizarDesdeAuth();
-
-          this.redirectByRole(transformedUser.roleId);
-        })
-      );
+        this.redirectByRole(transformedUser.roleId);
+      }),
+    );
   }
 
   logout(): void {
@@ -130,7 +127,7 @@ export class AuthService {
       [UserRole.LOGISTICA]: 'logistica'
     };
 
-    return roleNames[this.currentUser.roleId] || null;
+    return roleNames[this.currentUser.roleId as UserRole] || null; // ✅ Cast
   }
 
   getCurrentUser(): User | null {

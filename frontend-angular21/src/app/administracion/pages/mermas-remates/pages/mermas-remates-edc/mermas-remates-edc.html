@@ -1,0 +1,215 @@
+<div class="edit-user-page">
+
+    <!-- HEADER -->
+    <p-card styleClass="edit-user-header-card mb-4">
+        <div class="edit-user-header-row">
+
+            <div class="edit-user-header-title">
+                <span class="edit-user-title-icon">
+                    <i class="pi pi-pencil"></i>
+                </span>
+                <div>
+                    <p class="edit-user-kicker">ALMACÉN · MERMAS / REMATES</p>
+                    <h2 class="edit-user-title">
+                        {{ modoEdicion ? 'Editar Producto' : 'Nuevo Producto' }}
+                    </h2>
+                </div>
+            </div>
+
+            <div class="edit-user-header-actions">
+                <p-button icon="pi pi-arrow-left" label="Volver" [outlined]="true" severity="secondary"
+                    (onClick)="cancelar()">
+                </p-button>
+            </div>
+
+        </div>
+    </p-card>
+
+
+    <!-- FORM CARD -->
+    <p-card styleClass="edit-user-form-card">
+
+        <div class="edit-user-section">
+
+            <!-- SECTION HEADER -->
+            <div class="edit-user-section-header">
+                <div class="edit-user-section-title">
+                    <i class="pi pi-box"></i>
+                    <h3>Datos del producto</h3>
+                </div>
+
+                <p-button class="edit-user-update-btn" icon="pi pi-check"
+                    [label]="modoEdicion ? 'Actualizar' : 'Guardar'" (onClick)="guardar()">
+                </p-button>
+            </div>
+
+
+            <!-- CONTENT GRID -->
+            <div class="edit-user-content">
+
+                <!-- FORM GRID -->
+                <div class="edit-user-grid">
+
+                    <!-- CÓDIGO -->
+                    <div class="edit-user-field-icon">
+                        <div class="edit-user-icon-lg">
+                            <i class="pi pi-hashtag"></i>
+                        </div>
+
+                        <div class="edit-user-field">
+                            <label>CÓDIGO</label>
+                            <input pInputText [(ngModel)]="producto.codigo" [disabled]="modoEdicion"
+                                placeholder="TRF-2026-0006" />
+                        </div>
+                    </div>
+
+
+                    <!-- NOMBRE -->
+                    <div class="edit-user-field-icon">
+                        <div class="edit-user-icon-lg">
+                            <i class="pi pi-tag"></i>
+                        </div>
+
+                        <div class="edit-user-field">
+                            <label>NOMBRE</label>
+                            <input pInputText [(ngModel)]="producto.nombre" placeholder="Smart TV LED 55" />
+                        </div>
+                    </div>
+
+
+                    <!-- CANTIDAD -->
+                    <div class="edit-user-field-icon">
+                        <div class="edit-user-icon-lg">
+                            <i class="pi pi-sort-numeric-up"></i>
+                        </div>
+
+                        <div class="edit-user-field">
+                            <label>CANTIDAD</label>
+                            <p-inputNumber [(ngModel)]="producto.cantidad" [min]="1" [showButtons]="true"
+                                buttonLayout="horizontal" incrementButtonIcon="pi pi-plus"
+                                decrementButtonIcon="pi pi-minus" [style]="{'width':'100%'}">
+                            </p-inputNumber>
+                        </div>
+                    </div>
+
+
+                    <!-- TIPO -->
+                    <div class="edit-user-field-icon">
+                        <div class="edit-user-icon-lg">
+                            <i class="pi pi-list"></i>
+                        </div>
+
+                        <div class="edit-user-field">
+                            <label>TIPO DE REGISTRO</label>
+                            <p-autoComplete [(ngModel)]="producto.tipo" [suggestions]="tiposFiltrados"
+                                optionLabel="label" optionValue="value" placeholder="Seleccione tipo..."
+                                styleClass="w-full" (completeMethod)="filtrarTipos($event)" (onSelect)="onTipoChange()">
+                            </p-autoComplete>
+                        </div>
+                    </div>
+
+
+                    <!-- CAMPOS REMATE -->
+                    <ng-container *ngIf="producto.tipo === 'remate'">
+
+                        <div class="edit-user-field-icon">
+                            <div class="edit-user-icon-lg">
+                                <i class="pi pi-ticket"></i>
+                            </div>
+
+                            <div class="edit-user-field">
+                                <label>CÓDIGO REMATE</label>
+                                <input pInputText [(ngModel)]="producto.codigoRemate" placeholder="RMT-2026-004" />
+                            </div>
+                        </div>
+
+
+                        <div class="edit-user-field-icon">
+                            <div class="edit-user-icon-lg">
+                                <i class="pi pi-dollar"></i>
+                            </div>
+
+                            <div class="edit-user-field">
+                                <label>PRECIO REMATE</label>
+                                <p-inputNumber [(ngModel)]="producto.precioRemate" mode="currency" currency="PEN"
+                                    locale="es-PE" [minFractionDigits]="2" [maxFractionDigits]="2"
+                                    [style]="{'width':'100%'}">
+                                </p-inputNumber>
+                            </div>
+                        </div>
+
+                    </ng-container>
+
+
+                    <!-- RESPONSABLE -->
+                    <div class="edit-user-field-icon edit-user-field-wide">
+                        <div class="edit-user-icon-lg">
+                            <i class="pi pi-user"></i>
+                        </div>
+
+                        <div class="edit-user-field">
+                            <label>RESPONSABLE</label>
+                            <input pInputText [(ngModel)]="producto.responsable" placeholder="Jefatura de almacén" />
+                        </div>
+                    </div>
+
+                </div>
+
+
+                <!-- ASIDE DERECHO -->
+                <div class="edit-user-aside">
+
+                    <div class="edit-user-aside-card">
+
+                        <div class="edit-user-aside-header">
+                            <div class="edit-user-aside-icon">
+                                <i class="pi pi-info-circle"></i>
+                            </div>
+                            <div>
+                                <p class="edit-user-aside-title">Resumen rápido</p>
+                                <span class="edit-user-aside-subtitle">
+                                    Verifica antes de guardar
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="edit-user-aside-row">
+                            <span>Nombre</span>
+                            <strong>{{ producto.nombre || 'Sin nombre' }}</strong>
+                        </div>
+
+                        <div class="edit-user-aside-row">
+                            <span>Cantidad</span>
+                            <strong>{{ producto.cantidad || 0 }}</strong>
+                        </div>
+
+                        <div class="edit-user-aside-row">
+                            <span>Tipo</span>
+                            <span class="edit-user-chip">
+                                {{ producto.tipo || '-' }}
+                            </span>
+                        </div>
+
+                        <div class="edit-user-aside-row">
+                            <span>Responsable</span>
+                            <strong>{{ producto.responsable || '-' }}</strong>
+                        </div>
+
+                        <div class="edit-user-aside-hint">
+                            <i class="pi pi-check-circle"></i>
+                            Los cambios se reflejan inmediatamente.
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </p-card>
+
+    <p-toast></p-toast>
+
+</div>

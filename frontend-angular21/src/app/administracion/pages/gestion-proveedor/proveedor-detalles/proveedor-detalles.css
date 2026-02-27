@@ -1,0 +1,323 @@
+/* src/app/administracion/pages/proveedores/proveedor-detalles/proveedor-detalles.css */
+
+:host ::ng-deep {
+  .surface-50 {
+    border-radius: 1rem !important;
+  }
+}
+
+.proveedores-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.proveedores-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.proveedores-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.proveedores-pill {
+  border-radius: 9999px !important;
+  padding: 1.25rem 2.5rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  min-height: 56px !important;
+  box-shadow: 0 6px 12px #00000026 !important;
+  transition: all 0.2s;
+}
+
+.proveedores-pill-danger {
+  background: transparent !important;
+  border: 3px solid #ef4444 !important;
+  color: #ef4444 !important;
+}
+
+.proveedores-pill-danger:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+
+.proveedores-pill-warning {
+  background: transparent !important;
+  border: 3px solid #F6AF33 !important;
+  color: #F6AF33 !important;
+}
+
+.proveedores-pill-warning:hover {
+  background: #F6AF33 !important;
+  color: #1f2937 !important;
+}
+
+.proveedores-pill-secondary {
+  background: #64748b !important;
+  border: 2px solid #475569 !important;
+  color: #ffffff !important;
+}
+
+.proveedores-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #00000033 !important;
+}
+
+.estadistica-box {
+  transition: all 0.3s ease;
+}
+
+.estadistica-promedio {
+  background: #eff6ff;
+  border: 2px solid #bfdbfe;
+}
+
+.estadistica-promedio .estadistica-label {
+  color: #1e40af;
+}
+
+.estadistica-promedio .estadistica-valor {
+  color: #1d4ed8;
+}
+
+.estadistica-promedio .estadistica-icono {
+  color: #3b82f6;
+}
+
+.estadistica-minimo {
+  background: #f0fdf4;
+  border: 2px solid #bbf7d0;
+}
+
+.estadistica-minimo .estadistica-label {
+  color: #15803d;
+}
+
+.estadistica-minimo .estadistica-valor {
+  color: #16a34a;
+}
+
+.estadistica-minimo .estadistica-icono {
+  color: #22c55e;
+}
+
+.estadistica-maximo {
+  background: #fef2f2;
+  border: 2px solid #fecaca;
+}
+
+.estadistica-maximo .estadistica-label {
+  color: #991b1b;
+}
+
+.estadistica-maximo .estadistica-valor {
+  color: #dc2626;
+}
+
+.estadistica-maximo .estadistica-icono {
+  color: #ef4444;
+}
+
+.estadistica-diferencia {
+  background: #faf5ff;
+  border: 2px solid #e9d5ff;
+}
+
+.estadistica-diferencia .estadistica-label {
+  color: #6b21a8;
+}
+
+.estadistica-diferencia .estadistica-valor {
+  color: #7c3aed;
+}
+
+.estadistica-diferencia .estadistica-icono {
+  color: #a855f7;
+}
+
+.truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* DARK MODE */
+
+:host-context(.app-dark) {
+  .estadistica-promedio {
+    background: #12263f !important;
+    border-color: #1d4ed8 !important;
+  }
+
+  .estadistica-promedio .estadistica-label {
+    color: #93c5fd !important;
+  }
+
+  .estadistica-promedio .estadistica-valor {
+    color: #bfdbfe !important;
+  }
+
+  .estadistica-promedio .estadistica-icono {
+    color: #60a5fa !important;
+  }
+
+  .estadistica-minimo {
+    background: #142a1f !important;
+    border-color: #16a34a !important;
+  }
+
+  .estadistica-minimo .estadistica-label {
+    color: #86efac !important;
+  }
+
+  .estadistica-minimo .estadistica-valor {
+    color: #bbf7d0 !important;
+  }
+
+  .estadistica-minimo .estadistica-icono {
+    color: #4ade80 !important;
+  }
+
+  .estadistica-maximo {
+    background: #3d1f1f !important;
+    border-color: #dc2626 !important;
+  }
+
+  .estadistica-maximo .estadistica-label {
+    color: #fca5a5 !important;
+  }
+
+  .estadistica-maximo .estadistica-valor {
+    color: #fecaca !important;
+  }
+
+  .estadistica-maximo .estadistica-icono {
+    color: #f87171 !important;
+  }
+
+  .estadistica-diferencia {
+    background: #1a1228 !important;
+    border-color: #6d28d9 !important;
+  }
+
+  .estadistica-diferencia .estadistica-label {
+    color: #d8b4fe !important;
+  }
+
+  .estadistica-diferencia .estadistica-valor {
+    color: #e9d5ff !important;
+  }
+
+  .estadistica-diferencia .estadistica-icono {
+    color: #c084fc !important;
+  }
+}
+
+:host-context(.app-dark) ::ng-deep .bg-blue-50 {
+  background: linear-gradient(135deg, #12223a 0%, #0d1828 100%) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-blue-600 {
+  color: #60a5fa !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-blue-700 {
+  color: #93c5fd !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-blue-200 {
+  border-color: #283a52 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-green-50 {
+  background: linear-gradient(135deg, #152a1f 0%, #101f15 100%) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-green-600 {
+  color: #4ade80 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-green-700 {
+  color: #86efac !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-green-200 {
+  border-color: #284a2a !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-orange-50 {
+  background: linear-gradient(135deg, #2a1e12 0%, #1f150d 100%) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-orange-600 {
+  color: #fb923c !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-orange-700 {
+  color: #fdba74 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .border-orange-200 {
+  border-color: #4a3528 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .bg-primary-50 {
+  background: linear-gradient(135deg, #12223a 0%, #0d1828 100%) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-primary {
+  color: #60a5fa !important;
+}
+
+:host-context(.app-dark) .proveedores-title-icon {
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+:host-context(.app-dark) .proveedores-kicker {
+  color: #94a3b8 !important;
+}
+
+:host-context(.app-dark) .proveedores-title {
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-900 {
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-700 {
+  color: #cbd5e1 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .text-600 {
+  color: #94a3b8 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .surface-100 {
+  background: #1a1a1a !important;
+}
+
+@media (max-width: 768px) {
+  .proveedores-pill {
+    padding: 1rem 1.5rem !important;
+    font-size: 1rem !important;
+    min-height: 48px !important;
+  }
+
+  .truncate {
+    max-width: 150px;
+  }
+}

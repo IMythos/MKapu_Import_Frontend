@@ -8,8 +8,8 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #F5C34D;
-  color: #1F2937;
+  background: #f5c34d;
+  color: #1f2937;
   font-size: 18px;
 }
 
@@ -56,7 +56,7 @@
 :host ::ng-deep .ventas-pill:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
-  background-color: #F6AF33;
+  background-color: #f6af33;
 }
 
 :host ::ng-deep .ventas-pill:disabled {
@@ -65,7 +65,7 @@
 }
 
 :host ::ng-deep .ventas-pill-warning {
-  background: #F6AF33 !important;
+  background: #f6af33 !important;
   color: #1f2937 !important;
 }
 
@@ -111,7 +111,7 @@
   left: 0;
   width: 100%;
   height: 4px;
-  background: linear-gradient(90deg, #F6AF33 0%, #e8a424 100%);
+  background: linear-gradient(90deg, #f6af33 0%, #e8a424 100%);
   transform: scaleX(0);
   transform-origin: left;
   transition: transform 0.3s ease;
@@ -128,7 +128,7 @@
 
 .estadistica-card i {
   font-size: 2.5rem;
-  color: #F6AF33;
+  color: #f6af33;
   transition: all 0.3s ease;
 }
 
@@ -181,7 +181,7 @@
 }
 
 .seccion-filtros h3 i {
-  color: #F6AF33;
+  color: #f6af33;
   font-size: 1.1rem;
 }
 
@@ -297,11 +297,11 @@
 }
 
 :host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input:hover {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
 }
 
 :host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input:focus {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
   box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
   outline: none !important;
 }
@@ -332,11 +332,11 @@
 }
 
 :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext:hover {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
 }
 
 :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext:focus {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
   box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
   outline: none !important;
 }
@@ -390,12 +390,12 @@
 
 :host ::ng-deep .filtros-linea-2 .p-select:hover,
 :host ::ng-deep .filtros-linea-2 .p-inputtext:hover {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
 }
 
 :host ::ng-deep .filtros-linea-2 .p-select:focus,
 :host ::ng-deep .filtros-linea-2 .p-inputtext:focus {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
   box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
   outline: none !important;
 }
@@ -474,19 +474,19 @@
 }
 
 .tipo-pago-cell i.pi-money-bill {
-  color: #10B981;
+  color: #10b981;
 }
 
 .tipo-pago-cell i.pi-credit-card {
-  color: #3B82F6;
+  color: #3b82f6;
 }
 
 .tipo-pago-cell i.pi-mobile {
-  color: #F59E0B;
+  color: #f59e0b;
 }
 
 .tipo-pago-cell i.pi-wallet {
-  color: #6B7280;
+  color: #6b7280;
 }
 
 .acciones-tabla {
@@ -565,22 +565,45 @@
   cursor: not-allowed;
 }
 
-:host ::ng-deep .p-paginator {
+.paginator-navigation-group {
   display: flex !important;
-  flex-wrap: nowrap !important;
   align-items: center !important;
-  justify-content: space-between !important;
+  gap: 0.5rem !important;
+  justify-content: center !important;
+}
+
+.paginator-navigation-group .p-paginator-pages {
+  display: flex !important;
+  gap: 0.25rem !important;
+}
+
+:host ::ng-deep .p-paginator {
+  align-items: center !important;
   padding: 1rem 1.25rem !important;
   background: #ffffff !important;
   border-top: 1px solid #e5e7eb !important;
   border-radius: 0 0 10px 10px !important;
-  gap: 1rem !important;
-  position: relative !important;
+}
+
+:host ::ng-deep .p-paginator-left {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+}
+
+:host ::ng-deep .p-paginator-center {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:host ::ng-deep .p-paginator-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
 }
 
 :host ::ng-deep .p-paginator .p-paginator-current {
-  flex: 0 0 auto !important;
-  order: 1 !important;
   margin: 0 !important;
   font-size: 0.875rem !important;
   color: #64748b !important;
@@ -588,144 +611,48 @@
   white-space: nowrap !important;
 }
 
-:host ::ng-deep .p-paginator .p-paginator-first {
-  order: 2 !important;
-  margin: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-400%) !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-prev {
-  order: 3 !important;
-  margin: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-250%) !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-pages {
-  order: 4 !important;
-  margin: 0 !important;
-  display: inline-flex !important;
-  flex-wrap: nowrap !important;
-  gap: 0.75rem !important;
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(-50%) !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-next {
-  order: 5 !important;
-  margin: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(150%) !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-last {
-  order: 6 !important;
-  margin: 0 !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  left: 50% !important;
-  transform: translateX(300%) !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-rpp-dropdown {
-  flex: 0 0 auto !important;
-  order: 7 !important;
-  margin-left: auto !important;
+:host ::ng-deep .p-paginator .p-paginator-element {
+  min-width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 6px !important;
+  background: transparent !important;
   display: flex !important;
-  justify-content: flex-end !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
 }
 
 :host ::ng-deep .p-paginator .p-paginator-page {
   min-width: 2.5rem !important;
   height: 2.5rem !important;
   border-radius: 6px !important;
-  transition: all 0.2s ease !important;
-  display: inline-flex !important;
+  background: transparent !important;
+  border: none !important;
+  display: flex !important;
   align-items: center !important;
   justify-content: center !important;
-  flex-shrink: 0 !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-page:hover {
-  background: #fef3c7 !important;
-  color: #92400e !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-page.p-highlight {
-  background: #F6AF33 !important;
-  color: #1f2937 !important;
-  font-weight: 600 !important;
-}
-
-:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown,
-:host ::ng-deep .p-paginator-rpp-dropdown .p-select {
-  border: 1px solid #d1d5db !important;
-  border-radius: 6px !important;
-  height: 2.5rem !important;
-  min-width: 70px !important;
-  max-width: 70px !important;
-  width: 70px !important;
   transition: all 0.2s ease !important;
-  font-size: 0.875rem !important;
 }
 
-:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown:hover,
-:host ::ng-deep .p-paginator-rpp-dropdown .p-select:hover {
-  border-color: #F6AF33 !important;
-  box-shadow: 0 1px 3px rgba(246, 175, 51, 0.2) !important;
-}
-
-:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown:focus,
-:host ::ng-deep .p-paginator-rpp-dropdown .p-select:focus {
-  border-color: #F6AF33 !important;
-  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
-}
-
-:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown .p-dropdown-label,
-:host ::ng-deep .p-paginator-rpp-dropdown .p-select .p-select-label {
-  font-size: 0.875rem !important;
-  padding: 0 0.5rem !important;
-  text-align: center !important;
-}
-
-:host ::ng-deep .p-paginator .p-paginator-element {
-  min-width: 2.5rem !important;
-  height: 2.5rem !important;
-  border-radius: 6px !important;
-  color: #64748b !important;
-  transition: all 0.2s ease !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  flex-shrink: 0 !important;
-}
-
+:host ::ng-deep .p-paginator .p-paginator-page:not(.p-paginator-page-selected):hover,
 :host ::ng-deep .p-paginator .p-paginator-element:not(:disabled):hover {
   background: #fef3c7 !important;
   color: #92400e !important;
 }
 
-:host ::ng-deep .p-paginator .p-paginator-element:disabled {
-  opacity: 0.4 !important;
-  cursor: not-allowed !important;
-}
+@media (max-width: 768px) {
+  :host ::ng-deep .p-paginator {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+    text-align: center !important;
+  }
 
+  :host ::ng-deep .p-paginator-left,
+  :host ::ng-deep .p-paginator-center,
+  :host ::ng-deep .p-paginator-right {
+    justify-content: center !important;
+  }
+}
 :host-context(.app-dark) .ventas-title {
   color: #ffffff;
 }
@@ -739,11 +666,11 @@
 }
 
 :host-context(.app-dark) .seccion-estadisticas {
-  background: #18181B;
+  background: #18181b;
 }
 
 :host-context(.app-dark) .estadistica-card {
-  background: #18181B;
+  background: #18181b;
   border-right-color: #27272a;
 }
 
@@ -761,7 +688,7 @@
 }
 
 :host-context(.app-dark) .filtros-container {
-  background: #18181B;
+  background: #18181b;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }
 
@@ -791,11 +718,16 @@
   color: #ffffff !important;
 }
 
-:host-context(.app-dark) :host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input:hover,
+:host-context(.app-dark)
+  :host
+  ::ng-deep
+  .filtro-cliente-50
+  .p-autocomplete
+  .p-autocomplete-input:hover,
 :host-context(.app-dark) :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext:hover,
 :host-context(.app-dark) :host ::ng-deep .filtros-linea-2 .p-select:hover,
 :host-context(.app-dark) :host ::ng-deep .filtros-linea-2 .p-inputtext:hover {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
 }
 
 :host-context(.app-dark) :host ::ng-deep .filtro-cliente-50 .p-autocomplete-dropdown,
@@ -811,19 +743,19 @@
 }
 
 :host-context(.app-dark) .responsable-text {
-  color: #E4E4E7;
+  color: #e4e4e7;
 }
 
 :host-context(.app-dark) .tipo-pago-cell i.pi-money-bill {
-  color: #4ADE80;
+  color: #4ade80;
 }
 
 :host-context(.app-dark) .tipo-pago-cell i.pi-credit-card {
-  color: #60A5FA;
+  color: #60a5fa;
 }
 
 :host-context(.app-dark) .tipo-pago-cell i.pi-mobile {
-  color: #FBBF24;
+  color: #fbbf24;
 }
 
 :host-context(.app-dark) .ventas-icon-soft {
@@ -857,7 +789,7 @@
 }
 
 :host-context(.app-dark) :host ::ng-deep .p-paginator {
-  background: #18181B !important;
+  background: #18181b !important;
   border-top-color: #27272a !important;
 }
 
@@ -869,26 +801,28 @@
   color: #ffffff !important;
 }
 
-:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-page:hover {
+:host-context(.app-dark)
+  :host
+  ::ng-deep
+  .p-paginator
+  .p-paginator-page:not(.p-paginator-page-selected):hover {
   background: #27272a !important;
-  color: #F6AF33 !important;
+  color: #f6af33 !important;
 }
 
-:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-page.p-highlight {
-  background: #F6AF33 !important;
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-page.p-paginator-page-selected {
+  background: #f6af33 !important;
   color: #09090b !important;
 }
 
-:host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown,
 :host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-select {
   background: #09090b !important;
   border-color: #27272a !important;
   color: #ffffff !important;
 }
 
-:host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown:hover,
 :host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-select:hover {
-  border-color: #F6AF33 !important;
+  border-color: #f6af33 !important;
   box-shadow: 0 1px 3px rgba(246, 175, 51, 0.3) !important;
 }
 
@@ -898,7 +832,7 @@
 
 :host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-element:not(:disabled):hover {
   background: #27272a !important;
-  color: #F6AF33 !important;
+  color: #f6af33 !important;
 }
 
 @media (min-width: 1201px) and (max-width: 1600px) {
@@ -949,11 +883,11 @@
   .seccion-estadisticas {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .estadistica-card:nth-child(2) {
     border-right: none;
   }
-  
+
   .estadistica-card:nth-child(1),
   .estadistica-card:nth-child(2) {
     border-bottom: 2px solid #e5e7eb;
@@ -967,12 +901,12 @@
   .filtros-linea-2 {
     flex-wrap: wrap;
   }
-  
+
   .filtro-compacto {
     flex: 1 1 calc(50% - 0.5rem);
     min-width: 140px;
   }
-  
+
   .filtro-boton-limpiar {
     flex: 1 1 100%;
     min-width: 100%;
@@ -981,19 +915,6 @@
   :host ::ng-deep .p-datatable-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
-  }
-
-  :host ::ng-deep .p-paginator .p-paginator-first,
-  :host ::ng-deep .p-paginator .p-paginator-prev,
-  :host ::ng-deep .p-paginator .p-paginator-next,
-  :host ::ng-deep .p-paginator .p-paginator-last {
-    transform: translateX(0) !important;
-    position: static !important;
-  }
-
-  :host ::ng-deep .p-paginator .p-paginator-pages {
-    transform: translateX(0) !important;
-    position: static !important;
   }
 }
 
@@ -1015,31 +936,22 @@
   }
 
   :host ::ng-deep .p-paginator {
-    justify-content: center !important;
-    flex-wrap: wrap !important;
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
   }
 
-  :host ::ng-deep .p-paginator .p-paginator-current {
-    flex: 1 1 100% !important;
+  :host ::ng-deep .p-paginator-left {
+    justify-self: center !important;
     order: 1 !important;
-    text-align: center !important;
-    margin-bottom: 0.5rem !important;
   }
 
-  :host ::ng-deep .p-paginator .p-paginator-first,
-  :host ::ng-deep .p-paginator .p-paginator-prev,
-  :host ::ng-deep .p-paginator .p-paginator-pages,
-  :host ::ng-deep .p-paginator .p-paginator-next,
-  :host ::ng-deep .p-paginator .p-paginator-last {
+  :host ::ng-deep .p-paginator-center {
     order: 2 !important;
   }
 
-  :host ::ng-deep .p-paginator .p-paginator-rpp-dropdown {
-    flex: 1 1 100% !important;
+  :host ::ng-deep .p-paginator-right {
+    justify-self: center !important;
     order: 3 !important;
-    justify-content: center !important;
-    margin-top: 0.5rem !important;
-    margin-left: 0 !important;
   }
 
   :host ::ng-deep .tipo-pago-tag {
@@ -1067,7 +979,7 @@
   .seccion-estadisticas {
     grid-template-columns: 1fr;
   }
-  
+
   .estadistica-card {
     border-right: none;
     border-bottom: 2px solid #e5e7eb;
@@ -1077,11 +989,11 @@
   :host-context(.app-dark) .estadistica-card {
     border-bottom-color: #27272a;
   }
-  
+
   .estadistica-card:last-child {
     border-bottom: none;
   }
-  
+
   .estadistica-valor {
     font-size: 1.5rem;
   }
@@ -1093,21 +1005,21 @@
   .filtros-container {
     padding: 0.875rem;
   }
-  
+
   .filtros-linea-1 {
     flex-direction: column !important;
     gap: 0.875rem !important;
   }
-  
+
   .filtro-cliente-50::after {
     display: none;
   }
-  
+
   .filtro-cliente-50,
   .filtro-grupo-fechas {
     width: 100%;
   }
-  
+
   .fechas-con-guion {
     width: 100%;
     flex-direction: column;
@@ -1118,7 +1030,7 @@
   .fecha-separador {
     display: none !important;
   }
-  
+
   :host ::ng-deep .fechas-con-guion .p-datepicker {
     flex: 1;
     width: 100% !important;
@@ -1127,12 +1039,12 @@
   :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext {
     border-radius: 6px !important;
   }
-  
+
   .filtros-linea-2 {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .filtro-compacto,
   .filtro-boton-limpiar {
     width: 100%;

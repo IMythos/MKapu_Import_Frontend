@@ -1,0 +1,164 @@
+  <div class="sedes-page">
+    <p-card class="sedes-header-card">
+      <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="flex align-items-center gap-3">
+          <span class="sedes-title-icon">
+            <i class="pi pi-list"></i>
+          </span>
+          <div>
+            <p class="sedes-kicker">ADMINISTRADOR - ADMINISTRACION - DESCUENTOS</p>
+            <h2 class="sedes-title">GESTION DE DESCUENTOS</h2>
+          </div>
+        </div>
+        <div class="flex justify-items-end gap-2">
+          <p-button
+            label="Agregar descuento"
+            icon="pi pi-plus"
+            styleClass="sedes-pill"
+            [routerLink]="['/admin/descuentos/agregar-descuento']"
+          ></p-button>
+        </div>
+      </div>
+    </p-card>
+
+    <p-card>
+      <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-between gap-3">
+        <div class="sedes-search-container flex-1">
+          <span class="sedes-search-label">Buscar Descuento</span>
+          <p-autoComplete
+            class="sedes-search-input"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="onSearchChange($event)"
+            [suggestions]="descuentoSuggestions()"
+            field="nombre"
+            (completeMethod)="onSearch($event)"
+            (onSelect)="onSelectDescuento($event)"
+            placeholder="Escribe codigo, nombre o ciudad..."
+            style="background: transparent; color: var(--text-color);"
+            [inputStyle]="{ width: '100%', background: 'transparent', color: 'var(--text-color)' }"
+          >
+            <ng-template let-item pTemplate="item">
+              <div class="flex flex-column gap-1">
+                <span class="font-medium">{{ item.nombre }}</span>
+                <small class="text-500">{{ item.codigo }}</small>
+              </div>
+            </ng-template>
+          </p-autoComplete>
+        </div>
+
+        <div class="flex align-items-center gap-2 sedes-filter-actions">
+          <p-select
+            [options]="viewOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="viewMode()"
+            (ngModelChange)="onViewModeChange($event)"
+            placeholder="Todos"
+            class="sedes-filter-select"
+          ></p-select>
+          <p-button
+            label="Limpiar Filtros"
+            icon="pi pi-filter-slash"
+            severity="danger"
+            styleClass="sedes-pill sedes-pill-danger"
+            type="button"
+            (click)="clearSearch()"
+          ></p-button>
+        </div>
+      </div>
+    </p-card>
+
+    <p-toast position="top-right" />
+
+    <div class="mb-3">
+      <p-message *ngIf="loading()" severity="info" text="Cargando sedes..."></p-message>
+      <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e"></p-message>
+    </div>
+
+    <p-card>
+      <div class="flex align-items-center justify-content-between mb-3">
+        <div class="flex align-items-center gap-2">
+          <span class="sedes-section-icon">
+            <i class="pi pi-user"></i>
+          </span>
+          <span class="text-sm font-semibold text-700">
+            {{
+              viewMode() === 'activas'
+                ? 'DESCUENTOS ACTIVOS'
+                : viewMode() === 'inactivas'
+                  ? 'DESCUENTOS INACTIVOS'
+                  : 'DESCUENTOS (TODOS)'
+            }}
+          </span>
+          <p-tag
+            class="sedes-count-tag"
+            [value]="'[' + filteredDescuentos().length + '] Descuentos'"
+            [severity]="viewMode() === 'activas' ? 'success' : viewMode() === 'inactivas' ? 'danger' : 'info'"
+          ></p-tag>
+        </div>
+        <p-button icon="pi pi-id-card" text severity="secondary" styleClass="sedes-icon-btn"></p-button>
+      </div>
+
+      <div *ngIf="filteredDescuentos().length === 0" class="sedes-empty-state">
+        <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
+        <div class="sedes-empty-title">No hay descuentos con ese filtro</div>
+        <div class="sedes-empty-subtitle">
+          Prueba con otro termino o limpia los filtros para ver todos los descuentos.
+        </div>
+        <p-button
+          label="Limpiar filtros"
+          icon="pi pi-filter-slash"
+          severity="danger"
+          styleClass="sedes-pill sedes-pill-danger"
+          type="button"
+          (click)="clearSearch()"
+        ></p-button>
+      </div>
+
+      <p-table
+        *ngIf="filteredDescuentos().length > 0"
+        [value]="filteredDescuentos()"
+        [paginator]="true"
+        [rows]="5"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Nombre</th>
+            <th>Porcentaje</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-descuento>
+          <tr>
+            <td>{{ descuento.nombre }}</td>
+            <td>{{ descuento.porcentaje }} %</td>
+            <td>
+              <p-tag [value]="descuento.activo ? 'Activo' : 'Inactivo'" [severity]="descuento.activo ? 'success' : 'danger'"></p-tag>
+            </td>
+            <td>
+              <div class="flex align-items-center gap-2">
+              <p-button
+                icon="pi pi-pencil"
+                text
+                severity="secondary"
+                [routerLink]="['/admin/descuentos/editar-descuento', descuento.idDescuento]"
+              ></p-button>
+                <p-button
+                  [icon]="descuento.activo ? 'pi pi-times' : 'pi pi-check'"
+                  text
+                  [severity]="descuento.activo ? 'danger' : 'success'"
+                  (click)="confirmToggleStatus(descuento)"
+                  [title]="descuento.activo ? 'Desactivar descuento' : 'Activar descuento'"
+                ></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+
+      <p-confirmdialog />
+    </p-card>
+
+
+</div>

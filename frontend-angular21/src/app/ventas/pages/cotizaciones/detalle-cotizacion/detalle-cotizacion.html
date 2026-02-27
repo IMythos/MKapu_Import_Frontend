@@ -1,0 +1,250 @@
+<!-- src/app/ventas/pages/cotizaciones/detalle-cotizacion/detalle-cotizacion.html -->
+
+<div class="p-2">
+  <p-card styleClass="vdet-header-card mb-4">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="vdet-icon-wrap">
+          <i class="pi pi-file"></i>
+        </span>
+        <div>
+          <p class="vdet-kicker mb-0">VENTAS - COTIZACIONES</p>
+          <h2 class="vdet-titulo mb-0">
+            DETALLE - {{ cotizacion?.numero ?? '...' }}
+          </h2>
+        </div>
+      </div>
+      <div class="flex gap-2 align-items-center">
+        <p-tag
+          *ngIf="cotizacion"
+          [value]="cotizacion.estado"
+          [severity]="mapEstadoSeverity(cotizacion.estado)"
+          styleClass="font-bold text-sm px-3"
+        ></p-tag>
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="vdet-btn-round"
+          (onClick)="volver()"
+        ></p-button>
+        <p-button
+          *ngIf="cotizacion?.estado === 'BORRADOR'"
+          label="Editar"
+          icon="pi pi-pencil"
+          styleClass="vdet-btn-round vdet-btn-primary"
+          (onClick)="irEditar()"
+        ></p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <div *ngIf="cotizacion && !loading" class="grid align-items-start">
+
+    <div class="col-12 lg:col-8">
+      <div class="surface-card border-round-xl shadow-1 mb-4">
+        <div class="vdet-section-header">
+          <div class="flex align-items-center gap-2">
+            <span class="vdet-section-icon">
+              <i class="pi pi-list"></i>
+            </span>
+            <span class="vdet-section-title">Productos / Servicios</span>
+          </div>
+        </div>
+
+        <div class="p-4 pt-3">
+          <div class="vdet-tabla-header">
+            <span class="vdet-col-desc">Descripción</span>
+            <span class="vdet-col-cant">Cant.</span>
+            <span class="vdet-col-precio">P. Unitario</span>
+            <span class="vdet-col-subtotal">Subtotal</span>
+          </div>
+
+          <ng-container *ngIf="cotizacion.detalles && cotizacion.detalles.length > 0; else sinLineas">
+            <div
+              *ngFor="let det of cotizacion.detalles; let i = index"
+              class="vdet-linea-row"
+              [class.vdet-linea-impar]="i % 2 !== 0"
+            >
+              <div class="vdet-col-desc">
+                <div class="vdet-desc-titulo">
+                  {{ det.producto.descripcion }}
+                </div>
+                <div class="vdet-desc-meta">
+                  <span class="vdet-chip-codigo">
+                    {{ det.producto.codigo }}
+                  </span>
+                  <span class="vdet-chip-unidad">
+                    {{ getUnidad(det) }}
+                  </span>
+                </div>
+              </div>
+              <div class="vdet-col-cant">
+                {{ det.cantidad }}
+              </div>
+              <div class="vdet-col-precio">
+                {{ det.precio_unitario | currency:'PEN':'S/ ':'1.2-2' }}
+              </div>
+              <div class="vdet-col-subtotal">
+                {{ det.subtotal | currency:'PEN':'S/ ':'1.2-2' }}
+              </div>
+            </div>
+          </ng-container>
+
+          <ng-template #sinLineas>
+            <div class="vdet-empty-lineas">
+              <i class="pi pi-box text-3xl text-300 mb-2 block"></i>
+              <p class="text-500 text-sm mb-0">
+                Esta cotización aún no tiene líneas de detalle.
+              </p>
+            </div>
+          </ng-template>
+
+          <div class="vdet-totales-wrap">
+            <div class="vdet-totales">
+              <div class="vdet-total-row">
+                <span class="text-500 font-medium">Subtotal (sin IGV)</span>
+                <span class="font-semibold text-800">
+                  {{ subtotal | currency:'PEN':'S/ ':'1.2-2' }}
+                </span>
+              </div>
+              <div class="vdet-total-row">
+                <span class="text-500 font-medium">IGV (18%)</span>
+                <span class="font-semibold text-800">
+                  {{ igv | currency:'PEN':'S/ ':'1.2-2' }}
+                </span>
+              </div>
+              <div class="vdet-total-row vdet-total-final">
+                <span class="font-bold text-900 text-lg">TOTAL</span>
+                <span class="font-bold text-900 text-xl">
+                  {{ cotizacion.total | currency:'PEN':'S/ ':'1.2-2' }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="surface-card border-round-xl shadow-1">
+        <div class="vdet-section-header">
+          <div class="flex align-items-center gap-2">
+            <span class="vdet-section-icon">
+              <i class="pi pi-comment"></i>
+            </span>
+            <span class="vdet-section-title">Observaciones</span>
+          </div>
+        </div>
+        <div class="p-4 pt-3">
+          <p
+            *ngIf="cotizacion.observaciones; else sinObs"
+            class="text-700 text-sm m-0"
+          >
+            {{ cotizacion.observaciones }}
+          </p>
+          <ng-template #sinObs>
+            <p class="text-600 text-sm m-0 font-italic">
+              Sin observaciones registradas.
+            </p>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 lg:col-4">
+      <div class="surface-card border-round-xl shadow-1 mb-4">
+        <div class="vdet-section-header">
+          <div class="flex align-items-center gap-2">
+            <span class="vdet-section-icon">
+              <i class="pi pi-info-circle"></i>
+            </span>
+            <span class="vdet-section-title">Información</span>
+          </div>
+        </div>
+        <div class="p-4 pt-3">
+          <div class="vdet-info-row">
+            <span class="vdet-info-label">N° Cotización</span>
+            <span class="font-bold text-900">{{ cotizacion.numero }}</span>
+          </div>
+          <div class="vdet-info-row">
+            <span class="vdet-info-label">Fecha Emisión</span>
+            <span class="text-800">
+              {{ cotizacion.fecha | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <div class="vdet-info-row">
+            <span class="vdet-info-label">Vencimiento</span>
+            <span class="text-500 font-italic text-sm">No especificado</span>
+          </div>
+          <div class="vdet-info-row">
+            <span class="vdet-info-label">Estado</span>
+            <p-tag
+              [value]="cotizacion.estado"
+              [severity]="mapEstadoSeverity(cotizacion.estado)"
+              styleClass="font-bold"
+            ></p-tag>
+          </div>
+        </div>
+      </div>
+
+      <div class="surface-card border-round-xl shadow-1">
+        <div class="vdet-section-header">
+          <div class="flex align-items-center gap-2">
+            <span class="vdet-section-icon">
+              <i class="pi pi-user"></i>
+            </span>
+            <span class="vdet-section-title">Cliente</span>
+          </div>
+        </div>
+        <div class="p-4 pt-3">
+          <div class="vdet-cliente-avatar mb-3">
+            <div class="vdet-avatar-circle">
+              {{ cotizacion.cliente.razon_social.charAt(0) }}
+            </div>
+            <div>
+              <p class="font-bold text-900 mb-0 text-sm">
+                {{ cotizacion.cliente.razon_social }}
+              </p>
+              <p class="text-400 text-xs mb-0 mt-1">Cliente</p>
+            </div>
+          </div>
+
+          <div class="vdet-info-row">
+            <span class="vdet-info-label">
+              {{ cotizacion.cliente.ruc.length === 11 ? 'RUC' : 'DNI' }}
+            </span>
+            <span class="font-mono font-semibold text-800">
+              {{ cotizacion.cliente.ruc }}
+            </span>
+          </div>
+          <div class="vdet-info-row">
+            <span class="vdet-info-label">Dirección</span>
+            <span class="text-500 text-sm font-italic">
+              {{ cotizacion.cliente.direccion || 'No registrada' }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div
+    *ngIf="!cotizacion && !loading"
+    class="surface-card border-round-xl p-6 text-center"
+  >
+    <i class="pi pi-exclamation-circle text-6xl text-orange-400 mb-4 block"></i>
+    <h2 class="text-xl font-bold text-900 mb-2">Cotización no encontrada</h2>
+    <p class="text-500 mb-4">
+      No existe ninguna cotización con ese identificador.
+    </p>
+    <p-button
+      label="Volver al listado"
+      icon="pi pi-arrow-left"
+      styleClass="vdet-btn-round"
+      severity="secondary"
+      (onClick)="volver()"
+    ></p-button>
+  </div>
+</div>

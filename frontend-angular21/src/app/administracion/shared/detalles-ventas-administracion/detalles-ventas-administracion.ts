@@ -41,7 +41,7 @@ export class DetallesVentasAdministracion implements OnInit, OnDestroy {
   loadingHistorial: boolean = true;
   returnUrl: string = '/administracion/historial-ventas-administracion';
 
-  tituloKicker = 'ADMINISTRACIÓN - HISTORIAL DE VENTAS - DETALLE DE VENTA';
+  tituloKicker = 'VENTAS - HISTORIAL DE VENTAS - DETALLE DE VENTA';
   subtituloKicker = 'DETALLE DE VENTA';
   iconoCabecera = 'pi pi-file-edit';
 

@@ -1,0 +1,99 @@
+<div class="agregar-categoria-page">
+  <p-toast position="top-right"></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
+  <p-card styleClass="categoria-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="categoria-title-icon"><i class="pi pi-tag"></i></span>
+        <div>
+          <p class="categoria-kicker">ADMINISTRADOR - ADMINISTRACIÓN - CREAR CATEGORÍA</p>
+          <h2 class="categoria-title">CREAR CATEGORÍA</h2>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <div class="mb-3">
+    <p-message *ngIf="loading()" severity="info" text="Procesando..."></p-message>
+    <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e"></p-message>
+  </div>
+
+  <p-card styleClass="categoria-card">
+    <form #categoriaForm="ngForm" novalidate (ngSubmit)="saveCategoria(categoriaForm)">
+
+      <div class="categoria-section">
+        <div class="categoria-section-title">INFORMACIÓN DE LA CATEGORÍA:</div>
+        <p-divider></p-divider>
+      </div>
+
+      <div class="grid form-grid">
+
+        <!-- NOMBRE -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="nombre">NOMBRE: <span class="required">*</span></label>
+          <input
+            id="nombre"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese nombre"
+            [(ngModel)]="categoria.nombre"
+            name="nombre"
+            required
+            #nombre="ngModel"
+            (input)="toUpperCase('nombre')"
+            (keypress)="onlyLetters($event)"
+            [ngClass]="{ 'p-invalid': (categoriaForm.submitted || nombre.touched) && nombre.invalid }"
+          />
+          <p-message
+            *ngIf="(categoriaForm.submitted || nombre.touched) && nombre.invalid"
+            severity="error"
+            text="El nombre es obligatorio."
+          />
+        </div>
+
+        <!-- DESCRIPCIÓN -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="descripcion">DESCRIPCIÓN:</label>
+          <input
+            id="descripcion"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese descripción"
+            [(ngModel)]="categoria.descripcion"
+            name="descripcion"
+            #descripcion="ngModel"
+            (input)="toUpperCase('descripcion')"
+          />
+        </div>
+
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex align-items-center justify-content-center gap-3 mt-3">
+        <p-button
+          label="Cancelar"
+          outlined
+          severity="secondary"
+          styleClass="categoria-btn-cancel"
+          type="button"
+          (click)="confirmCancel()"
+        ></p-button>
+
+        <p-button
+          label="Registrar Categoría"
+          icon="pi pi-check"
+          styleClass="categoria-btn-primary"
+          type="submit"
+          [loading]="loading()"
+        ></p-button>
+      </div>
+
+    </form>
+  </p-card>
+
+  <p-confirmdialog />
+</div>
+
+

@@ -66,6 +66,12 @@ export interface UsuarioStatusUpdateRequest {
 
 export interface UsuarioUpdateRequest {
   usu_nom: string;
+  ape_pat: string;
+  ape_mat: string;
   celular: string;
+  email: string;
   direccion: string;
+  fec_nac: string;
+  id_sede: number;
+  rolNombre: string;
 }

@@ -1,0 +1,330 @@
+/* src/app/ventas/pages/cotizaciones/formulario-cotizacion/formulario-cotizacion.css */
+
+.fcot-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.fcot-icon-wrap {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f6af33;
+  color: #1f2937;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.fcot-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.fcot-titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.fcot-btn-round {
+  border-radius: 9999px !important;
+  padding: 0.6rem 1.2rem !important;
+}
+
+.fcot-btn-primary {
+  background: #f6af33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px #f6af3340 !important;
+  transition: all 0.2s !important;
+}
+
+.fcot-btn-primary:hover:not(:disabled) {
+  background: #e8a424 !important;
+  transform: translateY(-1px);
+}
+
+.fcot-btn-buscar {
+  min-width: 180px !important;
+  justify-content: center !important;
+}
+
+.fcot-buscar-cliente {
+  display: flex;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.fcot-buscar-cliente-input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fcot-buscar-cliente-btn {
+  flex: 0 0 auto;
+}
+
+.fcot-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.fcot-section-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #fdf3dc;
+  color: #e8a424;
+  font-size: 13px;
+}
+
+.fcot-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.fcot-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.4rem;
+}
+
+.fcot-opcional {
+  font-weight: 400;
+  text-transform: none;
+  font-size: 0.65rem;
+  color: #cbd5e1;
+}
+
+.fcot-input {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.fcot-textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  resize: vertical;
+  font-size: 0.875rem;
+  font-family: inherit;
+}
+
+:host ::ng-deep .fcot-select,
+:host ::ng-deep .fcot-select .p-select {
+  display: flex !important;
+  width: 100% !important;
+}
+:host ::ng-deep .fcot-select .p-select-label {
+  flex: 1 !important;
+}
+
+:host ::ng-deep .fcot-datepicker {
+  width: 100% !important;
+  display: block !important;
+}
+:host ::ng-deep .fcot-datepicker .p-iconfield {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
+  position: relative !important;
+}
+:host ::ng-deep .fcot-datepicker .p-iconfield input.p-datepicker-input {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding-left: 2.5rem !important;
+}
+:host ::ng-deep .fcot-datepicker .p-iconfield .p-input-icon {
+  position: absolute !important;
+  left: 0.75rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 1;
+  pointer-events: none;
+}
+
+:host ::ng-deep .fcot-autocomplete {
+  width: 100% !important;
+  display: block !important;
+}
+:host ::ng-deep .fcot-autocomplete .p-autocomplete-input {
+  width: 100% !important;
+}
+
+/* Sugerencias */
+.fcot-sugerido {
+  padding: 0.35rem 0;
+}
+.fcot-sugerido-nombre {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #1f2937;
+  margin-bottom: 0.2rem;
+}
+.fcot-sugerido-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.fcot-sugerido-codigo {
+  font-size: 0.7rem;
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-family: monospace;
+}
+.fcot-sugerido-precio {
+  font-size: 0.75rem;
+  color: #e8a424;
+  font-weight: 700;
+}
+
+.fcot-tabla-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.25rem;
+  background: var(--surface-50);
+  border-radius: 8px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.fcot-tabla-header .fcot-col-producto  { flex: 1 1 0%; min-width: 0; }
+.fcot-tabla-header .fcot-col-cant      { flex: 0 0 80px; text-align: center; }
+.fcot-tabla-header .fcot-col-precio    { flex: 0 0 120px; text-align: center; }
+.fcot-tabla-header .fcot-col-desc      { flex: 0 0 110px; text-align: center; }
+.fcot-tabla-header .fcot-col-subtotal  { flex: 0 0 120px; text-align: center; }
+.fcot-tabla-header .fcot-col-accion    { flex: 0 0 32px; }
+
+.fcot-linea-wrap {
+  border-radius: 8px;
+  margin-bottom: 0.25rem;
+  transition: background 0.15s;
+}
+.fcot-linea-wrap:hover {
+  background: #f6af3310;
+}
+.fcot-linea-impar {
+  background: var(--surface-50);
+}
+.fcot-linea-impar:hover {
+  background: #f6af3318 !important;
+}
+
+.fcot-linea-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.5rem;
+}
+
+.fcot-col-producto  { flex: 1 1 0%; min-width: 0; }
+.fcot-col-cant      { flex: 0 0 80px; }
+.fcot-col-precio    { flex: 0 0 120px; }
+.fcot-col-desc      { flex: 0 0 110px; }
+.fcot-col-subtotal  {
+  flex: 0 0 120px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+}
+.fcot-col-accion    { flex: 0 0 32px; text-align: center; }
+
+:host ::ng-deep .fcot-inputnum .p-inputnumber-input,
+:host ::ng-deep .fcot-inputnum-desc .p-inputnumber-input {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+:host ::ng-deep .fcot-inputnum,
+:host ::ng-deep .fcot-inputnum-desc {
+  width: 100% !important;
+}
+
+.fcot-desc-badge {
+  font-size: 0.65rem;
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 700;
+}
+
+.fcot-totales-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px dashed var(--surface-border);
+}
+.fcot-totales {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 300px;
+}
+.fcot-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+}
+.fcot-total-final {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fdf3dc, #fef9ec);
+  border-radius: 10px;
+  border: 1.5px solid #f6af33;
+}
+
+/* DARK MODE */
+:host-context(.app-dark) .fcot-titulo { color: #f1f5f9 !important; }
+:host-context(.app-dark) .fcot-kicker { color: #64748b !important; }
+:host-context(.app-dark) .fcot-icon-wrap { background: #e8a424 !important; }
+:host-context(.app-dark) .fcot-section-title { color: #e2e8f0 !important; }
+:host-context(.app-dark) .fcot-section-icon {
+  background: #2d2410 !important;
+  color: #f6af33 !important;
+}
+:host-context(.app-dark) .fcot-btn-primary {
+  background: #e8a424 !important;
+  border-color: #d69520 !important;
+}
+:host-context(.app-dark) .fcot-total-final {
+  background: #1e1a0e !important;
+  border-color: #e8a424 !important;
+}
+:host-context(.app-dark) .fcot-sugerido-nombre { color: #f1f5f9 !important; }
+:host-context(.app-dark) .fcot-sugerido-codigo {
+  background: #1e293b !important;
+  color: #94a3b8 !important;
+}
+:host-context(.app-dark) .fcot-desc-badge {
+  background: #14532d !important;
+  color: #4ade80 !important;
+}

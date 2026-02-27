@@ -1,200 +1,257 @@
-<div class="despacho-page flex flex-column gap-3 w-full px-3 md:px-0 pt-5 md:pt-0">
-  <p-card styleClass="despacho-header-card">
-    <div class="despacho-header-row flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
-      <div class="despacho-header-title flex align-items-center gap-3 w-full md:w-auto">
+<div class="p-2">
+
+  <!-- ===================== CABECERA ===================== -->
+  <p-card styleClass="despacho-header-card mb-4">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
         <span class="despacho-title-icon">
-          <i class="pi pi-truck"></i>
+          <i [class]="iconoCabecera"></i>
         </span>
         <div>
-          <p class="despacho-kicker">{{ tituloKicker }}</p>
-          <h2 class="despacho-title">{{ subtituloKicker }}</h2>
+          <p class="despacho-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="despacho-title mb-0">{{ subtituloKicker }}</h2>
         </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Nuevo Despacho"
+          icon="pi pi-plus"
+          styleClass="despacho-pill despacho-pill-warning"
+          routerLink="/admin/despacho-productos/agregar-despacho">
+        </p-button>
       </div>
     </div>
   </p-card>
 
-  <p-card styleClass="despacho-filter-card">
-    <div class="despacho-filter-row flex flex-column md:flex-row md:align-items-end gap-3">
-      <div class="despacho-search-container flex flex-column gap-2 flex-1 w-full">
-        <span class="despacho-search-label">Buscar despacho</span>
-        <p-autoComplete
-          styleClass="despacho-search-input w-full"
-          [(ngModel)]="searchTerm"
-          [suggestions]="sugerencias"
-          field="descripcion"
-          placeholder="Filtrado desde backend"
-          style="background: transparent; color: var(--text-color);"
-          [inputStyle]="{ width: '100%', background: 'transparent', color: 'var(--text-color)' }"
-        ></p-autoComplete>
+</div>
+
+
+<div class="p-2">
+
+  <!-- ===================== BANNER DE ERROR ===================== -->
+  <div *ngIf="error()"
+    class="despacho-error-banner mb-4 flex align-items-center gap-3 p-3 border-round-xl">
+    <i class="pi pi-exclamation-circle text-2xl"></i>
+    <span class="flex-1">{{ error() }}</span>
+    <p-button
+      label="Reintentar"
+      icon="pi pi-refresh"
+      size="small"
+      severity="danger"
+      [outlined]="true"
+      (onClick)="dispatchService.loadDispatches().subscribe()">
+    </p-button>
+  </div>
+
+  <!-- ===================== CONTADORES ===================== -->
+  <div class="contadores-despacho mb-4">
+
+    <!-- Total -->
+    <div class="contador-card">
+      <i class="pi pi-truck"></i>
+      <div>
+        <span class="contador-label">Total Despachos</span>
+        <span class="contador-valor">{{ dispatches().length }}</span>
+        <span class="contador-detalle"><i class="pi pi-list"></i> Registrados</span>
       </div>
-      <div class="despacho-filter-actions w-full md:w-auto">
-        <div class="flex flex-column gap-2">
-          <span class="despacho-search-label">Estado</span>
+    </div>
+
+    <!-- Pendientes -->
+    <div class="contador-card">
+      <i class="pi pi-clock"></i>
+      <div>
+        <span class="contador-label">Pendientes</span>
+        <span class="contador-valor">{{ totalPendientes() }}</span>
+        <span class="contador-detalle"><i class="pi pi-hourglass"></i> Por procesar</span>
+      </div>
+    </div>
+
+    <!-- Enviados -->
+    <div class="contador-card">
+      <i class="pi pi-send"></i>
+      <div>
+        <span class="contador-label">Enviados</span>
+        <span class="contador-valor">{{ totalEnviados() }}</span>
+        <span class="contador-detalle"><i class="pi pi-arrow-right"></i> En camino</span>
+      </div>
+    </div>
+
+    <!-- Entregados -->
+    <div class="contador-card">
+      <i class="pi pi-check-square"></i>
+      <div>
+        <span class="contador-label">Entregados</span>
+        <span class="contador-valor">{{ totalEntregados() }}</span>
+        <span class="contador-detalle"><i class="pi pi-verified"></i> Completados</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===================== FILTROS ===================== -->
+  <div class="surface-card border-round-xl shadow-1 mb-4">
+    <div class="p-3">
+      <div class="flex flex-wrap gap-3 align-items-end">
+
+        <!-- Buscador: busca por id_despacho, id_venta_ref y tipo_envio -->
+        <div class="flex-1 p-fluid" style="min-width: 220px;">
+          <label class="font-medium mb-2 block">Buscar Despacho</label>
+          <input
+            pInputText
+            type="text"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            placeholder="ID despacho, venta o tipo de envío..."
+            class="w-full"
+          />
+        </div>
+
+        <!-- Filtro Estado: incluye CANCELADO -->
+        <div class="flex flex-column" style="min-width: 200px;">
+          <label class="font-medium mb-2 block">Filtrar por Estado</label>
           <p-select
             [options]="estadoOptions"
-            [(ngModel)]="estadoFiltro"
+            [ngModel]="estadoFiltro()"
+            (ngModelChange)="estadoFiltro.set($event)"
             optionLabel="label"
             optionValue="value"
-            styleClass="w-full md:w-12rem"
-            (onChange)="aplicarFiltros()"
-          ></p-select>
+            placeholder="Seleccione estado"
+            class="w-full">
+          </p-select>
         </div>
-      </div>
-      <div class="despacho-filter-actions w-full md:w-auto">
-        <p-button
-          label="Limpiar filtros"
-          icon="pi pi-filter-slash"
-          severity="danger"
-          styleClass="despacho-pill despacho-pill-danger w-full md:w-auto"
-          (click)="limpiarFiltros()"
-        ></p-button>
+
+        <!-- Responsables -->
+        <div class="despacho-responsables-card flex flex-column gap-1 px-3 py-2 border-round-lg">
+          <span class="despacho-responsable-label">
+            <i class="pi pi-user mr-1"></i>
+            Almacenero: <strong>{{ despachador() }}</strong>
+          </span>
+          <span class="despacho-responsable-label">
+            <i class="pi pi-briefcase mr-1"></i>
+            Asesor: <strong>{{ asesor() }}</strong>
+          </span>
+        </div>
+
+        <!-- Limpiar filtros -->
+        <div class="flex align-items-end">
+          <p-button
+            icon="pi pi-filter-slash"
+            label="Limpiar"
+            severity="danger"
+            size="small"
+            (onClick)="limpiarFiltros()">
+          </p-button>
+        </div>
+
       </div>
     </div>
-  </p-card>
+  </div>
 
-  <p-toast position="top-right" />
+  <!-- ===================== TABLA ===================== -->
+  <div class="mb-6">
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
 
-  <p-card>
-    <div class="flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-2 mb-3">
-      <div class="flex flex-column sm:flex-row align-items-start sm:align-items-center gap-2 w-full md:w-auto">
-        <span class="despacho-section-icon">
-          <i class="pi pi-box"></i>
-        </span>
-        <span class="text-sm font-semibold text-700">LISTADO DE PRODUCTOS</span>
-        <p-tag
-          [value]="'[' + filasFiltradas.length + '] Despachos'"
-          severity="info"
-          styleClass="w-full sm:w-auto"
-        ></p-tag>
-      </div>
-      <p-button icon="pi pi-sliders-h" text severity="secondary" styleClass="despacho-icon-btn"></p-button>
-    </div>
-
-    <div class="despacho-table-scroll">
       <p-table
-        [value]="filasFiltradas"
-        styleClass="despacho-table"
+        [value]="filasFiltradas()"
+        [loading]="loading()"
         [paginator]="true"
         [rows]="10"
-        [rowsPerPageOptions]="[10, 25, 50]"
-        [tableStyle]="{ 'min-width': '70rem' }"
-      >
+        [rowsPerPageOptions]="[5, 10, 25, 50]"
+        styleClass="despacho-table-nativa despacho-table-hover"
+        [rowHover]="true">
+
         <ng-template pTemplate="header">
           <tr>
-            <th>CODIGO</th>
-            <th>DESCRIPCION</th>
-            <th>CANTIDAD</th>
-            <th>COMPROBANTE</th>
-            <th>DESPACHADOR</th>
-            <th>ASESOR</th>
-            <th>SALIDA</th>
-            <th>UBICACION</th>
-            <th>AGENCIA</th>
-            <th>HORA</th>
-            <th>ESTADO</th>
-            <th>ACCIONES</th>
+            <th style="width: 15%">ID Despacho</th>
+            <th style="width: 20%">ID Venta Ref.</th>
+            <th style="width: 30%">Tipo de Envío</th>
+            <th style="width: 20%">Estado</th>
+            <th style="width: 15%">Acciones</th>
           </tr>
         </ng-template>
-        <ng-template pTemplate="body" let-fila>
+
+        <ng-template pTemplate="body" let-d>
           <tr>
-            <td>
-              <div class="despacho-code">
-                <div class="despacho-code-main">{{ fila.codigo }}</div>
-                <div class="despacho-code-meta">{{ fila.comprobante }}</div>
-              </div>
+
+            <!-- id_despacho -->
+            <td class="font-semibold text-primary">
+              #{{ d.id_despacho }}
             </td>
-            <td>
-              <div class="despacho-producto">
-                <span class="despacho-producto-nombre">{{ fila.descripcion }}</span>
-                <span class="despacho-producto-meta">Despacha: {{ fila.despachador }}</span>
-              </div>
+
+            <!-- id_venta_ref → campo correcto de la interfaz Dispatch -->
+            <td class="font-semibold">
+              {{ d.id_venta_ref ?? '—' }}
             </td>
+
+            <!-- tipo_envio -->
             <td>
-              <span class="despacho-cantidad">{{ fila.cantidad }}</span>
+              <span class="flex align-items-center gap-2">
+                <i class="pi pi-box text-400"></i>
+                {{ d.tipo_envio ?? '—' }}
+              </span>
             </td>
-            <td>
-              <span class="despacho-comprobante">{{ fila.comprobante }}</span>
-            </td>
-            <td>
-              <span class="despacho-dato">{{ fila.despachador }}</span>
-            </td>
-            <td>
-              <span class="despacho-dato">{{ fila.asesor }}</span>
-            </td>
+
+            <!-- estado → badge con color según DispatchStatus -->
             <td>
               <p-tag
-                [value]="fila.salida"
-                [severity]="getSalidaSeverity(fila.salida)"
-                styleClass="despacho-tag"
-              ></p-tag>
+                [value]="d.estado"
+                [severity]="getEstadoSeverity(d.estado)"
+                styleClass="font-bold">
+              </p-tag>
             </td>
+
+            <!-- Acciones -->
             <td>
-              <span class="despacho-dato">{{ fila.ubicacion }}</span>
-            </td>
-            <td>
-              <span class="despacho-agencia">{{ fila.agencia }}</span>
-            </td>
-            <td>
-              <span class="despacho-hora">{{ fila.hora }}</span>
-            </td>
-            <td>
-              <p-tag
-                [value]="fila.estado"
-                [severity]="getEstadoSeverity(fila.estado)"
-                styleClass="despacho-tag"
-              ></p-tag>
-            </td>
-            <td>
-              <div class="despacho-actions">
+              <div class="flex align-items-center gap-2">
                 <p-button
                   icon="pi pi-eye"
                   text
                   severity="secondary"
-                  styleClass="despacho-icon-btn despacho-icon-warn"
-                  [routerLink]="['/admin/despacho-productos/detalle-despacho', fila.codigo]"
-                  pTooltip="Ver detalle"
-                  tooltipPosition="top"
-                ></p-button>
+                  styleClass="despacho-icon-btn despacho-icon-soft"
+                  pTooltip="Ver Detalle">
+                </p-button>
                 <p-button
                   icon="pi pi-pencil"
                   text
-                  severity="info"
+                  severity="secondary"
                   styleClass="despacho-icon-btn despacho-icon-warn"
-                  (click)="editarFila(fila)"
-                  pTooltip="Editar"
-                  tooltipPosition="top"
-                ></p-button>
+                  pTooltip="Editar Despacho">
+                </p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  text
+                  severity="danger"
+                  styleClass="despacho-icon-btn despacho-icon-danger"
+                  pTooltip="Eliminar Despacho"
+                  (onClick)="eliminar(d)">
+                </p-button>
               </div>
             </td>
+
           </tr>
         </ng-template>
+
+        <!-- Mensaje vacío dinámico -->
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="12" class="despacho-empty">
-              <div class="despacho-empty-inner">
-                <div class="despacho-empty-icon">
-                  <i class="pi pi-inbox"></i>
-                </div>
-                <div class="despacho-empty-title">No se encontraron despachos</div>
-                <div class="despacho-empty-text">
-                  Ajusta los filtros o prueba con otro termino de busqueda.
-                </div>
-                <div class="despacho-empty-actions">
-                  <p-button
-                    label="Limpiar filtros"
-                    icon="pi pi-filter-slash"
-                    severity="secondary"
-                    [outlined]="true"
-                    styleClass="despacho-empty-btn w-full md:w-auto"
-                    (click)="limpiarFiltros()"
-                  ></p-button>
-                </div>
-              </div>
+            <td colspan="5" class="text-center py-6">
+              <i class="pi pi-truck text-4xl text-400 mb-3 block"></i>
+              <p class="text-900 font-medium mb-0">No se encontraron despachos</p>
+              <p class="text-600 mt-2">
+                {{ (searchTerm() || estadoFiltro() !== 'TODOS')
+                  ? 'Prueba ajustando los filtros de búsqueda'
+                  : 'Aún no hay despachos registrados' }}
+              </p>
             </td>
           </tr>
         </ng-template>
+
       </p-table>
     </div>
-    <p-confirmdialog />
-  </p-card>
+  </div>
+
 </div>
+
+<!-- ===================== SERVICIOS GLOBALES ===================== -->
+<p-toast position="bottom-right"></p-toast>
+<p-confirmdialog></p-confirmdialog>

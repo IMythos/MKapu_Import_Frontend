@@ -1,0 +1,109 @@
+.editar-sede-page {
+  min-height: 100%;
+  padding: 4.5rem 2.5rem;
+}
+
+.sedes-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.sedes-header-card {
+  margin-top: -3.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.sedes-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.sedes-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.sedes-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sede-card {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid #2b2b2b;
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+}
+
+:host ::ng-deep .sede-card.p-card {
+  border: none;
+}
+
+.sede-card-header {
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.sede-card-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.sede-card-spacer {
+  width: 2.5rem;
+}
+
+.sede-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #3f3f3f;
+}
+
+.field-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #4b4b4b;
+}
+
+:host ::ng-deep .form-grid .p-inputtext {
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.sede-btn-primary {
+  background: #f1a92b;
+  border: 1px solid #d98d1b;
+  color: #1a1a1a;
+}
+
+:host ::ng-deep .sede-btn-primary .p-button-label {
+  font-weight: 700;
+}
+
+:host ::ng-deep .sede-btn-cancel .p-button-label {
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .editar-sede-page {
+    padding: 1.5rem 1rem;
+  }
+
+  .sede-card-title {
+    font-size: 1.2rem;
+  }
+}

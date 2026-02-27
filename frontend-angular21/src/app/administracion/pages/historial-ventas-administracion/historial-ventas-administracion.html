@@ -1,5 +1,5 @@
 <div class="p-2">
-  <p-card styleClass="ventas-header-card mb-4 ventas-header-bordered">
+  <p-card class="ventas-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="ventas-title-icon">
@@ -188,7 +188,7 @@
 </div>
 
 <div class="p-2">
-  <p-card styleClass="tarjeta-principal">
+  <p-card class="tarjeta-principal">
     <div class="seccion-tabla">
       <div class="tabla-header">
         <h3><i class="pi pi-list"></i> Listado de comprobantes</h3>
@@ -208,8 +208,8 @@
       <p-table
         [value]="comprobantesFiltrados"
         [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[10, 25, 50, 100]"
+        [rows]="5"
+        [rowsPerPageOptions]="[5,10, 20, 50]"
         [loading]="loading"
         [tableStyle]="{ 'min-width': '75rem' }"
         styleClass="p-datatable-striped"

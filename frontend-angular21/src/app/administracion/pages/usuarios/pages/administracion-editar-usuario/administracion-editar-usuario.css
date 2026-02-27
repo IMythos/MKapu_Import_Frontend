@@ -1,346 +1,502 @@
+
+
+.usuarios-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+
+.usuario-form-card {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #fcfcfd;                      /* Light mode fondo suave */
+  box-shadow: 0 12px 24px rgba(0,0,0,0.04); /* Sombra leve light */
+}
+
+/* DARK MODE OVERRIDE */
+:host-context(.app-dark) .usuario-form-card {
+  border: 1px solid #2b2b2b;
+  background: #17181b;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+}
+
+:host ::ng-deep .usuario-form-card .p-inputtext,
+:host ::ng-deep .usuario-form-card .p-dropdown {
+  background: #fff;
+  color: #23242b;
+  border-radius: 7px;
+  border: 1px solid #d1d5db;
+  padding: 0.9rem 1.1rem;
+  font-size: 1rem;
+}
+:host-context(.app-dark) .usuario-form-card .p-inputtext,
+:host-context(.app-dark) .usuario-form-card .p-dropdown {
+  background: #09090b !important;
+  color: #f8fafc !important;
+  border: 1px solid #353844 !important;
+}
+
+:host ::ng-deep .usuario-form-card .p-inputtext:focus,
+:host ::ng-deep .usuario-form-card .p-dropdown:focus {
+  border-color: #f5c34d;
+  box-shadow: 0 0 0 2px #f5c34d40;
+}
+/* DARK MODE OVERRIDE FOR FOCUS */
+:host-context(.app-dark) .usuario-form-card .p-inputtext:focus,
+:host-context(.app-dark) .usuario-form-card .p-dropdown:focus {
+  border-color: #f5c34d !important;
+  box-shadow: 0 0 0 2px #f5c34d40 !important;
+}
+
+/* Bordes, etiquetas, etc */
+.field-label {
+  color: #dc9916;
+}
+:host-context(.app-dark) .field-label { color: #f9d387; }
+
+/* Botón amarillo pill siempre igual */
+.usuario-btn-primary {
+  background: #f5c34d !important;
+  border: 1px solid #e5b600 !important;
+  color: #25211b !important;
+  font-weight: bold;
+  border-radius: 7px !important;
+}
+
+
+
+.usuario-section-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #f1bb40;
+  margin-bottom: 0.3rem;
+}
+.form-grid {
+  margin-bottom: 1.2rem;
+}
+.grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.col-12 { width: 100%; }
+@media (min-width: 768px) {
+  .md\:col-6 { width: 48%; }
+}
+.field-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: #f9d387;
+  letter-spacing: 0.06em;
+}
+.usuario-btn-primary {
+  background: #f5c34d !important;
+  border: 1px solid #e5b600 !important;
+  color: #25211b !important;
+  font-weight: bold;
+  border-radius: 7px !important;
+}
+.usuario-btn-primary .p-button-label { font-weight: 700 !important; }
+.usuario-btn-cancel .p-button-label { font-weight: 700 !important; }
+
+:host ::ng-deep .usuario-form-card .p-inputtext,
+:host ::ng-deep .usuario-form-card .p-dropdown {
+  background: #23242b;
+  color: #f8fafc;
+  border-radius: 7px;
+  border: 1px solid #353844;
+  padding: 0.9rem 1.1rem;
+  font-size: 1rem;
+}
+:host ::ng-deep .usuario-form-card .p-inputtext:focus,
+:host ::ng-deep .usuario-form-card .p-dropdown:focus {
+  border-color: #f5c34d;
+  box-shadow: 0 0 0 2px #f5c34d40;
+}
+.p-invalid {
+  border-color: #fb7185 !important;
+}
+.mt-3 { margin-top: 1.2rem !important; }
+.border-none { border: none !important; }
+
 :host {
   display: block;
 }
 
-.edit-user-page {
-  display: block;
-  min-height: 100%;
-}
-
-.edit-user-header-card {
-  width: 100%;
-  margin: 0;
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-.edit-user-form-card {
-  width: 100%;
-  margin: 0;
-  border-radius: 16px;
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  position: relative;
-  overflow: hidden;
-}
-
-:host-context(.app-dark) .edit-user-header-card,
-:host-context(.app-dark) .edit-user-form-card {
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
-}
-
-.edit-user-header-row {
+/* ================================
+   CONTENEDOR
+================================ */
+.usuarios-page {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1.5rem;
+  flex-direction: column;
+  gap: 16px;
 }
 
-.edit-user-header-title {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
+/* ================================
+   HEADER
+================================ */
+.usuarios-header-card .p-card-body {
+  padding: 1rem 1.25rem;
 }
 
-.edit-user-title-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+.usuarios-header-card {
+  width: 100%;
+}
+
+/* ICONO (AMARILLO COMO EJEMPLO) */
+.usuarios-title-icon {
+  width: 40px;
+  height: 40px;
   display: grid;
   place-items: center;
-  background: rgba(246, 175, 51, 0.18);
-  color: #f59e0b;
-  font-size: 1.2rem;
+  border-radius: 999px;
+  background: #f5c34d; 
+  color: #1f2937;
+  font-size: 18px;
 }
 
-.edit-user-kicker {
+/* ================================
+   TEXTOS HEADER
+================================ */
+.usuarios-kicker {
   margin: 0;
-  font-size: 0.75rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
   color: #94a3b8;
 }
 
-.edit-user-title {
-  margin: 0;
-  font-size: 1.35rem;
-  color: #0f172a;
-}
-
-:host-context(.app-dark) .edit-user-title {
-  color: #f8fafc;
-}
-
-.edit-user-header-actions {
-  display: flex;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.edit-user-header-actions .p-button {
-  transition: transform 0.15s ease, box-shadow 0.2s ease;
-}
-
-.edit-user-header-actions .p-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
-}
-
-.edit-user-form-card {
-  padding: 1rem 1.5rem 1.5rem;
-  min-height: 420px;
-}
-
-.edit-user-section {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.edit-user-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
-}
-
-.edit-user-section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.edit-user-section-title i {
-  font-size: 1.6rem;
-  color: #f59e0b;
-}
-
-.edit-user-section-title h3 {
+.usuarios-title {
   margin: 0;
   font-size: 1.1rem;
-}
-
-.edit-user-content {
-  display: grid;
-  grid-template-columns: minmax(0, 2.4fr) minmax(0, 1fr);
-  gap: 1.5rem;
-  align-items: start;
-}
-
-.edit-user-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.2rem;
-}
-
-.edit-user-field {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.edit-user-field label {
   font-weight: 600;
-  color: #64748b;
-  text-transform: uppercase;
-  font-size: 0.75rem;
+  color: #1f2937;
 }
 
-.edit-user-field-wide {
-  grid-column: span 1;
+:host-context(.app-dark) .usuarios-kicker {
+  color: #94a3b8;
 }
 
-.edit-user-aside {
-  position: sticky;
-  top: 1.5rem;
-}
-
-.edit-user-aside-card {
-  border-radius: 16px;
-  padding: 1.1rem 1.2rem;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.04), rgba(15, 23, 42, 0.02));
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  display: flex;
-  flex-direction: column;
-  gap: 0.85rem;
-}
-
-:host-context(.app-dark) .edit-user-aside-card {
-  background: linear-gradient(160deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.7));
-  border-color: rgba(148, 163, 184, 0.2);
-}
-
-.edit-user-aside-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.edit-user-aside-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  background: rgba(245, 158, 11, 0.18);
-  color: #f59e0b;
-  font-size: 1.2rem;
-}
-
-.edit-user-aside-title {
-  margin: 0;
-  font-weight: 700;
-  color: #0f172a;
-  font-size: 0.95rem;
-}
-
-:host-context(.app-dark) .edit-user-aside-title {
+:host-context(.app-dark) .usuarios-title {
   color: #f8fafc;
 }
 
-.edit-user-aside-subtitle {
-  font-size: 0.75rem;
-  color: #64748b;
-}
-
-.edit-user-aside-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  font-size: 0.85rem;
-  color: #64748b;
-}
-
-.edit-user-aside-row strong {
-  color: #0f172a;
-}
-
-:host-context(.app-dark) .edit-user-aside-row strong {
-  color: #f8fafc;
-}
-
-.edit-user-aside-status {
-  padding: 0.15rem 0.6rem;
-  border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 600;
-}
-
-.edit-user-aside-status.is-active {
-  background: rgba(34, 197, 94, 0.15);
-  color: #16a34a;
-}
-
-.edit-user-aside-status.is-inactive {
-  background: rgba(239, 68, 68, 0.15);
-  color: #dc2626;
-}
-
-.edit-user-aside-hint {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px dashed rgba(148, 163, 184, 0.35);
-  color: #64748b;
-  font-size: 0.75rem;
-}
-
-.edit-user-update-btn {
-  white-space: nowrap;
-}
-
-.edit-user-field-icon {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  border: 1px solid rgba(148, 163, 184, 0.25);
-  border-radius: 14px;
+/* ================================
+   BUSCADOR
+================================ */
+.usuarios-search {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 0.35rem 0.75rem;
   background: #ffffff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
 }
 
-:host-context(.app-dark) .edit-user-field-icon {
-  background: rgba(15, 23, 42, 0.6);
-  border-color: rgba(148, 163, 184, 0.2);
-}
-
-.edit-user-field-icon .edit-user-field {
-  flex: 1;
-}
-
-.edit-user-icon-lg {
-  width: 46px;
-  height: 46px;
-  border-radius: 14px;
-  display: grid;
-  place-items: center;
-  background: rgba(14, 165, 233, 0.12);
-  color: #0284c7;
-  font-size: 1.35rem;
-}
-
-:host-context(.app-dark) .edit-user-icon-lg {
-  background: rgba(56, 189, 248, 0.18);
-  color: #38bdf8;
-}
-
-.edit-user-field-icon:focus-within {
-  border-color: rgba(14, 165, 233, 0.7);
-  box-shadow: 0 12px 24px rgba(14, 165, 233, 0.12);
-  transform: translateY(-1px);
-}
-
-.edit-user-chip {
-  display: inline-flex;
-  align-items: center;
+.usuarios-search-container {
+  display: flex;
+  flex-direction: column;
   gap: 0.35rem;
-  padding: 0.25rem 0.6rem;
+}
+
+.usuarios-search-input {
+  flex: 1;
+  border: none;
+  box-shadow: none;
+}
+
+.usuarios-search-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.usuarios-clear {
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+/* ================================
+   BOTONES PILL
+================================ */
+.usuarios-pill {
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.12);
-  color: #16a34a;
-  font-weight: 600;
+  padding: 0.35rem 1rem;
   font-size: 0.75rem;
 }
 
-:host-context(.app-dark) .edit-user-chip {
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
+.usuarios-pill-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fecaca;
 }
 
-.edit-user-meta {
+.usuarios-pill-primary {
+  background: #dbeafe;
+  color: #1d4ed8;
+  border-color: #bfdbfe;
+}
+
+/* ================================
+   TABLA
+================================ */
+.usuarios-table .p-datatable-thead > tr > th {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.usuarios-table .p-datatable-tbody > tr > td {
+  padding: 0.75rem 1rem;
+  color: #4b5563;
+}
+
+.usuarios-table--espaciada ::ng-deep .p-datatable-tbody > tr > td {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* ================================
+   BOTONES TABLA
+================================ */
+.usuarios-page-btn {
+  border-radius: 999px;
+  padding: 0.2rem 1rem;
+  font-size: 0.7rem;
+}
+
+.usuarios-page-pill {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.usuarios-page-dropdown {
+  min-width: 90px;
+}
+
+/* ================================
+   FILTROS
+================================ */
+.usuarios-search-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+
+.usuario-search-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+
+.usuarios-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.usuarios-search-hint {
+  font-size: 0.75rem;
+  color: #c6a271;
+}
+
+.usuarios-filter-actions {
+  align-self: flex-end;
+}
+
+/* ============================================
+   USUARIO DETAIL MODAL — agregar a usuarios.css
+   ============================================ */
+
+/* Override PrimeNG dialog para quitar padding y bordes extra */
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 0 !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+:host ::ng-deep .p-dialog .p-dialog-header {
+  display: none !important;
+}
+:host ::ng-deep .p-dialog {
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.6) !important;
+}
+
+/* ── Contenedor principal ─────────────────── */
+.usuario-detail-modal {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Banner superior ─────────────────────── */
+.usuario-banner {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-top: 0.35rem;
-  color: #64748b;
-  font-size: 0.8rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  position: relative;
 }
 
-@media (max-width: 768px) {
-  .edit-user-header-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.usuario-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: rgba(242, 233, 54, 0.2);
+  color: #f59f0b;
+  border: 1px solid rgba(227, 166, 35, 0.426);
+  flex-shrink: 0;
+}
 
-  .edit-user-section-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.usuario-banner-info {
+  flex: 1;
+  min-width: 0;
+}
 
-  .edit-user-update-btn {
-    width: 100%;
-  }
+.usuario-kicker {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+  color: #f59f0bd0;
+}
 
-  .edit-user-content {
+.usuario-nombre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usuario-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #f59f0bc2;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.usuario-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+/* ── Info grid ────────────────────────────── */
+.usuario-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0.5rem 0;
+  gap: 0;
+}
+
+.usuario-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.95rem;
+  color: #e5e7eb;
+}
+
+.usuario-info-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+/* Si quieres hacer algunas en una sola línea usa: usuario-info-item--full */
+.usuario-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.usuario-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+:host ::ng-deep .user-btn-edit.p-button {
+  background:#f59f0bd0 !important;
+  border-color: #f59f0bd0 !important;
+  color: #111827 !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .user-btn-edit.p-button:hover {
+  background: #f59f0bd0 !important;
+}
+
+:host ::ng-deep .user-btn-close.p-button {
+  border-radius: 8px;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #94a3b8 !important;
+}
+
+:host ::ng-deep .user-btn-close.p-button:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* Estado Tag en info grid */
+.usuario-info-item p-tag,
+.usuario-info-item .p-tag {
+  font-size: 0.95em;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .usuario-info-grid {
     grid-template-columns: 1fr;
   }
+}
 
-  .edit-user-field-wide {
-    grid-column: span 1;
-  }
+.usuarios-cargando-bar {
+  background: #20293e;
+  color: #38bdf8;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+}
+.usuarios-cargando-bar .pi {
+  font-size: 1.15em;
 }

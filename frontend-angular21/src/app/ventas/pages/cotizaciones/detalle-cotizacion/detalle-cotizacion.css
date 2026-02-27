@@ -1,0 +1,249 @@
+/* src/app/ventas/pages/cotizaciones/detalle-cotizacion/detalle-cotizacion.css */
+
+/* === HEADER === */
+.vdet-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.vdet-icon-wrap {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f6af33;
+  color: #1f2937;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.vdet-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.vdet-titulo {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.vdet-btn-round {
+  border-radius: 9999px !important;
+  padding: 0.6rem 1.2rem !important;
+}
+
+.vdet-btn-primary {
+  background: #f6af33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 12px #f6af3340 !important;
+}
+
+/* === SECCIONES === */
+.vdet-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem;
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.vdet-section-icon {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: #fdf3dc;
+  color: #e8a424;
+  font-size: 13px;
+}
+
+.vdet-section-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* === TABLA LÍNEAS === */
+.vdet-tabla-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 0.5rem;
+  background: var(--surface-50);
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+}
+
+.vdet-col-desc     { flex: 1 1 0%; }
+.vdet-col-cant     { flex: 0 0 80px;  text-align: center; }
+.vdet-col-precio   { flex: 0 0 120px; text-align: right; }
+.vdet-col-subtotal { flex: 0 0 120px; text-align: right; }
+
+.vdet-linea-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.6rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+
+
+.vdet-linea-impar {
+  background: var(--surface-50);
+}
+
+.vdet-linea-impar:hover {
+  background: #f6af3318 !important;
+}
+
+.vdet-desc-titulo {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #111827;
+  margin-bottom: 0.1rem;
+}
+
+.vdet-desc-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.15rem;
+}
+
+.vdet-chip-codigo {
+  font-size: 0.7rem;
+  background: #eef2ff;
+  color: #4f46e5;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-family: monospace;
+}
+
+.vdet-chip-unidad {
+  font-size: 0.7rem;
+  background: #ecfeff;
+  color: #0f766e;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+/* vacío líneas */
+.vdet-empty-lineas {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: #94a3b8;
+}
+
+/* === TOTALES === */
+.vdet-totales-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 2px dashed var(--surface-border);
+}
+
+.vdet-totales {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 300px;
+}
+
+.vdet-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+}
+
+.vdet-total-final {
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(135deg, #fdf3dc, #fef9ec);
+  border-radius: 10px;
+  border: 1.5px solid #f6af33;
+}
+
+/* === INFO ROWS === */
+.vdet-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--surface-border);
+  gap: 1rem;
+}
+
+.vdet-info-row:last-child {
+  border-bottom: none;
+}
+
+.vdet-info-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+/* === AVATAR CLIENTE === */
+.vdet-cliente-avatar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--surface-50);
+  border-radius: 10px;
+}
+
+.vdet-avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f6af33, #e8a424);
+  color: #1f2937;
+  font-weight: 700;
+  font-size: 1.1rem;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+/* === DARK MODE === */
+:host-context(.app-dark) .vdet-titulo { color: #f1f5f9 !important; }
+:host-context(.app-dark) .vdet-kicker { color: #64748b !important; }
+:host-context(.app-dark) .vdet-icon-wrap { background: #e8a424 !important; }
+:host-context(.app-dark) .vdet-section-title { color: #e2e8f0 !important; }
+:host-context(.app-dark) .vdet-section-icon {
+  background: #2d2410 !important;
+  color: #f6af33 !important;
+}
+:host-context(.app-dark) .vdet-btn-primary {
+  background: #e8a424 !important;
+  border-color: #d69520 !important;
+}
+:host-context(.app-dark) .vdet-total-final {
+  background: #1e1a0e !important;
+  border-color: #e8a424 !important;
+}
+:host-context(.app-dark) .vdet-cliente-avatar {
+  background: var(--surface-100) !important;
+}

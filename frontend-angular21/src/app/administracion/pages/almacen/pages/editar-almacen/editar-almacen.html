@@ -1,0 +1,228 @@
+<div class="editar-almacen-page">
+  <p-toast position="top-right"></p-toast>
+  <p-confirmDialog appendTo="body"></p-confirmDialog>
+
+  <p-card styleClass="almacen-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="almacen-title-icon"><i class="pi pi-list"></i></span>
+        <div>
+          <p class="almacen-kicker">ADMINISTRADOR - ALMACÉN - EDITAR</p>
+          <h2 class="almacen-title">EDITAR ALMACÉN</h2>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <div class="mb-3">
+    <p-message *ngIf="loading()" severity="info" text="Cargando..."></p-message>
+    <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e"></p-message>
+  </div>
+
+  <p-card styleClass="almacen-card border-none">
+    <form #almacenForm="ngForm" novalidate (ngSubmit)="updateAlmacen()">
+      <div class="almacen-section">
+        <div class="almacen-section-title">UBICACIÓN:</div>
+        <p-divider></p-divider>
+      </div>
+
+      <div class="grid form-grid">
+        <!-- Código (readonly) -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="codigo">CÓDIGO</label>
+          <input
+            id="codigo"
+            pInputText
+            class="w-full"
+            [(ngModel)]="almacen.codigo"
+            name="codigo"
+            readonly
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted) && (almacenForm.controls['codigo']?.errors?.['server'])"
+            severity="error"
+            [text]="almacenForm.controls['codigo']?.errors?.['server']"
+          ></p-message>
+        </div>
+
+        <!-- Nombre -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="nombre">NOMBRE</label>
+          <input
+            id="nombre"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese nombre"
+            [(ngModel)]="almacen.nombre"
+            name="nombre"
+            required
+            #nombre="ngModel"
+            (input)="toUpperCase('nombre')"
+            (keypress)="onlyLetters($event)"
+            [ngClass]="{ 'p-invalid': (almacenForm.submitted || nombre.touched) && nombre.invalid }"
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted || nombre.touched) && nombre.invalid"
+            severity="error"
+            text="El nombre es obligatorio."
+          />
+        </div>
+
+        <!-- Departamento -->
+        <div class="col-12 md:col-4">
+          <label class="field-label" for="departamento">DEPARTAMENTO</label>
+          <p-autocomplete
+            id="departamento"
+            [(ngModel)]="almacen.departamento"
+            [suggestions]="filteredDepartamentos"
+            (completeMethod)="filterDepartamentos($event)"
+            (onSelect)="onDepartamentoSelect()"
+            placeholder="Buscar departamento..."
+            name="departamento"
+            required
+            #departamento="ngModel"
+            [dropdown]="true"
+            [forceSelection]="true"
+            [minLength]="1"
+            appNoNumbers
+            (onClear)="almacen.provincia=''; almacen.ciudad=''; provincias=[]; distritos=[]"
+            [ngClass]="{ 'p-invalid': (almacenForm.submitted || departamento.touched) && departamento.invalid }"
+            styleClass="w-full"
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted || departamento.touched) && departamento.invalid"
+            severity="error"
+            text="Campo obligatorio."
+          />
+        </div>
+
+        <!-- Provincia -->
+        <div class="col-12 md:col-4">
+          <label class="field-label" for="provincia">PROVINCIA</label>
+          <p-autocomplete
+            id="provincia"
+            [(ngModel)]="almacen.provincia"
+            [suggestions]="filteredProvincias"
+            (completeMethod)="filterProvincias($event)"
+            (onSelect)="onProvinciaSelect()"
+            placeholder="Seleccione provincia"
+            name="provincia"
+            required
+            #provincia="ngModel"
+            [disabled]="!almacen.departamento"
+            [dropdown]="true"
+            [forceSelection]="true"
+            [minLength]="1"
+            appNoNumbers
+            (onClear)="almacen.ciudad=''; distritos=[]"
+            [ngClass]="{ 'p-invalid': (almacenForm.submitted || provincia.touched) && provincia.invalid }"
+            styleClass="w-full"
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted || provincia.touched) && provincia.invalid"
+            severity="error"
+            text="Campo obligatorio."
+          />
+        </div>
+
+        <!-- Distrito -->
+        <div class="col-12 md:col-4">
+          <label class="field-label" for="ciudad">DISTRITO</label>
+          <p-autocomplete
+            id="ciudad"
+            [(ngModel)]="almacen.ciudad"
+            [suggestions]="filteredDistritos"
+            (completeMethod)="filterDistritos($event)"
+            placeholder="Seleccione distrito"
+            name="ciudad"
+            required
+            #ciudad="ngModel"
+            [disabled]="!almacen.provincia"
+            [dropdown]="true"
+            [forceSelection]="true"
+            [minLength]="1"
+            appNoNumbers
+            [ngClass]="{ 'p-invalid': (almacenForm.submitted || ciudad.touched) && ciudad.invalid }"
+            styleClass="w-full"
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted || ciudad.touched) && ciudad.invalid"
+            severity="error"
+            text="Campo obligatorio."
+          />
+        </div>
+
+        <!-- Teléfono -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="telefono">TELÉFONO</label>
+          <p-inputnumber
+            class="w-full"
+            [(ngModel)]="almacen.telefono"
+            inputId="telefono"
+            placeholder="Ingrese 9 dígitos"
+            [useGrouping]="false"
+            [min]="100000000"
+            [max]="999999999"
+            name="telefono"
+            required
+            #telefono="ngModel"
+            [inputStyleClass]="(almacenForm.submitted || telefono.touched) && telefono.invalid ? 'p-invalid' : ''"
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted || telefono.touched) && telefono.invalid"
+            severity="error"
+            text="El teléfono es obligatorio y debe tener 9 dígitos."
+          />
+        </div>
+
+        <!-- Dirección -->
+        <div class="col-12">
+          <label class="field-label" for="direccion">DIRECCIÓN</label>
+          <input
+            id="direccion"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese dirección"
+            [(ngModel)]="almacen.direccion"
+            name="direccion"
+            required
+            #direccion="ngModel"
+            (input)="toUpperCase('direccion')"
+            [ngClass]="{ 'p-invalid': (almacenForm.submitted || direccion.touched) && direccion.invalid }"
+          />
+          <p-message
+            *ngIf="(almacenForm.submitted || direccion.touched) && direccion.invalid"
+            severity="error"
+            text="La dirección es obligatoria."
+          />
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex align-items-center justify-content-center gap-3 mt-3">
+        <p-button
+          label="Cancelar"
+          outlined
+          severity="secondary"
+          styleClass="almacen-btn-cancel"
+          type="button"
+          (click)="confirmCancel()"
+        ></p-button>
+
+        <p-button
+          label="Modificar Almacén"
+          icon="pi pi-check"
+          styleClass="almacen-btn-primary"
+          type="submit"
+          [disabled]="almacenForm.invalid || loading()"
+        ></p-button>
+      </div>
+    </form>
+  </p-card>
+
+
+  <p-toast position="top-right" />
+  <p-confirmdialog />
+   <p-toast></p-toast>
+</div>

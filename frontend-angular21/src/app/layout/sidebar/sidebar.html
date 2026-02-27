@@ -6,7 +6,7 @@
         <div class="flex justify-content-center mb-3">
           <img src="/images/logo.jpg" alt="Logo MKapu" class="img-custom" />
         </div>
-        <span class="font-bold text-sm">Mkapu Import</span>
+        <span class="font-bold text-sm" style="user-select: none;">Mkapu Import</span>
       </div>
     </div>
 
@@ -17,16 +17,15 @@
           class="mt-3 font-bold text-xs px-4 text-gray-400">
           {{ item.label }}
         </div>
-        <a 
-          *ngIf="!isSection(item)"
-          class="flex align-items-center px-4 py-2 gap-2 cursor-pointer hover:surface-400"
-          [routerLink]="item.path"
-          routerLinkActive="bg-primary text-black border-round"
-          style="text-decoration: none; color: white;">
-          <i [class]="item.icon" *ngIf="item.icon"></i>
-          <span>{{ item.label }}</span>
-        </a>
-
+          <a 
+            *ngIf="!isSection(item)"
+            class="flex align-items-center px-4 py-2 gap-2 cursor-pointer hover:surface-400"
+            (click)="navigateTo(item.path)"
+            routerLinkActive="bg-primary text-black border-round"
+            style="text-decoration: none; color: white;">
+            <i [class]="item.icon" *ngIf="item.icon"></i>
+            <span>{{ item.label }}</span>
+          </a>
       </ng-container>
     </div>
 

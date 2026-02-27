@@ -1,0 +1,297 @@
+<div class="p-2">
+  <p-card styleClass="ventas-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="ventas-title-icon">
+          <i class="pi pi-tags"></i>
+        </span>
+        <div>
+          <p class="ventas-kicker mb-0">GESTIÓN DEL SISTEMA</p>
+          <h2 class="ventas-title mb-0">Promociones y Ofertas</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Nueva Promoción"
+          icon="pi pi-plus"
+          (click)="irANueva()"
+          pTooltip="Crear nueva promoción"
+          tooltipPosition="bottom"
+          styleClass="ventas-pill ventas-pill-warning"
+        />
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- KPI SECTION -->
+<div class="p-2">
+  <div class="ventas-header-bordered mb-4">
+    <div class="seccion-estadisticas">
+      <div class="estadistica-card">
+        <i class="pi pi-gift"></i>
+        <div>
+          <span class="estadistica-label">Promociones Activas</span>
+          <span class="estadistica-valor">{{ kpiPromocionesActivas() }}</span>
+        </div>
+      </div>
+
+      <div class="estadistica-card">
+        <i class="pi pi-gift"></i>
+        <div>
+          <span class="estadistica-label">Total de Promociones</span>
+          <span class="estadistica-valor">{{ kpiTotalPromociones() }}</span>
+        </div>
+      </div>
+
+      <div class="estadistica-card">
+        <i class="pi pi-calendar"></i>
+        <div>
+          <span class="estadistica-label">Próximas a Expirar</span>
+          <span class="estadistica-valor">{{ kpiProximasExpirar() }}</span>
+        </div>
+      </div>
+
+      <div class="estadistica-card">
+        <i class="pi pi-exclamation-triangle"></i>
+        <div>
+          <span class="estadistica-label">Expiradas</span>
+          <span class="estadistica-valor">{{ kpiExpiradas() }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS SECTION -->
+<div class="p-2">
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Promoción</label>
+          <input
+            pInputText
+            type="text"
+            placeholder="Código, nombre o descripción..."
+            [(ngModel)]="filtros.busqueda"
+            (keyup)="aplicarFiltros()"
+            class="w-full"
+          />
+        </div>
+
+        <div class="filtro-item filtro-grupo-fechas">
+          <label>Rango de Vigencia</label>
+          <div class="fechas-con-guion">
+            <p-datepicker
+              [(ngModel)]="filtros.fechaInicio"
+              dateFormat="dd/mm/yy"
+              placeholder="Fecha Inicio"
+              (onSelect)="aplicarFiltros()"
+              (onClear)="aplicarFiltros()"
+              [showClear]="true"
+              [showIcon]="true"
+              styleClass="w-full"
+            >
+            </p-datepicker>
+
+            <span class="fecha-separador">-</span>
+
+            <p-datepicker
+              [(ngModel)]="filtros.fechaFin"
+              dateFormat="dd/mm/yy"
+              placeholder="Fecha Fin"
+              (onSelect)="aplicarFiltros()"
+              (onClear)="aplicarFiltros()"
+              [showClear]="true"
+              [showIcon]="true"
+              styleClass="w-full"
+            >
+            </p-datepicker>
+          </div>
+        </div>
+      </div>
+
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>Tipo</label>
+          <p-select
+            [(ngModel)]="filtros.tipo"
+            [options]="tiposPromocion"
+            placeholder="Todos"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full"
+          />
+        </div>
+
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
+          <p-select
+            [(ngModel)]="filtros.estado"
+            [options]="estadosPromocion"
+            placeholder="Todos"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full"
+          />
+        </div>
+
+        <div class="filtro-item filtro-compacto">
+          <label>Rango Descuento</label>
+          <p-select
+            [(ngModel)]="filtros.rangoDescuento"
+            [options]="rangosDescuento"
+            placeholder="Todos"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full"
+          />
+        </div>
+
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros"
+            icon="pi pi-filter-slash"
+            (onClick)="limpiarFiltros()"
+            severity="danger"
+            styleClass="btn-limpiar-filtros"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLA SECTION -->
+<div class="p-2">
+  <p-card class="tarjeta-principal">
+    <div class="seccion-tabla">
+      <div class="tabla-header">
+        <h3><i class="pi pi-list"></i> Listado de Promociones</h3>
+      </div>
+
+      <p-table
+        [value]="filteredPromociones()"
+        [loading]="loading()"
+        [lazy]="false"
+        [paginator]="true"
+        [rows]="itemsPorPagina()"
+        [totalRecords]="totalItems()"
+        [first]="paginaActual()"
+        (onPageChange)="onPageChange($event)"
+        styleClass="p-datatable-striped"
+        [tableStyle]="{ 'min-width': '70rem' }"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Descuento</th>
+            <th>Vigencia Inicio</th>
+            <th>Vigencia Fin</th>
+            <th>Estado</th>
+            <th class="text-center">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-promo>
+          <tr>
+            <td>
+              <strong>{{ promo.codigo }}</strong>
+            </td>
+            <td>
+              <div class="nombre-info">
+                <strong>{{ promo.nombre }}</strong>
+                <small>{{ promo.descripcion | slice: 0 : 40 }}...</small>
+              </div>
+            </td>
+            <td>
+              <p-tag
+                [value]="promo.tipo"
+                [severity]="promo.tipo === 'Porcentaje' ? 'info' : 'warn'"
+              />
+            </td>
+            <td>
+              <span
+                class="descuento-badge"
+                [ngClass]="{ 'descuento-alto': obtenerValorDescuento(promo) > 20 }"
+              >
+                {{ promo.porcentaje ? promo.porcentaje + '%' : 'S/. ' + (promo.monto || 0) }}
+              </span>
+            </td>
+            <td>{{ promo.fechaInicio | date: 'dd/MM/yyyy' }}</td>
+            <td>{{ promo.fechaFin | date: 'dd/MM/yyyy' }}</td>
+            <td>
+              <p-tag [value]="promo.estado" [severity]="obtenerSeveridadEstado(promo.estado)" />
+            </td>
+            <td class="text-center">
+              <div class="acciones-tabla">
+                <p-button
+                  icon="pi pi-eye"
+                  (onClick)="verPromocion(promo.id)"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  pTooltip="Ver Detalles"
+                  tooltipPosition="top"
+                  styleClass="ventas-icon-btn ventas-icon-soft"
+                />
+                <p-button
+                  icon="pi pi-pencil"
+                  (onClick)="editarPromocion(promo.id)"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  pTooltip="Editar"
+                  tooltipPosition="top"
+                  styleClass="ventas-icon-btn ventas-icon-soft"
+                />
+                <p-button
+                  icon="pi pi-trash"
+                  (onClick)="eliminarPromocion(promo.id, promo.nombre)"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="secondary"
+                  pTooltip="Eliminar"
+                  tooltipPosition="top"
+                  styleClass="ventas-icon-btn ventas-icon-danger"
+                />
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="8" class="text-center">
+              <div class="mensaje-vacio">
+                <i class="pi pi-inbox"></i>
+                <p>No se encontraron promociones</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="paginatorleft">
+          <span class="p-paginator-current">
+            Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de {{ totalItems() }} registros
+          </span>
+        </ng-template>
+      </p-table>
+    </div>
+  </p-card>
+
+  <p-toast />
+  <p-confirmDialog />
+</div>

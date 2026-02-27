@@ -1,11 +1,10 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, AfterViewInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, ActivatedRoute, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, filter, takeUntil } from 'rxjs';
 
 import { ButtonModule } from 'primeng/button';
-import { TableModule } from 'primeng/table';
+import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { CardModule } from 'primeng/card';
 import { TagModule } from 'primeng/tag';
 import { AutoCompleteModule } from 'primeng/autocomplete';
@@ -15,24 +14,15 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
 import { PaginatorModule } from 'primeng/paginator';
-import { RouterOutlet, RouterModule } from '@angular/router';
+import { Router, RouterModule} from '@angular/router';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmationService, MessageService } from 'primeng/api';
-
-import { ProductosService, Producto } from '../../../../core/services/productos.service';
-import { DialogStockSedes } from '../../../shared/dialog-stock-sedes/dialog-stock-sedes';
-
-interface ProductoAgrupado {
-  codigo: string;
-  nombre: string;
-  familia: string;
-  precioVenta: number;
-  stockTotal: number;
-  variantes: Producto[];
-  cantidadSedes: number;
-}
+import { ProductoService } from '../../../services/producto.service';
+import { ProductoAutocomplete, ProductoStock } from '../../../interfaces/producto.interface';
+import { SedeService } from '../../../services/sede.service';
+import { CategoriaService } from '../../../services/categoria.service';
 
 @Component({
   selector: 'app-gestion-productos',
@@ -40,633 +30,256 @@ interface ProductoAgrupado {
   imports: [
     CommonModule, FormsModule, ButtonModule, TableModule, CardModule, TagModule,
     AutoCompleteModule, SelectModule, ToggleButtonModule, ProgressSpinnerModule,
-    InputTextModule, TooltipModule, PaginatorModule, RouterOutlet, RouterModule,
-    ConfirmDialog, DialogModule, ToastModule, DialogStockSedes
+    InputTextModule, TooltipModule, PaginatorModule, RouterModule,
+    ConfirmDialog, DialogModule, ToastModule
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
   providers: [ConfirmationService, MessageService]
 })
-export class GestionListado implements OnInit, OnDestroy, AfterViewInit {
-  private destroy$ = new Subject<void>();
+export class GestionListado implements OnInit {
+  public router = inject(Router);
+  private productoService = inject(ProductoService);
+  private sedeService = inject(SedeService);
+  private categoriaService = inject(CategoriaService);
+  // Definición de Signals para el estado
 
-  tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓN - PRODUCTOS ACTIVOS';
-  subtituloKicker = 'GESTION DE PRODUCTOS'
-  iconoCabecera = 'pi pi-building';
+  productos = signal<ProductoStock[]>([]);
+  loading = signal<boolean>(false);
 
-  productosAgrupados: ProductoAgrupado[] = [];
-  productosAgrupadosFiltrados: ProductoAgrupado[] = [];
-  productosAgrupadosPaginados: ProductoAgrupado[] = [];
-  
-  loading = false;
-  vistaLista: boolean = true;
+  categorias = signal<{ label: string; value: string }[]>([]);
+  categoriaSeleccionada = signal<string | null>(null);
 
-  mostrarDialogStock = false;
-  variantesSeleccionadas: Producto[] = [];
-  nombreProductoSeleccionado = '';
+  buscarValue = signal<ProductoAutocomplete | string | null>(null);
+  sugerencias = signal<ProductoAutocomplete[]>([]);
 
-  mostrarDialogEliminar = false;
-  productoAEliminar: ProductoAgrupado | null = null;
+  // Signals para la Paginación (Server-Side)
+  totalRecords = signal<number>(0);
+  rows = signal<number>(10);
+  currentPage = signal<number>(1);
+  idSedeActual = signal<number | null>(null);
+  esVistaEliminados: any;
+  tituloKicker: string | undefined;
+  iconoCabecera: string | undefined;
+  subtituloKicker: string | undefined;
+  mostrarDialogEliminar: boolean = false;
+  mostrarDialogStock: boolean = true;
 
-  productosEliminados: Producto[] = [];
-  productosEliminadosAgrupados: ProductoAgrupado[] = [];
-  productosEliminadosFiltrados: Producto[] = [];
-  loadingEliminados = false;
-  vistaListaEliminados: boolean = true;
-  buscarValueEliminados: string | null = null;
+  sedesOptions = computed(() => {
+    // Leemos el signal del servicio de sedes y lo mapeamos
+    return this.sedeService.sedes().map(sede => ({
+      label: sede.nombre, // Asumiendo que tu interfaz Headquarter tiene 'nombre'
+      value: sede.id_sede
+    }));
+  });
 
-  sedeValue: string | null = null;
-  familiaValue: string | null = null;
-  buscarValue: string | null = null;
-  items: ProductoAgrupado[] = [];
+  stockTotalVisible = computed(() => {
+    return this.productos().reduce((suma, producto) => suma + producto.stock, 0);
+  });
 
-  sedesOptions: {label: string, value: string | null}[] = [];
-  familias: {label: string, value: string}[] = [];
-
-  familiaValueEliminados: string | null = null;
-  familiasEliminados: {label: string, value: string | null}[] = [];
-
-  totalSedesActivas = 0;
-  totalProductosActivos = 0;
-
-  rows = 10;
-  first = 0;
-  totalRecords = 0;
-  rowsEliminados = 10;
-  firstEliminados = 0;
-  totalRecordsEliminados = 0;
-
-  esVistaEliminados = false;
-
-  constructor(
-    public router: Router,
-    private activatedRoute: ActivatedRoute,
-    private productosService: ProductosService,
-    private cdr: ChangeDetectorRef,
-    private confirmationService: ConfirmationService,
-    private messageService: MessageService
-  ) {
-    this.actualizarCabecera();
+constructor() {
+    // Escuchamos los cambios de ruta en tiempo real y actualizamos la signal
+    this.actualizarCabecera(); // Actualizamos la cabecera automáticamente aquí
+    this.obtenerSedeDeUsuario();
   }
 
   ngOnInit() {
-    this.cargarProductosAgrupados();
-    this.loadingEliminados = false;
-    this.actualizarCabecera();
-    
-    this.router.events
-      .pipe(
-        filter(event => event instanceof NavigationEnd),
-        takeUntil(this.destroy$)
-      )
-      .subscribe((event: NavigationEnd) => {
-        this.actualizarCabecera();
-        
-        if (event.url === '/admin/gestion-productos' || 
-            event.url.startsWith('/admin/gestion-productos?')) {
-          this.cargarProductosAgrupados();
-        }
-        
-        this.cdr.detectChanges();
-      });
+    this.cargarProductos();
+
+    this.sedeService.loadSedes().subscribe({
+      error: (err) => console.error('Error cargando sedes', err)
+    });
+
+    this.categoriaService.getCategorias(true).subscribe({
+      next: (resp) => {
+        this.categorias.set(
+          resp.categories.map(cat => ({
+            label: cat.nombre,
+            value: cat.nombre
+          }))
+        );
+        console.log("categorias", resp)
+      },
+      error: (err) => console.error('Error cargando categorías', err)
+    });
+
   }
 
-  ngAfterViewInit() {
-    this.cdr.detectChanges();
-  }
+  onSedeChange(nuevaSedeId: number | null) {
+    this.idSedeActual.set(nuevaSedeId);
 
-  ngOnDestroy() {
-    this.destroy$.next();
-    this.destroy$.complete();
-    this.confirmationService.close();
-  }
-
-  private actualizarCabecera() {
-
-    Promise.resolve().then(() => {
-    if (this.esVistaEliminados) {
-      this.tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓN - PRODUCTOS ELIMINADOS';
-      this.iconoCabecera = 'pi pi-trash';
+    if (nuevaSedeId) {
+      this.currentPage.set(1);
+      this.cargarProductos();
     } else {
+      // Si el usuario borra la selección
+      this.productos.set([]);
+      this.totalRecords.set(0);
+    }
+  }
+
+  onCategoriaChange(nuevaCategoria: string | null) {
+    this.categoriaSeleccionada.set(nuevaCategoria);
+    this.currentPage.set(1);
+    this.cargarProductos();
+  }
+
+  private obtenerSedeDeUsuario() {
+    try {
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const user = JSON.parse(userString);
+        if (user.idSede) {
+          // Seteamos la signal inicial con la sede del usuario
+          this.idSedeActual.set(user.idSede);
+        }
+      }
+    } catch (e) {
+      console.error('Error parseando el usuario del localStorage', e);
+    }
+  }
+
+private actualizarCabecera() {
+    Promise.resolve().then(() => {
       const url = this.router.url;
-      
+
       if (url.includes('crear-producto')) {
-        this.tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓN - PRODUCTOS CREACIÓN';
+        this.tituloKicker = 'ADMINISTRACIÓN - PRODUCTOS CREACIÓN';
+        this.subtituloKicker = 'CREAR PRODUCTO'; // Añadido
         this.iconoCabecera = 'pi pi-plus-circle';
       } else if (url.includes('editar-producto')) {
-        this.tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓN - PRODUCTOS EDICIÓN';
+        this.tituloKicker = 'ADMINISTRACIÓN - PRODUCTOS EDICIÓN';
+        this.subtituloKicker = 'EDITAR PRODUCTO'; // Añadido
         this.iconoCabecera = 'pi pi-pencil';
       } else if (url.includes('ver-detalle-producto')) {
-        this.tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓN - PRODUCTOS DETALLE';
+        this.tituloKicker = 'ADMINISTRACIÓN - PRODUCTOS DETALLE';
+        this.subtituloKicker = 'DETALLE DE PRODUCTO'; // Añadido
         this.iconoCabecera = 'pi pi-eye';
       } else {
-        this.tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓN - PRODUCTOS ACTIVOS';
+        // RUTA PRINCIPAL
+        this.tituloKicker = 'ADMINISTRACIÓN - PRODUCTOS ACTIVOS';
+        this.subtituloKicker = 'GESTIÓN DE PRODUCTOS'; // Esto es lo que se estaba perdiendo
         this.iconoCabecera = 'pi pi-building';
       }
-    }
-    this.cdr.detectChanges();
-  });
-}
+    });
+  }
 
+  cargarProductos() {
+    const sedeId = this.idSedeActual();
+    if (!sedeId) return;
 
-  cargarProductosAgrupados() {
-    this.loading = true;
-    
-    const todosProductos = this.productosService.getProductos(undefined, 'Activo');
-    
-    const productosPorCodigo = new Map<string, Producto[]>();
-    
-    todosProductos.forEach(p => {
-      if (!productosPorCodigo.has(p.codigo)) {
-        productosPorCodigo.set(p.codigo, []);
+    this.loading.set(true);
+
+    this.productoService.getProductosConStock(
+      sedeId,
+      this.currentPage(),
+      this.rows(),
+      this.categoriaSeleccionada() ?? undefined
+    ).subscribe({
+      next: (response) => {
+        this.productos.set(response.data);
+        this.totalRecords.set(response.pagination.total_records);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar productos con stock:', err);
+        this.loading.set(false);
       }
-      productosPorCodigo.get(p.codigo)!.push(p);
-    });
-
-    this.productosAgrupados = Array.from(productosPorCodigo.entries()).map(([codigo, variantes]) => {
-      const primera = variantes[0];
-      const stockTotal = variantes.reduce((sum, v) => sum + (v.stockTotal || 0), 0);
-      const precioPromedio = variantes.reduce((sum, v) => sum + v.precioVenta, 0) / variantes.length;
-
-      return {
-        codigo: codigo,
-        nombre: primera.nombre,
-        familia: primera.familia,
-        precioVenta: precioPromedio,
-        stockTotal: stockTotal,
-        variantes: variantes,
-        cantidadSedes: primera.cantidadSedes || variantes.length
-      };
-    });
-
-    this.cargarSedes();
-    this.familias = this.productosService.getFamilias().map(f => ({ label: f, value: f }));
-    this.totalSedesActivas = this.productosService.getSedes().length;
-    this.totalProductosActivos = this.productosAgrupados.length;
-    
-    this.aplicarTodosLosFiltros();
-    this.loading = false;
-    this.resetPaginador();
-  }
-
-  cargarSedes() {
-    const sedesData = this.productosService.getSedes();
-    this.sedesOptions = [
-      { label: 'Todas las sedes', value: null },
-      ...sedesData.map(sede => ({
-        label: this.formatearNombreSede(sede),
-        value: sede
-      }))
-    ];
-  }
-
-  formatearNombreSede(sede: string): string {
-    return sede
-      .split(' ')
-      .map(palabra => palabra.charAt(0).toUpperCase() + palabra.slice(1).toLowerCase())
-      .join(' ');
-  }
-
-  onSelectSede() {
-    this.aplicarTodosLosFiltros();
-  }
-
-  irEliminados() {
-    this.esVistaEliminados = true;
-    this.vistaListaEliminados = true;
-    this.cargarProductosEliminados();
-    this.cargarFamiliasEliminados();
-    this.actualizarCabecera();
-  }
-
-  volverDesdeEliminados() {
-    this.esVistaEliminados = false;
-    this.buscarValueEliminados = null;
-    this.familiaValueEliminados = null;
-    this.actualizarCabecera();
-    this.cargarProductosAgrupados();
-  }
-
-  cargarProductosEliminados() {
-    this.loadingEliminados = true;
-    this.cdr.detectChanges();
-    
-    setTimeout(() => {
-      try {
-        let productos = this.productosService.getProductosEliminados();
-        
-        if (this.familiaValueEliminados) {
-          productos = productos.filter(p => p.familia === this.familiaValueEliminados);
-        }
-        
-        this.productosEliminados = productos;
-        this.productosEliminadosFiltrados = [...productos];
-        
-        this.agruparProductosEliminados();
-        
-        this.totalRecordsEliminados = this.productosEliminadosAgrupados.length;
-        this.resetPaginadorEliminados();
-      } catch (error) {
-        this.productosEliminados = [];
-        this.productosEliminadosFiltrados = [];
-        this.productosEliminadosAgrupados = [];
-        this.totalRecordsEliminados = 0;
-      } finally {
-        this.loadingEliminados = false;
-        this.cdr.detectChanges();
-      }
-    }, 300);
-  }
-
-  agruparProductosEliminados() {
-    const productosPorCodigo = new Map<string, Producto[]>();
-    
-    this.productosEliminadosFiltrados.forEach(p => {
-      if (!productosPorCodigo.has(p.codigo)) {
-        productosPorCodigo.set(p.codigo, []);
-      }
-      productosPorCodigo.get(p.codigo)!.push(p);
-    });
-
-    this.productosEliminadosAgrupados = Array.from(productosPorCodigo.entries()).map(([codigo, variantes]) => {
-      const primera = variantes[0];
-      const stockTotal = variantes.reduce((sum, v) => sum + (v.stockTotal || 0), 0);
-      const precioPromedio = variantes.reduce((sum, v) => sum + v.precioVenta, 0) / variantes.length;
-
-      return {
-        codigo: codigo,
-        nombre: primera.nombre,
-        familia: primera.familia,
-        precioVenta: precioPromedio,
-        stockTotal: stockTotal,
-        variantes: variantes,
-        cantidadSedes: primera.cantidadSedes || variantes.length
-      };
     });
   }
 
-  cargarFamiliasEliminados() {
-    const productos = this.productosService.getProductosEliminados();
-    const familiasUnicas = [...new Set(productos.map(p => p.familia))];
-    
-    this.familiasEliminados = [
-      { label: 'Todas las familias', value: null },
-      ...familiasUnicas.map(familia => ({ label: familia, value: familia }))
-    ];
-  }
+  onPageChange(event: TableLazyLoadEvent) {
+    const first = event.first ?? 0;
+    const rows = event.rows ?? this.rows();
 
-  onSelectFamiliaEliminados() {
-    this.cargarProductosEliminados();
-  }
-
-  onPageChange(event: any) {
-    this.first = event.first;
-    this.rows = event.rows || 10;
-    this.aplicarPaginacion();
-  }
-
-  cambiarFilas(rows: number) {
-    this.rows = rows;
-    this.first = 0;
-    this.aplicarPaginacion();
-  }
-
-  private aplicarPaginacion() {
-    if (this.productosAgrupadosFiltrados.length === 0) {
-      this.productosAgrupadosPaginados = [];
-      this.totalRecords = 0;
-      return;
+    if (rows > 0) {
+      const paginaCalculada = Math.floor(first / rows) + 1;
+      this.currentPage.set(paginaCalculada);
+      this.rows.set(rows);
+      this.cargarProductos();
     }
-    this.totalRecords = this.productosAgrupadosFiltrados.length;
-    this.productosAgrupadosPaginados = this.productosAgrupadosFiltrados.slice(this.first, this.first + this.rows);
-  }
-
-  private resetPaginador() {
-    this.rows = 10;
-    this.first = 0;
-  }
-
-  onPageChangeEliminados(event: any) {
-    this.firstEliminados = event.first;
-    this.rowsEliminados = event.rows || 10;
-    this.aplicarPaginacionEliminados();
-  }
-
-  cambiarFilasEliminados(rows: number) {
-    this.rowsEliminados = rows;
-    this.firstEliminados = 0;
-    this.aplicarPaginacionEliminados();
-  }
-
-  private aplicarPaginacionEliminados() {
-    if (this.productosEliminadosAgrupados.length === 0) {
-      this.totalRecordsEliminados = 0;
-      return;
-    }
-    this.totalRecordsEliminados = this.productosEliminadosAgrupados.length;
-  }
-
-  private resetPaginadorEliminados() {
-    this.rowsEliminados = 10;
-    this.firstEliminados = 0;
-  }
-
-  onSelectFamilia() {
-    this.aplicarTodosLosFiltros();
-  }
-
-  aplicarTodosLosFiltros() {
-    if (this.productosAgrupados.length === 0) {
-      this.productosAgrupadosFiltrados = [];
-      this.aplicarPaginacion();
-      return;
-    }
-
-    this.productosAgrupadosFiltrados = this.productosAgrupados.filter((p: ProductoAgrupado) => {
-      const matchesSede = !this.sedeValue || 
-        p.variantes.some(v => v.variantes?.some(vr => vr.sede === this.sedeValue));
-      
-      const matchesFamilia = !this.familiaValue || p.familia === this.familiaValue;
-      
-      let query = '';
-      if (this.buscarValue && typeof this.buscarValue === 'string') {
-        query = this.buscarValue.toLowerCase();
-      }
-      
-      const matchesBusqueda = !query || 
-        p.nombre.toLowerCase().includes(query) ||
-        p.codigo.toLowerCase().includes(query) ||
-        p.familia.toLowerCase().includes(query);
-      
-      return matchesSede && matchesFamilia && matchesBusqueda;
-    });
-
-    if (this.sedeValue) {
-      this.productosAgrupadosFiltrados = this.productosAgrupadosFiltrados.map(p => {
-        const variantesFiltradas = p.variantes.filter(v => 
-          v.variantes?.some(vr => vr.sede === this.sedeValue)
-        );
-        const stockFiltrado = variantesFiltradas.reduce((sum, v) => sum + (v.stockTotal || 0), 0);
-        
-        return {
-          ...p,
-          stockTotal: stockFiltrado,
-          variantes: variantesFiltradas,
-          cantidadSedes: variantesFiltradas[0]?.variantes?.filter(vr => vr.sede === this.sedeValue).length || 0
-        };
-      });
-    }
-    
-    this.aplicarPaginacion();
   }
 
   searchBuscar(event: any) {
-    const query = event.query?.toLowerCase() || '';
-    this.items = this.productosAgrupados.filter((p: ProductoAgrupado) => 
-      p.nombre.toLowerCase().includes(query) || 
-      p.codigo.toLowerCase().includes(query) ||
-      p.familia.toLowerCase().includes(query)
-    ).slice(0, 10);
-  }
-
-  filtrarPorBusqueda(event: any) {
-    if (event?.value) {
-      this.buscarValue = event.value.nombre;
-      this.aplicarTodosLosFiltros();
-    }
-  }
-
-  filtrarEliminados() {
-    if (!this.buscarValueEliminados || this.buscarValueEliminados.trim() === '') {
-      this.productosEliminadosFiltrados = [...this.productosEliminados];
-    } else {
-      const query = this.buscarValueEliminados.toLowerCase();
-      this.productosEliminadosFiltrados = this.productosEliminados.filter(p => 
-        p.nombre.toLowerCase().includes(query) || 
-        p.codigo.toLowerCase().includes(query)
-      );
-    }
+    const query = event.query;
+    const sedeId = this.idSedeActual();
     
-    this.agruparProductosEliminados();
-    this.totalRecordsEliminados = this.productosEliminadosAgrupados.length;
-  }
+    // Si no hay sede o no escribió nada, no buscamos
+    if (!sedeId || !query) {
+      this.sugerencias.set([]);
+      return;
+    }
 
-  verStockPorSede(producto: ProductoAgrupado, event: Event) {
-    event.stopPropagation();
-    this.variantesSeleccionadas = producto.variantes;
-    this.nombreProductoSeleccionado = producto.nombre;
-    this.mostrarDialogStock = true;
-  }
-
-  getStockSeverity(stock: number): 'success' | 'warn' | 'danger' {
-    if (stock > 30) return 'success';
-    if (stock > 10) return 'warn';
-    return 'danger';
-  }
-
-  eliminarProducto(producto: ProductoAgrupado, event: Event) {
-    this.confirmationService.confirm({
-      target: event.target as EventTarget,
-      message: `¿Estás seguro de eliminar el producto "<strong>${producto.nombre}</strong>"?`,
-      header: 'Confirmar Eliminación',
-      icon: 'pi pi-exclamation-triangle',
-      rejectLabel: 'Cancelar',
-      acceptLabel: 'Continuar',
-      acceptButtonProps: { severity: 'danger' },
-      rejectButtonProps: { severity: 'secondary', outlined: true },
-      accept: () => {
-        if (producto.cantidadSedes === 1 && producto.variantes[0].id) {
-          this.ejecutarEliminacion(producto.variantes[0]);
-        } else {
-          this.productoAEliminar = producto;
-          this.mostrarDialogEliminar = true;
-        }
-      }
+    // Llamamos al endpoint de autocompletado
+    this.productoService.getProductosAutocomplete(query, sedeId).subscribe({
+      next: (response) => {
+        // Llenamos las opciones del dropdown con la 'data' del JSON
+        this.sugerencias.set(response.data);
+      },
+      error: (err) => console.error('Error en autocomplete:', err)
     });
   }
 
-  seleccionarSedeEliminar(variante: Producto) {
-    if (!variante.id) return;
+seleccionarProductoBusqueda(event: any) {
+    // 1. Extraemos el objeto ligero que nos dio el autocomplete
+    const productoSeleccionado = event.value as ProductoAutocomplete;
     
-    const sedeNombre = variante.variantes?.[0]?.sede || 'desconocida';
-    
-    this.confirmationService.confirm({
-      message: `¿Eliminar el producto "<strong>${variante.nombre}</strong>" de la sede <strong>${this.formatearNombreSede(sedeNombre)}</strong>?`,
-      header: 'Confirmar Eliminación',
-      icon: 'pi pi-exclamation-triangle',
-      rejectLabel: 'Cancelar',
-      acceptLabel: 'Eliminar',
-      acceptButtonProps: { severity: 'danger' },
-      rejectButtonProps: { severity: 'secondary', outlined: true },
-      accept: () => {
-        this.ejecutarEliminacion(variante);
-        this.cerrarDialogEliminar();
-      }
-    });
-  }
+    // 2. Solucionamos el [object Object] dejando solo el nombre en el input
+    this.buscarValue.set(productoSeleccionado.nombre);
 
-  eliminarTodasLasSedes() {
-    if (!this.productoAEliminar) return;
+    const sedeId = this.idSedeActual();
+    if (!sedeId) return;
 
-    this.confirmationService.confirm({
-      message: `¿Eliminar el producto "<strong>${this.productoAEliminar.nombre}</strong>" de <strong>TODAS LAS SEDES</strong>?<br><br>Esta acción eliminará ${this.productoAEliminar.cantidadSedes} registros.`,
-      header: 'Confirmar Eliminación Total',
-      icon: 'pi pi-exclamation-triangle',
-      rejectLabel: 'Cancelar',
-      acceptLabel: 'Eliminar Todo',
-      acceptButtonProps: { severity: 'danger' },
-      rejectButtonProps: { severity: 'secondary', outlined: true },
-      accept: () => {
-        let exitoso = 0;
-        this.productoAEliminar!.variantes.forEach(variante => {
-          if (variante.id && this.productosService.eliminarProducto(variante.id)) {
-            exitoso++;
-          }
-        });
+    this.loading.set(true);
 
-        if (exitoso > 0) {
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Productos Eliminados',
-            detail: `"${this.productoAEliminar!.nombre}" eliminado de ${exitoso} sedes`,
-            life: 3000
-          });
-          this.cargarProductosAgrupados();
-        }
+    // 3. Usamos tu endpoint detallado buscando por ID y Sede
+    this.productoService.getProductoDetalleStock(productoSeleccionado.id_producto, sedeId).subscribe({
+      next: (detalleResponse) => {
+        // 4. Mapeamos la respuesta rica al formato que espera tu tabla (ProductoStock)
+        const productoParaTabla: ProductoStock = {
+          id_producto: detalleResponse.producto.id_producto,
+          codigo: detalleResponse.producto.codigo,
+          nombre: detalleResponse.producto.nombre,
+          // ¡Aquí extraemos la familia y sede de la nueva estructura JSON!
+          familia: detalleResponse.producto.categoria.nombre, 
+          sede: detalleResponse.stock.sede,
+          stock: detalleResponse.stock.cantidad
+        };
         
-        this.cerrarDialogEliminar();
+        // 5. Reemplazamos los datos de la tabla con nuestro único producto
+        this.productos.set([productoParaTabla]);
+        this.totalRecords.set(1);
+        this.loading.set(false);
+      },
+      error: (err) => {
+        console.error('Error al cargar detalle completo del producto:', err);
+        this.loading.set(false);
       }
     });
   }
 
-  ejecutarEliminacion(producto: Producto) {
-    if (!producto.id) return;
-    
-    const sedeNombre = producto.variantes?.[0]?.sede || 'desconocida';
-    const exito = this.productosService.eliminarProducto(producto.id);
-    
-    if (exito) {
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Producto Eliminado',
-        detail: `"${producto.nombre}" eliminado de ${this.formatearNombreSede(sedeNombre)}`,
-        life: 3000
-      });
-      this.cargarProductosAgrupados();
-    }
+  limpiarBusqueda() {
+    this.buscarValue.set(null);
+    this.currentPage.set(1);
+    this.cargarProductos(); // Volvemos a cargar todos los productos de la sede
   }
 
-  cerrarDialogEliminar() {
-    this.mostrarDialogEliminar = false;
-    this.productoAEliminar = null;
-  }
-
-  restaurarProducto(producto: ProductoAgrupado, event: Event) {
-    const varianteId = producto.variantes[0]?.id;
-    if (!varianteId) return;
-    
-    if (producto.cantidadSedes === 1) {
-      this.confirmationService.confirm({
-        target: event.target as EventTarget,
-        message: `¿Restaurar "<strong>${producto.nombre}</strong>"?`,
-        header: 'Confirmar Restauración',
-        icon: 'pi pi-info-circle',
-        rejectLabel: 'Cancelar',
-        acceptLabel: 'Restaurar',
-        acceptButtonProps: { severity: 'warning' },
-        rejectButtonProps: { severity: 'secondary', outlined: true },
-        accept: () => {
-          const exito = this.productosService.restaurarProducto(varianteId);
-          if (exito) {
-            this.messageService.add({
-              severity: 'success',
-              summary: 'Producto Restaurado',
-              detail: `"${producto.nombre}" restaurado exitosamente`,
-              life: 3000
-            });
-            this.cargarProductosEliminados();
-          }
-        }
-      });
-    } else {
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Restauración por Sede',
-        detail: 'Este producto tiene múltiples sedes. Usa "Editar" para restaurar sedes específicas.',
-        life: 4000
-      });
-    }
-  }
-
-  limpiarFiltros() {
-    if (this.esVistaEliminados) {
-      this.buscarValueEliminados = null;
-      this.familiaValueEliminados = null;
-      this.filtrarEliminados();
-      this.cargarProductosEliminados();
-    } else {
-      this.sedeValue = null;
-      this.familiaValue = null;
-      this.buscarValue = null;
-      this.items = [];
-      this.aplicarTodosLosFiltros();
-    }
-  }
-
-  trackByFn(index: number, item: any): string {
-    return item.codigo || item.id;
-  }
-
-  irDetalle(id: number) { 
-    setTimeout(() => {
-      this.router.navigate(['/admin/gestion-productos/ver-detalle-producto', id]);
-      this.actualizarCabecera();
-      this.cdr.detectChanges();
-    }, 0);
-  }
-  
   irCrear() { 
-    setTimeout(() => {
-      this.router.navigate(['/admin/gestion-productos/crear-producto']);
-      this.actualizarCabecera();
-      this.cdr.detectChanges();
-    }, 0);
+    this.router.navigate(['/admin/gestion-productos/crear-producto']);
   }
   
   irEditar(id: number) { 
-    setTimeout(() => {
-      this.router.navigate(['/admin/gestion-productos/editar-producto', id], {
-        queryParams: { returnUrl: '/admin/gestion-productos' }
-      });
-      this.actualizarCabecera();
-      this.cdr.detectChanges();
-    }, 0);
+    // Obtenemos la sede que el usuario seleccionó en el dropdown de la tabla
+    const sedeActual = this.idSedeActual(); 
+
+    this.router.navigate(['/admin/gestion-productos/editar-producto', id], {
+      // Mandamos la sede como parámetro en la URL (?idSede=X)
+      queryParams: { idSede: sedeActual } 
+    });
   }
 
-  isRutaHija(): boolean {
-    const url = this.router.url;
-    return url.includes('crear-producto') || 
-           url.includes('editar-producto') || 
-           url.includes('ver-detalle-producto');
+  irDetalle(id: number) { 
+    this.router.navigate(['/admin/gestion-productos/ver-detalle-producto', id]);
   }
 
-  get stockTotalGeneral(): number {
-    return this.productosAgrupados.reduce((sum, p) => sum + p.stockTotal, 0);
-  }
-
-  get totalFamilias(): number {
-    return this.familias.length;
-  }
-
-  get totalEliminados(): number {
-    return this.productosService.getTotalProductosEliminados();
-  }
-
-  getLast(): number {
-    return Math.min(this.first + this.rows, this.totalRecords);
-  }
-
-  getLastEliminados(): number {
-    return Math.min(this.firstEliminados + this.rowsEliminados, this.totalRecordsEliminados);
-  }
 }

@@ -1,8 +1,12 @@
-import { UserRole } from '../constants/roles.constants';
-
 export interface User {
   userId: number;
   username: string;
-  roleId: UserRole;
-  email?: string;
+  email: string;
+  roleId: number;
+  roleName: string;
+  idSede: number;
+  sedeNombre: string;
+  permisos: string[];
+  nombres: string;
+  apellidos: string;
 }

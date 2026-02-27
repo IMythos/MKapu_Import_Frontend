@@ -1,15 +1,22 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
-import { forkJoin, map } from 'rxjs';
-import { TransferenciaService } from '../../../../services/transferencia.service';
-import { SedeService } from '../../../../services/sede.service';
-import { TransferenciaInterfaceResponse } from '../../../../interfaces/transferencia.interface';
-import { Headquarter } from '../../../../interfaces/sedes.interface';
+import {
+  TransferListResponseDto,
+  TransferStatus,
+} from '../../../../interfaces/transferencia.interface';
+import { TransferStore } from '../../../../services/transfer.store';
 
 interface NotificacionTransferenciaItem {
   id: string;
+  transferId: number;
   titulo: string;
   detalle: string;
   tiempo: string;
@@ -19,117 +26,95 @@ interface NotificacionTransferenciaItem {
 @Component({
   selector: 'app-notificacion-transferencia',
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, RouterModule, ButtonModule],
   templateUrl: './notificacion-transferencia.html',
   styleUrl: './notificacion-transferencia.css',
 })
-export class NotificacionTransferencia implements OnInit {
-  notificaciones: NotificacionTransferenciaItem[] = [];
-  private sedeNombrePorId = new Map<string, string>();
-  private userSedeId: string | null = null;
-  private userSedeNombre: string | null = null;
+export class NotificacionTransferencia {
+  private readonly transferStore = inject(TransferStore);
 
-  constructor(
-    private transferenciaService: TransferenciaService,
-    private sedeService: SedeService,
-  ) {}
+  private readonly userSedeIdSig = signal<string | null>(null);
+
+  readonly notificacionesSig = computed<NotificacionTransferenciaItem[]>(() => {
+    const sedeId = this.userSedeIdSig();
+    if (!sedeId) {
+      return [];
+    }
+
+    return this.transferStore
+      .transfers()
+      .filter((transferencia) => String(transferencia.destinationHeadquartersId ?? '') === sedeId)
+      .map((transferencia) => this.mapNotificacion(transferencia));
+  });
 
   ngOnInit(): void {
-    this.cargarUsuarioDesdeStorage();
-    this.cargarNotificaciones();
-  }
+    const user = this.getCurrentUserFromStorage();
+    const sedeId = user?.idSede !== undefined ? String(user.idSede) : null;
 
-  private cargarUsuarioDesdeStorage(): void {
-    const userStr = localStorage.getItem('user');
-    if (!userStr) return;
-    try {
-      const user = JSON.parse(userStr);
-      if (user?.idSede !== undefined && user?.idSede !== null) {
-        this.userSedeId = String(user.idSede);
-      }
-      if (user?.sedeNombre) {
-        this.userSedeNombre = String(user.sedeNombre);
-      }
-    } catch (error) {
-      console.error('Error al leer user del localStorage:', error);
+    this.userSedeIdSig.set(sedeId);
+
+    if (!sedeId) {
+      return;
     }
+
+    this.transferStore.loadByHq(sedeId);
   }
 
-  private cargarNotificaciones(): void {
-    const sedes$ = this.sedeService.getSedes().pipe(
-      map((response) => (Array.isArray(response) ? response : response?.headquarters ?? [])),
-    );
-
-    forkJoin({
-      transferencias: this.transferenciaService.getTransferencias(),
-      sedes: sedes$,
-    }).subscribe({
-      next: ({ transferencias, sedes }) => {
-        this.indexarSedes(sedes);
-        const lista = Array.isArray(transferencias) ? transferencias : [];
-        this.notificaciones = this.mapNotificaciones(lista);
-        localStorage.setItem('transferencia_notif_count', String(this.notificaciones.length));
-      },
-      error: (error) => {
-        console.error('Error al cargar notificaciones:', error);
-        this.notificaciones = [];
-        localStorage.setItem('transferencia_notif_count', '0');
-      },
-    });
+  get notificaciones(): NotificacionTransferenciaItem[] {
+    return this.notificacionesSig();
   }
 
-  private indexarSedes(sedes: Headquarter[]): void {
-    this.sedeNombrePorId.clear();
-    sedes.forEach((sede) => {
-      this.sedeNombrePorId.set(String(sede.id_sede), sede.nombre);
-    });
+  private mapNotificacion(transferencia: TransferListResponseDto): NotificacionTransferenciaItem {
+    const origen = transferencia.origin?.nomSede || transferencia.originHeadquartersId || '-';
+    const destino =
+      transferencia.destination?.nomSede || transferencia.destinationHeadquartersId || '-';
+    const status = this.normalizeStatus(transferencia.status);
+
+    return {
+      id: `#${transferencia.id}`,
+      transferId: transferencia.id,
+      titulo: status === 'SOLICITADA' ? 'Nueva Transferencia' : 'Estado actualizado',
+      detalle: `Ruta: ${origen} -> ${destino} (${status})`,
+      tiempo: this.formatTiempo(transferencia.requestDate),
+      tipo: status === 'SOLICITADA' ? 'nueva' : 'estado',
+    };
   }
 
-  private mapNotificaciones(
-    transferencias: TransferenciaInterfaceResponse[],
-  ): NotificacionTransferenciaItem[] {
-    const sedeId = this.userSedeId;
-    const sedeNombre = this.userSedeNombre;
+  private normalizeStatus(value: string | TransferStatus | undefined): TransferStatus {
+    const raw = String(value ?? 'SOLICITADA').toUpperCase();
 
-    const filtradas = transferencias.filter((t) => {
-      if (!sedeId && !sedeNombre) return false;
-      const destinoId = t.destinationHeadquartersId ? String(t.destinationHeadquartersId) : '';
-      const destinoNombre = this.getSedeNombre(t.destinationHeadquartersId);
-      if (sedeId && destinoId === sedeId) return true;
-      if (sedeNombre && destinoNombre === sedeNombre) return true;
-      return false;
-    });
-
-    return filtradas.map((t) => {
-      const origen = this.getSedeNombre(t.originHeadquartersId);
-      const destino = this.getSedeNombre(t.destinationHeadquartersId);
-      const ruta = `Ruta: ${origen} -> ${destino}`;
-      return {
-        id: `#${t.id}`,
-        titulo: 'Nueva Transferencia',
-        detalle: ruta,
-        tiempo: this.formatTiempo(t.requestDate),
-        tipo: 'nueva',
-      };
-    });
-  }
-
-  private getSedeNombre(id: string | null | undefined): string {
-    if (!id) return '-';
-    return this.sedeNombrePorId.get(String(id)) ?? String(id);
+    if (raw.includes('APROB')) return 'APROBADA';
+    if (raw.includes('RECH')) return 'RECHAZADA';
+    if (raw.includes('COMPLET')) return 'COMPLETADA';
+    return 'SOLICITADA';
   }
 
   private formatTiempo(iso: string | null | undefined): string {
     if (!iso) return '-';
+
     const fecha = new Date(iso);
     if (Number.isNaN(fecha.getTime())) return '-';
+
     const diffMs = Date.now() - fecha.getTime();
     const diffMin = Math.floor(diffMs / 60000);
+
     if (diffMin < 1) return 'Hace un momento';
     if (diffMin < 60) return `Hace ${diffMin} minutos`;
+
     const diffH = Math.floor(diffMin / 60);
     if (diffH < 24) return `Hace ${diffH} horas`;
+
     const diffD = Math.floor(diffH / 24);
     return `Hace ${diffD} dias`;
+  }
+
+  private getCurrentUserFromStorage(): { idSede?: number | string } | null {
+    try {
+      const raw = localStorage.getItem('user');
+      return raw ? (JSON.parse(raw) as { idSede?: number | string }) : null;
+    } catch {
+      return null;
+    }
   }
 }

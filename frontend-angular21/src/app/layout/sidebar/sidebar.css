@@ -3,13 +3,89 @@
     height: auto;
     display: block;
     margin: 0 auto;
-    border-radius: 10px; 
     transform: scale(0.7);  
     margin-top: 20px;
     border-radius: 50%;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 .sidebar-root {
   background-color: var(--surface-900);
   color: var(--surface-0);
+  border: none !important;
 }
+
+.sidebar-root a {
+  border: none !important;
+  outline: none !important;
+  border-left: none !important;
+}
+
+.sidebar-root a.active,
+.sidebar-root a:focus,
+.sidebar-root a:active {
+  border: none !important;
+  border-left: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-root span {
+  user-select: none;
+  cursor: default;
+}
+
+.sidebar-root .border-bottom-1 {
+  border-bottom-color: transparent !important;
+}
+
+.sidebar-root .flex.justify-content-center {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+.sidebar-root .flex.align-items-center.gap-2 {
+  border: none !important;
+  outline: none !important;
+}
+
+.p-inputtext {
+  caret-color: transparent;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.p-inputtext:focus {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* Scrollbar solo en el área del menú */
+.menu-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #f59e0b transparent;
+}
+
+.menu-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.menu-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.menu-scroll::-webkit-scrollbar-thumb {
+  background-color: #f59e0b;
+  border-radius: 10px;
+}
+
+.menu-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: #d97706;
+}
+
