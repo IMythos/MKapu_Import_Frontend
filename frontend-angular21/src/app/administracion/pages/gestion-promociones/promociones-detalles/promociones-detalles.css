@@ -1,0 +1,144 @@
+.promociones-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.promociones-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.promociones-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.promociones-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.form-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  padding-bottom: 0.625rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.form-section-title i {
+  color: #f6af33;
+  font-size: 1.05rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin: 0 0 0.4rem 0;
+  line-height: 1;
+}
+
+.detalle-valor {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.925rem;
+  font-weight: 500;
+  color: #1f2937;
+  min-height: 28px;
+}
+
+.detalle-descripcion {
+  align-items: flex-start;
+  font-weight: 400;
+  color: #374151;
+  line-height: 1.55;
+}
+
+.detalle-icon {
+  font-size: 0.85rem;
+  color: #f6af33;
+  flex-shrink: 0;
+}
+
+.codigo-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #fefce8;
+  border: 1.5px solid #fcd34d;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.85rem;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+}
+
+.descuento-card {
+  background: #fffdf4;
+  border: 2px solid #fffdf4;
+}
+
+.descuento-valor-grande {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #92400e;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.descuento-tipo-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #b45309;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0;
+}
+
+:host ::ng-deep .vigencia-progress .p-progressbar-value {
+  background: linear-gradient(90deg, #f6af33 0%, #e8a424 100%) !important;
+}
+
+:host ::ng-deep .vigencia-progress {
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: #e5e7eb !important;
+}
+
+:host-context(.app-dark) .promociones-title { color: #ffffff; }
+:host-context(.app-dark) .promociones-kicker { color: #a1a1aa; }
+:host-context(.app-dark) .promociones-title-icon { background: #e8a424; color: #1f2937; }
+:host-context(.app-dark) .form-section-title { color: #f1f5f9; border-bottom-color: #27272a; }
+:host-context(.app-dark) .form-label { color: #a1a1aa; }
+:host-context(.app-dark) .detalle-valor { color: #f1f5f9; }
+:host-context(.app-dark) .detalle-descripcion { color: #cbd5e1; }
+:host-context(.app-dark) .codigo-badge { background: #2a1f00; border-color: #92400e; color: #fcd34d; }
+:host-context(.app-dark) .descuento-card { background: linear-gradient(135deg, #2a2000 0%, #3a2d00 100%); border-color: #92400e; }
+:host-context(.app-dark) .descuento-valor-grande { color: #fcd34d; }
+:host-context(.app-dark) .descuento-tipo-label { color: #f6af33; }
+:host-context(.app-dark) :host ::ng-deep .vigencia-progress { background: #27272a !important; }
+
+@media (max-width: 768px) {
+  .descuento-valor-grande { font-size: 2.25rem; }
+}
