@@ -9,6 +9,9 @@ import {
   RequestTransferAggregatedItemDto,
   TransferApiError,
   TransferByIdResponseDto,
+  TransferListPaginatedResponseDto,
+  TransferListPaginationDto,
+  TransferListQueryDto,
   TransferListResponseDto,
   TransferResponseDto,
   TransferStatus,
@@ -31,6 +34,15 @@ const EMPTY_DRAFT: RequestTransferAggregatedDto = {
   items: [],
 };
 
+const DEFAULT_TRANSFER_PAGINATION: TransferListPaginationDto = {
+  page: 1,
+  pageSize: 5,
+  totalRecords: 0,
+  totalPages: 0,
+  hasNextPage: false,
+  hasPreviousPage: false,
+};
+
 @Injectable({ providedIn: 'root' })
 export class TransferStore {
   private readonly transferApiService = inject(TransferApiService);
@@ -40,6 +52,9 @@ export class TransferStore {
   readonly selected = signal<TransferByIdResponseDto | TransferResponseDto | null>(null);
   readonly loading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
+  readonly pagination = signal<TransferListPaginationDto>({
+    ...DEFAULT_TRANSFER_PAGINATION,
+  });
 
   readonly requestDraft = signal<RequestTransferAggregatedDto>({ ...EMPTY_DRAFT });
   readonly selectedItems = signal<TransferDraftItemSelection[]>([]);
@@ -52,6 +67,7 @@ export class TransferStore {
   readonly hasError = computed(() => !!this.error());
   readonly count = computed(() => this.transfers().length);
   readonly total = this.count;
+  readonly totalRecords = computed(() => this.pagination().totalRecords);
   readonly totalQuantity = computed(() =>
     this.selectedItems().reduce((acc, item) => acc + item.quantity, 0),
   );
@@ -67,7 +83,8 @@ export class TransferStore {
       draft.originHeadquartersId !== draft.destinationHeadquartersId ||
       draft.originWarehouseId !== draft.destinationWarehouseId;
 
-    const hasValidItems = this.selectedItems().length > 0 && this.selectedItems().every((i) => i.quantity > 0);
+    const hasValidItems =
+      this.selectedItems().length > 0 && this.selectedItems().every((i) => i.quantity > 0);
 
     return hasRoute && differentRoute && hasValidItems && draft.userId > 0;
   });
@@ -78,24 +95,61 @@ export class TransferStore {
 
   private readonly lastLoadedHqId = signal<string | null>(null);
 
-  loadAll(): void {
+  loadAll(query: TransferListQueryDto = {}): void {
+    const currentPagination = this.pagination();
+    const page =
+      Number.isFinite(Number(query.page)) && Number(query.page) > 0
+        ? Math.floor(Number(query.page))
+        : currentPagination.page;
+    const pageSize =
+      Number.isFinite(Number(query.pageSize)) && Number(query.pageSize) > 0
+        ? Math.floor(Number(query.pageSize))
+        : currentPagination.pageSize;
+    const headquartersId = String(
+      query.headquartersId ?? this.transferUserContext.getCurrentHeadquarterId() ?? '',
+    ).trim();
+
+    if (!headquartersId) {
+      this.loading.set(false);
+      this.error.set('No se pudo determinar la sede del usuario para listar transferencias.');
+      this.transfers.set([]);
+      this.pagination.set({
+        ...DEFAULT_TRANSFER_PAGINATION,
+        page,
+        pageSize,
+      });
+      return;
+    }
+
     this.loading.set(true);
     this.error.set(null);
 
     this.transferApiService
-      .listAll()
+      .listAll({ headquartersId, page, pageSize })
       .pipe(
         take(1),
         finalize(() => this.loading.set(false)),
       )
       .subscribe({
-        next: (transfers) => {
-          this.lastLoadedHqId.set(null);
-          this.transfers.set(transfers ?? []);
+        next: (response) => {
+          this.lastLoadedHqId.set(headquartersId);
+          const normalizedPagination = this.normalizePagination(
+            response,
+            page,
+            pageSize,
+          );
+
+          this.transfers.set(response?.data ?? []);
+          this.pagination.set(normalizedPagination);
         },
         error: (error: TransferApiError) => {
           this.error.set(this.resolveErrorMessage(error));
           this.transfers.set([]);
+          this.pagination.set({
+            ...DEFAULT_TRANSFER_PAGINATION,
+            page,
+            pageSize,
+          });
         },
       });
   }
@@ -116,10 +170,20 @@ export class TransferStore {
         next: (transfers) => {
           this.lastLoadedHqId.set(normalizedHqId);
           this.transfers.set(transfers ?? []);
+          const totalRecords = transfers?.length ?? 0;
+          this.pagination.set({
+            page: 1,
+            pageSize: Math.max(1, totalRecords || this.pagination().pageSize),
+            totalRecords,
+            totalPages: totalRecords > 0 ? 1 : 0,
+            hasNextPage: false,
+            hasPreviousPage: false,
+          });
         },
         error: (error: TransferApiError) => {
           this.error.set(this.resolveErrorMessage(error));
           this.transfers.set([]);
+          this.pagination.set({ ...DEFAULT_TRANSFER_PAGINATION });
         },
       });
   }
@@ -171,9 +235,7 @@ export class TransferStore {
   }
 
   approve(id: number | string, dto: ApproveTransferDto): Observable<TransferResponseDto | null> {
-    return this.updateStatus(
-      this.transferApiService.approve(Number(id), dto, 'ADMINISTRADOR'),
-    );
+    return this.updateStatus(this.transferApiService.approve(Number(id), dto, 'ADMINISTRADOR'));
   }
 
   confirmReceipt(
@@ -181,18 +243,12 @@ export class TransferStore {
     dto: ConfirmReceiptTransferDto,
   ): Observable<TransferResponseDto | null> {
     return this.updateStatus(
-      this.transferApiService.confirmReceipt(
-        Number(id),
-        dto,
-        'ADMINISTRADOR',
-      ),
+      this.transferApiService.confirmReceipt(Number(id), dto, 'ADMINISTRADOR'),
     );
   }
 
   reject(id: number | string, dto: RejectTransferDto): Observable<TransferResponseDto | null> {
-    return this.updateStatus(
-      this.transferApiService.reject(Number(id), dto, 'ADMINISTRADOR'),
-    );
+    return this.updateStatus(this.transferApiService.reject(Number(id), dto, 'ADMINISTRADOR'));
   }
 
   // Compatibilidad con llamadas existentes
@@ -296,7 +352,9 @@ export class TransferStore {
     this.conflictProductId.set(null);
   }
 
-  private updateStatus(source$: Observable<TransferResponseDto>): Observable<TransferResponseDto | null> {
+  private updateStatus(
+    source$: Observable<TransferResponseDto>,
+  ): Observable<TransferResponseDto | null> {
     this.loading.set(true);
     this.error.set(null);
 
@@ -347,6 +405,55 @@ export class TransferStore {
       userId,
       items,
       observation: draft.observation?.trim() || null,
+    };
+  }
+
+
+  private normalizePagination(
+    response: TransferListPaginatedResponseDto | null | undefined,
+    fallbackPage: number,
+    fallbackPageSize: number,
+  ): TransferListPaginationDto {
+    const pagination = response?.pagination;
+    if (!pagination) {
+      return {
+        ...DEFAULT_TRANSFER_PAGINATION,
+        page: fallbackPage,
+        pageSize: fallbackPageSize,
+      };
+    }
+
+    const page =
+      Number.isFinite(Number(pagination.page)) && Number(pagination.page) > 0
+        ? Math.floor(Number(pagination.page))
+        : fallbackPage;
+    const pageSize =
+      Number.isFinite(Number(pagination.pageSize)) &&
+      Number(pagination.pageSize) > 0
+        ? Math.floor(Number(pagination.pageSize))
+        : fallbackPageSize;
+    const totalRecords = Math.max(0, Number(pagination.totalRecords ?? 0));
+    const totalPages =
+      Number.isFinite(Number(pagination.totalPages)) &&
+      Number(pagination.totalPages) >= 0
+        ? Math.floor(Number(pagination.totalPages))
+        : totalRecords === 0
+          ? 0
+          : Math.ceil(totalRecords / pageSize);
+
+    return {
+      page,
+      pageSize,
+      totalRecords,
+      totalPages,
+      hasNextPage:
+        typeof pagination.hasNextPage === 'boolean'
+          ? pagination.hasNextPage
+          : totalPages > 0 && page < totalPages,
+      hasPreviousPage:
+        typeof pagination.hasPreviousPage === 'boolean'
+          ? pagination.hasPreviousPage
+          : totalPages > 0 && page > 1,
     };
   }
 

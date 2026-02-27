@@ -46,7 +46,12 @@ export class Sidebar implements OnInit {
 
   private readonly SIDEBAR_ROUTES: RouteConfig[] = [
     // ==================== ADMIN ====================
-    { path: '/admin/dashboard-admin',                 allowedRoles: [UserRole.ADMIN],  label: 'Dashboard', icon: 'pi pi-home' },
+    {
+      path: '/admin/dashboard',
+      allowedRoles: [UserRole.ADMIN],
+      label: 'Dashboard',
+      icon: 'pi pi-home',
+    },
 
     { path: '',                                       allowedRoles: [UserRole.ADMIN],  label: 'VENTAS', isSection: true },
     { path: '/admin/dashboard-ventas',                allowedRoles: [UserRole.ADMIN],  label: 'Dashboard Ventas', icon: 'pi pi-chart-line' },
@@ -94,12 +99,31 @@ export class Sidebar implements OnInit {
     { path: '/ventas/remates',                        allowedRoles: [UserRole.VENTAS], label: 'Remates', icon: 'pi pi-tag' },
 
     // ==================== ALMACÉN ====================
-    { path: '/almacen/dashboard',                     allowedRoles: [UserRole.ALMACEN], label: 'Dashboard', icon: 'pi pi-chart-line' },
-
-    // ==================== LOGISTICA ====================
-    { path: '',                                       allowedRoles: [UserRole.ADMIN], label: 'LOGISTICA', isSection: true },
-    { path: '/admin/conteo-inventario',           allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN], label: 'Conteo Inventario', icon: 'pi pi-bookmark' },
-    { path: '/logistica/remision',                    allowedRoles: [UserRole.ALMACEN, UserRole.ADMIN], label: 'Remisión', icon: 'pi pi-truck' }
+    {
+      path: '/almacen/dashboard',
+      allowedRoles: [UserRole.ALMACEN],
+      label: 'Dashboard',
+      icon: 'pi pi-chart-line',
+    },
+  //==================== LOGISTICA ====================
+    {
+      path: '',
+      allowedRoles: [UserRole.ADMIN],
+      label: 'LOGISTICA',
+      isSection: true,
+    },
+    {
+      path: '/logistica/remision',
+      allowedRoles: [UserRole.ADMIN],
+      label: 'Remision',
+      icon: 'pi pi-truck',
+    },
+    {
+      path: '/logistica/conteo-inventario',
+      allowedRoles: [UserRole.ADMIN],
+      label: 'Conteo Inventario',
+      icon: 'pi pi-folder',
+    },
   ];
 
   // ========== Ciclo de vida ==========

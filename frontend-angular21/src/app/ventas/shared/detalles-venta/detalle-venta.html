@@ -1,3 +1,5 @@
+<p-toast></p-toast>
+
 <div class="p-2">
   <p-card class="ventas-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
@@ -12,7 +14,6 @@
       </div>
       <div class="flex gap-3">
         <p-button
-          type="button"
           label="Historial Ventas"
           icon="pi pi-list"
           (click)="irHistorialVentas()"
@@ -20,39 +21,37 @@
           tooltipPosition="bottom"
         />
         <p-button
-          type="button"
           label="Imprimir"
           icon="pi pi-print"
-          class="p-button-outlined"
+          [outlined]="true"
           (click)="imprimirComprobante()"
           pTooltip="Imprimir comprobante"
           tooltipPosition="bottom"
+          [disabled]="!comprobante()"
         />
       </div>
     </div>
   </p-card>
 </div>
 
-<!-- ── SKELETON ─────────────────────────────────────────────────────────── -->
-<div *ngIf="loading()" class="p-2">
-  <div class="loading-container">
+<!-- ── SKELETON ──────────────────────────────────────────────────────────── -->
+@if (loading()) {
+  <div class="p-2">
     <p-card>
       <div class="skeleton-wrapper">
-        <p-skeleton width="100%" height="150px" styleClass="mb-3"></p-skeleton>
-        <p-skeleton width="100%" height="300px" styleClass="mb-3"></p-skeleton>
-        <p-skeleton width="100%" height="200px"></p-skeleton>
+        <p-skeleton width="100%" height="150px" styleClass="mb-3" />
+        <p-skeleton width="100%" height="300px" styleClass="mb-3" />
+        <p-skeleton width="100%" height="200px" />
       </div>
     </p-card>
   </div>
-</div>
+}
 
-<!-- ── CONTENIDO ────────────────────────────────────────────────────────── -->
-<div *ngIf="!loading() && comprobante()">
-
-  <!-- ── CABECERA COMPROBANTE ─────────────────────────────────────────── -->
+<!-- ── CONTENIDO ─────────────────────────────────────────────────────────── -->
+@if (!loading() && comprobante(); as c) {
+  <!-- ── CABECERA COMPROBANTE ──────────────────────────────────────────── -->
   <div class="p-2">
     <p-card class="comprobante-card mb-4">
-
       <div class="comprobante-header">
         <div class="comprobante-tipo">
           <span class="tipo-icon">
@@ -64,44 +63,45 @@
           </div>
         </div>
         <div class="comprobante-estado">
-          <p-tag
-            [value]="estadoLabel()"
-            [severity]="estadoSeverity()"
-            [rounded]="true"
-          ></p-tag>
+          <p-tag [value]="c.estadoLabel" [severity]="estadoSeverity()" [rounded]="true" />
         </div>
       </div>
 
       <div class="info-grid-wrapper">
         <div class="info-grid">
-
           <!-- Cliente -->
           <div class="info-section">
             <h3><i class="pi pi-user"></i> Cliente</h3>
             <div class="info-row">
               <span class="label">Nombre completo:</span>
-              <span class="value">{{ comprobante()!.cliente_nombre }}</span>
+              <span class="value">{{ c.cliente_nombre }}</span>
             </div>
             <div class="info-row">
               <span class="label">Tipo documento:</span>
-              <span class="value">{{ comprobante()!.cliente_tipo_doc }}</span>
+              <span class="value">{{ c.cliente_tipo_doc }}</span>
             </div>
             <div class="info-row">
               <span class="label">N° Documento:</span>
-              <span class="value">{{ comprobante()!.cliente_doc }}</span>
+              <span class="value">{{ c.cliente_doc }}</span>
             </div>
-            <div class="info-row" *ngIf="comprobante()!.cliente_direccion !== '—'">
-              <span class="label">Dirección:</span>
-              <span class="value">{{ comprobante()!.cliente_direccion }}</span>
-            </div>
-            <div class="info-row" *ngIf="comprobante()!.cliente_email !== '—'">
-              <span class="label">Email:</span>
-              <span class="value">{{ comprobante()!.cliente_email }}</span>
-            </div>
-            <div class="info-row" *ngIf="comprobante()!.cliente_telefono !== '—'">
-              <span class="label">Teléfono:</span>
-              <span class="value">{{ comprobante()!.cliente_telefono }}</span>
-            </div>
+            @if (c.cliente_direccion !== '—') {
+              <div class="info-row">
+                <span class="label">Dirección:</span>
+                <span class="value">{{ c.cliente_direccion }}</span>
+              </div>
+            }
+            @if (c.cliente_email !== '—') {
+              <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ c.cliente_email }}</span>
+              </div>
+            }
+            @if (c.cliente_telefono !== '—') {
+              <div class="info-row">
+                <span class="label">Teléfono:</span>
+                <span class="value">{{ c.cliente_telefono }}</span>
+              </div>
+            }
           </div>
 
           <!-- Comprobante -->
@@ -109,66 +109,58 @@
             <h3><i class="pi pi-file-edit"></i> Comprobante</h3>
             <div class="info-row">
               <span class="label">Fecha emisión:</span>
-              <span class="value">{{ comprobante()!.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="info-row" *ngIf="comprobante()!.fec_venc">
-              <span class="label">Fecha vencimiento:</span>
-              <span class="value">{{ comprobante()!.fec_venc | date: 'dd/MM/yyyy' }}</span>
+              <span class="value">{{ c.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</span>
             </div>
             <div class="info-row">
               <span class="label">Moneda:</span>
               <span class="value">
-                {{ comprobante()!.moneda === 'PEN' ? 'Soles (S/.)' : 'Dólares ($)' }}
+                {{ c.moneda === 'PEN' ? 'Soles (S/.)' : 'Dólares ($)' }}
               </span>
             </div>
             <div class="info-row">
               <span class="label">Responsable:</span>
-              <span class="value">{{ comprobante()!.responsable }}</span>
+              <span class="value">{{ c.responsable }}</span>
             </div>
             <div class="info-row">
               <span class="label">Sede:</span>
-              <span class="value">{{ comprobante()!.sede_nombre }}</span>
+              <span class="value">{{ c.sede_nombre }}</span>
             </div>
             <div class="info-row">
               <span class="label">Estado SUNAT:</span>
-              <span class="value sunat-ok">{{ comprobante()!.estadoLabel }}</span>
+              <span class="value sunat-ok">{{ c.estadoLabel }}</span>
             </div>
           </div>
 
           <!-- Pago -->
           <div class="info-section">
             <h3><i class="pi pi-wallet"></i> Información de Pago</h3>
-
-            <div *ngIf="comprobante()!.medio_pago !== 'N/A'; else sinPago">
+            @if (c.medio_pago !== 'N/A') {
               <div class="pago-item">
                 <div class="info-row">
                   <span class="label">Medio de pago:</span>
                   <span class="value">
-                    <i [class]="getIconoPago(comprobante()!.medio_pago)"></i>
-                    {{ comprobante()!.medio_pago }}
+                    <i [class]="getIconoPago(c.medio_pago)"></i>
+                    {{ c.medio_pago }}
                   </span>
                 </div>
                 <div class="info-row">
                   <span class="label">Monto pagado:</span>
-                  <span class="value amount">S/. {{ comprobante()!.total | number: '1.2-2' }}</span>
+                  <span class="value amount"> S/. {{ c.total | number: '1.2-2' }} </span>
                 </div>
               </div>
-            </div>
-
-            <ng-template #sinPago>
+            } @else {
               <div class="no-data">
                 <i class="pi pi-info-circle"></i>
                 <span>Sin información de pago</span>
               </div>
-            </ng-template>
+            }
           </div>
-
         </div>
       </div>
     </p-card>
   </div>
 
-  <!-- ── PRODUCTOS ────────────────────────────────────────────────────── -->
+  <!-- ── PRODUCTOS ─────────────────────────────────────────────────────── -->
   <div class="p-2">
     <p-card class="productos-card mb-4">
       <ng-template pTemplate="header">
@@ -177,37 +169,36 @@
             <span class="icon-shopping"><i class="pi pi-shopping-cart"></i></span>
             Productos Vendidos
           </h3>
-          <p-tag
-            [value]="comprobante()!.detalles.length + ' items'"
-            severity="success"
-            [rounded]="true"
-          ></p-tag>
+          <p-tag [value]="c.detalles.length + ' items'" severity="success" [rounded]="true" />
         </div>
       </ng-template>
 
       <p-table
-        [value]="comprobante()!.detalles"
-        [paginator]="false"
+        [value]="c.detalles"
         [tableStyle]="{ 'min-width': '50rem' }"
         styleClass="p-datatable-gridlines p-datatable-sm"
       >
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 10%">Código</th>
-            <th style="width: 40%">Descripción</th>
-            <th style="width: 10%; text-align: center">Cantidad</th>
-            <th style="width: 13%; text-align: right">Valor Unit.</th>
+            <th style="width: 45%">Descripción</th>
+            <th style="width: 10%; text-align: center">Cant.</th>
             <th style="width: 13%; text-align: right">P. Unit.</th>
-            <th style="width: 14%; text-align: right">Total</th>
+            <th style="width: 10%; text-align: right">IGV</th>
+            <th style="width: 12%; text-align: right">Total</th>
           </tr>
         </ng-template>
         <ng-template pTemplate="body" let-item>
           <tr>
-            <td><span class="codigo-producto">{{ item.cod_prod }}</span></td>
-            <td><strong>{{ item.descripcion }}</strong></td>
+            <td>
+              <span class="codigo-producto">{{ item.cod_prod }}</span>
+            </td>
+            <td>
+              <strong>{{ item.descripcion }}</strong>
+            </td>
             <td style="text-align: center">{{ item.cantidad }}</td>
-            <td style="text-align: right">S/. {{ item.valor_unit | number: '1.2-2' }}</td>
             <td style="text-align: right">S/. {{ item.pre_uni | number: '1.2-2' }}</td>
+            <td style="text-align: right">S/. {{ item.igv | number: '1.2-2' }}</td>
             <td style="text-align: right">
               <strong>S/. {{ item.total | number: '1.2-2' }}</strong>
             </td>
@@ -215,30 +206,27 @@
         </ng-template>
       </p-table>
 
+      <!-- Totales -->
       <div class="totales-container">
         <div class="totales-grid">
           <div class="total-row">
             <span class="label">Subtotal (Base imponible):</span>
-            <span class="value">S/. {{ comprobante()!.subtotal | number: '1.2-2' }}</span>
+            <span class="value">S/. {{ c.subtotal | number: '1.2-2' }}</span>
           </div>
           <div class="total-row">
             <span class="label">IGV (18%):</span>
-            <span class="value">S/. {{ comprobante()!.igv | number: '1.2-2' }}</span>
-          </div>
-          <div class="total-row" *ngIf="comprobante()!.isc > 0">
-            <span class="label">ISC:</span>
-            <span class="value">S/. {{ comprobante()!.isc | number: '1.2-2' }}</span>
+            <span class="value">S/. {{ c.igv | number: '1.2-2' }}</span>
           </div>
           <div class="total-row total-final">
             <span class="label">TOTAL A PAGAR:</span>
-            <span class="value">S/. {{ comprobante()!.total | number: '1.2-2' }}</span>
+            <span class="value">S/. {{ c.total | number: '1.2-2' }}</span>
           </div>
         </div>
       </div>
     </p-card>
   </div>
 
-  <!-- ── HISTORIAL CLIENTE ─────────────────────────────────────────────── -->
+  <!-- ── HISTORIAL CLIENTE ──────────────────────────────────────────────── -->
   <div class="p-2">
     <p-card class="historial-card">
       <ng-template pTemplate="header">
@@ -247,6 +235,12 @@
             <span class="icon-history"><i class="pi pi-history"></i></span>
             Historial de Compras del Cliente
           </h3>
+          <!-- Indicador de paginación backend -->
+          @if (historialPaginacion(); as pag) {
+            <span class="historial-pag-info">
+              {{ historial().length }} de {{ pag.total }} compras
+            </span>
+          }
         </div>
       </ng-template>
 
@@ -255,7 +249,9 @@
         <div class="stat-card">
           <i class="pi pi-shopping-bag"></i>
           <div class="stat-content">
-            <span class="stat-value">{{ estadisticas()?.totalCompras ?? historial().length }}</span>
+            <span class="stat-value">
+              {{ estadisticas()?.totalCompras ?? 0 }}
+            </span>
             <span class="stat-label">Compras realizadas</span>
           </div>
         </div>
@@ -263,7 +259,7 @@
           <i class="pi pi-dollar"></i>
           <div class="stat-content">
             <span class="stat-value">
-              S/. {{ (estadisticas()?.montoTotal ?? totalHistorial()) | number: '1.2-2' }}
+              S/. {{ estadisticas()?.montoTotal ?? 0 | number: '1.2-2' }}
             </span>
             <span class="stat-label">Total gastado</span>
           </div>
@@ -272,35 +268,35 @@
           <i class="pi pi-chart-bar"></i>
           <div class="stat-content">
             <span class="stat-value">
-              S/. {{ (estadisticas()?.promedioCompra ?? 0) | number: '1.2-2' }}
+              S/. {{ estadisticas()?.promedioCompra ?? 0 | number: '1.2-2' }}
             </span>
             <span class="stat-label">Promedio por compra</span>
           </div>
         </div>
       </div>
 
-      <p-divider></p-divider>
+      <p-divider />
 
       <!-- Tabla historial -->
-      <div *ngIf="historial().length > 0; else sinHistorial">
+      @if (historial().length > 0) {
         <p-table
           [value]="historial()"
-          [paginator]="true"
-          [rows]="5"
           [tableStyle]="{ 'min-width': '50rem' }"
           styleClass="p-datatable-gridlines p-datatable-sm"
         >
           <ng-template pTemplate="header">
             <tr>
-              <th style="width: 15%">Comprobante</th>
-              <th style="width: 12%">Fecha</th>
-              <th style="width: 20%">Responsable</th>
+              <th style="width: 17%">Comprobante</th>
+              <th style="width: 13%">Fecha</th>
+              <th style="width: 18%">Responsable</th>
               <th style="width: 10%; text-align: center">Tipo</th>
+              <th style="width: 10%; text-align: center">Método pago</th>
               <th style="width: 10%; text-align: center">Estado</th>
-              <th style="width: 13%; text-align: right">Total</th>
-              <th style="width: 20%; text-align: center">Acciones</th>
+              <th style="width: 12%; text-align: right">Total</th>
+              <th style="width: 10%; text-align: center">Acciones</th>
             </tr>
           </ng-template>
+
           <ng-template pTemplate="body" let-venta>
             <tr>
               <td>{{ formatNumero(venta.serie, venta.numero) }}</td>
@@ -315,21 +311,26 @@
                 <p-tag
                   [value]="getTipoLabel(venta.tipo_comprobante)"
                   [severity]="venta.tipo_comprobante === '03' ? 'info' : 'warn'"
-                ></p-tag>
+                />
+              </td>
+              <td style="text-align: center">
+                <span class="flex align-items-center justify-content-center gap-1">
+                  <i [class]="getIconoPago(venta.metodo_pago)"></i>
+                  {{ venta.metodo_pago }}
+                </span>
               </td>
               <td style="text-align: center">
                 <p-tag
                   [value]="venta.estado"
                   [severity]="getSeverityEstadoHistorial(venta.estado)"
-                ></p-tag>
+                />
               </td>
               <td style="text-align: right">
                 <strong>S/. {{ venta.total | number: '1.2-2' }}</strong>
               </td>
               <td style="text-align: center">
-                <div class="flex gap-1 justify-content-center align-items-center">
+                <div class="flex gap-1 justify-content-center">
                   <p-button
-                    type="button"
                     icon="pi pi-eye"
                     [text]="true"
                     severity="secondary"
@@ -339,7 +340,6 @@
                     styleClass="icon-btn"
                   />
                   <p-button
-                    type="button"
                     icon="pi pi-print"
                     [text]="true"
                     severity="secondary"
@@ -349,23 +349,23 @@
                     styleClass="icon-btn"
                   />
                   <p-button
-                    type="button"
                     icon="pi pi-send"
                     [text]="true"
                     severity="secondary"
                     (click)="enviarEmailHistorial(venta)"
                     pTooltip="Enviar por correo"
                     tooltipPosition="top"
-                    [disabled]="comprobante()!.cliente_email === '—'"
+                    [disabled]="c.cliente_email === '—'"
                     styleClass="icon-btn"
                   />
                 </div>
               </td>
             </tr>
           </ng-template>
+
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="7" style="text-align: center">
+              <td colspan="8" style="text-align: center">
                 <div class="no-data">
                   <i class="pi pi-inbox"></i>
                   <p>No hay historial de compras</p>
@@ -374,18 +374,37 @@
             </tr>
           </ng-template>
         </p-table>
-      </div>
 
-      <ng-template #sinHistorial>
+        <!-- ── CARGAR MÁS (paginación backend 5x5) ───────────────────── -->
+        @if (historialPaginacion(); as pag) {
+          @if (pag.total_pages > 1) {
+            <div class="historial-paginator-wrapper">
+              <p-paginator
+                [first]="(pag.page - 1) * 5"
+                [rows]="5"
+                [totalRecords]="pag.total"
+                [showFirstLastIcon]="true"
+                [showPageLinks]="true"
+                (onPageChange)="onHistorialPageChange($event)"
+              />
+            </div>
+          }
+        }
+
+        @if (!hayMasPaginasHistorial() && historial().length > 5) {
+          <div class="cargar-mas-container">
+            <span class="cargar-mas-info">
+              <i class="pi pi-check-circle"></i>
+              Historial completo — {{ historial().length }} compras cargadas
+            </span>
+          </div>
+        }
+      } @else {
         <div class="no-data">
           <i class="pi pi-info-circle"></i>
           <span>Este cliente no tiene compras anteriores</span>
         </div>
-      </ng-template>
-
+      }
     </p-card>
   </div>
-
-</div>
-
-<p-toast></p-toast>
+}

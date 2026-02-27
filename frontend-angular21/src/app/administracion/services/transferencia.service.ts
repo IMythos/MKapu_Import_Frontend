@@ -15,6 +15,8 @@ import {
   RejectTransferDto,
   TransferApiError,
   TransferByIdResponseDto,
+  TransferListPaginatedResponseDto,
+  TransferListQueryDto,
   TransferConflictInfo,
   TransferProductAutocompleteQuery,
   TransferProductAutocompleteResponse,
@@ -22,7 +24,6 @@ import {
   TransferProductsStockQuery,
   TransferProductsStockResponse,
   TransferProductStockQuery,
-  TransferListResponseDto,
   TransferResponseDto,
   TransferRole,
 } from '../interfaces/transferencia.interface';
@@ -94,9 +95,17 @@ export class TransferApiService {
       );
   }
 
-  listAll(): Observable<TransferListResponseDto[]> {
+  listAll(
+    query: TransferListQueryDto = {},
+  ): Observable<TransferListPaginatedResponseDto> {
+    let params = new HttpParams();
+    params = this.setParamIfDefined(params, 'headquartersId', query.headquartersId);
+    params = this.setParamIfDefined(params, 'page', query.page);
+    params = this.setParamIfDefined(params, 'pageSize', query.pageSize);
+
     return this.http
-      .get<TransferListResponseDto[]>(this.transferBase, {
+      .get<TransferListPaginatedResponseDto>(this.transferBase, {
+        params,
         headers: this.buildHeaders(),
       })
       .pipe(
@@ -138,8 +147,10 @@ export class TransferApiService {
     return this.reject(id, dto, 'ADMINISTRADOR');
   }
 
-  listTransfers(): Observable<TransferListResponseDto[]> {
-    return this.listAll();
+  listTransfers(
+    query: TransferListQueryDto = {},
+  ): Observable<TransferListPaginatedResponseDto> {
+    return this.listAll(query);
   }
 
   listTransfersByHeadquarters(hqId: string): Observable<TransferResponseDto[]> {

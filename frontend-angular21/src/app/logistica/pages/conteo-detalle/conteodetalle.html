@@ -38,13 +38,29 @@
         (onClick)="retomarConteo()"
       >
       </p-button>
-      <p-button
-        label="Exportar PDF"
-        icon="pi pi-file-pdf"
-        styleClass="p-button-danger"
-        (onClick)="descargarPDF()"
+      <button
+        class="btn-excel"
+        (click)="descargarExcel()"
+        [disabled]="isDownloadingExcel() || !idConteoActual()"
       >
-      </p-button>
+        <i
+          class="bi"
+          [ngClass]="isDownloadingExcel() ? 'bi-arrow-repeat spin-icon' : 'bi-file-earmark-excel'"
+        ></i>
+        {{ isDownloadingExcel() ? 'Generando Excel...' : 'Exportar a Excel' }}
+      </button>
+
+      <button
+        class="btn-pdf"
+        (click)="descargarPdf()"
+        [disabled]="isDownloadingPdf() || !idConteoActual()"
+      >
+        <i
+          class="bi"
+          [ngClass]="isDownloadingPdf() ? 'bi-arrow-repeat spin-icon' : 'bi-file-earmark-pdf'"
+        ></i>
+        {{ isDownloadingPdf() ? 'Generando PDF...' : 'Exportar a PDF' }}
+      </button>
     </div>
   </div>
 

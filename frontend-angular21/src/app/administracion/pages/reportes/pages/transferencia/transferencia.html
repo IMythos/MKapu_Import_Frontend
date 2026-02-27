@@ -137,7 +137,7 @@
         </span>
         <span class="text-sm font-semibold text-700">TRANSFERENCIAS REGISTRADAS</span>
         <p-tag
-          [value]="'[' + filteredTransferencias.length + '] Transferencias'"
+          [value]="'[' + totalRecords + '] Transferencias'"
           severity="info"
           styleClass="w-full sm:w-auto"
         ></p-tag>
@@ -150,8 +150,12 @@
         [value]="filteredTransferencias"
         [loading]="loading"
         styleClass="transferencia-table"
-        [paginator]="true"
-        [rows]="5"
+        [paginator]="!hasActiveFilters"
+        [lazy]="!hasActiveFilters"
+        (onLazyLoad)="onTableLazyLoad($event)"
+        [totalRecords]="totalRecords"
+        [first]="firstRowIndex"
+        [rows]="rowsPerPage"
         [rowsPerPageOptions]="[5,10, 20, 50]"
         [tableStyle]="{ 'min-width': '70rem' }"
       >

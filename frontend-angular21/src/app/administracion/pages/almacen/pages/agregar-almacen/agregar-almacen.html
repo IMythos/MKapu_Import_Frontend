@@ -18,7 +18,6 @@
 
   <div class="mb-3">
     <p-message *ngIf="busy()" severity="info" text="Procesando..."></p-message>
-    <p-message *ngIf="!busy() && error() as e" severity="error" [text]="e"></p-message>
     <p-message *ngIf="!busy() && sedesError() as sedeError" severity="warn" [text]="sedeError"></p-message>
   </div>
 
@@ -132,18 +131,18 @@
       <p-divider></p-divider>
 
       <div class="flex align-items-center justify-content-center gap-3 mt-3">
-        <p-button label="Cancelar" 
-          outlined severity="secondary" 
-          styleClass="sede-btn-cancel" 
-          type="button" 
+        <p-button label="Cancelar"
+          outlined severity="secondary"
+          styleClass="sede-btn-cancel"
+          type="button"
           (click)="confirmCancel()">
         </p-button>
 
-        <p-button 
+        <p-button
           label="Registrar Almacén"
-          icon="pi pi-check" 
-          styleClass="sede-btn-primary" 
-          type="submit" 
+          icon="pi pi-check"
+          styleClass="sede-btn-primary"
+          type="submit"
           [disabled]="sedeForm.invalid || busy()">
         </p-button>
       </div>

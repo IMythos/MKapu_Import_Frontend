@@ -248,11 +248,17 @@ export class AgregarSede implements CanComponentDeactivate {
         });
         this.router.navigate(['/admin/sedes']);
       },
-      error: () => {
+      error: (error: unknown) => {
+        const normalizedMessage = this.normalizeMessage(
+          this.extractServerMessage(error),
+        );
+        const isDuplicateCode = this.isDuplicateCodeError(normalizedMessage);
+
         this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo registrar la sede.',
+          severity: isDuplicateCode ? 'warn' : 'error',
+          summary: isDuplicateCode ? 'Validacion' : 'Error',
+          detail: this.resolveCreateSedeErrorMessage(error),
+          styleClass: isDuplicateCode ? 'duplicate-entity-toast' : undefined,
         });
       },
     });
@@ -314,5 +320,78 @@ export class AgregarSede implements CanComponentDeactivate {
     setTimeout(() => {
       this.router.navigate(['/admin/sedes']);
     }, 1500);
+  }
+
+  private resolveCreateSedeErrorMessage(error: unknown): string {
+    const rawMessage = this.extractServerMessage(error);
+    const normalized = this.normalizeMessage(rawMessage);
+
+    if (this.isDuplicateCodeError(normalized)) {
+      return 'Ya existe una sede con ese codigo.';
+    }
+
+    return 'No se pudo registrar la sede.';
+  }
+
+  private extractServerMessage(error: unknown): string {
+    if (!error || typeof error !== 'object') {
+      return '';
+    }
+
+    const candidate = error as {
+      message?: unknown;
+      error?:
+        | {
+            message?: unknown;
+            error?: unknown;
+          }
+        | string;
+    };
+
+    if (typeof candidate.error === 'string') {
+      return candidate.error;
+    }
+
+    if (candidate.error && typeof candidate.error === 'object') {
+      const nestedMessage = candidate.error.message;
+      if (Array.isArray(nestedMessage)) {
+        return nestedMessage.filter(Boolean).join(' | ');
+      }
+      if (typeof nestedMessage === 'string') {
+        return nestedMessage;
+      }
+
+      if (typeof candidate.error.error === 'string') {
+        return candidate.error.error;
+      }
+    }
+
+    if (typeof candidate.message === 'string') {
+      return candidate.message;
+    }
+
+    return '';
+  }
+
+  private normalizeMessage(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+
+  private isDuplicateCodeError(message: string): boolean {
+    const duplicateContext =
+      message.includes('ya existe') ||
+      message.includes('duplicate') ||
+      message.includes('already exists') ||
+      message.includes('duplicado');
+
+    const codeField =
+      message.includes('codigo') ||
+      message.includes('code') ||
+      message.includes('sede.codigo');
+
+    return duplicateContext && codeField;
   }
 }

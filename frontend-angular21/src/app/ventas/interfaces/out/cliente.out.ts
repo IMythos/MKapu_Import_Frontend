@@ -13,22 +13,8 @@ export interface ClienteBusquedaResponse {
   displayName?: string;
 }
 
-export interface ClienteErrorResponse {
-  message: string;
-  error: string;
-  statusCode: number;
-}
-
-export interface CrearClienteRequest {
-  documentTypeId: number;
-  documentValue: string;
-  name: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-}
-
-export interface CrearClienteResponse {
+// Alias: crear y obtener por ID devuelven el mismo shape completo
+export interface ClienteResponse {
   customerId: string;
   documentTypeId: number;
   documentTypeDescription: string;
@@ -43,15 +29,8 @@ export interface CrearClienteResponse {
   invoiceType: string;
 }
 
-export interface ActualizarClienteRequest {
-  name?: string;
-  address?: string;
-  email?: string;
-  phone?: string;
-}
-
 export interface ListarClientesResponse {
-  customers: CrearClienteResponse[];
+  customers: ClienteResponse[];
   total: number;
 }
 
@@ -60,3 +39,10 @@ export interface TipoDocumento {
   sunatCode: string;
   description: string;
 }
+
+export interface ClienteErrorResponse {
+  message: string;
+  error: string;
+  statusCode: number;
+}
+

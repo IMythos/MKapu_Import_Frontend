@@ -1,43 +1,51 @@
 <div class="p-2">
-    <app-nueva-remision [abierto]="sidebarVisible()" (onHide)="cerrarFormulario()"></app-nueva-remision>
+  <app-nueva-remision
+    [abierto]="sidebarVisible()"
+    (onHide)="cerrarFormulario()"
+  ></app-nueva-remision>
   <p-card class="mb-4 shadow-1">
     <div class="flex align-items-center justify-content-between">
       <div class="flex align-items-center gap-3">
         <i class="pi pi-truck text-primary text-2xl"></i>
         <h2 class="m-0 font-bold">Historial de Guías de Remisión</h2>
       </div>
-      <p-button label="Nueva Guía" icon="pi pi-plus" size="small" (onClick)="abrirFormulario()"></p-button>
+      <p-button
+        label="Nueva Guía"
+        icon="pi pi-plus"
+        size="small"
+        (onClick)="abrirFormulario()"
+      ></p-button>
     </div>
   </p-card>
 
   <div class="ventas-header-bordered mb-4 p-3 border-round shadow-1">
     <div class="seccion-estadisticas flex justify-content-around flex-wrap gap-3">
       <div class="estadistica-card flex align-items-center gap-3">
-        <i class="pi pi-file-export text-blue-500" style="font-size: 2rem;"></i>
+        <i class="pi pi-file-export text-blue-500" style="font-size: 2rem"></i>
         <div>
           <span class="estadistica-label block text-sm text-gray-500">Total Mes</span>
-          <span class="estadistica-valor font-bold text-xl">145 Guías</span>
+          <span class="estadistica-valor font-bold text-xl">{{ resumen().totalMes }}</span>
         </div>
       </div>
       <div class="estadistica-card flex align-items-center gap-3">
-        <i class="pi pi-clock text-orange-500" style="font-size: 2rem;"></i>
+        <i class="pi pi-clock text-orange-500" style="font-size: 2rem"></i>
         <div>
           <span class="estadistica-label block text-sm text-gray-500">En Tránsito</span>
-          <span class="estadistica-valor font-bold text-xl">12</span>
+          <span class="estadistica-valor font-bold text-xl">{{ resumen().enTransito }}</span>
         </div>
       </div>
       <div class="estadistica-card flex align-items-center gap-3">
-        <i class="pi pi-check-circle text-green-500" style="font-size: 2rem;"></i>
+        <i class="pi pi-check-circle text-green-500" style="font-size: 2rem"></i>
         <div>
           <span class="estadistica-label block text-sm text-gray-500">Entregadas</span>
-          <span class="estadistica-valor font-bold text-xl">130</span>
+          <span class="estadistica-valor font-bold text-xl">{{ resumen().entregadas }}</span>
         </div>
       </div>
       <div class="estadistica-card flex align-items-center gap-3">
-        <i class="pi pi-exclamation-triangle text-red-500" style="font-size: 2rem;"></i>
+        <i class="pi pi-exclamation-triangle text-red-500" style="font-size: 2rem"></i>
         <div>
           <span class="estadistica-label block text-sm text-gray-500">Observadas</span>
-          <span class="estadistica-valor font-bold text-xl">3</span>
+          <span class="estadistica-valor font-bold text-xl">{{ resumen().observadas }}</span>
         </div>
       </div>
     </div>
@@ -46,57 +54,137 @@
   <div class="filtros-container mb-4 p-4 border-round shadow-1">
     <h3 class="mt-0 mb-3 text-lg"><i class="pi pi-filter mr-2"></i>Filtros de Búsqueda</h3>
     <div class="grid">
+      
       <div class="col-12 md:col-4">
         <label class="block mb-2 font-medium">Nro. Guía / Cliente</label>
         <span class="p-input-icon-left w-full flex gap-2 align-items-center">
           <i class="pi pi-search"></i>
-          <input type="text" pInputText placeholder="T001-0000123" class="w-full " />
+          <input 
+            type="text" 
+            pInputText 
+            placeholder="T001-0000123" 
+            class="w-full"
+            [ngModel]="filtroTexto()"
+            (ngModelChange)="filtroTexto.set($event)"
+            (keyup.enter)="aplicarFiltros()"
+          />
         </span>
       </div>
+
       <div class="col-12 md:col-3">
         <label class="block mb-2 font-medium">Estado de Envío</label>
-        <p-select placeholder="Todos los estados" styleClass="w-full"></p-select>
+        <p-select 
+          [options]="opcionesEstado"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Todos los estados" 
+          styleClass="w-full"
+          [ngModel]="filtroEstado()"
+          (ngModelChange)="filtroEstado.set($event); aplicarFiltros()">
+        </p-select>
       </div>
+
       <div class="col-12 md:col-3">
         <label class="block mb-2 font-medium">Rango de Fechas</label>
-        <p-datepicker selectionMode="range" [showIcon]="true" placeholder="Seleccionar fechas" styleClass="w-full"></p-datepicker>
+        <p-datepicker
+          selectionMode="range"
+          [showIcon]="true"
+          placeholder="Seleccionar fechas"
+          styleClass="w-full"
+          [ngModel]="filtroFechas()"
+          (ngModelChange)="filtroFechas.set($event); aplicarFiltros()"
+        ></p-datepicker>
       </div>
+
       <div class="col-12 md:col-2 flex align-items-end">
-        <p-button label="Limpiar" icon="pi pi-filter-slash" severity="secondary" styleClass="w-full"></p-button>
+        <p-button
+          label="Limpiar"
+          icon="pi pi-filter-slash"
+          severity="secondary"
+          styleClass="w-full"
+          (onClick)="limpiarFiltros()"
+        ></p-button>
       </div>
+      
     </div>
   </div>
 
   <p-card styleClass="tarjeta-principal shadow-2">
     <div class="flex justify-content-between align-items-center mb-3">
       <h3 class="m-0"><i class="pi pi-list mr-2"></i>Registros Recientes</h3>
-      <p-button label="Exportar" icon="pi pi-file-excel" severity="success" [outlined]="true" size="small"></p-button>
+      <p-button
+        label="Exportar"
+        icon="pi pi-file-excel"
+        severity="success"
+        [outlined]="true"
+        size="small"
+      ></p-button>
     </div>
 
-    <p-table [value]="remisiones()" styleClass="p-datatable-sm p-datatable-striped shadow-2">
-    <ng-template pTemplate="header">
-      <tr>
-        <th>Nro. Guía</th>
-        <th>Fecha Emisión</th>
-        <th>Cliente</th>
-        <th>Destino</th>
-        <th>Estado</th>
-        <th class="text-center">Acciones</th>
-      </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-guia>
-      <tr>
-        <td class="font-bold text-primary">{{ guia.numero }}</td>
-        <td>{{ guia.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</td>
-        <td>{{ guia.cliente }}</td>
-        <td>{{ guia.punto_llegada }}</td>
-        <td><p-tag [value]="guia.estado" [severity]="guia.severity"></p-tag></td>
-        <td class="text-center">
-          <p-button icon="pi pi-eye" [text]="true" [rounded]="true" severity="secondary" (onClick)="verDetalle()"></p-button>
-          <p-button icon="pi pi-print" [text]="true" [rounded]="true" severity="secondary"></p-button>
-        </td>
-      </tr>
-    </ng-template>
-  </p-table>
+    <p-table
+      [value]="remisiones()"
+      [loading]="loading()"
+      [paginator]="true"
+      [rows]="10"
+      [totalRecords]="totalRecords()"
+      [lazy]="true"
+      (onLazyLoad)="onPageChange($event)"
+      responsiveLayout="scroll"
+      [rowHover]="true"
+      styleClass="p-datatable-sm"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Ref. Comprobante</th>
+          <th>Tipo de Guía</th>
+          <th>Fecha Traslado</th>
+          <th>Motivo</th>
+          <th>Modalidad</th>
+          <th>Peso Total</th>
+          <th>N° Productos</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-remision>
+        <tr>
+          <td class="font-bold">#{{ remision.id_comprobante_ref || 'N/A' }}</td>
+          <td>
+            <p-tag
+              [severity]="remision.tipo_guia === 0 ? 'success' : 'warn'"
+              [value]="remision.tipo_guia === 0 ? 'REMITENTE' : 'TRANSPORTISTA'"
+            >
+            </p-tag>
+          </td>
+          <td>{{ remision.fecha_inicio | date: 'dd/MM/yyyy' }}</td>
+          <td>{{ remision.motivo_traslado }}</td>
+          <td>
+            <p-tag
+              [severity]="remision.modalidad === 0 ? 'success' : 'secondary'"
+              [value]="remision.modalidad === 0 ? 'PÚBLICO' : 'PRIVADO'"
+            >
+            </p-tag>
+          </td>
+          <td>{{ remision.peso_total }} {{ remision.unidad_peso }}</td>
+          <td >{{remision.cantidad}} ítems</td>
+          <td class="text-center">
+             <p-button 
+               pButton 
+               pRipple 
+               icon="pi pi-eye" 
+               class="p-button-rounded p-button-text p-button-info" 
+               pTooltip="Ver detalles"
+               tooltipPosition="left"
+               (click)="verDetalles(remision.id_guia)">
+             </p-button>
+          </td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center p-4">No hay guías de remisión registradas.</td>
+        </tr>
+      </ng-template>
+    </p-table>
   </p-card>
 </div>

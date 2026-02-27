@@ -303,6 +303,30 @@ export class AlmacenCrear implements CanComponentDeactivate, OnInit {
     }
   }
 
+  private normalizeMessage(value: string): string {
+    return String(value ?? '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+
+  private isDuplicateCreateAlmacenCodeError(message: string): boolean {
+    const duplicateContext =
+      message.includes('duplicate') ||
+      message.includes('ya existe') ||
+      message.includes('already exists') ||
+      message.includes('duplicado');
+
+    const codeContext =
+      message.includes('codigo') ||
+      message.includes('code') ||
+      message.includes('duplicate entry') ||
+      message.includes('for key') ||
+      message.includes('almacen');
+
+    return duplicateContext && codeContext;
+  }
+
   private isAssignWarehouseError(error: unknown): error is AssignWarehouseError {
     if (!error || typeof error !== 'object') {
       return false;
@@ -520,17 +544,23 @@ export class AlmacenCrear implements CanComponentDeactivate, OnInit {
 
           const httpError = err as HttpErrorResponse;
           const serverMsg = this.extractServerMessage(httpError);
+          const normalizedServerMessage = this.normalizeMessage(serverMsg);
+          const isDuplicateCodeError =
+            this.isDuplicateCreateAlmacenCodeError(normalizedServerMessage);
+          const duplicateCodeMessage = 'Ya existe un almacen con ese nombre.';
+          const detailMessage = isDuplicateCodeError
+            ? duplicateCodeMessage
+            : serverMsg;
 
-          const lower = serverMsg.toLowerCase();
           const codigoCtrl = this.sedeForm?.controls['codigo'] as
             | AbstractControl
             | undefined;
           if (
-            lower.includes('c?dig') ||
-            lower.includes('codigo') ||
-            lower.includes('code')
+            isDuplicateCodeError ||
+            normalizedServerMessage.includes('codigo') ||
+            normalizedServerMessage.includes('code')
           ) {
-            codigoCtrl?.setErrors({ server: serverMsg });
+            codigoCtrl?.setErrors({ server: detailMessage });
             codigoCtrl?.markAsTouched();
             try {
               (document.getElementById('codigo') as HTMLInputElement)?.focus();
@@ -540,9 +570,18 @@ export class AlmacenCrear implements CanComponentDeactivate, OnInit {
           }
 
           this.messageService.add({
-            severity: httpError?.status === 400 ? 'warn' : 'error',
-            summary: httpError?.status === 400 ? 'Validaci?n' : 'Error',
-            detail: serverMsg,
+            severity:
+              isDuplicateCodeError || httpError?.status === 400
+                ? 'warn'
+                : 'error',
+            summary:
+              isDuplicateCodeError || httpError?.status === 400
+                ? 'Validacion'
+                : 'Error',
+            detail: detailMessage,
+            styleClass: isDuplicateCodeError
+              ? 'duplicate-entity-toast'
+              : undefined,
           });
         },
       });

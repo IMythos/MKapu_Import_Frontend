@@ -1,0 +1,110 @@
+<div class="p-2">
+  <div
+    *ngIf="loading()"
+    class="flex justify-content-center align-items-center"
+    style="height: 50vh"
+  >
+    <p-progressSpinner></p-progressSpinner>
+  </div>
+
+  <p-card *ngIf="!loading() && remision() as detalle">
+    <ng-template pTemplate="title">
+      <div class="flex justify-content-between align-items-center">
+        <div class="flex align-items-center gap-3">
+          <button
+            pButton
+            icon="pi pi-arrow-left"
+            class="p-button-rounded p-button-secondary p-button-text"
+            (click)="volver()"
+            pTooltip="Volver"
+          ></button>
+          <span class="text-xl font-bold"
+            >Detalle de Remisión: {{ detalle.serie }}-{{ detalle.numero }}</span
+          >
+          <p-tag
+            [severity]="detalle.estado === 0 || detalle.estado === 'EMITIDO' ? 'success' : 'danger'"
+            value="{{ detalle.estado === 0 ? 'EMITIDO' : detalle.estado }}"
+          >
+          </p-tag>
+        </div>
+        <div>
+          <button
+            pButton
+            icon="pi pi-file-pdf"
+            label="Descargar PDF"
+            class="p-button-outlined p-button-danger"
+          ></button>
+        </div>
+      </div>
+    </ng-template>
+
+    <div class="grid p-fluid mt-3 mb-4">
+      <div class="col-12 md:col-4">
+        <div class="text-500 mb-1">Motivo de Traslado</div>
+        <div class="font-semibold text-lg">{{ detalle.motivo_traslado }}</div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="text-500 mb-1">Fecha Emisión / Inicio Traslado</div>
+        <div class="font-semibold text-lg">
+          {{ detalle.fecha_emision | date: 'dd/MM/yyyy' }} -
+          {{ detalle.fecha_inicio | date: 'dd/MM/yyyy' }}
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="text-500 mb-1">Peso Total</div>
+        <div class="font-semibold text-lg">{{ detalle.peso_total }} {{ detalle.unidad_peso }}</div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="text-500 mb-1">Comprobante de Ref.</div>
+        <div class="font-semibold text-lg">
+          {{ detalle.id_comprobante_ref ? '#' + detalle.id_comprobante_ref : 'Ninguno' }}
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="text-500 mb-1">Modalidad</div>
+        <div class="font-semibold text-lg">
+          {{ detalle.modalidad === 0 ? 'Transporte Público' : 'Transporte Privado' }}
+        </div>
+      </div>
+      <div class="col-12 md:col-4">
+        <div class="text-500 mb-1">Tipo de Guía</div>
+        <div class="font-semibold text-lg">
+          {{ detalle.tipo_guia === 0 ? 'Remitente' : 'Transportista' }}
+        </div>
+      </div>
+    </div>
+
+    <p-divider></p-divider>
+
+    <h3 class="mb-3">Lista de Productos ({{ detalle.items?.length || 0 }})</h3>
+
+    <p-table
+      [value]="detalle.items || []"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-sm p-datatable-gridlines"
+      [rowHover]="true"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width: 20%">Cod. Producto</th>
+          <th class="text-right" style="width: 20%">Cantidad</th>
+          <th class="text-right" style="width: 30%">Peso Unitario</th>
+          <th class="text-right" style="width: 30%">Peso Total</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-item>
+        <tr>
+          <td class="font-semibold">{{ item.cod_prod }}</td>
+          <td class="text-right">{{ item.cantidad }}</td>
+          <td class="text-right">{{ item.peso_unitario }}</td>
+          <td class="text-right font-bold text-primary">{{ item.peso_total }}</td>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="text-center p-4">No hay productos registrados en esta guía.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </p-card>
+</div>

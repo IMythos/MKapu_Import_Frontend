@@ -223,3 +223,28 @@
   box-shadow: 0 0 0 2px rgba(241,169,43,0.12) !important;
   border-color: rgba(241,169,43,0.9) !important;
 }
+
+:host {
+  --duplicate-toast-bg: #fff4cc;
+  --duplicate-toast-border: #f1c75b;
+  --duplicate-toast-text: #6a4b00;
+}
+
+:host-context(.app-dark) {
+  --duplicate-toast-bg: #3a2a08;
+  --duplicate-toast-border: #d6a734;
+  --duplicate-toast-text: #ffd980;
+}
+
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast {
+  background: var(--duplicate-toast-bg) !important;
+  border: 1px solid var(--duplicate-toast-border) !important;
+  color: var(--duplicate-toast-text) !important;
+}
+
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-summary,
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-detail,
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-icon-close,
+:host ::ng-deep .p-toast .p-toast-message.duplicate-entity-toast .p-toast-message-icon {
+  color: var(--duplicate-toast-text) !important;
+}

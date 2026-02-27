@@ -363,7 +363,6 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
       import('./pages/comision-reportes/comisionreportes')
         .then((m) => m.ComisionReportes),
   },
-
   /* =======================
   GESTIÓN DE Conteos
 ======================= */
@@ -386,6 +385,7 @@ import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
       import('./pages/conteo-detalle/conteodetalle')
         .then((m) => m.ConteoDetalle),
   },
+
 
 
 

@@ -15,6 +15,7 @@ import { ButtonModule } from 'primeng/button';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
+import { TableLazyLoadEvent } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -78,6 +79,7 @@ export class Transferencia {
   private readonly estadoFilterSig = signal<TransferStatus | null>(null);
   private readonly solicitudFilterSig = signal<string | null>(null);
   private readonly lastErrorShown = signal<string | null>(null);
+  private readonly paginationSig = this.transferStore.pagination;
 
   readonly transferenciasSig = computed(() =>
     this.transferStore.transfers().map((transferencia) => this.mapTransferencia(transferencia)),
@@ -119,6 +121,9 @@ export class Transferencia {
   readonly rechazadasSig = computed(
     () => this.transferenciasSig().filter((item) => item.estado === 'RECHAZADA').length,
   );
+  readonly displayCountSig = computed(() =>
+    this.hasActiveFilters ? this.filteredTransferenciasSig().length : this.paginationSig().totalRecords,
+  );
 
   readonly estadoOptions = [
     { label: 'Todos', value: null },
@@ -151,7 +156,10 @@ export class Transferencia {
   }
 
   ngOnInit(): void {
-    this.transferStore.loadAll();
+    this.transferStore.loadAll({
+      page: this.paginationSig().page,
+      pageSize: this.paginationSig().pageSize,
+    });
   }
 
   get transferencias(): TransferenciaRow[] {
@@ -214,6 +222,19 @@ export class Transferencia {
     return this.rechazadasSig();
   }
 
+  get totalRecords(): number {
+    return this.displayCountSig();
+  }
+
+  get firstRowIndex(): number {
+    const pagination = this.paginationSig();
+    return Math.max(0, (pagination.page - 1) * pagination.pageSize);
+  }
+
+  get rowsPerPage(): number {
+    return this.paginationSig().pageSize;
+  }
+
   trackByTransferId = (_: number, item: TransferenciaRow): number => item.id;
 
   onSearch(event: { query: string }): void {
@@ -226,6 +247,18 @@ export class Transferencia {
 
   onSelectTransferencia(event: { value?: string | { producto?: string } } | null): void {
     this.searchTerm = this.obtenerValor(event?.value ?? this.searchTerm);
+  }
+
+  onTableLazyLoad(event: TableLazyLoadEvent): void {
+    if (this.hasActiveFilters) {
+      return;
+    }
+
+    const rows = Math.max(1, Number(event.rows ?? this.rowsPerPage));
+    const first = Math.max(0, Number(event.first ?? 0));
+    const page = Math.floor(first / rows) + 1;
+
+    this.transferStore.loadAll({ page, pageSize: rows });
   }
 
   clearSearch(): void {

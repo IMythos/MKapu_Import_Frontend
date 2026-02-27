@@ -133,6 +133,26 @@ export interface TransferListResponseDto {
   items?: TransferItemResponse[];
 }
 
+export interface TransferListQueryDto {
+  headquartersId?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface TransferListPaginationDto {
+  page: number;
+  pageSize: number;
+  totalRecords: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface TransferListPaginatedResponseDto {
+  data: TransferListResponseDto[];
+  pagination: TransferListPaginationDto;
+}
+
 export interface TransferByIdResponseDto extends TransferResponseDto {}
 
 export interface TransferConflictInfo {

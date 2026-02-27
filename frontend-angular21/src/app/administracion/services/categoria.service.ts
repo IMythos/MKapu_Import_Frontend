@@ -190,4 +190,6 @@ export class CategoriaService {
       categories: prev.categories.map((c) => (c.id_categoria === id ? updated : c)),
     });
   }
+
 }
+

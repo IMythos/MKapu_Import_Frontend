@@ -1,23 +1,4 @@
-export interface ProductoConStock {
-  id_producto: number;
-  codigo: string;
-  nombre: string;
-  familia: string;
-  sede: string;
-  stock: number;
-  detalle: ProductoDetalle;  
-}
-
-export interface ProductoStockResponse {
-  data: ProductoConStock[];
-  pagination: {
-    page: number;
-    size: number;
-    total_records: number;
-    total_pages: number;
-  };
-}
-
+// ─── Producto en listado stock-ventas ────────────────────────────
 export interface ProductoStockVentas {
   id_producto: number;
   codigo: string;
@@ -41,17 +22,7 @@ export interface ProductoStockVentasResponse {
   };
 }
 
-export interface ProductoAutocomplete {
-  id_producto: number;
-  codigo: string;
-  nombre: string;
-  stock: number;
-}
-
-export interface ProductoAutocompleteResponse {
-  data: ProductoAutocomplete[];
-}
-
+// ─── Autocomplete ventas (con precios) ───────────────────────────
 export interface ProductoAutocompleteVentas {
   id_producto: number;
   codigo: string;
@@ -68,6 +39,19 @@ export interface ProductoAutocompleteVentasResponse {
   data: ProductoAutocompleteVentas[];
 }
 
+// ─── Autocomplete logistics genérico (sin precios) ───────────────
+export interface ProductoAutocomplete {
+  id_producto: number;
+  codigo: string;
+  nombre: string;
+  stock: number;
+}
+
+export interface ProductoAutocompleteResponse {
+  data: ProductoAutocomplete[];
+}
+
+// ─── Detalle individual ──────────────────────────────────────────
 export interface ProductoDetalle {
   producto: {
     id_producto: number;
@@ -99,7 +83,15 @@ export interface ProductoDetalle {
   };
 }
 
-export interface Producto {
+// ─── Categorías con stock ────────────────────────────────────────
+export interface CategoriaConStock {
+  id_categoria: number;
+  nombre: string;
+  total_productos?: number;
+}
+
+// No es response del backend — es el modelo que usan los componentes
+export interface ProductoUI {
   id: number;
   codigo: string;
   nombre: string;
