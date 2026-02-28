@@ -1,18 +1,19 @@
 <div class="p-2">
-  <!-- CABECERA PRINCIPAL -->
+  <!-- CABECERA -->
   <p-card class="cotizaciones-header-card mb-4 cotizaciones-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap">
       <div class="flex align-items-center gap-3">
-        <span class="ventas-titulo-icon"><i class="pi pi-credit-card"></i></span>
+        <span class="cotizaciones-title-icon"><i class="pi pi-credit-card"></i></span>
         <div>
-          <p class="ventas-kicker mb-0">{{ tituloKicker }}</p>
-          <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
+          <p class="cotizaciones-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="cotizaciones-title mb-0">{{ subtituloKicker }}</h2>
         </div>
       </div>
       <div>
-        <p-button label="Crear Venta por Cobrar"
+        <p-button
+          label="Crear Venta por Cobrar"
           icon="pi pi-plus"
-          styleClass="ventas-pill ventas-pill-crear"
+          styleClass="cotizaciones-pill cotizaciones-pill-warning"
           (onClick)="irAgregarVentaPorCobrar(null)">
         </p-button>
       </div>
@@ -21,108 +22,199 @@
 </div>
 
 <div class="p-2">
-  <!-- FILTROS Y BUSCADOR -->
-  <div class="surface-card border-round-xl shadow-1 mb-4 px-3 py-4">
-    <div class="flex flex-wrap gap-6 align-items-center">
-      <div class="flex-1 p-fluid min-w-18rem">
-        <label class="font-medium mb-2 block">Buscar cliente</label>
-        <p-autocomplete
-          [ngModel]="buscarValue()"
-          (ngModelChange)="buscarValue.set($event)"
-          [suggestions]="cotizacionSugerencias()"
-          (completeMethod)="searchCotizacion($event)"
-          (onSelect)="seleccionarCotizacionBusqueda($event)"
-          (onClear)="limpiarBusquedaCotizacion()"
-          placeholder="Escriba nombre o documento..."
-          field="cliente"
-          [showClear]="true"
-          styleClass="ventas-buscador"
-        >
-          <ng-template let-item pTemplate="item">
-            <div class="ventas-buscador-item p-2">
-              <span class="font-bold">{{ item.cliente }}</span>
-              <span class="text-secondary">{{ item.fecha }}</span>
-            </div>
-          </ng-template>
-        </p-autocomplete>
+
+  <!-- CONTADORES -->
+  <div class="contadores-cotizaciones contador-cotizaciones mb-4">
+    <div class="contador-card">
+      <i class="pi pi-list"></i>
+      <div>
+        <p class="contador-label">TOTAL POR COBRAR</p>
+        <p class="contador-valor">{{ totalPorCobrar() }}</p>
+        <span class="contador-detalle"><i class="pi pi-bars"></i> En el sistema</span>
       </div>
-      <div class="flex flex-column w-14rem">
-        <label class="font-medium mb-2 block">Filtrar por Fecha</label>
-        <input pInputText type="text" placeholder="mm/dd/yyyy" class="w-full" />
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-clock"></i>
+      <div>
+        <p class="contador-label">PENDIENTES</p>
+        <p class="contador-valor">{{ totalPendientes() }}</p>
+        <span class="contador-detalle"><i class="pi pi-exclamation-circle"></i> Por procesar</span>
       </div>
-      <div class="flex flex-column w-14rem">
-        <label class="font-medium mb-2 block">Sede</label>
-        <p-select
-          [options]="sedesOptions()"
-          [ngModel]="sedeSeleccionada()"
-          (ngModelChange)="onSedeChange($event)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todas las sedes"
-          class="w-full"
-          [showClear]="true">
-        </p-select>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-exclamation-circle"></i>
+      <div>
+        <p class="contador-label">VENCIDOS</p>
+        <p class="contador-valor">{{ totalVencidos() }}</p>
+        <span class="contador-detalle"><i class="pi pi-times-circle"></i> Sin pagar</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-check-circle"></i>
+      <div>
+        <p class="contador-label">PROCESADAS HOY</p>
+        <p class="contador-valor">{{ totalProcesadasHoy() }}</p>
+        <span class="contador-detalle"><i class="pi pi-check"></i> Ventas confirmadas</span>
       </div>
     </div>
   </div>
 
-  <!-- TABLA PRINCIPAL -->
+  <!-- FILTROS -->
+  <div class="flex flex-wrap gap-3 align-items-center mb-4">
+    <div class="flex-1 min-w-18rem">
+      <p-autocomplete
+        [ngModel]="buscarValue()"
+        (ngModelChange)="buscarValue.set($event)"
+        [suggestions]="sugerencias()"
+        (completeMethod)="searchCuenta($event)"
+        (onSelect)="seleccionarSugerencia($event)"
+        (onClear)="limpiarBusqueda()"
+        placeholder="Usuario, código de comprobante..."
+        field="userRef"
+        [showClear]="true"
+        styleClass="autocomplete-cotizaciones w-full"
+        inputStyleClass="w-full">
+        <ng-template let-item pTemplate="item">
+          <div class="autocomplete-item-custom">
+            <span class="font-bold">{{ item.userRef }}</span>
+            <small>Comprobante #{{ item.salesReceiptId }} · {{ item.status }}</small>
+          </div>
+        </ng-template>
+      </p-autocomplete>
+    </div>
+
+    <div class="w-12rem">
+      <p-select
+        [options]="estadosOptions"
+        [ngModel]="estadoSeleccionado()"
+        (ngModelChange)="onEstadoChange($event)"
+        optionLabel="label"
+        optionValue="value"
+        placeholder="Estado"
+        class="w-full"
+        [showClear]="true">
+      </p-select>
+    </div>
+  </div>
+
+  <!-- LOADING / ERROR -->
+  @if (arService.loading()) {
+    <div class="text-center py-4">
+      <i class="pi pi-spin pi-spinner text-2xl text-primary"></i>
+      <p class="text-500 mt-2">Cargando cuentas por cobrar...</p>
+    </div>
+  }
+
+  @if (arService.error()) {
+    <div class="surface-card border-round p-3 mb-3 border-left-3 border-red-500">
+      <i class="pi pi-exclamation-triangle text-red-500 mr-2"></i>
+      <span class="text-red-600">{{ arService.error() }}</span>
+      <p-button
+        label="Reintentar"
+        icon="pi pi-refresh"
+        styleClass="p-button-text p-button-sm ml-3"
+        (onClick)="arService.getAll()">
+      </p-button>
+    </div>
+  }
+
+  <!-- TABLA -->
   <div class="surface-card border-round-xl shadow-1">
-    <p-table 
-      [value]="hardcodedVentasPorCobrar"
+    <p-table
+      [value]="ventasFiltradas()"
       [paginator]="true"
-      [rows]="10"
-      [totalRecords]="hardcodedVentasPorCobrar.length"
+      [rows]="rows()"
       [rowsPerPageOptions]="[5,10,25,50]"
-      styleClass="ventas-table-hover"
-    >
+      [totalRecords]="arService.totalRecords()"
+      styleClass="cotizaciones-table-hover"
+      (onPage)="onPageChange($event)">
+
       <ng-template pTemplate="header">
         <tr>
-          <th style="width:8%">Fecha</th>
-          <th style="width:15%">Cliente</th>
-          <th style="width:15%">Sede</th>
+          <th style="width:10%">Comprobante</th>
+          <th style="width:18%">Usuario</th>
+          <th style="width:14%">Fechas</th>
+          <th style="width:12%">Monto Total</th>
+          <th style="width:12%">Saldo Pendiente</th>
           <th style="width:12%">Estado</th>
-          <th style="width:15%">Acciones</th>
+          <th style="width:14%">Acciones</th>
         </tr>
       </ng-template>
-      <ng-template pTemplate="body" let-vp>
+
+      <ng-template pTemplate="body" let-a>
         <tr>
-          <td>{{ vp.fecha }}</td>
-          <td class="font-semibold">{{ vp.cliente }}</td>
-          <td>{{ vp.sede }}</td>
+          <td class="font-semibold text-400" style="font-size:0.85rem;">
+            #{{ a.salesReceiptId }}
+          </td>
+          <td class="font-semibold">{{ a.userRef }}</td>
           <td>
-            <p-tag value="Por Cobrar" styleClass="ventas-tag-por-cobrar"></p-tag>
+            <div class="flex flex-column gap-1">
+              <span class="text-sm">
+                <i class="pi pi-calendar mr-1 text-400"></i>{{ formatDate(a.issueDate) }}
+              </span>
+              <span class="text-sm">
+                <i class="pi pi-clock mr-1 text-400"></i>{{ formatDate(a.dueDate) }}
+                <span class="dias-badge ml-1" [ngClass]="getDiasBadgeClass(a.dueDate)">
+                  {{ getDiasBadgeLabel(a.dueDate) }}
+                </span>
+              </span>
+            </div>
+          </td>
+          <td class="font-semibold">
+            {{ a.currencyCode }} {{ a.totalAmount | number:'1.2-2' }}
+          </td>
+          <td>
+            {{ a.currencyCode }} {{ a.pendingBalance | number:'1.2-2' }}
+          </td>
+          <td>
+            <p-tag [value]="a.status" [styleClass]="getTagClass(a.status)"></p-tag>
           </td>
           <td>
             <div class="acciones-grupo">
-              <p-button label="Crear Venta"
-                icon="pi pi-check"
-                styleClass="ventas-btn ventas-btn-crear"
-                (onClick)="irAgregarVentaPorCobrar(vp.id)">
+              <p-button
+                icon="pi pi-eye"
+                styleClass="accion-btn accion-btn--ver p-button-text p-button-rounded"
+                pTooltip="Ver detalle"
+                tooltipPosition="top"
+                (onClick)="verDetalle(a.id)">
               </p-button>
-              <p-button label="Cancelar"
+              <span class="accion-separador"></span>
+              <p-button
+                icon="pi pi-shopping-cart"
+                styleClass="accion-btn accion-btn--venta p-button-text p-button-rounded"
+                pTooltip="Registrar Pago"
+                tooltipPosition="top"
+                (onClick)="irAgregarVentaPorCobrar(a.id)">
+              </p-button>
+              <p-button
                 icon="pi pi-times"
-                styleClass="ventas-btn ventas-btn-cancelar"
-                severity="secondary"
-                (onClick)="rechazarCotizacion(vp.id)">
+                styleClass="accion-btn accion-btn--eliminar p-button-text p-button-rounded"
+                pTooltip="Cancelar"
+                tooltipPosition="top"
+                [disabled]="a.status === 'CANCELADO' || a.status === 'PAGADO'"
+                (onClick)="rechazarCotizacion(a.id)">
               </p-button>
             </div>
           </td>
         </tr>
       </ng-template>
+
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="5" class="text-center py-6">
+          <td colspan="7" class="text-center py-6">
             <i class="pi pi-inbox text-3xl text-400 mb-3 block"></i>
-            <p class="text-900 font-medium mb-0">No hay ventas por cobrar pendientes</p>
+            <p class="text-600 font-medium mb-0">No hay cuentas por cobrar</p>
           </td>
         </tr>
       </ng-template>
+
     </p-table>
-    <small class="text-600 block text-center py-2">
-      El botón "Crear Venta" enviará la venta para procesar el pago.
+
+    <small class="text-500 block text-center py-2">
+      El botón <i class="pi pi-shopping-cart"></i> permite registrar un pago sobre la cuenta.
     </small>
   </div>
+
 </div>
 
 <p-toast></p-toast>

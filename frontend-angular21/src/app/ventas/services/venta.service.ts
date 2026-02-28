@@ -143,6 +143,20 @@ export class VentaService {
     return this.http.get<SalesReceiptKpiDto>(`${this.apiUrl}/receipts/kpi/semanal`, { params });
   }
 
+  /**
+   * Obtiene los tipos de pago disponibles (tipo_pago).
+   */
+  getPaymentTypes(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/receipts/payment-types`);
+  }
+
+  /**
+   * Obtiene las monedas SUNAT disponibles (sunat_moneda).
+   */
+  getCurrencies(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/receipts/currencies`);
+  }
+
   autocompleteClientes(search: string): Observable<any[]> {
     if (search.trim().length < 2) {
       return new Observable((obs) => {

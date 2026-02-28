@@ -281,28 +281,6 @@ export const ADMIN_ROUTES: Routes = [
       },
     ],
   },
-  /* =======================
-      INGRESOS ALMACÉN
-    ======================= */
-  {
-    path: 'ingresos-almacen',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./pages/ingresos-almacen/pages/ingresos-almacen/ingresos-almacen').then(
-            (m) => m.IngresosAlmacen,
-          ),
-      },
-      {
-        path: 'ingresos-agregar',
-        loadComponent: () =>
-          import('./pages/ingresos-almacen/pages/ingresos-agregar/ingresos-agregar').then(
-            (m) => m.IngresosAgregar,
-          ),
-      },
-    ],
-  },
 
   /* =======================
     VENTAS ADMINISTRACIÓN

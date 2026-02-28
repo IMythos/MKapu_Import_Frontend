@@ -1940,7 +1940,7 @@
 
 :host-context(.app-dark) {
   .ventas-title-icon {
-    background: #F0D067 !important;
+    background: #f5c34d !important;
   }
 
   .ventas-title,
@@ -1955,7 +1955,7 @@
   }
 
   .wizard-step.active .step-number {
-    background: #F0D067 !important;
+    background: #f5c34d !important;
     color: #18181B !important;
   }
 
@@ -1969,7 +1969,7 @@
   }
 
   .wizard-step.active .step-title {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .wizard-step.completed .step-title {
@@ -1982,7 +1982,7 @@
   }
 
   .section-label i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .input-label,
@@ -2002,7 +2002,7 @@
 
   .metodo-pago-card.selected {
     background: #3F3520 !important;
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
     box-shadow: 0 0 0 3px rgba(240, 208, 103, 0.25), 0 4px 12px rgba(240, 208, 103, 0.3) !important;
   }
 
@@ -2015,7 +2015,7 @@
   }
 
   .metodo-pago-card.selected .metodo-icon {
-    background: #F0D067 !important;
+    background: #f5c34d !important;
   }
 
   .metodo-pago-card.selected .metodo-icon i {
@@ -2027,7 +2027,7 @@
   }
 
   .metodo-pago-card.selected .metodo-label {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
     font-weight: 700;
   }
 
@@ -2052,11 +2052,11 @@
   }
 
   .info-badge i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .info-badge:hover {
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
     background: #2d2d30 !important;
   }
 
@@ -2073,11 +2073,11 @@
 
   .total-display {
     background: rgba(240, 208, 103, 0.15) !important;
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
   }
 
   .total-valor {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .monto-destacado-box {
@@ -2087,11 +2087,11 @@
   }
 
   .monto-destacado-box:hover {
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
   }
 
   .monto-destacado-box i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .monto-destacado {
@@ -2104,7 +2104,7 @@
   }
 
   .pago-header-inline i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .campo-pago-header {
@@ -2112,7 +2112,7 @@
   }
 
   .campo-pago-header i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   :host ::ng-deep .autocomplete-clientes .p-autocomplete-input,
@@ -2151,7 +2151,7 @@
   :host ::ng-deep .campo-pago-item .p-select:focus,
   :host ::ng-deep .campo-pago-item .p-inputtext:focus,
   .tipo-venta-section .p-inputtext:focus {
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
     box-shadow: 0 0 0 3px rgba(240, 208, 103, 0.15) !important;
     background: #27272A !important;
   }
@@ -2180,16 +2180,16 @@
   }
 
   :host ::ng-deep .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover .suggestion-codigo-nuevo {
-    background: #F0D067 !important;
+    background: #f5c34d !important;
     color: #18181B !important;
   }
 
   :host ::ng-deep .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover .suggestion-nombre-nuevo {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   :host ::ng-deep .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:hover .suggestion-precio-nuevo {
-    background: #F0D067 !important;
+    background: #f5c34d !important;
     color: #18181B !important;
   }
 
@@ -2201,11 +2201,11 @@
 
   .resumen-titulo {
     color: #F1F5F9 !important;
-    border-bottom-color: #F0D067 !important;
+    border-bottom-color: #f5c34d !important;
   }
 
   .resumen-titulo i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .resumen-item {
@@ -2214,7 +2214,7 @@
   }
 
   .resumen-item:hover {
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
   }
 
   .resumen-item .label {
@@ -2222,7 +2222,7 @@
   }
 
   .resumen-item .label i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .resumen-value {
@@ -2231,7 +2231,7 @@
 
   .resumen-totales {
     background: rgba(240, 208, 103, 0.1) !important;
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
   }
 
   .resumen-totales .total-line {
@@ -2264,7 +2264,7 @@
   }
 
   .info-item .label i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .info-item strong {
@@ -2291,7 +2291,7 @@
   .columna-header,
   .carrito-header {
     background: linear-gradient(135deg, #2d2d30 0%, #27272A 100%) !important;
-    border-bottom-color: #F0D067 !important;
+    border-bottom-color: #f5c34d !important;
   }
 
   .columna-header h4,
@@ -2301,7 +2301,7 @@
 
   .columna-header i,
   .carrito-header i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .producto-item {
@@ -2310,13 +2310,13 @@
   }
 
   .producto-item:hover {
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
     background: #2d2d30 !important;
   }
 
   .producto-item.selected {
     background: rgba(240, 208, 103, 0.15) !important;
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
   }
 
   .columna-agregar-carrito {
@@ -2324,7 +2324,7 @@
   }
 
   .producto-seleccionado {
-    border-color: #F0D067 !important;
+    border-color: #f5c34d !important;
   }
 
   .totales-contenido {
@@ -2387,7 +2387,7 @@
   }
 
   .check-indicator {
-    background: #F0D067 !important;
+    background: #f5c34d !important;
     color: #18181B !important;
     border: 2px solid #18181B;
     box-shadow: 0 2px 8px rgba(240, 208, 103, 0.5);
@@ -2445,14 +2445,14 @@
   .select-comprobante-inline .p-button.p-highlight,
   .select-inline .p-button.p-highlight {
     background: #3F3520 !important;
-    border-color: #F0D067 !important;
-    color: #F0D067 !important;
+    border-color: #f5c34d !important;
+    color: #f5c34d !important;
     box-shadow: 0 0 0 3px rgba(240, 208, 103, 0.2) !important;
   }
 
   .familia-option i,
   .sede-option i {
-    color: #F0D067 !important;
+    color: #f5c34d !important;
   }
 
   .familia-option span,

@@ -11,7 +11,7 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #f6af33;
+  background: #f5c34d;
   color: #1f2937;
   font-size: 18px;
 }
@@ -42,8 +42,8 @@
 }
 
 .cotiz-pill-primary {
-  background: #f6af33 !important;
-  border: 2px solid #e8a424 !important;
+  background: #f5c34d !important;
+  border: 2px solid #f5c34d !important;
   color: #1f2937 !important;
 }
 
@@ -243,7 +243,7 @@
 
 /* === DARK MODE === */
 :host-context(.app-dark) .cotiz-title-icon {
-  background: #e8a424 !important;
+  background: #f5c34d !important;
   color: #1f2937 !important;
 }
 
@@ -256,8 +256,8 @@
 }
 
 :host-context(.app-dark) .cotiz-pill-primary {
-  background: #e8a424 !important;
-  border-color: #d69520 !important;
+  background: #f5c34d !important;
+  border-color: #f5c34d !important;
   color: #1f2937 !important;
 }
 

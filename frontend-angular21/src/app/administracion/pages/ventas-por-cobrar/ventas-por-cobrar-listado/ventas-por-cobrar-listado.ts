@@ -12,6 +12,11 @@ import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoComplete } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
+import {
+  AccountReceivableService,
+  AccountReceivableResponse,
+  AccountReceivableStatus,
+} from '../../../services/account-receivable.service';
 
 @Component({
   selector: 'app-ventas-por-cobrar-listado',
@@ -19,108 +24,178 @@ import { TooltipModule } from 'primeng/tooltip';
   imports: [
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
-    RouterModule, AutoComplete, TooltipModule
+    RouterModule, AutoComplete, TooltipModule,
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
   styleUrl: './ventas-por-cobrar-listado.css',
-  providers: [MessageService, ConfirmationService]
+  providers: [MessageService, ConfirmationService],
 })
 export class VentasPorCobrarListadoComponent implements OnInit {
-  public iconoCabecera   = 'pi pi-credit-card';
-  public tituloKicker    = 'VENTAS POR COBRAR';
-  public subtituloKicker = 'LISTADO PENDIENTE';
 
-  // Hardcode para maqueta
-  hardcodedVentasPorCobrar = [
-    { id: 1, fecha: '08/02/2024', cliente: 'Jorge Luna', sede: 'SEDE SJL', estado: 'Por Cobrar' },
-    { id: 2, fecha: '07/02/2024', cliente: 'Carlos Hinostroza', sede: 'SEDE SJL', estado: 'Por Cobrar' },
-    { id: 3, fecha: '06/02/2024', cliente: 'Jose Paredes', sede: 'SEDE SJL', estado: 'Por Cobrar' },
-  ];
+  private messageService      = inject(MessageService);
+  private confirmationService = inject(ConfirmationService);
+  private router              = inject(Router);
+  readonly arService          = inject(AccountReceivableService);
 
-  // ── Signals para buscador/autocompletar ──────────────────────────
-  buscarValue = signal<string>('');
-  cotizacionSugerencias = signal<any[]>([]); // hardcoded/autocomplete
+  public tituloKicker    = 'ADMINISTRACIÓN';
+  public subtituloKicker = 'VENTAS POR COBRAR';
 
-  // ── Filtros hardcodeados ─────────────────────────────────────────
-  estadoSeleccionado = signal<string | null>('POR_COBRAR');
-  sedeSeleccionada   = signal<string | null>('SEDE SJL');
-  rows               = signal<number>(10);
+  // ── Signals locales ──────────────────────────────────────────────
+  buscarValue           = signal<string>('');
+  sugerencias           = signal<AccountReceivableResponse[]>([]);
+  estadoSeleccionado    = signal<AccountReceivableStatus | null>(null);
+  sedeSeleccionada      = signal<string | null>(null);
+  rows                  = signal<number>(10);
 
-  // Opciones para filtros (puedes actualizar con tu real)
+  // ── Computed: lista filtrada ─────────────────────────────────────
+  ventasFiltradas = computed(() => {
+    const q   = this.buscarValue().toLowerCase();
+    const est = this.estadoSeleccionado();
+
+    return this.arService.accounts().filter(a => {
+      const matchQ   = !q  || a.userRef.toLowerCase().includes(q) ||
+                              String(a.salesReceiptId).includes(q);
+      const matchEst = !est || a.status === est;
+      return matchQ && matchEst;
+    });
+  });
+
+  // ── Computed: contadores ─────────────────────────────────────────
+  totalPorCobrar     = computed(() => this.arService.totalRecords());
+  totalPendientes    = computed(() => this.arService.pendientes().length);
+  totalVencidos      = computed(() => this.arService.vencidos().length);
+  totalProcesadasHoy = computed(() => {
+    const hoy = new Date().toDateString();
+    return this.arService.accounts().filter(a =>
+      new Date(a.issueDate).toDateString() === hoy
+    ).length;
+  });
+
+  // ── Opciones estado ───────────────────────────────────────────────
   estadosOptions = [
-    { label: 'Todos',     value: null        },
-    { label: 'Por Cobrar', value: 'POR_COBRAR' },
-    { label: 'Pagada',  value: 'PAGADA'  },
-    { label: 'Cancelada', value: 'CANCELADA' },
+    { label: 'Todos',      value: null          },
+    { label: 'Pendiente',  value: 'PENDIENTE'   },
+    { label: 'Parcial',    value: 'PARCIAL'     },
+    { label: 'Pagado',     value: 'PAGADO'      },
+    { label: 'Vencido',    value: 'VENCIDO'     },
+    { label: 'Cancelado',  value: 'CANCELADO'   },
   ];
 
-  sedesOptions = signal([
-    { label: 'Todas las sedes', value: null },
-    { label: 'SEDE SJL', value: 'SEDE SJL' },
-    { label: 'SEDE San Miguel', value: 'SEDE San Miguel' },
-    { label: 'SEDE Principal', value: 'SEDE Principal' },
-  ]);
-  messageService: any;
-
-  // ── Lifecycle ────────────────────────────────────────────────────
-  ngOnInit() {
-    // Hardcodeo no requiere inicialización aún
+  // ── Init ─────────────────────────────────────────────────────────
+  async ngOnInit() {
+    await this.arService.getAll(1, this.rows());
   }
 
-  // ── Acciones y handlers vacíos (listos para conectar backend) ───
-  onSedeChange(nuevaSedeId: string | null) { 
-    this.sedeSeleccionada.set(nuevaSedeId);
-    // Filtro no implementado aún
+  // ── Handlers filtros ─────────────────────────────────────────────
+  onEstadoChange(v: AccountReceivableStatus | null) { this.estadoSeleccionado.set(v); }
+  onPageChange(e: any) {
+    this.rows.set(e.rows);
+    this.arService.goToPage(e.page + 1);
   }
 
-  onEstadoChange(estado: string | null) {
-    this.estadoSeleccionado.set(estado);
-    // Filtro no implementado aún
-  }
-
-  onPageChange(event: any) {
-    this.rows.set(event.rows);
-    // Paginación no implementada aún
-  }
-
-  searchCotizacion(event: any) {
-    // Maquetado: sugiere 2 clientes por ejemplo
+  // ── Autocomplete ─────────────────────────────────────────────────
+  searchCuenta(event: any) {
     const q = event.query?.toLowerCase() ?? '';
-    if (!q || q.length < 2) { 
-      this.cotizacionSugerencias.set([]); 
-      return; 
-    }
-    this.cotizacionSugerencias.set(
-      this.hardcodedVentasPorCobrar
-        .filter(v => v.cliente.toLowerCase().includes(q) || v.id.toString().includes(q))
-        // Puedes limitar y mapear según tu UI!
+    if (!q || q.length < 2) { this.sugerencias.set([]); return; }
+    this.sugerencias.set(
+      this.arService.accounts().filter(a =>
+        a.userRef.toLowerCase().includes(q) ||
+        String(a.salesReceiptId).includes(q)
+      )
     );
   }
 
-  seleccionarCotizacionBusqueda(event: any) {
-    // Ejemplo: navegar a detalle, por ahora solo console
-    const v = event.value;
-    console.log('Seleccionado en autocomplete:', v);
+  seleccionarSugerencia(event: any) {
+    const a = event.value as AccountReceivableResponse;
+    if (a) this.buscarValue.set(a.userRef);
   }
 
-  limpiarBusquedaCotizacion() {
+  limpiarBusqueda() {
     this.buscarValue.set('');
-    this.cotizacionSugerencias.set([]);
+    this.sugerencias.set([]);
   }
 
-  // ── Botones de acción de la tabla ───────────────────────────────
-  irAgregarVentaPorCobrar(id: number | null) {
-    // Navega a crear venta por cobrar
-    console.log('Crear Venta por Cobrar, id:', id);
-    // this.router.navigate(['/admin/ventas-por-cobrar/nueva'], { queryParams: id ? { cotizacion: id } : {} });
+  // ── Helpers visuales ─────────────────────────────────────────────
+  getTagClass(status: AccountReceivableStatus): string {
+    switch (status) {
+      case 'PENDIENTE':  return 'cotizaciones-tag-amarillo';
+      case 'PARCIAL':    return 'cotizaciones-tag-parcial';
+      case 'PAGADO':     return 'cotizaciones-tag-aprobada';
+      case 'VENCIDO':    return 'cotizaciones-tag-vencido';
+      case 'CANCELADO':  return 'cotizaciones-tag-rechazada';
+      default:           return 'cotizaciones-tag-amarillo';
+    }
   }
 
-  rechazarCotizacion(id: number) {
-    // Simulación de rechazo (sólo para maqueta)
-    console.log('Cancelar venta por cobrar, id:', id);
-    // Mostrar toast ejemplo
-    this.messageService.add({ severity: 'info', summary: 'Cancelada', detail: 'La venta por cobrar fue cancelada.' });
-    // Aquí puedes eliminar del array hardcoded si lo deseas
-    this.hardcodedVentasPorCobrar = this.hardcodedVentasPorCobrar.filter(v => v.id !== id);
+  getDiasBadgeClass(dueDate: string): string {
+    const dias = this.calcDias(dueDate);
+    if (dias < 0)   return 'dias-badge dias-badge--vencido';
+    if (dias === 0) return 'dias-badge dias-badge--hoy';
+    if (dias <= 3)  return 'dias-badge dias-badge--urgente';
+    if (dias <= 7)  return 'dias-badge dias-badge--proximo';
+    return 'dias-badge dias-badge--ok';
+  }
+
+  getDiasBadgeLabel(dueDate: string): string {
+    const dias = this.calcDias(dueDate);
+    if (dias < 0)   return `Vencido ${Math.abs(dias)}d`;
+    if (dias === 0) return 'Hoy';
+    return `${dias}d`;
+  }
+
+  private calcDias(dueDate: string): number {
+    const hoy  = new Date(); hoy.setHours(0, 0, 0, 0);
+    const venc = new Date(dueDate); venc.setHours(0, 0, 0, 0);
+    return Math.round((venc.getTime() - hoy.getTime()) / 86_400_000);
+  }
+
+  formatDate(iso: string): string {
+    return new Date(iso).toLocaleDateString('es-PE');
+  }
+
+  // ── Acciones ─────────────────────────────────────────────────────
+// ventas-por-cobrar-listado.component.ts
+
+irAgregarVentaPorCobrar(id: number | null) {
+  if (id) {
+    // Editar
+    this.router.navigate(['/admin/editar-ventas-por-cobrar', id]);
+  } else {
+    // Crear nuevo
+    this.router.navigate(['/admin/agregar-ventas-por-cobrar']);
+  }
+}
+
+  verDetalle(id: number) {
+    this.router.navigate(['/admin/editar-ventas-por-cobrar', id]);
+  }
+  
+    rechazarCotizacion(id: number) {
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de cancelar esta venta por cobrar?',
+      header: 'Confirmar Cancelación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, cancelar',
+      rejectLabel: 'No',
+      accept: async () => {
+        const res = await this.arService.cancel({
+          accountReceivableId: id,
+          reason: 'Cancelado desde listado',
+        });
+        if (res) {
+          this.messageService.add({
+            severity: 'info',
+            summary: 'Cancelada',
+            detail: 'La venta por cobrar fue cancelada.',
+          });
+        } else {
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: this.arService.error() ?? 'No se pudo cancelar.',
+          });
+        }
+      },
+    });
   }
 }

@@ -1,17 +1,24 @@
+<!-- ventas-por-cobrar-formulario.html -->
+
 <div class="p-2">
+  <!-- CABECERA -->
   <p-card styleClass="cotizacion-header-card mb-4">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <span class="cotizacion-title-icon"><i class="pi pi-file-edit"></i></span>
+        <span class="cotizacion-title-icon">
+          <i class="pi pi-credit-card"></i>
+        </span>
         <div>
-          <p class="cotizacion-kicker mb-0">Administración · Cotizaciones</p>
-          <h2 class="cotizacion-title mb-0">
-            {{ esModoEdicion() ? 'Editar Cotización' : 'Nueva Cotización' }}
-          </h2>
+          <p class="cotizacion-kicker mb-0">Administración · Ventas por Cobrar</p>
+          <h2 class="cotizacion-title mb-0">Nueva Venta por Cobrar</h2>
         </div>
       </div>
-      <p-button label="Volver" icon="pi pi-arrow-left" (click)="cancelar()"
-        styleClass="ventas-pill" severity="secondary" />
+      <p-button
+        label="Volver"
+        icon="pi pi-arrow-left"
+        (click)="cancelar()"
+        styleClass="ventas-pill"
+        severity="secondary" />
     </div>
   </p-card>
 </div>
@@ -20,465 +27,227 @@
   <p-card styleClass="tarjeta-principal">
     <form [formGroup]="form" (ngSubmit)="guardar()" class="formgrid grid">
 
-      <!-- ══ CLIENTE ═══════════════════════════════════════════════ -->
+      <!-- ══ COMPROBANTE ══════════════════════════════════════════ -->
       <div class="col-12 mb-2">
-        <h3 class="form-section-title"><i class="pi pi-user"></i> Cliente</h3>
+        <h3 class="form-section-title">
+          <i class="pi pi-file"></i> Comprobante de Venta
+        </h3>
         <div class="section-divider"></div>
       </div>
 
-      <div class="col-12 mb-4">
-        <p-card styleClass="cliente-buscador-card">
+      <!-- salesReceiptId -->
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">
+          ID Comprobante de Venta <span class="text-red-400">*</span>
+        </label>
+        <p-inputNumber
+          formControlName="salesReceiptId"
+          placeholder="Ej: 8"
+          [min]="1"
+          [useGrouping]="false"
+          styleClass="w-full"
+          [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('salesReceiptId') }"
+        />
+        <small *ngIf="isInvalid('salesReceiptId')" class="vpc-error">
+          <i class="pi pi-exclamation-circle mr-1"></i>El ID del comprobante es requerido.
+        </small>
+      </div>
 
-          <!-- Buscador documento -->
-          <div class="formgrid grid align-items-end">
-            <div class="field col-12 md:col-5 mb-0 flex align-items-end gap-2">
-              <div style="flex:1">
-                <label class="form-label">Número de Documento <span class="text-red-400">*</span></label>
-                <input pInputText formControlName="documento" placeholder="N° Documento"
-                  maxlength="15"
-                  (keydown)="soloNumeros($event)"
-                  (blur)="buscarClientePorDocumento()"
-                  (keydown.enter)="buscarClientePorDocumento()"
-                  class="w-full" />
-              </div>
-              <p-button
-                [icon]="cargandoCliente() ? 'pi pi-spin pi-spinner' : 'pi pi-search'"
-                label="Buscar"
-                (click)="buscarClientePorDocumento()"
-                [disabled]="cargandoCliente()"
-                styleClass="p-button-secondary ml-2"
-              />
+      <!-- userRef -->
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">
+          Referencia de Usuario (UUID) <span class="text-red-400">*</span>
+        </label>
+        <input
+          pInputText
+          formControlName="userRef"
+          placeholder="uuid-del-usuario"
+          class="w-full"
+          [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('userRef') }"
+        />
+        <small *ngIf="isInvalid('userRef')" class="vpc-error">
+          <i class="pi pi-exclamation-circle mr-1"></i>La referencia de usuario es requerida.
+        </small>
+      </div>
+
+      <!-- ══ MONTOS ════════════════════════════════════════════════ -->
+      <div class="col-12 mb-2">
+        <h3 class="form-section-title">
+          <i class="pi pi-wallet"></i> Monto y Moneda
+        </h3>
+        <div class="section-divider"></div>
+      </div>
+
+      <!-- totalAmount -->
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">
+          Monto Total <span class="text-red-400">*</span>
+        </label>
+        <p-inputNumber
+          formControlName="totalAmount"
+          placeholder="0.00"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          [min]="0.01"
+          mode="decimal"
+          styleClass="w-full"
+          [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('totalAmount') }"
+        />
+        <small *ngIf="isInvalid('totalAmount')" class="vpc-error">
+          <i class="pi pi-exclamation-circle mr-1"></i>Ingrese un monto válido.
+        </small>
+      </div>
+
+      <!-- currencyCode -->
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">
+          Moneda <span class="text-red-400">*</span>
+        </label>
+          <p-select
+            formControlName="currencyCode"
+            [options]="monedas()"
+            optionLabel="descripcion"
+            optionValue="codigo"
+            placeholder="Seleccionar moneda"
+            class="w-full"
+            [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('currencyCode') }"
+          />
+
+        <small *ngIf="isInvalid('currencyCode')" class="vpc-error">
+          <i class="pi pi-exclamation-circle mr-1"></i>Selecciona una moneda.
+        </small>
+      </div>
+
+      <!-- paymentTypeId -->
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">
+          Tipo de Pago <span class="text-red-400">*</span>
+        </label>
+        <p-select
+          formControlName="paymentTypeId"
+          [options]="tiposPago()"
+          optionLabel="descripcion"
+          optionValue="id"
+          placeholder="Seleccionar tipo"
+          class="w-full"
+          [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('paymentTypeId') }"
+        />
+          <!-- Loading state opcional -->
+          @if (loadingCatalogos()) {
+            <div class="col-12 flex align-items-center gap-2 mb-2">
+              <i class="pi pi-spin pi-spinner text-primary"></i>
+              <small class="text-500">Cargando opciones...</small>
             </div>
-          </div>
-
-          <!-- Cliente encontrado -->
-          <div *ngIf="clienteEncontrado()" class="mt-3">
-            <p-card styleClass="cliente-info-card">
-              <div class="flex align-items-center gap-2 mb-3">
-                <i class="pi pi-check-circle" style="color:var(--gold); font-size:1rem;"></i>
-                <span style="font-size:0.75rem; font-weight:700; color:var(--gold); letter-spacing:0.1em; text-transform:uppercase;">
-                  Cliente encontrado
-                </span>
-              </div>
-              <div class="grid">
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Nombre / Razón Social</label>
-                  <input pInputText class="w-full" readonly
-                    [value]="clienteEncontrado()!.displayName || clienteEncontrado()!.name" />
-                </div>
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Dirección</label>
-                  <input pInputText class="w-full" readonly [value]="clienteEncontrado()!.address || '-'" />
-                </div>
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Email</label>
-                  <input pInputText class="w-full" readonly [value]="clienteEncontrado()!.email || '-'" />
-                </div>
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Teléfono</label>
-                  <input pInputText class="w-full" readonly [value]="clienteEncontrado()!.phone || '-'" />
-                </div>
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Documento</label>
-                  <input pInputText class="w-full" readonly [value]="clienteEncontrado()!.documentValue" />
-                </div>
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Tipo Documento</label>
-                  <input pInputText class="w-full" readonly
-                    [value]="clienteEncontrado()!.documentTypeDescription || '-'" />
-                </div>
-              </div>
-            </p-card>
-          </div>
-
-          <!-- Cliente no encontrado → formulario registro -->
-          <div *ngIf="busquedaSinResultado()" class="mt-3">
-            <p-card styleClass="cliente-nuevo-card">
-              <div class="flex align-items-center gap-2 mb-3">
-                <i class="pi pi-exclamation-triangle" style="color:#facc15; font-size:1rem"></i>
-                <span style="font-size:0.75rem; font-weight:700; color:#facc15; letter-spacing:0.1em; text-transform:uppercase;">
-                  Cliente no encontrado — Registrar
-                </span>
-              </div>
-
-              <div class="grid" [formGroup]="nuevoClienteForm">
-
-                <!-- 1. Tipo documento PRIMERO -->
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Tipo Documento <span class="text-red-400">*</span></label>
-                  <p-select
-                    formControlName="documentTypeId"
-                    [options]="tiposDocumento()"
-                    optionLabel="description"
-                    optionValue="documentTypeId"
-                    placeholder="Seleccionar tipo"
-                    (ngModelChange)="onTipoDocumentoChange($event)"
-                    class="w-full"
-                  />
-                </div>
-
-                <!-- 2. N° Documento (readonly, viene del buscador) -->
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">
-                    N° Documento
-                    <span *ngIf="nuevoClienteForm.get('documentTypeId')?.value"
-                      style="font-size:0.68rem; color:var(--text-muted); font-weight:400;">
-                      (máx. {{ getMaxLengthDoc() }} dígitos)
-                    </span>
-                  </label>
-                  <input pInputText
-                    [value]="form.get('documento')?.value"
-                    placeholder="N° Documento"
-                    readonly
-                    class="w-full"
-                  />
-                </div>
-
-                <!-- 3. Email -->
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Email <span class="text-red-400">*</span></label>
-                  <input pInputText formControlName="email"
-                    placeholder="correo@ejemplo.com" class="w-full" />
-                  <small *ngIf="nuevoClienteForm.get('email')?.invalid && nuevoClienteForm.get('email')?.touched"
-                    style="font-size:0.72rem; color:#f87171;">
-                    Email válido requerido.
-                  </small>
-                </div>
-
-                <!-- ── RUC: solo Razón Social ──────────────────────── -->
-                <ng-container *ngIf="esRuc()">
-                  <div class="field col-12 md:col-8">
-                    <label class="form-label">Razón Social <span class="text-red-400">*</span></label>
-                    <input pInputText formControlName="razon_social"
-                      placeholder="Razón social de la empresa" class="w-full" />
-                    <small *ngIf="nuevoClienteForm.get('razon_social')?.invalid && nuevoClienteForm.get('razon_social')?.touched"
-                      style="font-size:0.72rem; color:#f87171;">
-                      La razón social es requerida.
-                    </small>
-                  </div>
-                </ng-container>
-
-                <!-- ── No RUC: Nombres + Apellidos ────────────────── -->
-                <ng-container *ngIf="!esRuc()">
-                  <div class="field col-12 md:col-4">
-                    <label class="form-label">Nombres <span class="text-red-400">*</span></label>
-                    <input pInputText formControlName="name"
-                      placeholder="Nombres" class="w-full" />
-                    <small *ngIf="nuevoClienteForm.get('name')?.invalid && nuevoClienteForm.get('name')?.touched"
-                      style="font-size:0.72rem; color:#f87171;">
-                      Los nombres son requeridos.
-                    </small>
-                  </div>
-                  <div class="field col-12 md:col-4">
-                    <label class="form-label">Apellidos <span class="text-red-400">*</span></label>
-                    <input pInputText formControlName="apellidos"
-                      placeholder="Apellidos" class="w-full" />
-                    <small *ngIf="nuevoClienteForm.get('apellidos')?.invalid && nuevoClienteForm.get('apellidos')?.touched"
-                      style="font-size:0.72rem; color:#f87171;">
-                      Los apellidos son requeridos.
-                    </small>
-                  </div>
-                </ng-container>
-
-                <!-- 4. Teléfono -->
-                <div class="field col-12 md:col-4">
-                  <label class="form-label">Teléfono</label>
-                  <input pInputText formControlName="phone"
-                    placeholder="Teléfono" maxlength="10"
-                    (keydown)="soloNumeros($event)"
-                    class="w-full" />
-                </div>
-
-                <!-- 5. Dirección -->
-                <div class="field col-12 md:col-8">
-                  <label class="form-label">Dirección</label>
-                  <input pInputText formControlName="address"
-                    placeholder="Dirección" class="w-full" />
-                </div>
-
-              </div>
-
-              <div class="flex justify-content-end mt-3">
-                <p-button label="Registrar Cliente" icon="pi pi-user-plus"
-                  styleClass="ventas-pill" severity="success" (click)="registrarNuevoCliente()" />
-              </div>
-            </p-card>
-          </div>
-
-        </p-card>
+          }
+        <small *ngIf="isInvalid('paymentTypeId')" class="vpc-error">
+          <i class="pi pi-exclamation-circle mr-1"></i>Selecciona un tipo de pago.
+        </small>
       </div>
 
       <!-- ══ FECHAS ════════════════════════════════════════════════ -->
       <div class="col-12 mb-2">
-        <h3 class="form-section-title"><i class="pi pi-calendar"></i> Fechas</h3>
+        <h3 class="form-section-title">
+          <i class="pi pi-calendar"></i> Vencimiento
+        </h3>
         <div class="section-divider"></div>
       </div>
 
+      <!-- dueDate -->
       <div class="field col-12 md:col-6 mb-4">
-        <label class="form-label">Fecha de Emisión</label>
+        <label class="form-label">
+          Fecha de Vencimiento <span class="text-red-400">*</span>
+        </label>
         <p-datepicker
-          formControlName="fec_emision"
+          formControlName="dueDate"
           dateFormat="dd/mm/yy"
-          [disabled]="true"
-          [showIcon]="true"
-          appendTo="body"
-          class="w-full"
-          styleClass="w-full"
-        />
-      </div>
-
-      <div class="field col-12 md:col-6 mb-4">
-        <label class="form-label">Fecha de Vencimiento <span class="text-red-400">*</span></label>
-        <p-datepicker
-          formControlName="fec_venc"
           [minDate]="manana"
-          dateFormat="dd/mm/yy"
           placeholder="Seleccionar fecha límite"
           [showIcon]="true"
           appendTo="body"
           class="w-full"
           styleClass="w-full"
+          [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('dueDate') }"
         />
-        <small *ngIf="form.get('fec_venc')?.invalid && form.get('fec_venc')?.touched"
-          style="font-size:0.72rem; color:#f87171;">
+        <small *ngIf="isInvalid('dueDate')" class="vpc-error">
           <i class="pi pi-exclamation-circle mr-1"></i>La fecha de vencimiento es requerida.
         </small>
       </div>
 
-      <!-- ══ SEDE · ALMACÉN · ESTADO ═══════════════════════════════ -->
-      <div class="col-12 mb-2">
-        <h3 class="form-section-title"><i class="pi pi-building"></i> Sede y Almacén</h3>
-        <div class="section-divider"></div>
-      </div>
-
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Sede <span class="text-red-400">*</span></label>
-        <p-select formControlName="sede" [options]="sedes()"
-          optionLabel="nombre" optionValue="id_sede"
-          placeholder="Seleccionar sede" class="w-full" />
-      </div>
-
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Almacén</label>
-        <p-select
-          formControlName="id_almacen"
-          [options]="almacenes()"
-          optionLabel="nombre"
-          optionValue="id_almacen"
-          [placeholder]="almacenes().length === 0 ? 'Sin almacenes disponibles' : 'Seleccionar almacén'"
-          [disabled]="almacenes().length === 0"
-          class="w-full"
-        />
-        <small *ngIf="!form.get('sede')?.value" style="font-size:0.72rem; color:var(--text-muted)">
-          Selecciona una sede primero.
-        </small>
-      </div>
-
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Estado</label>
-        <p-select *ngIf="esModoEdicion()" formControlName="estado"
-          [options]="estadoOptions" optionLabel="label" optionValue="value"
-          placeholder="Seleccionar estado" class="w-full" />
-        <div *ngIf="!esModoEdicion()" class="flex align-items-center gap-2">
-          <input pInputText class="w-full" readonly value="Pendiente" />
-          <i class="pi pi-lock lock-icon"
-             pTooltip="Las cotizaciones nuevas inician en Pendiente"
-             tooltipPosition="top"></i>
+      <!-- ══ RESUMEN ════════════════════════════════════════════════ -->
+      @if (form.get('totalAmount')?.value && form.get('currencyCode')?.value) {
+        <div class="col-12 mb-4">
+          <p-card styleClass="cliente-info-card">
+            <div class="flex align-items-center gap-2 mb-2">
+              <i class="pi pi-info-circle" style="color:var(--gold)"></i>
+              <span style="font-size:0.75rem; font-weight:700; color:var(--gold); letter-spacing:0.1em; text-transform:uppercase;">
+                Resumen de la cuenta
+              </span>
+            </div>
+            <div class="grid">
+              <div class="col-12 md:col-3">
+                <p class="form-label mb-1">Monto Total</p>
+                <p class="font-bold text-lg" style="color:var(--gold)">
+                  {{ form.get('currencyCode')?.value }}
+                  {{ form.get('totalAmount')?.value | number:'1.2-2' }}
+                </p>
+              </div>
+              <div class="col-12 md:col-3">
+                <p class="form-label mb-1">Saldo Inicial</p>
+                <p class="font-bold text-lg">
+                  {{ form.get('currencyCode')?.value }}
+                  {{ form.get('totalAmount')?.value | number:'1.2-2' }}
+                </p>
+              </div>
+              <div class="col-12 md:col-3">
+                <p class="form-label mb-1">Estado inicial</p>
+                <p-tag value="PENDIENTE" styleClass="cotizaciones-tag-amarillo" />
+              </div>
+              <div class="col-12 md:col-3">
+                <p class="form-label mb-1">Monto Pagado</p>
+                <p class="font-bold text-lg text-green-500">
+                  {{ form.get('currencyCode')?.value }} 0.00
+                </p>
+              </div>
+            </div>
+          </p-card>
         </div>
-      </div>
+      }
 
-      <!-- Detalle sede -->
-      <div *ngIf="sedeSeleccionada()" class="col-12 mb-4">
-        <p-card styleClass="cliente-info-card">
-          <div class="flex align-items-center gap-2 mb-3">
-            <i class="pi pi-map-marker" style="color:var(--gold); font-size:0.9rem;"></i>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--gold); letter-spacing:0.1em; text-transform:uppercase;">
-              Detalle de Sede
-            </span>
-          </div>
-          <div class="grid">
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Nombre</label>
-              <input pInputText class="w-full" readonly
-                [value]="sedeSeleccionada().nombre || sedeSeleccionada().nombre_sede || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Código</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().codigo || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Ciudad</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().ciudad || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Departamento</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().departamento || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Dirección</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().direccion || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Teléfono</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().telefono || '-'" />
-            </div>
-          </div>
-        </p-card>
-      </div>
-
-      <!-- ══ PRODUCTOS ═════════════════════════════════════════════ -->
+      <!-- ══ OBSERVACIÓN ═══════════════════════════════════════════ -->
       <div class="col-12 mb-2">
-        <h3 class="form-section-title"><i class="pi pi-shopping-cart"></i> Productos</h3>
+        <h3 class="form-section-title">
+          <i class="pi pi-comment"></i> Observación
+        </h3>
         <div class="section-divider"></div>
       </div>
 
-      <div class="col-12 mb-4">
-        <p-card styleClass="cliente-buscador-card">
-
-          <!-- Buscador -->
-          <div class="formgrid grid mb-3">
-            <div class="field col-12 md:col-6 mb-0">
-              <label class="form-label">Buscar Producto</label>
-              <div class="p-inputgroup">
-                <input pInputText
-                  [(ngModel)]="busquedaProductoVal"
-                  [ngModelOptions]="{ standalone: true }"
-                  placeholder="Código o nombre del producto..."
-                  (keydown)="soloAlfanumericoMayus($event)"
-                  (input)="aMayusculas($event); buscarProducto(busquedaProductoVal)"
-                  class="w-full" />
-                <span *ngIf="cargandoProducto()" class="p-inputgroup-addon">
-                  <i class="pi pi-spin pi-spinner"></i>
-                </span>
-              </div>
-              <small *ngIf="!form.get('sede')?.value" style="font-size:0.72rem; color:#facc15;">
-                <i class="pi pi-exclamation-triangle mr-1"></i>Selecciona una sede primero.
-              </small>
-            </div>
-          </div>
-
-          <!-- Resultados autocomplete -->
-          <div *ngIf="productosAutoComplete().length > 0" class="mb-3">
-            <p-card styleClass="surface-card">
-              <div class="flex flex-column gap-1">
-                <div *ngFor="let prod of productosAutoComplete()"
-                  class="prod-row flex align-items-center justify-content-between p-2 cursor-pointer"
-                  (click)="agregarProducto(prod)">
-                  <div class="flex flex-column gap-1">
-                    <span style="font-size:0.88rem; font-weight:600; color:var(--text-main)">{{ prod.nombre }}</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted)">{{ prod.codigo }}</span>
-                  </div>
-                  <div class="flex align-items-center gap-3">
-                    <span style="font-size:0.75rem; color:var(--text-muted)">
-                      Stock: <strong style="color:var(--text-main)">{{ prod.stock }}</strong>
-                    </span>
-                    <p-button icon="pi pi-plus"
-                      styleClass="p-button-rounded p-button-sm" severity="success"
-                      pTooltip="Agregar" tooltipPosition="left"
-                      (click)="agregarProducto(prod); $event.stopPropagation()" />
-                  </div>
-                </div>
-              </div>
-            </p-card>
-          </div>
-
-          <!-- Tabla detalles -->
-          <ng-container *ngIf="detalles().length > 0; else sinDetalles">
-            <p-table [value]="detalles()" [showGridlines]="true" styleClass="p-datatable-sm">
-              <ng-template pTemplate="header">
-                <tr>
-                  <th style="width:90px">Código</th>
-                  <th>Descripción</th>
-                  <th style="width:70px" class="text-center">U.M.</th>
-                  <th style="width:220px" class="text-center">Tipo Precio</th>
-                  <th style="width:130px" class="text-center">Cantidad</th>
-                  <th style="width:140px" class="text-center">Precio (S/)</th>
-                  <th style="width:110px" class="text-right">Importe</th>
-                  <th style="width:50px"></th>
-                </tr>
-              </ng-template>
-              <ng-template pTemplate="body" let-item let-i="rowIndex">
-                <tr>
-                  <td style="font-family:monospace; font-size:0.8rem; color:var(--text-muted)">{{ item.cod_prod }}</td>
-                  <td style="font-weight:500">{{ item.descripcion }}</td>
-                  <td class="text-center" style="font-size:0.78rem; color:var(--text-muted)">{{ item.uni_med || '-' }}</td>
-                  <td>
-                    <p-select
-                      [ngModel]="item.tipoPrecio"
-                      [ngModelOptions]="{ standalone: true }"
-                      (ngModelChange)="cambiarTipoPrecio(i, $event)"
-                      [options]="tipoPrecioOpciones(item)"
-                      optionLabel="label" optionValue="value"
-                      appendTo="body" class="w-full" styleClass="w-full"
-                    />
-                  </td>
-                  <td>
-                    <p-inputNumber
-                      [ngModel]="item.cantidad" [ngModelOptions]="{ standalone: true }"
-                      (ngModelChange)="actualizarCantidad(i, $event)"
-                      [min]="1" [showButtons]="true" buttonLayout="horizontal"
-                      incrementButtonIcon="pi pi-plus" decrementButtonIcon="pi pi-minus"
-                      styleClass="w-full"
-                    />
-                  </td>
-                  <td>
-                    <p-inputNumber
-                      [ngModel]="item.precio"
-                      [ngModelOptions]="{ standalone: true }"
-                      [readonly]="true"
-                      [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2"
-                      styleClass="w-full"
-                    />
-                  </td>
-                  <td class="text-right" style="font-weight:700; color:var(--gold)">
-                    S/ {{ item.importe | number:'1.2-2' }}
-                  </td>
-                  <td class="text-center">
-                    <p-button icon="pi pi-trash" severity="danger" [text]="true"
-                      (click)="eliminarDetalle(i)" pTooltip="Eliminar" tooltipPosition="top" />
-                  </td>
-                </tr>
-              </ng-template>
-            </p-table>
-
-            <!-- Totales -->
-            <div class="flex justify-content-end mt-4">
-              <div class="totales-box">
-                <div class="totales-row">
-                  <span>Subtotal</span>
-                  <span>S/ {{ subtotal | number:'1.2-2' }}</span>
-                </div>
-                <div class="totales-row">
-                  <span>IGV (18%)</span>
-                  <span>S/ {{ igv | number:'1.2-2' }}</span>
-                </div>
-                <div class="totales-divider"></div>
-                <div class="totales-total">
-                  <span class="label">Total</span>
-                  <span class="valor">S/ {{ total | number:'1.2-2' }}</span>
-                </div>
-              </div>
-            </div>
-          </ng-container>
-
-          <ng-template #sinDetalles>
-            <div class="empty-state">
-              <i class="pi pi-inbox"></i>
-              <span>Busca y agrega productos a la cotización</span>
-            </div>
-          </ng-template>
-
-        </p-card>
+      <div class="field col-12 mb-4">
+        <label class="form-label">Observación <span class="text-400">(opcional)</span></label>
+        <textarea
+          pTextarea
+          formControlName="observation"
+          placeholder="Ej: Venta a crédito 30 días..."
+          rows="3"
+          class="w-full"
+          style="resize: vertical;"
+        ></textarea>
       </div>
 
       <!-- ══ ACCIONES ══════════════════════════════════════════════ -->
       <div class="col-12 flex gap-2 justify-content-end pt-2">
-        <p-button type="button" label="Cancelar" icon="pi pi-times"
-          severity="secondary" [outlined]="true" styleClass="ventas-pill" (click)="cancelar()" />
-        <p-button type="submit"
-          [label]="esModoEdicion() ? 'Actualizar Cotización' : 'Guardar Cotización'"
+        <p-button
+          type="button"
+          label="Cancelar"
+          icon="pi pi-times"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="ventas-pill"
+          (click)="cancelar()" />
+        <p-button
+          type="submit"
+          label="Guardar Venta por Cobrar"
           [icon]="isSubmitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-          [disabled]="form.invalid || isSubmitting() || detalles().length === 0"
+          [disabled]="form.invalid || isSubmitting()"
           styleClass="ventas-pill ventas-pill-warning" />
       </div>
 
@@ -487,4 +256,3 @@
 </div>
 
 <p-toast />
-<p-confirmDialog />

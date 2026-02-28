@@ -1,6 +1,6 @@
-<div class="conteo-page">
-  <p-card class="conteo-header-card">
-    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+<div class="p-2">
+  <p-card class="sedes-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="sedes-title-icon">
           <i class="pi pi-chart-line"></i>
@@ -10,8 +10,14 @@
           <h2 class="sedes-title">CONTEOS DE INVENTARIO</h2>
         </div>
       </div>
-
-      <p-button label="Crear Nuevo Conteo" icon="pi pi-plus" (onClick)="crearConteo()"> </p-button>
+      <div class="flex justify-items-end gap-2">
+          <p-button 
+          label="Crear Nuevo Conteo" 
+          icon="pi pi-plus" 
+          styleClass="sedes-pill"
+          (onClick)="crearConteo()"> 
+        </p-button>
+      </div>
     </div>
   </p-card>
 
