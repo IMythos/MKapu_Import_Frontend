@@ -13,7 +13,7 @@ import {
 
 @Injectable({ providedIn: 'root' })
 export class VentasApiService {
-  private readonly http   = inject(HttpClient);
+  private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/sales`;
 
 
