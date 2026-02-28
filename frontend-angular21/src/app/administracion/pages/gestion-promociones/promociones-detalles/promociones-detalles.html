@@ -1,0 +1,247 @@
+<div class="p-2">
+  <p-card styleClass="promociones-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="promociones-title-icon">
+          <i class="pi pi-tag"></i>
+        </span>
+        <div>
+          <p class="promociones-kicker mb-0">ADMINISTRACIÓN - CAMPAÑAS</p>
+          <h2 class="promociones-title mb-0">Detalle de Promoción</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Editar"
+          icon="pi pi-pencil"
+          styleClass="ventas-pill ventas-pill-warning"
+          (onClick)="irEditar()"
+        />
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          styleClass="ventas-pill"
+          (onClick)="volver()"
+        />
+      </div>
+    </div>
+  </p-card>
+</div>
+
+@if (cargando()) {
+  <div class="p-2">
+    <div class="flex justify-content-center align-items-center" style="min-height: 300px">
+      <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #f6af33"></i>
+    </div>
+  </div>
+}
+
+@if (!cargando() && promocion()) {
+  <div class="p-2 grid">
+
+    <!-- ── COLUMNA IZQUIERDA ── -->
+    <div class="col-12 md:col-8 flex flex-column gap-3">
+      <p-card styleClass="tarjeta-principal border-round-xl">
+
+        <div class="col-12 mb-3">
+          <h3 class="form-section-title">
+            <i class="pi pi-info-circle"></i>
+            Información General
+          </h3>
+        </div>
+
+        <div class="formgrid grid">
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Código de Cupón</span>
+            <div class="detalle-valor">
+              <span class="codigo-badge">{{ promocion()!.codigo }}</span>
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Nombre</span>
+            <div class="detalle-valor">{{ promocion()!.nombre }}</div>
+          </div>
+
+          <div class="col-12 mb-4">
+            <span class="form-label">Descripción</span>
+            <div class="detalle-valor detalle-descripcion">{{ promocion()!.descripcion }}</div>
+          </div>
+
+          @if (promocion()!.condiciones) {
+            <div class="col-12 mb-4">
+              <span class="form-label">Condiciones Especiales</span>
+              <div class="detalle-valor detalle-descripcion">{{ promocion()!.condiciones }}</div>
+            </div>
+          }
+
+          <div class="col-12">
+            <div class="border-top-1 surface-border mb-4"></div>
+          </div>
+
+          <div class="col-12 mb-3">
+            <h3 class="form-section-title">
+              <i class="pi pi-calendar"></i>
+              Vigencia
+            </h3>
+          </div>
+
+          <div class="col-12 md:col-4 mb-4">
+            <span class="form-label">Fecha Inicio</span>
+            <div class="detalle-valor">
+              <i class="pi pi-calendar-plus detalle-icon"></i>
+              {{ promocion()!.fechaInicio | date:'dd/MM/yyyy' }}
+            </div>
+          </div>
+
+          <div class="col-12 md:col-4 mb-4">
+            <span class="form-label">Fecha Fin</span>
+            <div class="detalle-valor">
+              <i class="pi pi-calendar-minus detalle-icon"></i>
+              {{ promocion()!.fechaFin | date:'dd/MM/yyyy' }}
+            </div>
+          </div>
+
+          <div class="col-12 md:col-4 mb-4">
+            <span class="form-label">Días Restantes</span>
+            <div class="detalle-valor">
+              <i class="pi pi-clock detalle-icon"></i>
+              {{ diasRestantes() }}
+            </div>
+          </div>
+
+          <div class="col-12">
+            <div class="border-top-1 surface-border mb-4"></div>
+          </div>
+
+          <div class="col-12 mb-3">
+            <h3 class="form-section-title">
+              <i class="pi pi-shield"></i>
+              Condiciones
+            </h3>
+          </div>
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Tipo de Descuento</span>
+            <div class="detalle-valor">
+              <p-tag
+                [value]="promocion()!.tipo"
+                [severity]="promocion()!.tipo === 'Porcentaje' ? 'info' : 'warn'"
+              />
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Productos Aplicables</span>
+            <div class="detalle-valor">
+              <i class="pi pi-box detalle-icon"></i>
+              {{ (promocion()!.productosCantidad ?? 0) }} productos
+            </div>
+          </div>
+
+        </div>
+      </p-card>
+    </div>
+
+    <!-- ── COLUMNA DERECHA ── -->
+    <div class="col-12 md:col-4 flex flex-column gap-3">
+
+      <div class="descuento-card border-round-xl shadow-2 p-4 text-center">
+        <p class="form-label mb-3" style="text-align:center">Valor del Descuento</p>
+        <div class="descuento-valor-grande">
+          @if (promocion()!.tipo === 'Porcentaje') {
+            {{ promocion()!.porcentaje }}%
+          } @else {
+            S/ {{ (promocion()!.monto ?? 0) | number:'1.2-2' }}
+          }
+        </div>
+        <p class="descuento-tipo-label mt-2">
+          {{ promocion()!.tipo === 'Porcentaje' ? 'Descuento porcentual' : 'Descuento de monto fijo' }}
+        </p>
+      </div>
+
+      <p-card styleClass="tarjeta-principal border-round-xl">
+        <div class="flex flex-column gap-3">
+
+          <div>
+            <span class="form-label">Estado Actual</span>
+            <div class="mt-2">
+              <p-tag
+                [value]="promocion()!.estado"
+                [severity]="severidadEstado()"
+                styleClass="text-sm font-bold"
+              />
+            </div>
+          </div>
+
+          <div class="border-top-1 surface-border"></div>
+
+          <div>
+            <span class="form-label">Progreso de Vigencia</span>
+            <div class="mt-2">
+              <div class="flex justify-content-between mb-1">
+                <small class="text-500">{{ promocion()!.fechaInicio | date:'dd/MM/yy' }}</small>
+                <small class="text-500">{{ promocion()!.fechaFin | date:'dd/MM/yy' }}</small>
+              </div>
+              <p-progressbar
+                [value]="progresoVigencia()"
+                [showValue]="false"
+                styleClass="vigencia-progress"
+              />
+              <small class="text-500 mt-1 block text-center">{{ progresoVigencia() }}% transcurrido</small>
+            </div>
+          </div>
+
+          <div class="border-top-1 surface-border"></div>
+
+          <div>
+            <span class="form-label">Acciones Rápidas</span>
+            <div class="flex flex-column gap-2 mt-2">
+              <p-button
+                label="Editar Promoción"
+                icon="pi pi-pencil"
+                styleClass="ventas-pill ventas-pill-warning w-full"
+                (onClick)="irEditar()"
+              />
+              <p-button
+                label="Eliminar Promoción"
+                icon="pi pi-trash"
+                severity="danger"
+                [outlined]="true"
+                styleClass="ventas-pill w-full"
+                (onClick)="confirmarEliminar()"
+              />
+            </div>
+          </div>
+
+        </div>
+      </p-card>
+
+    </div>
+
+  </div>
+}
+
+@if (!cargando() && !promocion()) {
+  <div class="p-2">
+    <p-card styleClass="tarjeta-principal border-round-xl">
+      <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+        <i class="pi pi-inbox" style="font-size: 3rem; color: #94a3b8"></i>
+        <p class="text-900 font-semibold m-0">Promoción no encontrada</p>
+        <p class="text-500 m-0">El ID solicitado no existe o fue eliminado</p>
+        <p-button
+          label="Volver al listado"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          styleClass="ventas-pill mt-2"
+          (onClick)="volver()"
+        />
+      </div>
+    </p-card>
+  </div>
+}
+
+<p-toast />
+<p-confirmDialog />

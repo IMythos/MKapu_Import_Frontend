@@ -1,0 +1,232 @@
+<div class="p-2">
+  <p-card styleClass="promociones-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="promociones-title-icon">
+          <i [class]="iconoCabecera()"></i>
+        </span>
+        <div>
+          <p class="promociones-kicker mb-0">{{ tituloKicker() }}</p>
+          <h2 class="promociones-title mb-0">{{ tituloPrincipal() }}</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          (onClick)="cancelar()"
+          styleClass="ventas-pill"
+          severity="secondary"
+        />
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<div class="p-2">
+  <p-card styleClass="tarjeta-principal border-round-xl">
+    <form [formGroup]="promocionForm" (ngSubmit)="guardarPromocion()" class="formgrid grid">
+
+      <!-- ── Sección: Configuración General ── -->
+      <div class="col-12 mb-3">
+        <h3 class="form-section-title">
+          <i class="pi pi-info-circle"></i>
+          Configuración General
+        </h3>
+      </div>
+
+      <div class="field col-12 md:col-6 mb-4">
+        <label for="codigo" class="form-label">Código de Cupón <span class="text-red-400">*</span></label>
+        <input
+          pInputText
+          id="codigo"
+          formControlName="codigo"
+          class="w-full uppercase"
+          placeholder="Ej: VERANO2026"
+        />
+        @if (promocionForm.get('codigo')?.invalid && promocionForm.get('codigo')?.touched) {
+          <small class="text-red-500 block mt-1">
+            <i class="pi pi-exclamation-circle mr-1"></i>El código es requerido (mínimo 3 caracteres)
+          </small>
+        }
+      </div>
+
+      <div class="field col-12 md:col-6 mb-4">
+        <label for="tipo_descuento" class="form-label">Tipo de Descuento <span class="text-red-400">*</span></label>
+        <p-select
+          id="tipo_descuento"
+          formControlName="tipo_descuento"
+          [options]="tiposPromocion()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Seleccionar tipo"
+          styleClass="w-full"
+        />
+        @if (promocionForm.get('tipo_descuento')?.invalid && promocionForm.get('tipo_descuento')?.touched) {
+          <small class="text-red-500 block mt-1">
+            <i class="pi pi-exclamation-circle mr-1"></i>El tipo de descuento es requerido
+          </small>
+        }
+      </div>
+
+      <div class="field col-12 mb-4">
+        <label for="descripcion" class="form-label">Descripción <span class="text-red-400">*</span></label>
+        <textarea
+          pInputTextarea
+          id="descripcion"
+          formControlName="descripcion"
+          rows="3"
+          class="w-full"
+          placeholder="Describe el beneficio de la promoción..."
+        ></textarea>
+        @if (promocionForm.get('descripcion')?.invalid && promocionForm.get('descripcion')?.touched) {
+          <small class="text-red-500 block mt-1">
+            <i class="pi pi-exclamation-circle mr-1"></i>La descripción es requerida
+          </small>
+        }
+      </div>
+
+      <!-- Divider -->
+      <div class="col-12 mb-3">
+        <div class="border-top-1 surface-border"></div>
+      </div>
+
+      <!-- ── Sección: Vigencia y Beneficio ── -->
+      <div class="col-12 mb-3">
+        <h3 class="form-section-title">
+          <i class="pi pi-calendar"></i>
+          Vigencia y Beneficio
+        </h3>
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Fecha Inicio <span class="text-red-400">*</span></label>
+        <p-datepicker
+          formControlName="fecha_inicio"
+          [showIcon]="true"
+          dateFormat="dd/mm/yy"
+          placeholder="dd/mm/aaaa"
+          styleClass="w-full"
+        />
+        @if (promocionForm.get('fecha_inicio')?.invalid && promocionForm.get('fecha_inicio')?.touched) {
+          <small class="text-red-500 block mt-1">
+            <i class="pi pi-exclamation-circle mr-1"></i>La fecha de inicio es requerida
+          </small>
+        }
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Fecha Fin <span class="text-red-400">*</span></label>
+        <p-datepicker
+          formControlName="fecha_fin"
+          [showIcon]="true"
+          dateFormat="dd/mm/yy"
+          placeholder="dd/mm/aaaa"
+          styleClass="w-full"
+        />
+        @if (promocionForm.get('fecha_fin')?.invalid && promocionForm.get('fecha_fin')?.touched) {
+          <small class="text-red-500 block mt-1">
+            <i class="pi pi-exclamation-circle mr-1"></i>La fecha de fin es requerida
+          </small>
+        }
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Valor del Descuento <span class="text-red-400">*</span></label>
+        <p-inputNumber
+          formControlName="valor_descuento"
+          [mode]="esModoMonto() ? 'currency' : 'decimal'"
+          currency="PEN"
+          locale="es-PE"
+          [suffix]="esModoMonto() ? '' : ' %'"
+          [min]="0"
+          [max]="esModoMonto() ? null : 100"
+          placeholder="0.00"
+          styleClass="w-full"
+        />
+        @if (promocionForm.get('valor_descuento')?.invalid && promocionForm.get('valor_descuento')?.touched) {
+          <small class="text-red-500 block mt-1">
+            <i class="pi pi-exclamation-circle mr-1"></i>Ingrese un valor mayor a 0
+          </small>
+        }
+      </div>
+
+      <!-- Divider -->
+      <div class="col-12 mb-3">
+        <div class="border-top-1 surface-border"></div>
+      </div>
+
+      <!-- ── Sección: Restricciones de Uso ── -->
+      <div class="col-12 mb-3">
+        <h3 class="form-section-title">
+          <i class="pi pi-shield"></i>
+          Restricciones de Uso
+        </h3>
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Monto Mínimo de Compra</label>
+        <p-inputNumber
+          formControlName="monto_minimo"
+          mode="currency"
+          currency="PEN"
+          locale="es-PE"
+          [min]="0"
+          placeholder="S/ 0.00"
+          styleClass="w-full"
+        />
+        <small class="form-hint">Dejar en 0 si no aplica mínimo</small>
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Límite Total de Usos</label>
+        <p-inputNumber
+          formControlName="uso_maximo"
+          [min]="0"
+          placeholder="Vacío / ilimitado"
+          styleClass="w-full"
+        />
+        <small class="form-hint">Dejar vacío para usos ilimitados</small>
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Tipo de Comprobante</label>
+        <p-select
+          formControlName="tipo_comprobante"
+          [options]="tiposComprobante()"
+          optionLabel="label"
+          optionValue="value"
+          styleClass="w-full"
+        />
+      </div>
+
+      <!-- Divider + Acciones -->
+      <div class="col-12">
+        <div class="border-top-1 surface-border mb-4"></div>
+      </div>
+
+      <div class="col-12 flex gap-2 justify-content-end">
+        <p-button
+          type="button"
+          label="Cancelar"
+          icon="pi pi-times"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="ventas-pill"
+          (onClick)="cancelar()"
+        />
+        <p-button
+          type="submit"
+          [label]="esModoEdicion() ? 'Actualizar Promoción' : 'Guardar Promoción'"
+          [icon]="isSubmitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+          [disabled]="promocionForm.invalid || isSubmitting()"
+          styleClass="ventas-pill ventas-pill-warning"
+        />
+      </div>
+
+    </form>
+  </p-card>
+</div>
+
+<p-toast />
+<p-confirmDialog />
