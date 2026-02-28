@@ -1,0 +1,218 @@
+/* src/app/administracion/pages/proveedores/proveedor-formulario/proveedor-formulario.css */
+
+:host {
+  display: block;
+}
+
+:host > .p-2:first-child {
+  padding-top: 0;
+}
+
+:host ::ng-deep {
+  .surface-50 {
+    border-radius: 1rem !important;
+  }
+}
+
+.proveedores-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.proveedores-pill {
+  border-radius: 9999px !important;
+  padding: 1.25rem 2.5rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  min-height: 56px !important;
+  box-shadow: 0 6px 12px #00000026 !important;
+  transition: all 0.2s;
+}
+
+.proveedores-pill-warning {
+  background: #F6AF33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+.proveedores-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #00000033 !important;
+}
+
+.proveedores-pill:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.field label {
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.field small.text-red-500 {
+  font-size: 0.875rem;
+}
+
+.surface-card {
+  background: var(--surface-card);
+  transition: all 0.3s ease;
+}
+
+.border-round {
+  border-radius: 0.5rem;
+}
+
+.border-round-xl {
+  border-radius: 1rem;
+}
+
+.text-primary {
+  color: var(--primary-color) !important;
+}
+
+.text-warning {
+  color: #F6AF33 !important;
+}
+
+h3 {
+  margin: 0;
+}
+
+.formgrid.grid {
+  row-gap: 0;
+}
+
+.field {
+  margin-bottom: 0;
+}
+
+:host ::ng-deep .p-inputtext,
+:host ::ng-deep textarea {
+  transition: all 0.2s;
+}
+
+:host ::ng-deep .p-inputtext:focus,
+:host ::ng-deep textarea:focus {
+  box-shadow: 0 0 0 0.2rem rgba(246, 175, 51, 0.25);
+  border-color: #F6AF33;
+}
+
+:host ::ng-deep .p-button.p-button-secondary {
+  background: transparent !important;
+  border: 2px solid #94a3b8 !important;
+  color: #64748b !important;
+  transition: all 0.2s;
+}
+
+:host ::ng-deep .p-button.p-button-secondary:hover:not(:disabled) {
+  background: #f8fafc !important;
+  border-color: #64748b !important;
+  color: #475569 !important;
+}
+
+:host ::ng-deep .p-confirmdialog .p-dialog-content {
+  padding: 1.5rem;
+}
+
+:host ::ng-deep .p-toast {
+  z-index: 9999;
+}
+
+:host ::ng-deep textarea {
+  font-family: inherit;
+}
+
+.surface-100 {
+  background: var(--surface-100);
+}
+
+.surface-50 {
+  background: var(--surface-50);
+}
+
+.border-1 {
+  border: 1px solid;
+}
+
+.border-300 {
+  border-color: var(--surface-300);
+}
+
+.border-top-1 {
+  border-top: 1px solid;
+}
+
+/* DARK MODE */
+
+:host-context(.app-dark) {
+  .surface-card {
+    background: var(--surface-card);
+  }
+
+  .surface-100 {
+    background: #1a1a1a !important;
+  }
+
+  .surface-50 {
+    background: #262626 !important;
+  }
+
+  .border-300 {
+    border-color: #404040 !important;
+  }
+
+  .text-900 {
+    color: #e5e5e5 !important;
+  }
+
+  .text-600 {
+    color: #a3a3a3 !important;
+  }
+
+  .text-500 {
+    color: #737373 !important;
+  }
+
+  .proveedores-title-icon {
+    background: #e8a424 !important;
+    color: #1f2937 !important;
+  }
+
+  .text-warning {
+    color: #fbbf24 !important;
+  }
+}
+
+:host-context(.app-dark) ::ng-deep .p-button.p-button-secondary {
+  border-color: #64748b !important;
+  color: #94a3b8 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .p-button.p-button-secondary:hover:not(:disabled) {
+  background: #1e293b !important;
+  border-color: #94a3b8 !important;
+  color: #cbd5e1 !important;
+}
+
+@media (max-width: 768px) {
+  .proveedores-pill {
+    padding: 1rem 1.5rem !important;
+    font-size: 1rem !important;
+    min-height: 48px !important;
+  }
+
+  :host ::ng-deep .p-button.w-10rem {
+    width: 100% !important;
+  }
+
+  .field.col-12.flex.gap-3 {
+    flex-direction: column;
+  }
+}

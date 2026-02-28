@@ -46,6 +46,7 @@
     box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
 }
 
+
 .clientes-search-input {
     flex: 1;
     border: none;
@@ -116,7 +117,7 @@
 .clientes-search-label {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #1f2937;
+    color: #f8fafc;
 }
 
 .clientes-search-container {
@@ -128,7 +129,7 @@
 .clientes-search-label {
     font-size: 0.85rem;
     font-weight: 600;
-    color: #1f2937;
+    color: #f8fafc;
 }
 
 .clientes-search-hint {
@@ -138,4 +139,384 @@
 
 .clientes-filter-actions {
     align-self: flex-end;
+}
+
+/* Asegura que el panel de Autocomplete esté por encima y con fondo oscuro */
+:host ::ng-deep .p-autocomplete-panel {
+  z-index: 2500 !important;
+  background: rgba(17, 24, 39, 0.95) !important; /* color oscuro */
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+}
+
+:host ::ng-deep .p-autocomplete-item {
+  color: var(--text-color, #e6e6e6);
+  padding: 0.6rem 0.8rem;
+}
+
+:host ::ng-deep .p-autocomplete-item .text-500 {
+  color: #9aa0a6;
+  font-size: 0.8rem;
+}
+
+:host-context(.app-dark) .clientes-kicker {
+  color: #94a3b8;
+}
+
+:host-context(.app-dark) .clientes-title {
+  color: #f8fafc;
+}
+
+/* ===========================
+   Empty state (adapted from sedes) for clientes
+   =========================== */
+
+.clientes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Make the shared sedes-empty-state look right inside clientes */
+.clientes-page .sedes-empty-state {
+  width: 100%;
+  border: 1px dashed rgba(255,255,255,0.06); /* subtle dotted border for dark theme */
+  border-radius: 12px;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  background: rgba(255,255,255,0.01); /* slight contrast inside card */
+  color: #9aa0a6;
+}
+
+/* Icon block */
+.clientes-page .sedes-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: #94a3b8;
+}
+
+/* Titles */
+.clientes-page .sedes-empty-title {
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.clientes-page .sedes-empty-subtitle {
+  font-size: 0.85rem;
+  max-width: 640px;
+  color: #9aa0a6;
+}
+
+.clientes-page .sedes-pill {
+  margin-top: 0.5rem;
+}
+
+:host ::ng-deep .p-autocomplete-panel {
+  z-index: 2500 !important;
+  background: rgba(17, 24, 39, 0.98) !important;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Items contrast */
+:host ::ng-deep .p-autocomplete-item {
+  color: #e6e6e6;
+  padding: 0.6rem 0.8rem;
+}
+:host ::ng-deep .p-autocomplete-item .text-500 {
+  color: #9aa0a6;
+  font-size: 0.8rem;
+}
+
+:host ::ng-deep .clientes-search-input .p-inputtext:focus,
+:host ::ng-deep .clientes-search-input:focus-within {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(247, 208, 83, 0.15);
+  border-color: rgba(247, 208, 83, 0.9) !important;
+}
+
+.clientes-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.clientes-page p-card > .p-card-body > .sedes-empty-state,
+.clientes-page p-card > .p-card-body .sedes-empty-state {
+  margin-top: 0.5rem;
+}
+
+.clientes-page .p-tag {
+  font-weight: 700;
+}
+
+/* ============================================
+   CLIENTE DETAIL MODAL — agregar al clientes.css
+   ============================================ */
+
+/* Override PrimeNG dialog para quitar padding */
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 0 !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+:host ::ng-deep .p-dialog .p-dialog-header {
+  display: none !important;
+}
+:host ::ng-deep .p-dialog {
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.6) !important;
+}
+
+/* ── Contenedor principal ─────────────────── */
+.cliente-detail-modal {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Banner superior ─────────────────────── */
+.cdm-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  position: relative;
+}
+
+
+
+.cdm-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: rgba(245, 195, 77, 0.12);
+  color: #f5c34d;
+  border: 1px solid rgba(245, 195, 77, 0.2);
+  flex-shrink: 0;
+}
+
+.cdm-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cdm-tipo {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+}
+
+.cdm-nombre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cdm-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #64748b;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.cdm-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+/* ── Fila de documento ────────────────────── */
+.cdm-doc-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.cdm-doc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(245, 195, 77, 0.1);
+  color: #f5c34d;
+  border: 1px solid rgba(245, 195, 77, 0.2);
+  text-transform: uppercase;
+}
+
+.cdm-doc-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.cdm-status-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.cdm-status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.cdm-status--inactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.cdm-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Info grid ────────────────────────────── */
+.cdm-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0.5rem 0;
+}
+
+.cdm-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+
+.cdm-info-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.cdm-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.cdm-info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.04);
+  color: #64748b;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.cdm-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.cdm-info-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.cdm-info-value {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  word-break: break-word;
+}
+
+/* Sin datos */
+.cdm-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+/* ── Footer ───────────────────────────────── */
+.cdm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+:host ::ng-deep .cdm-btn-edit.p-button {
+  background: #f5c34d !important;
+  border-color: #f5c34d !important;
+  color: #111827 !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .cdm-btn-edit.p-button:hover {
+  background: #f0b429 !important;
+}
+
+:host ::ng-deep .cdm-btn-close.p-button {
+  border-radius: 8px;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #94a3b8 !important;
+}
+
+:host ::ng-deep .cdm-btn-close.p-button:hover {
+  background: rgba(255,255,255,0.06) !important;
 }

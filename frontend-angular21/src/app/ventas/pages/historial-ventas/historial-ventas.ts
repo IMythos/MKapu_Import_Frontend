@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,22 +14,66 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DatePicker } from 'primeng/datepicker';
 import { Tooltip } from 'primeng/tooltip';
 import { AutoComplete } from 'primeng/autocomplete';
+import { MessageService, ConfirmationService } from 'primeng/api';
 
-import { VentasService, ComprobanteVenta } from '../../../core/services/ventas.service';
+import { VentaService } from '../../services/venta.service';
+import { AuthService } from '../../../auth/services/auth.service';
 import { SedeService, Sede } from '../../../core/services/sede.service';
-import { EmpleadosService, Empleado } from '../../../core/services/empleados.service';
 import { ComprobantesService } from '../../../core/services/comprobantes.service';
 import { PosService } from '../../../core/services/pos.service';
-import { MessageService, ConfirmationService } from 'primeng/api';
+
+import type { User } from '../../../core/interfaces/user.interface';
+import type {
+  SalesReceiptSummaryListResponse,
+  SalesReceiptSummaryDto,
+  SalesReceiptsQuery,
+  SalesReceiptKpiDto,
+  ReceiptStatus,
+} from '../../interfaces';
+
+interface ComprobanteVentaVM {
+  id: number;
+  id_sede: number;
+  serie: string;
+  numero: number;
+  fec_emision: string;
+  tipo_comprobante: string;
+  tipo_pago: string;
+  idCliente: string;
+  idResponsableRef: number;
+  cliente_nombre: string;
+  cliente_doc: string;
+  responsable: string;
+  sede_nombre: string;
+  total: number;
+  estadoSunat: ReceiptStatus;
+  estado: boolean;
+}
 
 interface FiltroVentas {
   tipoComprobante: string | null;
-  estado: string | null;
+  estado: ReceiptStatus | null;
   fechaInicio: Date | null;
   fechaFin: Date | null;
   busqueda: string;
-  tipoPago: string | null;
+  tipoPago: number | null;
 }
+
+const TIPO_MAP: Record<string, string> = {
+  'FACTURA DE VENTA': '01',
+  FACTURA: '01',
+  'BOLETA DE VENTA': '03',
+  BOLETA: '03',
+  'NOTA DE CREDITO': '07',
+  'NOTA DE DEBITO': '08',
+};
+
+const RECEIPT_TYPE_ID_MAP: Record<string, number> = {
+  '01': 1,
+  '03': 2,
+  '07': 3,
+  '08': 4,
+};
 
 @Component({
   selector: 'app-historial-ventas',
@@ -53,373 +97,414 @@ interface FiltroVentas {
   styleUrls: ['./historial-ventas.css'],
 })
 export class HistorialVentas implements OnInit, OnDestroy {
-  tituloKicker = 'VENTAS - HISTORIAL DE VENTAS';
-  subtituloKicker = 'CONSULTA Y GESTIÓN DE VENTAS';
-  iconoCabecera = 'pi pi-list';
+  private readonly router = inject(Router);
+  private readonly ventaService = inject(VentaService);
+  private readonly authService = inject(AuthService);
+  private readonly sedeService = inject(SedeService);
+  private readonly comprobantesService = inject(ComprobantesService);
+  private readonly posService = inject(PosService);
+  private readonly messageService = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
 
-  private subscriptions = new Subscription();
+  readonly tituloKicker = 'VENTAS - HISTORIAL DE VENTAS';
+  readonly subtituloKicker = 'CONSULTA Y GESTIÓN DE VENTAS';
+  readonly iconoCabecera = 'pi pi-list';
 
-  comprobantes: ComprobanteVenta[] = [];
-  comprobantesFiltrados: ComprobanteVenta[] = [];
-  comprobanteSeleccionado: ComprobanteVenta | null = null;
-  sedes: Sede[] = [];
-  empleadoActual: Empleado | null = null;
-  sedeActual: Sede | null = null;
+  comprobantes = signal<ComprobanteVentaVM[]>([]);
+  totalRecords = signal(0);
+  loading = signal(false);
+  firstRow = signal(0);
+  currentLimit = signal<10 | 20 | 50 | 100>(10);
+  currentPage = computed(() => Math.floor(this.firstRow() / this.currentLimit()) + 1);
+  // Opciones para el selector de filas por página
+  rowsPerPageOptions = [
+    { label: '10', value: 10 },
+    { label: '20', value: 20 },
+    { label: '50', value: 50 },
+    { label: '100', value: 100 },
+  ];
 
-  filtros: FiltroVentas = {
+  sedes = signal<Sede[]>([]);
+  tiposComprobante = signal<any[]>([]);
+  estadosComprobante = signal<any[]>([]);
+  tiposPago = signal<any[]>([]);
+
+  sugerenciasBusqueda = signal<string[]>([]);
+
+  private sugerenciasPool = computed<string[]>(() => {
+    const set = new Set<string>();
+    for (const c of this.comprobantes()) {
+      set.add(this.getNumeroFormateado(c));
+      if (c.cliente_nombre?.trim()) set.add(c.cliente_nombre.trim());
+      if (c.cliente_doc?.trim()) set.add(c.cliente_doc.trim());
+    }
+    return [...set].sort();
+  });
+
+  private currentUser = signal<User | null>(null);
+  private sedeRefEmpleado = signal<number | null>(null);
+
+  kpiSede = signal<SalesReceiptKpiDto | null>(null);
+  kpiTotalVentas = computed(() => this.kpiSede()?.total_ventas ?? 0);
+  kpiNumeroVentas = computed(() => this.kpiSede()?.cantidad_ventas ?? 0);
+  kpiTotalBoletas = computed(() => this.kpiSede()?.total_boletas ?? 0);
+  kpiTotalFacturas = computed(() => this.kpiSede()?.total_facturas ?? 0);
+  kpiSemanaDesde = computed(() => this.kpiSede()?.semana_desde ?? '');
+  kpiSemanaHasta = computed(() => this.kpiSede()?.semana_hasta ?? '');
+
+  filtros = signal<FiltroVentas>({
     tipoComprobante: null,
     estado: null,
     fechaInicio: null,
     fechaFin: null,
     busqueda: '',
     tipoPago: null,
-  };
+  });
 
-  tiposComprobante: any[] = [];
-  estadosComprobante: any[] = [];
-  tiposPago: any[] = [];
+  hayFiltrosActivos = computed(() => {
+    const f = this.filtros();
+    return !!(
+      f.tipoComprobante ||
+      f.estado ||
+      f.fechaInicio ||
+      f.fechaFin ||
+      f.busqueda?.trim() ||
+      f.tipoPago
+    );
+  });
 
-  sugerenciasBusqueda: string[] = [];
-  todasLasSugerencias: string[] = [];
-
-  loading: boolean = false;
-  mostrarDetalle: boolean = false;
-
-  totalVentas: number = 0;
-  numeroVentas: number = 0;
-  totalBoletas: number = 0;
-  totalFacturas: number = 0;
-
-  inicioSemana: Date = new Date();
-  finSemana: Date = new Date();
-
-  constructor(
-    private router: Router,
-    private ventasService: VentasService,
-    private sedeService: SedeService,
-    private empleadosService: EmpleadosService,
-    private comprobantesService: ComprobantesService,
-    private posService: PosService,
-    private messageService: MessageService,
-    private confirmationService: ConfirmationService,
-  ) {}
+  private subs = new Subscription();
 
   ngOnInit(): void {
-    this.calcularRangoSemana();
     this.cargarOpcionesFiltros();
-    this.cargarEmpleadoActual();
+    this.cargarUsuarioYSede();
     this.cargarSedes();
-    this.cargarComprobantes();
+    this.cargarKpiSede();
+    setTimeout(() => this.cargarHistorial(), 0);
   }
 
   ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
+    this.subs.unsubscribe();
   }
 
+  // ========== MÉTODOS PARA EL PAGINADOR PERSONALIZADO ==========
 
-  calcularRangoSemana(): void {
-    const hoy = new Date();
-    const diaSemana = hoy.getDay();
-    
-    const diasDesdeInicio = diaSemana === 0 ? 6 : diaSemana - 1;
-    
-    this.inicioSemana = new Date(hoy);
-    this.inicioSemana.setDate(hoy.getDate() - diasDesdeInicio);
-    this.inicioSemana.setHours(0, 0, 0, 0);
-    
-    this.finSemana = new Date(this.inicioSemana);
-    this.finSemana.setDate(this.inicioSemana.getDate() + 6);
-    this.finSemana.setHours(23, 59, 59, 999);
-
-    console.log('📅 Semana actual:', {
-      inicio: this.inicioSemana.toLocaleDateString('es-PE'),
-      fin: this.finSemana.toLocaleDateString('es-PE'),
-    });
+  getFirstRecord(): number {
+    return this.totalRecords() === 0 ? 0 : this.firstRow() + 1;
   }
 
-  cargarOpcionesFiltros(): void {
-    this.tiposComprobante = this.comprobantesService.getTiposComprobanteOptions();
-    this.estadosComprobante = this.comprobantesService.getEstadosComprobanteOptions();
-    this.tiposPago = this.posService.getTiposPagoOptions();
+  getLastRecord(): number {
+    const last = this.firstRow() + this.currentLimit();
+    return last > this.totalRecords() ? this.totalRecords() : last;
   }
 
-  cargarEmpleadoActual(): void {
-    this.empleadoActual = this.empleadosService.getEmpleadoActual();
+  isFirstPage(): boolean {
+    return this.currentPage() === 1;
+  }
 
-    if (!this.empleadoActual) {
+  isLastPage(): boolean {
+    return this.currentPage() >= this.getTotalPages();
+  }
+
+  getTotalPages(): number {
+    return Math.ceil(this.totalRecords() / this.currentLimit());
+  }
+
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    const current = this.currentPage();
+    const delta = 2; // Mostrar 2 páginas a cada lado
+    const range: number[] = [];
+
+    for (
+      let i = Math.max(2, current - delta);
+      i <= Math.min(totalPages - 1, current + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+    if (current - delta > 2) {
+      range.unshift(-1); // Representa "..."
+    }
+    if (current + delta < totalPages - 1) {
+      range.push(-1); // Representa "..."
+    }
+
+    range.unshift(1);
+    if (totalPages > 1) {
+      range.push(totalPages);
+    }
+
+    return range.filter((v, i, a) => a.indexOf(v) === i && v !== -1);
+  }
+
+  goToFirstPage(): void {
+    if (!this.isFirstPage()) {
+      this.firstRow.set(0);
+      this.cargarHistorial();
+    }
+  }
+
+  goToPrevPage(): void {
+    if (!this.isFirstPage()) {
+      this.firstRow.update((f) => f - this.currentLimit());
+      this.cargarHistorial();
+    }
+  }
+
+  goToNextPage(): void {
+    if (!this.isLastPage()) {
+      this.firstRow.update((f) => f + this.currentLimit());
+      this.cargarHistorial();
+    }
+  }
+
+  goToLastPage(): void {
+    if (!this.isLastPage()) {
+      const lastPageFirst = (this.getTotalPages() - 1) * this.currentLimit();
+      this.firstRow.set(lastPageFirst);
+      this.cargarHistorial();
+    }
+  }
+
+  goToPage(page: number): void {
+    if (page !== this.currentPage() && page > 0 && page <= this.getTotalPages()) {
+      const newFirst = (page - 1) * this.currentLimit();
+      this.firstRow.set(newFirst);
+      this.cargarHistorial();
+    }
+  }
+
+  onRowsPerPageChange(newLimit: number): void {
+    this.currentLimit.set(newLimit as 10 | 20 | 50 | 100);
+    this.firstRow.set(0);
+    this.cargarHistorial();
+  }
+
+  // ========== FIN MÉTODOS PAGINADOR ==========
+
+  private cargarUsuarioYSede(): void {
+    const user = this.authService.getCurrentUser();
+    this.currentUser.set(user);
+    this.sedeRefEmpleado.set(user?.idSede ?? null);
+
+    if (!user) {
       this.messageService.add({
         severity: 'error',
         summary: 'Error de autenticación',
-        detail: 'No hay un empleado autenticado. Redirigiendo...',
+        detail: 'No hay usuario autenticado.',
         life: 3000,
       });
-
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 1000);
       return;
     }
 
     this.messageService.add({
       severity: 'info',
       summary: 'Sede actual',
-      detail: `Mostrando ventas de: ${this.empleadoActual.nombre_sede}`,
-      life: 3000,
+      detail: `Mostrando ventas de: ${user.sedeNombre ?? 'Sede'}`,
+      life: 2000,
     });
   }
 
-  cargarSedes(): void {
-    const sub = this.sedeService.getSedes().subscribe({
-      next: (sedes) => {
-        this.sedes = sedes;
+  cargarHistorial(): void {
+    this.loading.set(true);
 
-        if (this.empleadoActual?.id_sede) {
-          this.sedeActual =
-            this.sedes.find((s) => s.id_sede === this.empleadoActual!.id_sede) || null;
-        }
+    const f = this.filtros();
+    const dateTo = f.fechaFin ? new Date(f.fechaFin) : null;
+    if (dateTo) dateTo.setHours(23, 59, 59, 999);
+
+    const pagina = this.currentPage();
+
+    const query: SalesReceiptsQuery = {
+      page: pagina,
+      limit: this.currentLimit(),
+      status: f.estado ?? undefined,
+      search: f.busqueda?.trim() || undefined,
+      dateFrom: f.fechaInicio ? this.toDateStr(f.fechaInicio) : undefined,
+      dateTo: dateTo ? this.toDateStr(dateTo) : undefined,
+      receiptTypeId: f.tipoComprobante ? RECEIPT_TYPE_ID_MAP[f.tipoComprobante] : undefined,
+      paymentMethodId: f.tipoPago ?? undefined,
+      sedeId: this.sedeRefEmpleado() ?? undefined,
+    };
+
+    const sub = this.ventaService.listarHistorialVentas(query).subscribe({
+      next: (res: SalesReceiptSummaryListResponse) => {
+        this.comprobantes.set(res.receipts.map((r) => this.toVM(r)));
+        this.totalRecords.set(res.total);
+        this.loading.set(false);
       },
-      error: (error) => {
-        console.error('Error al cargar sedes:', error);
+      error: () => {
+        this.loading.set(false);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
-          detail: 'No se pudieron cargar las sedes',
+          detail: 'No se pudo cargar el historial de ventas.',
           life: 3000,
         });
       },
     });
-    this.subscriptions.add(sub);
+
+    this.subs.add(sub);
   }
 
-  cargarComprobantes(): void {
-    this.loading = true;
-
-    const todosComprobantes = this.ventasService.getComprobantes();
-
-    if (this.empleadoActual?.id_sede) {
-      this.comprobantes = todosComprobantes
-        .filter((c) => c.id_sede === this.empleadoActual!.id_sede)
-        .sort((a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime());
-
-      console.log(`📍 Filtrando ventas por sede: ${this.empleadoActual.nombre_sede}`);
-      console.log(`📊 Total de ventas en esta sede: ${this.comprobantes.length}`);
-    } else {
-      this.comprobantes = todosComprobantes.sort(
-        (a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime(),
-      );
-      console.warn('⚠️ No hay empleado logueado, mostrando todas las ventas');
-    }
-
-    this.comprobantesFiltrados = [...this.comprobantes];
-    this.cargarSugerenciasBusqueda();
-    this.calcularEstadisticas();
-
-    this.loading = false;
-
-    if (this.comprobantes.length === 0) {
-      this.messageService.add({
-        severity: 'info',
-        summary: 'Sin registros',
-        detail: `No hay ventas registradas en ${this.empleadoActual?.nombre_sede || 'esta sede'}`,
-        life: 3000,
-      });
-    }
-  }
-
-  cargarSugerenciasBusqueda(): void {
-    const sugerencias = new Set<string>();
-
-    this.comprobantes.forEach((c) => {
-      sugerencias.add(this.getNumeroFormateado(c));
-
-      if (c.cliente_nombre && c.cliente_nombre.trim()) {
-        sugerencias.add(c.cliente_nombre.trim());
-      }
-
-      if (c.cliente_doc && c.cliente_doc.trim()) {
-        sugerencias.add(c.cliente_doc.trim());
-      }
+  cargarKpiSede(): void {
+    const sub = this.ventaService.getKpiSemanal().subscribe({
+      next: (kpi) => this.kpiSede.set(kpi),
+      error: () => {},
     });
-
-    this.todasLasSugerencias = Array.from(sugerencias).sort();
+    this.subs.add(sub);
   }
 
-  buscarSugerencias(event: any): void {
-    const query = event.query.toLowerCase().trim();
+cargarOpcionesFiltros(): void {
+  this.tiposComprobante.set(this.comprobantesService.getTiposComprobanteOptions());
+  this.estadosComprobante.set(this.comprobantesService.getEstadosComprobanteOptions());
+  
+  // PRUEBA MANUAL: Asegúrate de que los IDs coincidan con tu BD (1: Efectivo, 2: Tarjeta, etc.)
+  this.tiposPago.set([
+    { label: 'Efectivo', value: 1 },
+    { label: 'DEPÓSITO EN CUENTA', value: 2 },
+    { label: 'TRANSFERENCIA DE FONDOS', value: 3 }
+  ]);
+}
 
-    if (!query) {
-      this.sugerenciasBusqueda = this.todasLasSugerencias.slice(0, 10);
-    } else {
-      this.sugerenciasBusqueda = this.todasLasSugerencias
-        .filter((item) => item.toLowerCase().includes(query))
-        .slice(0, 15);
-    }
+
+  cargarSedes(): void {
+    const sub = this.sedeService.getSedes().subscribe({
+      next: (s) => this.sedes.set(s),
+      error: () => {},
+    });
+    this.subs.add(sub);
+  }
+
+  onPageChange(event: any): void {
+    const newFirst = event.first ?? 0;
+    const newLimit = (event.rows ?? 10) as 10 | 20 | 50 | 100;
+
+    if (newFirst === this.firstRow() && newLimit === this.currentLimit()) return;
+
+    this.firstRow.set(newFirst);
+    this.currentLimit.set(newLimit);
+    this.cargarHistorial();
   }
 
   aplicarFiltros(): void {
-    let resultado = [...this.comprobantes];
-
-    if (this.filtros.tipoComprobante) {
-      resultado = resultado.filter((c) => c.tipo_comprobante === this.filtros.tipoComprobante);
-    }
-
-    if (this.filtros.estado) {
-      resultado = resultado.filter((c) => this.getEstadoComprobante(c) === this.filtros.estado);
-    }
-
-    if (this.filtros.tipoPago) {
-      resultado = resultado.filter((c) => c.tipo_pago === this.filtros.tipoPago);
-    }
-
-    if (this.filtros.fechaInicio) {
-      resultado = resultado.filter((c) => {
-        const fecha = new Date(c.fec_emision);
-        return fecha >= this.filtros.fechaInicio!;
-      });
-    }
-
-    if (this.filtros.fechaFin) {
-      const fechaFinAjustada = new Date(this.filtros.fechaFin);
-      fechaFinAjustada.setHours(23, 59, 59, 999);
-
-      resultado = resultado.filter((c) => {
-        const fecha = new Date(c.fec_emision);
-        return fecha <= fechaFinAjustada;
-      });
-    }
-
-    if (this.filtros.busqueda && this.filtros.busqueda.trim()) {
-      const busqueda = this.filtros.busqueda.toLowerCase().trim();
-      resultado = resultado.filter((c) => {
-        const serie = c.serie.toLowerCase();
-        const numero = c.numero.toString();
-        const cliente = (c.cliente_nombre || '').toLowerCase();
-        const documento = (c.cliente_doc || '').toLowerCase();
-        const numeroFormateado = this.getNumeroFormateado(c).toLowerCase();
-
-        return (
-          serie.includes(busqueda) ||
-          numero.includes(busqueda) ||
-          cliente.includes(busqueda) ||
-          documento.includes(busqueda) ||
-          numeroFormateado.includes(busqueda)
-        );
-      });
-    }
-
-    resultado.sort((a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime());
-
-    this.comprobantesFiltrados = resultado;
-    this.calcularEstadisticas();
+    this.firstRow.set(0);
+    this.cargarHistorial();
   }
 
   limpiarFiltros(): void {
-    this.filtros = {
+    this.filtros.set({
       tipoComprobante: null,
       estado: null,
       fechaInicio: null,
       fechaFin: null,
       busqueda: '',
       tipoPago: null,
-    };
-    this.aplicarFiltros();
-
+    });
+    this.firstRow.set(0);
+    this.cargarHistorial();
     this.messageService.add({
       severity: 'info',
       summary: 'Filtros limpiados',
-      detail: 'Se restablecieron todos los filtros',
+      detail: 'Se restablecieron todos los filtros.',
       life: 2000,
     });
   }
 
-    calcularEstadisticas(): void {
-    const ventasSemana = this.comprobantesFiltrados.filter((c) => {
-      const fechaVenta = new Date(c.fec_emision);
-      return fechaVenta >= this.inicioSemana && fechaVenta <= this.finSemana;
+  actualizarFiltroBusqueda(valor: string): void {
+    this.filtros.update((f) => ({ ...f, busqueda: valor }));
+  }
+
+  actualizarFiltroFechaInicio(valor: Date | null): void {
+    this.filtros.update((f) => ({ ...f, fechaInicio: valor }));
+  }
+
+  actualizarFiltroFechaFin(valor: Date | null): void {
+    this.filtros.update((f) => ({ ...f, fechaFin: valor }));
+  }
+
+  actualizarFiltroTipoComprobante(valor: string | null): void {
+    this.filtros.update((f) => ({ ...f, tipoComprobante: valor }));
+  }
+
+  actualizarFiltroTipoPago(valor: number | null): void {
+    this.filtros.update((f) => ({ ...f, tipoPago: valor }));
+  }
+
+  actualizarFiltroEstado(valor: ReceiptStatus | null): void {
+    this.filtros.update((f) => ({ ...f, estado: valor }));
+  }
+
+  buscarSugerencias(event: any): void {
+    const q = (event.query ?? '').toLowerCase().trim();
+    const pool = this.sugerenciasPool();
+    this.sugerenciasBusqueda.set(
+      q ? pool.filter((s) => s.toLowerCase().includes(q)).slice(0, 15) : pool.slice(0, 10),
+    );
+  }
+
+  nuevaVenta(): void {
+    this.router.navigate(['/ventas/generar-venta']);
+  }
+
+  verDetalleVenta(c: ComprobanteVentaVM): void {
+    this.router.navigate(['/ventas/ver-detalle', c.id]);
+  }
+
+  imprimirComprobante(c: ComprobanteVentaVM): void {
+    this.router.navigate(['/ventas/imprimir-comprobante'], {
+      state: { comprobante: c, rutaRetorno: '/ventas/historial-ventas' },
     });
-
-    this.totalVentas = ventasSemana.reduce((sum, c) => sum + c.total, 0);
-    
-    this.numeroVentas = ventasSemana.length;
-    
-    this.totalBoletas = ventasSemana.filter((c) => c.tipo_comprobante === '03').length;
-    
-    this.totalFacturas = ventasSemana.filter((c) => c.tipo_comprobante === '01').length;
-
   }
 
-
-  getEstadoComprobante(comprobante: ComprobanteVenta): string {
-    return this.comprobantesService.getEstadoComprobante(comprobante);
-  }
-
-  getSeverityEstado(estado: string): 'success' | 'danger' | 'warn' | 'info' {
-    return this.comprobantesService.getSeverityEstado(estado);
+  getNumeroFormateado(c: ComprobanteVentaVM): string {
+    return this.comprobantesService.getNumeroFormateado(c.serie, c.numero);
   }
 
   getTipoComprobanteLabel(tipo: string): string {
     return this.comprobantesService.getTipoComprobanteLabel(tipo as '01' | '03');
   }
 
-  getNumeroFormateado(comprobante: ComprobanteVenta): string {
-    return this.comprobantesService.getNumeroFormateado(comprobante.serie, comprobante.numero);
+  getTipoPagoLabel(tipoPago: string): string {
+    return tipoPago === 'N/A' ? 'N/A' : this.posService.getTipoPagoLabel(tipoPago);
   }
 
-  getTipoPagoLabel(tipoPago: string): string {
-    return this.posService.getTipoPagoLabel(tipoPago);
+  getSeverityEstado(estado: string): 'success' | 'danger' | 'warn' | 'info' {
+    const map: Record<string, 'success' | 'danger' | 'warn' | 'info'> = {
+      EMITIDO: 'success',
+      ANULADO: 'warn',
+      RECHAZADO: 'danger',
+    };
+    return map[estado] ?? 'info';
   }
 
   getSeverityTipoPago(tipoPago: string): 'success' | 'info' | 'warn' | 'secondary' {
-    return this.posService.getSeverityTipoPago(tipoPago);
+    return tipoPago === 'N/A' ? 'secondary' : this.posService.getSeverityTipoPago(tipoPago);
   }
 
-  getSede(comprobante: ComprobanteVenta): string {
-    const sede = this.sedes.find((s) => s.id_sede === comprobante.id_sede);
-    return sede ? sede.nombre : 'N/A';
+  private toVM(r: SalesReceiptSummaryDto): ComprobanteVentaVM {
+    return {
+      id: r.idComprobante,
+      id_sede: r.idSede,
+      serie: r.serie,
+      numero: r.numero,
+      fec_emision: r.fecEmision,
+      tipo_comprobante: TIPO_MAP[r.tipoComprobante?.toUpperCase()] ?? '03',
+      tipo_pago: r.metodoPago || 'N/A',
+      idCliente: r.clienteNombre || '',
+      idResponsableRef: Number(r.idResponsable),
+      cliente_nombre: r.clienteNombre || '—',
+      cliente_doc: r.clienteDocumento || '—',
+      responsable: r.responsableNombre || '—',
+      sede_nombre: r.sedeNombre || '—',
+      total: r.total,
+      estadoSunat: r.estado,
+      estado: r.estado === 'EMITIDO',
+    };
   }
 
-  cerrarDetalle(): void {
-    this.mostrarDetalle = false;
-    this.comprobanteSeleccionado = null;
-  }
-
-  imprimirComprobante(comprobante: ComprobanteVenta): void {
-    this.router.navigate(['/ventas/imprimir-comprobante'], {
-      state: {
-        comprobante: comprobante,
-        rutaRetorno: '/ventas/historial-ventas',
-      },
-    });
-  }
-
-  verDetalleVenta(comprobante: ComprobanteVenta): void {
-    this.router.navigate(['/ventas/ver-detalle', comprobante.id]);
-  }
-
-  anularComprobante(comprobante: ComprobanteVenta): void {
-    this.confirmationService.confirm({
-      message: `¿Está seguro de anular el comprobante ${this.getNumeroFormateado(comprobante)}?`,
-      header: 'Confirmar Anulación',
-      icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, anular',
-      rejectLabel: 'Cancelar',
-      acceptButtonStyleClass: 'p-button-danger',
-      accept: () => {
-        comprobante.estado = false;
-
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Comprobante anulado',
-          detail: `${this.getNumeroFormateado(comprobante)} fue anulado exitosamente`,
-          life: 3000,
-        });
-
-        this.aplicarFiltros();
-      },
-    });
-  }
-
-  nuevaVenta(): void {
-    this.router.navigate(['/ventas/generar-venta']);
+  private toDateStr(d: Date): string {
+    return d.toISOString().slice(0, 10);
   }
 }

@@ -1,0 +1,413 @@
+/* src/app/administracion/pages/proveedores/proveedores-listado/proveedores-listado.css */
+
+:host ::ng-deep {
+  .surface-50 {
+    border-radius: 1rem !important;
+  }
+  
+  p-paginator .p-paginator-pages .p-paginator-page {
+    margin: 0 0.125rem;
+  }
+
+  .h-header-fijo {
+    min-height: 5rem !important;
+    max-height: 5rem !important;
+  }
+  
+  .truncate {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .autocomplete-proveedores .p-autocomplete-input {
+    font-weight: 500;
+    color: #1e293b;
+  }
+
+  .p-autocomplete-panel {
+    min-width: 600px !important;
+    max-width: 750px !important;
+    margin-top: 12px !important;
+  }
+
+  .autocomplete-item-custom {
+    padding: 1.75rem 2rem !important;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+    background-color: transparent;
+    min-height: 85px;
+  }
+
+  .autocomplete-item-custom:hover {
+    background-color: #FFF5E6 !important;
+    transform: translateX(6px);
+  }
+
+  .autocomplete-item-custom .font-bold {
+    font-size: 1.1rem !important;
+    color: #0f172a;
+    margin-bottom: 0.75rem !important;
+    line-height: 1.4;
+  }
+
+  .autocomplete-item-custom small {
+    font-size: 0.9rem !important;
+    color: #64748b;
+    display: block;
+    margin-top: 0.5rem;
+    line-height: 1.5;
+  }
+
+  .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item {
+    padding: 0 !important;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 4px;
+  }
+
+  .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+  }
+
+  .p-autocomplete-panel .p-autocomplete-items .p-autocomplete-item.p-highlight {
+    background-color: #FFE0B3 !important;
+    color: #0f172a !important;
+  }
+}
+
+.proveedores-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.proveedores-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.proveedores-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.proveedores-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.proveedores-pill {
+  border-radius: 9999px !important;
+  padding: 1.25rem 2.5rem !important;
+  font-size: 1.1rem !important;
+  font-weight: 600;
+  min-height: 56px !important;
+  box-shadow: 0 6px 12px #00000026 !important;
+  transition: all 0.2s;
+}
+
+.proveedores-pill-warning {
+  background: #F6AF33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+.proveedores-pill-secondary {
+  background: #64748b !important;
+  border: 2px solid #475569 !important;
+  color: #ffffff !important;
+}
+
+.proveedores-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #00000033 !important;
+}
+
+.proveedores-table-nativa .p-datatable-thead > tr > th {
+  background: var(--surface-50) !important;
+  border-bottom: 2px solid var(--surface-border) !important;
+  color: var(--text-color) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  padding: 1rem 0.75rem !important;
+}
+
+.proveedores-table-nativa .p-datatable-tbody > tr > td {
+  border-bottom: 1px solid var(--surface-border-light) !important;
+  padding: 1rem 0.75rem !important;
+}
+
+:host ::ng-deep .proveedores-table-hover .p-datatable-tbody > tr:hover {
+  background-color: #F6AF3326 !important;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+:host ::ng-deep .proveedores-table-hover .p-datatable-tbody > tr:hover > td {
+  background-color: transparent !important;
+}
+
+.proveedores-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.proveedores-icon-soft {
+  background: #ecfdf3;
+  color: #15803d;
+}
+
+.proveedores-icon-warn {
+  background: #fff7ed;
+  color: #b45309;
+}
+
+.proveedores-icon-danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.contadores-proveedores {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 0;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.contador-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-right: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.contador-card:last-child {
+  border-right: none;
+}
+
+.contador-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #F6AF33 0%, #e8a424 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.contador-card:hover::before {
+  transform: scaleX(1);
+}
+
+.contador-card:hover {
+  background: #fefce8;
+  box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.1);
+}
+
+.contador-card i {
+  font-size: 2.5rem;
+  transition: all 0.3s ease;
+  color: #F6AF33; /* amarillo base */
+}
+
+.contador-card:hover i {
+  transform: scale(1.1);
+  color: #E8A424; /* amarillo un poco más intenso al hover */
+}
+
+
+.contador-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.contador-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.contador-valor {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.contador-detalle {
+  font-size: 0.75rem;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.contador-detalle i {
+  font-size: 0.75rem;
+}
+
+
+:host-context(.app-dark) .proveedores-title-icon {
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+:host-context(.app-dark) .proveedores-kicker {
+  color: #94a3b8 !important;
+}
+
+:host-context(.app-dark) .proveedores-title {
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) .proveedores-pill-warning {
+  background: #e8a424 !important;
+  border: 2px solid #d69520 !important;
+  color: #1f2937 !important;
+}
+
+:host-context(.app-dark) .proveedores-icon-soft {
+  background: #1a3d2b !important;
+  color: #4ade80 !important;
+}
+
+:host-context(.app-dark) .proveedores-icon-soft:hover {
+  background: #22543d !important;
+  color: #86efac !important;
+}
+
+:host-context(.app-dark) .proveedores-icon-warn {
+  background: #2a2218 !important;
+  color: #fbbf24 !important;
+}
+
+:host-context(.app-dark) .proveedores-icon-warn:hover {
+  background: #3d2e1a !important;
+  color: #fcd34d !important;
+}
+
+:host-context(.app-dark) .proveedores-icon-danger {
+  background: #3d1f1f !important;
+  color: #f87171 !important;
+}
+
+:host-context(.app-dark) .proveedores-icon-danger:hover:not(:disabled) {
+  background: #4a2626 !important;
+  color: #fca5a5 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .autocomplete-proveedores .p-autocomplete-input {
+  color: #e2e8f0 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .autocomplete-item-custom:hover {
+  background-color: #2a2218 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .autocomplete-item-custom .font-bold {
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .autocomplete-item-custom small {
+  color: #94a3b8 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .proveedores-table-hover .p-datatable-tbody > tr:hover {
+  background-color: #3d2e1a !important;
+}
+
+:host-context(.app-dark) .contadores-proveedores {
+  background: #18181B;
+}
+
+:host-context(.app-dark) .contador-card {
+  background: #18181B;
+  border-right-color: #27272a;
+}
+
+:host-context(.app-dark) .contador-card:hover {
+  background: #27272a;
+  box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.2);
+}
+
+:host-context(.app-dark) .contador-label {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .contador-valor {
+  color: #ffffff;
+}
+
+@media (max-width: 1200px) {
+  .contadores-proveedores {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .contador-card:nth-child(2) {
+    border-right: none;
+  }
+  
+  .contador-card:nth-child(1),
+  .contador-card:nth-child(2) {
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  :host-context(.app-dark) .contador-card:nth-child(1),
+  :host-context(.app-dark) .contador-card:nth-child(2) {
+    border-bottom-color: #27272a;
+  }
+}
+
+@media (max-width: 768px) {
+  .contadores-proveedores {
+    grid-template-columns: 1fr;
+  }
+  
+  .contador-card {
+    border-right: none;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 1.25rem;
+  }
+
+  :host-context(.app-dark) .contador-card {
+    border-bottom-color: #27272a;
+  }
+  
+  .contador-card:last-child {
+    border-bottom: none;
+  }
+}

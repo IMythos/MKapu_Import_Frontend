@@ -1,69 +1,171 @@
-<div class="editar-cliente-page">
-  <p-card styleClass="clientes-header-card">
-    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
-      <div class="flex align-items-center gap-3">
-        <span class="clientes-title-icon">
-          <i class="pi pi-list"></i>
-        </span>
-        <div>
-          <p class="clientes-kicker">VENTAS - CLIENTES</p>
-          <h2 class="clientes-title">EDITAR CLIENTE</h2>
+  <div class="editar-cliente-page">
+    <p-toast position="top-right" />
+    <p-confirmdialog />
+
+    <!-- HEADER -->
+    <p-card styleClass="clientes-header-card mb-3">
+      <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+        <div class="flex align-items-center gap-3">
+          <span class="clientes-title-icon"><i class="pi pi-users"></i></span>
+          <div>
+            <p class="clientes-kicker">VENTAS - CLIENTES</p>
+            <h2 class="clientes-title">EDITAR CLIENTE</h2>
+          </div>
         </div>
+        <p-button icon="pi pi-arrow-left" text severity="secondary"
+          aria-label="Volver" [routerLink]="['/admin/clientes']"></p-button>
       </div>
-    </div>
-  </p-card>
+    </p-card>
 
-  <div class="flex align-items-center justify-content-between mb-4">
-    <h2 class="cliente-card-title">Modificar Cliente</h2>
-    <p-button icon="pi pi-arrow-left" text severity="secondary" aria-label="Volver a clientes"
-      [routerLink]="['/admin/clientes']"></p-button>
+    <!-- FORMULARIO -->
+    <p-card styleClass="cliente-card">
+      <div class="grid form-grid">
+
+        <!-- TIPO DOCUMENTO -->
+        <div class="col-12 md:col-6">
+          <label class="field-label">TIPO DE DOCUMENTO <span class="required">*</span></label>
+          <p-select
+            [options]="tiposDocumento"
+            optionLabel="descripcion"
+            optionValue="cod_sunat"
+            [(ngModel)]="cliente.documentTypeSunatCode"
+            name="tipoDoc"
+            placeholder="Seleccione tipo"
+            (onChange)="onTipoDocumentoChange()"
+            styleClass="w-full">
+          </p-select>
+        </div>
+
+        <!-- NRO DOCUMENTO -->
+        <div class="col-12 md:col-6">
+          <label class="field-label">NÚMERO DE DOCUMENTO <span class="required">*</span></label>
+          <input pInputText class="w-full"
+            [(ngModel)]="cliente.nro_documento"
+            name="nro_documento"
+            [placeholder]="esDNI ? '8 dígitos' : esRUC ? '11 dígitos' : 'Número de documento'"
+            (keydown)="soloDocumento($event)"
+            (input)="sanitizarDocumento()"
+            [maxlength]="maxLengthDocumento"
+            [ngClass]="{ 'p-invalid': submitted() && !documentoValido }" />
+          <small class="p-error" *ngIf="submitted() && !documentoValido">
+            {{ esDNI ? 'El DNI debe tener exactamente 8 dígitos.' : esRUC ? 'El RUC debe tener exactamente 11 dígitos.' : 'Documento obligatorio.' }}
+          </small>
+        </div>
+
+        <!-- RAZÓN SOCIAL (solo RUC) -->
+        <div class="col-12" *ngIf="esRUC">
+          <label class="field-label">RAZÓN SOCIAL <span class="required">*</span></label>
+          <input pInputText class="w-full"
+            [(ngModel)]="cliente.razon_social"
+            name="razon_social"
+            placeholder="Ingrese razón social"
+            (keydown)="soloLetras($event)"
+            (input)="sanitizarSoloLetras('razon_social')"
+            [ngClass]="{ 'p-invalid': submitted() && !razonSocialValida }" />
+          <small class="p-error" *ngIf="submitted() && !razonSocialValida">
+            La razón social es obligatoria.
+          </small>
+        </div>
+
+        <!-- NOMBRES (solo no-RUC) -->
+        <div class="col-12 md:col-6" *ngIf="!esRUC">
+          <label class="field-label">NOMBRES <span class="required">*</span></label>
+          <input pInputText class="w-full"
+            [(ngModel)]="cliente.nombres"
+            name="nombres"
+            placeholder="Ingrese nombres"
+            (keydown)="soloLetras($event)"
+            (input)="sanitizarSoloLetras('nombres')"
+            [ngClass]="{ 'p-invalid': submitted() && !nombresValido }" />
+          <small class="p-error" *ngIf="submitted() && !nombresValido">
+            Los nombres son obligatorios.
+          </small>
+        </div>
+
+        <!-- APELLIDOS (solo no-RUC) -->
+        <div class="col-12 md:col-6" *ngIf="!esRUC">
+          <label class="field-label">APELLIDOS <span class="required">*</span></label>
+          <input pInputText class="w-full"
+            [(ngModel)]="cliente.apellidos"
+            name="apellidos"
+            placeholder="Ingrese apellidos"
+            (keydown)="soloLetras($event)"
+            (input)="sanitizarSoloLetras('apellidos')"
+            [ngClass]="{ 'p-invalid': submitted() && !apellidosValido }" />
+          <small class="p-error" *ngIf="submitted() && !apellidosValido">
+            Los apellidos son obligatorios.
+          </small>
+        </div>
+
+        <!-- DIRECCIÓN -->
+        <div class="col-12">
+          <label class="field-label">DIRECCIÓN <span class="required">*</span></label>
+          <input pInputText class="w-full"
+            [(ngModel)]="cliente.direccion"
+            name="direccion"
+            placeholder="Ingrese dirección"
+            (input)="sanitizarTexto('direccion')"
+            [ngClass]="{ 'p-invalid': submitted() && cliente.direccion.trim().length < 3 }" />
+          <small class="p-error" *ngIf="submitted() && cliente.direccion.trim().length < 3">
+            La dirección es obligatoria.
+          </small>
+        </div>
+
+        <!-- EMAIL -->
+        <div class="col-12 md:col-6">
+          <label class="field-label">EMAIL</label>
+          <input pInputText class="w-full"
+            [(ngModel)]="cliente.email"
+            name="email"
+            placeholder="correo@ejemplo.com"
+            (input)="sanitizarEmail()"
+            [ngClass]="{ 'p-invalid': submitted() && !emailValido }" />
+          <small class="p-error" *ngIf="submitted() && !emailValido">
+            El email no es válido.
+          </small>
+        </div>
+
+        <!-- TELÉFONO -->
+        <div class="col-12 md:col-6">
+          <label class="field-label">NÚMERO TELEFÓNICO</label>
+          <p-inputnumber class="w-full"
+            [(ngModel)]="cliente.telefono"
+            name="telefono"
+            placeholder="9 dígitos"
+            [useGrouping]="false"
+            [min]="0"
+            [max]="999999999"
+            (onKeyDown)="onTelefonoKeyDown($event)"
+            (ngModelChange)="onTelefonoChange($event)"
+            [ngClass]="{ 'p-invalid': submitted() && !telefonoValido }" />
+          <small class="p-error" *ngIf="submitted() && !telefonoValido">
+            El teléfono debe tener exactamente 9 dígitos.
+          </small>
+          <small class="text-500" *ngIf="!submitted() && cliente.telefono !== null">
+            {{ telefonoDigitos }}/9 dígitos
+          </small>
+        </div>
+
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex align-items-center justify-content-center gap-3 mt-3">
+        <p-button
+          label="Cancelar"
+          outlined
+          severity="secondary"
+          styleClass="cliente-btn-cancel"
+          type="button"
+          (click)="confirmCancel()">
+        </p-button>
+        <p-button
+          label="Modificar Cliente"
+          icon="pi pi-check"
+          styleClass="cliente-btn-primary"
+          [loading]="loading()"
+          (onClick)="editar()">
+        </p-button>
+      </div>
+    </p-card>
   </div>
-
-  <p-card styleClass="cliente-card">
-    <div class="grid form-grid">
-      <div class="col-12 md:col-6">
-        <label class="field-label" for="nro_documento">NUMERO DE DOCUMENTO:</label>
-        <input id="nro_documento" pInputText class="w-full" placeholder="Ingrese datos"
-          [(ngModel)]="cliente.nro_documento" />
-      </div>
-      <div class="col-12 md:col-6">
-        <label class="field-label" for="razon_social">RAZON SOCIAL:</label>
-        <input id="razon_social" pInputText class="w-full" placeholder="Ingrese datos"
-          [(ngModel)]="cliente.razon_social" />
-      </div>
-      <div class="col-12 md:col-6">
-        <label class="field-label" for="nombres">NOMBRES:</label>
-        <input id="nombres" pInputText class="w-full" placeholder="Ingrese datos" [(ngModel)]="cliente.nombres" />
-      </div>
-      <div class="col-12 md:col-6">
-        <label class="field-label" for="apellidos">APELLIDOS:</label>
-        <input pInputText class="w-full" [(ngModel)]="cliente.apellidos" inputId="apellidos"
-          placeholder="Ingrese datos" />
-      </div>
-      <div class="col-12">
-        <label class="field-label" for="direccion">DIRECCION:</label>
-        <input id="direccion" pInputText class="w-full" placeholder="Ingrese datos" [(ngModel)]="cliente.direccion" />
-      </div>
-      <div class="col-12">
-        <label class="field-label" for="email">EMAIL:</label>
-        <input id="email" pInputText class="w-full" placeholder="Ingrese datos" [(ngModel)]="cliente.email" />
-      </div>
-      <div class="col-12">
-        <label class="field-label" for="telefono">NUMERO TELEFONICO:</label>
-        <p-inputnumber id="telefono" class="w-full" placeholder="Ingrese datos" [maxlength]="9" [useGrouping]="false"
-          [(ngModel)]="cliente.telefono" />
-      </div>
-    </div>
-
-    <p-divider></p-divider>
-
-    <div class="flex align-items-center justify-content-center gap-3 mt-3">
-      <p-button label="Cancelar" outlined severity="secondary" styleClass="cliente-btn-cancel"></p-button>
-      <!-- <p-button label="Modificar Cliente" icon="pi pi-check" styleClass="cliente-btn-primary"></p-button> -->
-      <p-toast />
-      <p-button (onClick)="editar()" label="Modificar Cliente" 
-      />
-    </div>
-  </p-card>
-  <p-confirmdialog />
-</div>

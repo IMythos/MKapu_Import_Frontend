@@ -1,10 +1,8 @@
 :host {
   display: block;
-  width: 100%;
-  min-height: 100%;
   --usuarios-bg: #f4f4f4;
-  --usuarios-card: #ffffff;
-  --usuarios-border: #e5e7eb;
+  --usuarios-card: #ffffff54;
+  --usuarios-border: #e5e7ebab;
   --usuarios-text: #1f2937;
   --usuarios-muted: #6b7280;
   --usuarios-accent: #f6af33;
@@ -13,12 +11,18 @@
 
 :host-context(.app-dark) {
   --usuarios-bg: #101214;
-  --usuarios-card: #14171a;
+  --usuarios-card: #18181b;
   --usuarios-border: #2c3137;
   --usuarios-text: #f2f4f7;
   --usuarios-muted: #9aa2ac;
-  --usuarios-accent: #f0a63f;
+  --usuarios-accent: #F6AF33;
   --usuarios-success: #22c55e;
+}
+
+.usuarios-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .usuarios-header-card {
@@ -26,30 +30,42 @@
   background: var(--usuarios-card);
 }
 
-.usuarios-title-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  display: grid;
-  place-items: center;
-  background: rgba(246, 175, 51, 0.15);
-  color: var(--usuarios-accent);
-  font-size: 1.2rem;
-}
-
+  /* ICONO (AMARILLO COMO EJEMPLO) */
+  .usuarios-title-icon {
+    width: 40px;
+    height: 40px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: #f5c34d; /* 🔥 amarillo exacto */
+    color: #1f2937;
+    font-size: 18px;
+  }
+/* ================================
+   TEXTOS HEADER
+================================ */
 .usuarios-kicker {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--usuarios-muted);
+  color: #94a3b8;
 }
 
 .usuarios-title {
   margin: 0;
-  font-size: 1.25rem;
-  color: var(--usuarios-text);
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
 }
 
+:host-context(.app-dark) .usuarios-kicker {
+  color: #94a3b8;
+}
+
+:host-context(.app-dark) .usuarios-title {
+  color: #f8fafc;
+}
 .usuarios-header-btn {
   border-radius: 999px;
   padding: 0.35rem 1rem;
@@ -70,7 +86,7 @@
 }
 
 .usuarios-wizard-card ::ng-deep .p-card-body {
-  padding: 0;
+  padding: 1rem 1.25rem;
 }
 
 .usuarios-wizard-steps {
@@ -211,6 +227,7 @@
   color: var(--usuarios-muted);
   text-transform: uppercase;
 }
+
 
 .usuarios-search-field {
   max-width: 420px;
@@ -365,7 +382,3 @@
   font-weight: 700;
 }
 
-:host ::ng-deep .usuarios-wizard-primary.p-button:hover {
-  background: #e69a27;
-  border-color: #e69a27;
-}

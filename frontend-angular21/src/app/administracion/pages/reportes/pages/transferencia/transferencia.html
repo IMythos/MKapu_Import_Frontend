@@ -1,5 +1,5 @@
 <div class="transferencia-page flex flex-column gap-3 w-full px-3 md:px-0 pt-5 md:pt-0">
-  <p-card styleClass="transferencia-header-card">
+  <p-card class="transferencia-header-card">
     <div class="transferencia-header-row flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
       <div class="transferencia-header-title flex align-items-center gap-3 w-full md:w-auto">
         <span class="transferencia-title-icon">
@@ -23,51 +23,51 @@
 
   <div class="transferencia-metrics grid">
     <div class="col-12 md:col-6 xl:col-3">
-      <p-card styleClass="metric-card metric-pendiente">
+      <p-card class="metric-card metric-pendiente">
       <div class="metric-header">
         <span class="metric-title">Solicitudes Pendientes</span>
         <span class="metric-icon metric-icon-warning"><i class="pi pi-clock"></i></span>
       </div>
-      <div class="metric-value">12</div>
-      <div class="metric-sub">+ 2 nuevas hoy</div>
+      <div class="metric-value">{{ solicitadas }}</div>
+      <div class="metric-sub">Estado: SOLICITADA</div>
     </p-card>
     </div>
 
     <div class="col-12 md:col-6 xl:col-3">
-      <p-card styleClass="metric-card metric-transito">
+      <p-card class="metric-card metric-transito">
       <div class="metric-header">
         <span class="metric-title">En Transito</span>
         <span class="metric-icon metric-icon-info"><i class="pi pi-truck"></i></span>
       </div>
-      <div class="metric-value">5</div>
-      <div class="metric-sub">En ruta a destino</div>
+      <div class="metric-value">{{ aprobadas }}</div>
+      <div class="metric-sub">Estado: APROBADA</div>
     </p-card>
     </div>
 
     <div class="col-12 md:col-6 xl:col-3">
-      <p-card styleClass="metric-card metric-recibidos">
+      <p-card class="metric-card metric-recibidos">
       <div class="metric-header">
         <span class="metric-title">Recibidos Hoy</span>
         <span class="metric-icon metric-icon-success"><i class="pi pi-check-circle"></i></span>
       </div>
-      <div class="metric-value">28</div>
-      <div class="metric-sub">+ 5% vs ayer</div>
+      <div class="metric-value">{{ completadas }}</div>
+      <div class="metric-sub">Estado: COMPLETADA</div>
     </p-card>
     </div>
 
     <div class="col-12 md:col-6 xl:col-3">
-      <p-card styleClass="metric-card metric-incidencia">
+      <p-card class="metric-card metric-incidencia">
       <div class="metric-header">
         <span class="metric-title">Incidencias</span>
         <span class="metric-icon metric-icon-danger"><i class="pi pi-exclamation-triangle"></i></span>
       </div>
-      <div class="metric-value">1</div>
-      <div class="metric-sub">Atencion requerida</div>
+      <div class="metric-value">{{ rechazadas }}</div>
+      <div class="metric-sub">Estado: RECHAZADA</div>
     </p-card>
     </div>
   </div>
 
-  <p-card styleClass="transferencia-filter-card">
+  <p-card class="transferencia-filter-card">
     <div class="transferencia-filter-row flex flex-column md:flex-row md:align-items-end gap-3">
       <div class="transferencia-search-container flex flex-column gap-2 flex-1 w-full">
         <span class="transferencia-search-label">Buscar Transferencia</span>
@@ -104,7 +104,7 @@
         ></p-select>
       </div>
       <div class="transferencia-search-container transferencia-status-filter w-full md:w-14rem">
-        <span class="transferencia-search-label">Solicitudes</span>
+        <span class="transferencia-search-label">Observacion</span>
         <p-select
           styleClass="transferencia-search-input w-full"
           [options]="solicitudOptions"
@@ -137,7 +137,7 @@
         </span>
         <span class="text-sm font-semibold text-700">TRANSFERENCIAS REGISTRADAS</span>
         <p-tag
-          [value]="'[' + filteredTransferencias.length + '] Transferencias'"
+          [value]="'[' + totalRecords + '] Transferencias'"
           severity="info"
           styleClass="w-full sm:w-auto"
         ></p-tag>
@@ -150,9 +150,13 @@
         [value]="filteredTransferencias"
         [loading]="loading"
         styleClass="transferencia-table"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[10, 25, 50]"
+        [paginator]="!hasActiveFilters"
+        [lazy]="!hasActiveFilters"
+        (onLazyLoad)="onTableLazyLoad($event)"
+        [totalRecords]="totalRecords"
+        [first]="firstRowIndex"
+        [rows]="rowsPerPage"
+        [rowsPerPageOptions]="[5,10, 20, 50]"
         [tableStyle]="{ 'min-width': '70rem' }"
       >
       <ng-template pTemplate="header">
@@ -161,7 +165,7 @@
           <th class="col-producto">PRODUCTO</th>
           <th class="col-ruta">RUTA (ORIGEN -> DESTINO)</th>
           <th class="col-cantidad">CANTIDAD</th>
-          <th class="col-solicitud">SOLICITUD</th>
+          <th class="col-solicitud">OBSERVACION</th>
           <th class="col-estado">ESTADO</th>
           <th class="col-acciones">ACCIONES</th>
         </tr>
@@ -170,8 +174,7 @@
         <tr>
           <td>
             <div class="transferencia-code">
-              <div class="transferencia-code-main">{{ transferencia.codigo }}</div>
-              <div class="transferencia-code-meta">{{ transferencia.fechaEnvio }} · {{ transferencia.fechaLlegada }}</div>
+              <div class="transferencia-code-main ">{{ transferencia.codigo }}</div>
             </div>
           </td>
           <td>
@@ -202,13 +205,30 @@
           </td>
           <td class="col-acciones">
             <div class="transferencia-actions">
+              @if (canApprove(transferencia)) {
+                <p-button
+                  icon="pi pi-check"
+                  text
+                  severity="success"
+                  styleClass="transferencia-icon-btn"
+                  (onClick)="aprobarTransferencia(transferencia)"
+                ></p-button>
+              }
+              @if (canConfirm(transferencia)) {
+                <p-button
+                  icon="pi pi-verified"
+                  text
+                  severity="info"
+                  styleClass="transferencia-icon-btn"
+                  (onClick)="confirmarRecepcion(transferencia)"
+                ></p-button>
+              }
               <p-button
-                icon="pi pi-eye"
+                icon="pi pi-file-edit"
                 text
                 severity="secondary"
                 styleClass="transferencia-icon-btn transferencia-icon-warn"
-                [routerLink]="['/admin/transferencia/detalle-transferencia']"
-                [queryParams]="{ codigo: transferencia.codigo }"
+                [routerLink]="['/admin/transferencia/solicitud-transferencia', transferencia.codigo]"
               ></p-button>
             </div>
           </td>
@@ -224,19 +244,21 @@
               <div class="transferencia-empty-title">
                 {{ hasActiveFilters ? 'No se encontraron transferencias' : 'Aun no hay transferencias' }}
               </div>
-              <div class="transferencia-empty-text" *ngIf="hasActiveFilters">
-                Ajusta los filtros o prueba con otro termino de busqueda.
-              </div>
-              <div class="transferencia-empty-actions" *ngIf="hasActiveFilters">
-                <p-button
-                  label="Limpiar filtros"
-                  icon="pi pi-filter-slash"
-                  severity="secondary"
-                  [outlined]="true"
-                  styleClass="transferencia-empty-btn w-full md:w-auto"
-                  (click)="clearSearch()"
-                ></p-button>
-              </div>
+              @if (hasActiveFilters) {
+                <div class="transferencia-empty-text">
+                  Ajusta los filtros o prueba con otro termino de busqueda.
+                </div>
+                <div class="transferencia-empty-actions">
+                  <p-button
+                    label="Limpiar filtros"
+                    icon="pi pi-filter-slash"
+                    severity="secondary"
+                    [outlined]="true"
+                    styleClass="transferencia-empty-btn w-full md:w-auto"
+                    (click)="clearSearch()"
+                  ></p-button>
+                </div>
+              }
             </div>
           </td>
         </tr>

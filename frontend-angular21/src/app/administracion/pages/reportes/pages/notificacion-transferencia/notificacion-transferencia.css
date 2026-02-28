@@ -124,6 +124,21 @@
   background: var(--notif-panel-strong);
   border: 1px solid var(--notif-border);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+ }
+
+ .notificacion-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(246, 175, 51, 0.45);
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+ }
+
+ .notificacion-card:focus-visible {
+  outline: none;
+  border-color: var(--notif-accent);
+  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.22);
  }
 
  .notificacion-accent {
@@ -180,23 +195,9 @@
   color: var(--notif-muted);
  }
 
- .notificacion-action {
-  border: 1px solid var(--notif-border);
-  background: transparent;
-  color: var(--notif-muted);
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
- }
-
- .notificacion-action:hover {
-  color: var(--notif-accent);
-  border-color: var(--notif-accent);
-  background: rgba(246, 175, 51, 0.08);
+ :host-context(.app-dark) .notificacion-card:hover {
+  border-color: rgba(246, 175, 51, 0.5);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.4);
  }
 
  .notificacion-empty {

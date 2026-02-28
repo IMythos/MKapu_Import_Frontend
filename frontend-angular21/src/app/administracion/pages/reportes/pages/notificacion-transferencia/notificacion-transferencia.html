@@ -21,27 +21,31 @@
       </div>
     </div>
 
-    <div class="notificacion-list" *ngIf="notificaciones.length > 0; else emptyState">
-      <div class="notificacion-card" *ngFor="let item of notificaciones">
-        <span class="notificacion-accent" [class.accent-warning]="item.tipo === 'estado'"></span>
-        <div class="notificacion-icon" [class.icon-warning]="item.tipo === 'estado'">
-          <i [class]="item.tipo === 'estado' ? 'pi pi-exclamation-triangle' : 'pi pi-envelope'"></i>
-        </div>
-        <div class="notificacion-body">
-          <div class="notificacion-title-row">
-            <span class="notificacion-title-text">
-              {{ item.titulo }}: {{ item.id }}
-            </span>
-          </div>
-          <div class="notificacion-detail">{{ item.detalle }}</div>
-          <div class="notificacion-time">{{ item.tiempo }}</div>
-        </div>
-        <button class="notificacion-action" type="button" aria-label="Ver detalle">
-          <i class="pi pi-eye"></i>
-        </button>
+    @if (notificaciones.length > 0) {
+      <div class="notificacion-list">
+        @for (item of notificaciones; track item.id) {
+          <a
+            class="notificacion-card"
+            [routerLink]="['/admin/transferencia/solicitud-transferencia', item.transferId]"
+            aria-label="Ir al detalle de transferencia"
+          >
+            <span class="notificacion-accent" [class.accent-warning]="item.tipo === 'estado'"></span>
+            <div class="notificacion-icon" [class.icon-warning]="item.tipo === 'estado'">
+              <i [class]="item.tipo === 'estado' ? 'pi pi-exclamation-triangle' : 'pi pi-envelope'"></i>
+            </div>
+            <div class="notificacion-body">
+              <div class="notificacion-title-row">
+                <span class="notificacion-title-text">
+                  {{ item.titulo }}: {{ item.id }}
+                </span>
+              </div>
+              <div class="notificacion-detail">{{ item.detalle }}</div>
+              <div class="notificacion-time">{{ item.tiempo }}</div>
+            </div>
+          </a>
+        }
       </div>
-    </div>
-    <ng-template #emptyState>
+    } @else {
       <div class="notificacion-empty">
         <div class="notificacion-empty-icon">
           <i class="pi pi-inbox"></i>
@@ -51,6 +55,6 @@
           No tienes solicitudes de transferencia para tu sede.
         </div>
       </div>
-    </ng-template>
+    }
   </div>
 </div>

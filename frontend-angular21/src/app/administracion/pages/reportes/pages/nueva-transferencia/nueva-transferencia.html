@@ -2,7 +2,7 @@
 <p-confirmDialog></p-confirmDialog>
 
 <div class="p-2 pt-5 md:pt-2">
-  <p-card styleClass="transfer-header-card">
+  <p-card class="transfer-header-card">
     <div class="flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-3">
       <div class="flex align-items-center gap-3 w-full md:w-auto">
         <span class="transfer-title-icon">
@@ -28,29 +28,118 @@
 </div>
 
 <div class="p-2">
-  <p-card styleClass="wizard-card">
+  <p-card class="wizard-card">
     <div class="wizard-steps flex flex-wrap md:flex-nowrap md:align-items-center md:justify-content-between gap-3 p-3 md:p-4 pb-2">
-      <div
-        *ngFor="let step of steps; let i = index"
-        class="wizard-step"
-        [class.active]="activeStep === i"
-        [class.completed]="activeStep > i"
-      >
-        <div class="step-number">
-          <i *ngIf="activeStep > i" class="pi pi-check"></i>
-          <span *ngIf="activeStep <= i">{{ i + 1 }}</span>
+      @for (step of steps; track step; let i = $index) {
+        <div
+          class="wizard-step"
+          [class.active]="activeStep === i"
+          [class.completed]="activeStep > i"
+        >
+          <div class="step-number">
+            @if (activeStep > i) {
+              <i class="pi pi-check"></i>
+            } @else {
+              <span>{{ i + 1 }}</span>
+            }
+          </div>
+          <div class="step-title">{{ step }}</div>
         </div>
-        <div class="step-title">{{ step }}</div>
-      </div>
+      }
     </div>
 
     <p-divider styleClass="wizard-divider" />
 
     <div class="wizard-content p-3 md:p-4">
-      <div *ngIf="activeStep === 0" class="step-content">
+      @if (activeStep === 0) {
+        <div class="step-content">
         <div class="step-header">
           <i class="pi pi-warehouse step-icon"></i>
           <h3>Producto y sedes</h3>
+        </div>
+
+        <div class="grid mb-3">
+          <div class="transfer-field col-12 md:col-6">
+            <label class="field-label">Sede origen</label>
+            <p-select
+              class="w-full"
+              [options]="sedes"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccione sede origen"
+              [(ngModel)]="sedeOrigen"
+              (onChange)="onSedeOrigenChange()"
+            ></p-select>
+            <small class="helper-text sede-note" aria-hidden="true">&nbsp;</small>
+            <label class="field-label mt-2">Almacen origen</label>
+            <p-select
+              class="w-full"
+              [options]="almacenesOrigen"
+              optionLabel="label"
+              optionValue="value"
+              [loading]="loadingAlmacenesOrigen"
+              [disabled]="!sedeOrigen || loadingAlmacenesOrigen"
+              placeholder="Seleccione almacen origen"
+              [(ngModel)]="almacenOrigenId"
+              (onChange)="onAlmacenOrigenChange()"
+            ></p-select>
+            @if (sedeOrigen && almacenOrigenId && productoSeleccionado) {
+              <p-card class="stock-mini-card">
+                <div class="stock-mini-row">
+                  <span class="stock-mini-label">Stock disponible en almacen origen</span>
+                  <span class="stock-badge" [ngClass]="getStockClassForSede(productoSeleccionado, sedeOrigen)">
+                    {{ stockDisponible }} un.
+                  </span>
+                </div>
+              </p-card>
+            }
+          </div>
+
+          <div class="transfer-field col-12 md:col-6">
+            <label class="field-label">Sede destino</label>
+            <p-select
+              class="w-full"
+              [options]="sedes"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccione sede destino"
+              [(ngModel)]="sedeDestino"
+              [disabled]="destinationSedeLocked"
+              (onChange)="onSedeDestinoChange()"
+            ></p-select>
+            <small class="helper-text sede-note">
+              @if (destinationSedeLocked) {
+                Sede destino bloqueada según sede del usuario logeado.
+              } @else {
+                &nbsp;
+              }
+            </small>
+            <label class="field-label mt-2">Almacen destino</label>
+            <p-select
+              class="w-full"
+              [options]="almacenesDestino"
+              optionLabel="label"
+              optionValue="value"
+              [loading]="loadingAlmacenesDestino"
+              [disabled]="!sedeDestino || loadingAlmacenesDestino"
+              placeholder="Seleccione almacen destino"
+              [(ngModel)]="almacenDestinoId"
+              (onChange)="onAlmacenDestinoChange()"
+            ></p-select>
+            @if (sedeDestino && productoSeleccionado) {
+              <p-card class="stock-mini-card">
+                <div class="stock-mini-row">
+                  <span class="stock-mini-label">Stock actual</span>
+                  <span
+                    class="stock-badge"
+                    [ngClass]="getStockClassForSede(productoSeleccionado, sedeDestino)"
+                  >
+                    {{ productoSeleccionado.stockPorSede[sedeDestino] || 0 }} un.
+                  </span>
+                </div>
+              </p-card>
+            }
+          </div>
         </div>
 
         <div class="grid mb-3 transfer-panel-grid">
@@ -65,6 +154,7 @@
               (onClear)="onClearProducto()"
               [forceSelection]="true"
               [dropdown]="true"
+              [disabled]="!sedeOrigen || !almacenOrigenId"
               optionLabel="nombre"
               placeholder="Buscar por codigo o nombre"
               emptyMessage="Sin resultados"
@@ -79,84 +169,48 @@
           </div>
         </div>
 
-        <p-card *ngIf="productoSeleccionado" styleClass="transfer-subcard">
-          <div class="transfer-product-title">{{ productoSeleccionado.nombre }}</div>
-          <div class="transfer-meta flex flex-column md:flex-row">
-            <span>SKU: {{ productoSeleccionado.sku }}</span>
-            <span>Categoria: {{ productoSeleccionado.categoria }}</span>
-            <span>Marca: {{ productoSeleccionado.marca }}</span>
-          </div>
-        </p-card>
-
-        <div class="grid mb-3">
-          <div class="transfer-field col-12 md:col-6">
-            <label class="field-label">Sede origen</label>
-            <p-select
-              class="w-full"
-              [options]="sedes"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Seleccione sede origen"
-              [(ngModel)]="sedeOrigen"
-              (onChange)="onSedeOrigenChange()"
-            ></p-select>
-            <p-card *ngIf="sedeOrigen && productoSeleccionado" styleClass="stock-mini-card">
-              <div class="stock-mini-row">
-                <span class="stock-mini-label">Stock disponible</span>
-                <span class="stock-badge" [ngClass]="getStockClassForSede(productoSeleccionado, sedeOrigen)">
-                  {{ stockDisponible }} un.
-                </span>
+        @if (productoSeleccionado) {
+          <p-card class="transfer-subcard" [class.transfer-subcard-conflict]="isSelectedProductInConflict()">
+            <div class="transfer-product-title">{{ productoSeleccionado.nombre }}</div>
+            <div class="transfer-meta flex flex-column md:flex-row">
+              <span>Código: {{ productoSeleccionado.sku }}</span>
+              <span>Categoria: {{ productoSeleccionado.categoria }}</span>
+              <span>Marca: {{ productoSeleccionado.marca }}</span>
+            </div>
+            @if (isSelectedProductInConflict()) {
+              <div class="transfer-conflict-note mt-2">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Stock insuficiente para este producto. Ajusta la cantidad solicitada.</span>
               </div>
-            </p-card>
-          </div>
+            }
+          </p-card>
+        }
 
-          <div class="transfer-field col-12 md:col-6">
-            <label class="field-label">Sede destino</label>
-            <p-select
-              class="w-full"
-              [options]="sedes"
-              optionLabel="label"
-              optionValue="value"
-              placeholder="Seleccione sede destino"
-              [(ngModel)]="sedeDestino"
-            ></p-select>
-            <p-card *ngIf="sedeDestino && productoSeleccionado" styleClass="stock-mini-card">
-              <div class="stock-mini-row">
-                <span class="stock-mini-label">Stock actual</span>
-                <span
-                  class="stock-badge"
-                  [ngClass]="getStockClassForSede(productoSeleccionado, sedeDestino)"
-                >
-                  {{ productoSeleccionado.stockPorSede[sedeDestino] || 0 }} un.
-                </span>
-              </div>
-            </p-card>
-          </div>
         </div>
+      }
 
-      </div>
-
-      <div *ngIf="activeStep === 1" class="step-content">
+      @if (activeStep === 1) {
+        <div class="step-content">
         <div class="step-header">
           <i class="pi pi-box step-icon"></i>
           <h3>Cantidad y motivo</h3>
         </div>
 
-        <div class="grid mb-3">
-          <div class="transfer-panel col-12 lg:col-6">
+        <div class="flex flex-col xl:flex-row gap-6 xl:gap-10 w-full">
+          <div class="transfer-panel w-full xl:flex-1">
             <div class="transfer-panel-title">
               <i class="pi pi-sort-amount-up-alt"></i>
               Cantidad a transferir
             </div>
             <div class="transfer-panel-helper">
               <i class="pi pi-database"></i>
-              <span>Disponible: {{ stockDisponible }} uds</span>
+              <span>Stock disponible en almacen origen: {{ stockDisponible }} uds</span>
             </div>
             <div class="transfer-qty-row flex flex-column md:flex-row align-items-stretch md:align-items-center gap-3">
               <div class="flex justify-content-center w-full md:w-auto">
                 <p-inputnumber
                   class="transfer-qty"
-                  [min]="1"
+                  [min]="stockDisponible > 0 ? 1 : 0"
                   [max]="stockDisponible"
                   [minFractionDigits]="0"
                   [maxFractionDigits]="0"
@@ -184,9 +238,10 @@
               </div>
             </div>
             <div class="helper-text">Ajusta la cantidad con controles rapidos.</div>
+            <div class="helper-text">Cantidad total del borrador: {{ totalQuantity }} uds.</div>
           </div>
 
-          <div class="transfer-panel col-12 lg:col-6">
+          <div class="transfer-panel w-full xl:flex-1">
             <div class="transfer-panel-title">
               <i class="pi pi-flag"></i>
               Motivo de transferencia
@@ -221,16 +276,18 @@
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      }
 
-      <div *ngIf="activeStep === 2" class="step-content">
+      @if (activeStep === 2) {
+        <div class="step-content">
         <div class="step-header">
           <i class="pi pi-calendar step-icon"></i>
           <h3>Fechas y responsable</h3>
         </div>
 
-        <div class="grid mb-3">
-          <div class="transfer-panel col-12 lg:col-6">
+        <div class="mb-3 flex flex-col xl:flex-row gap-6 xl:gap-10 w-full">
+          <div class="transfer-panel w-full xl:flex-1">
             <div class="transfer-panel-title">
               <i class="pi pi-send"></i>
               Fechas de traslado
@@ -266,7 +323,7 @@
             </div>
           </div>
 
-          <div class="transfer-panel col-12 lg:col-6">
+          <div class="transfer-panel w-full xl:flex-1">
             <div class="transfer-panel-title">
               <i class="pi pi-user"></i>
               Responsable
@@ -285,9 +342,11 @@
             ></p-select>
           </div>
         </div>
-      </div>
+        </div>
+      }
 
-      <div *ngIf="activeStep === 3" class="step-content">
+      @if (activeStep === 3) {
+        <div class="step-content">
         <div class="step-header">
           <i class="pi pi-check-circle step-icon"></i>
           <h3>Confirmacion</h3>
@@ -295,7 +354,7 @@
 
         <div class="grid mb-3">
           <div class="col-12 md:col-6">
-            <p-card styleClass="recap-card">
+            <p-card class="recap-card">
               <div class="recap-label"><i class="pi pi-box"></i> Producto</div>
               <div class="recap-value">{{ productoSeleccionado?.nombre || '-' }}</div>
               <div class="recap-meta">SKU: {{ productoSeleccionado?.sku || '-' }}</div>
@@ -303,15 +362,15 @@
           </div>
 
           <div class="col-12 md:col-6">
-            <p-card styleClass="recap-card">
+            <p-card class="recap-card">
               <div class="recap-label"><i class="pi pi-map-marker"></i> Origen</div>
               <div class="recap-value">{{ getSedeLabel(sedeOrigen) }}</div>
-              <div class="recap-meta">Stock: {{ stockDisponible }} uds</div>
+              <div class="recap-meta">Almacen: {{ getAlmacenLabel(almacenOrigenId) }}</div>
             </p-card>
           </div>
 
           <div class="col-12 md:col-6">
-            <p-card styleClass="recap-card">
+            <p-card class="recap-card">
               <div class="recap-label"><i class="pi pi-flag"></i> Motivo</div>
               <div class="recap-value">{{ getMotivoLabel(motivo) }}</div>
               <div class="recap-meta">Responsable: {{ getResponsableLabel(responsable) }}</div>
@@ -319,37 +378,40 @@
           </div>
 
           <div class="col-12 md:col-6">
-            <p-card styleClass="recap-card">
+            <p-card class="recap-card">
               <div class="recap-label"><i class="pi pi-map-marker"></i> Destino</div>
               <div class="recap-value">{{ getSedeLabel(sedeDestino) }}</div>
-              <div class="recap-meta">Stock: {{ getStockForSede(productoSeleccionado, sedeDestino) }} uds</div>
+              <div class="recap-meta">Almacen: {{ getAlmacenLabel(almacenDestinoId) }}</div>
             </p-card>
           </div>
 
           <div class="col-12 md:col-6">
-            <p-card styleClass="recap-card">
+            <p-card class="recap-card">
               <div class="recap-label"><i class="pi pi-sort-amount-up-alt"></i> Cantidad</div>
-              <div class="recap-value">{{ cantidad }} uds</div>
-              <div class="recap-meta">Disponible: {{ stockDisponible }} uds</div>
+              <div class="recap-value">{{ totalQuantity }} uds</div>
+              <div class="recap-meta">Disponible: {{ stockDisponible }} uds / Destino: {{ getStockForSede(productoSeleccionado, sedeDestino) }} uds</div>
             </p-card>
           </div>
 
           <div class="col-12 md:col-6">
-            <p-card styleClass="recap-card">
+            <p-card class="recap-card">
               <div class="recap-label"><i class="pi pi-calendar"></i> Fechas</div>
               <div class="recap-value">{{ fechaEnvio ? (fechaEnvio | date:'dd/MM/yyyy') : '-' }}</div>
               <div class="recap-meta">Llegada: {{ fechaLlegada ? (fechaLlegada | date:'dd/MM/yyyy') : '-' }}</div>
             </p-card>
           </div>
 
-          <div *ngIf="observacion" class="col-12">
-            <p-card styleClass="recap-card recap-card-wide">
-              <div class="recap-label"><i class="pi pi-comment"></i> Observacion</div>
-              <div class="recap-value">{{ observacion }}</div>
-            </p-card>
-          </div>
+          @if (observacion) {
+            <div class="col-12">
+              <p-card class="recap-card recap-card-wide">
+                <div class="recap-label"><i class="pi pi-comment"></i> Observacion</div>
+                <div class="recap-value">{{ observacion }}</div>
+              </p-card>
+            </div>
+          }
         </div>
-      </div>
+        </div>
+      }
     </div>
 
     <div class="step-actions flex flex-column md:flex-row md:justify-content-between gap-3 p-3 md:p-4">
@@ -362,21 +424,25 @@
         [disabled]="activeStep === 0"
       ></p-button>
 
-      <p-button
-        *ngIf="activeStep < steps.length - 1"
-        label="Siguiente"
-        icon="pi pi-arrow-right"
-        styleClass="wizard-primary w-full md:w-auto"
-        (onClick)="nextStep()"
-      ></p-button>
+      @if (activeStep < steps.length - 1) {
+        <p-button
+          label="Siguiente"
+          icon="pi pi-arrow-right"
+          styleClass="wizard-primary w-full md:w-auto"
+          (onClick)="nextStep()"
+        ></p-button>
+      }
 
-      <p-button
-        *ngIf="activeStep === steps.length - 1"
-        label="Confirmar transferencia"
-        icon="pi pi-check"
-        styleClass="wizard-primary w-full md:w-auto"
-        (onClick)="confirmarTransferencia()"
-      ></p-button>
+      @if (activeStep === steps.length - 1) {
+        <p-button
+          label="Confirmar transferencia"
+          icon="pi pi-check"
+          styleClass="wizard-primary w-full md:w-auto"
+          [loading]="submitting"
+          [disabled]="submitting || !canSubmitSig()"
+          (onClick)="confirmarTransferencia()"
+        ></p-button>
+      }
     </div>
   </p-card>
 </div>

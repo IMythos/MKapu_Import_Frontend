@@ -1,0 +1,384 @@
+<div class="p-3">
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="text-3xl font-semibold m-0 mb-2">Bienvenido, {{ username }}</h1>
+      <p class="text-500 m-0">aquí tienes el resumen de operaciones de hoy</p>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">
+        <div class="flex align-items-center gap-3 p-2">
+          <div
+            class="flex align-items-center justify-content-center border-round"
+            style="width: 60px; height: 60px; background-color: #fff3e0"
+          >
+            <i class="pi pi-dollar text-4xl" style="color: #ffa726"></i>
+          </div>
+          <div class="flex-1">
+            <span class="text-500 text-sm block mb-1">Total Ventas</span>
+            <h2 class="text-3xl font-bold m-0 mb-1">
+              S/ {{ totalVentas.toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+            </h2>
+            <span class="text-green-500 text-xs">
+              <i class="pi pi-arrow-up text-xs"></i> {{ variacionVentas }}% vs. mes anterior
+            </span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">
+        <div class="flex align-items-center gap-3 p-2">
+          <div
+            class="flex align-items-center justify-content-center border-round"
+            style="width: 60px; height: 60px; background-color: #e3f2fd"
+          >
+            <i class="pi pi-file text-4xl" style="color: #42a5f5"></i>
+          </div>
+          <div class="flex-1">
+            <span class="text-500 text-sm block mb-1">Órdenes</span>
+            <h2 class="text-3xl font-bold m-0 mb-1">{{ totalOrdenes }}</h2>
+            <span class="text-green-500 text-xs">
+              <i class="pi pi-arrow-up text-xs"></i> {{ variacionOrdenes }}% vs. mes anterior
+            </span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">
+        <div class="flex align-items-center gap-3 p-2">
+          <div
+            class="flex align-items-center justify-content-center border-round"
+            style="width: 60px; height: 60px; background-color: #e8f5e9"
+          >
+            <i class="pi pi-wallet text-4xl" style="color: #66bb6a"></i>
+          </div>
+          <div class="flex-1">
+            <span class="text-500 text-sm block mb-1">Ticket Promedio</span>
+            <h2 class="text-3xl font-bold m-0 mb-1">
+              S/ {{ ticketPromedio.toLocaleString('es-PE', { minimumFractionDigits: 0 }) }}
+            </h2>
+            <span class="text-green-500 text-xs">
+              <i class="pi pi-arrow-up text-xs"></i> {{ variacionTicket }}% vs. mes anterior
+            </span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 md:col-6 lg:col-3">
+      <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">
+        <div class="flex align-items-center gap-3 p-2">
+          <div
+            class="flex align-items-center justify-content-center border-round"
+            style="width: 60px; height: 60px; background-color: #f3e5f5"
+          >
+            <i class="pi pi-users text-4xl" style="color: #ab47bc"></i>
+          </div>
+          <div class="flex-1">
+            <span class="text-500 text-sm block mb-1">Nuevos Clientes</span>
+            <h2 class="text-3xl font-bold m-0 mb-1">{{ nuevosClientes }}</h2>
+            <span class="text-green-500 text-xs">
+              <i class="pi pi-arrow-up text-xs"></i> {{ variacionClientes }}% vs. mes anterior
+            </span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid mt-3">
+    <div class="col-12 lg:col-8">
+      <p-card class="border-round shadow-2">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-chart-line text-primary"></i>
+              <span class="font-semibold text-lg">Ventas por Día</span>
+            </div>
+            <p-select
+              [options]="periodosOptions"
+              [(ngModel)]="periodoVentasDia"
+              (onChange)="onPeriodoVentasDiaChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-10rem"
+            />
+          </div>
+        </ng-template>
+        <div class="p-3">
+          <p-chart
+            type="line"
+            [data]="ventasPorDiaChart"
+            [options]="chartOptions"
+            [height]="'320px'"
+          ></p-chart>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-4">
+      <p-card class="border-round shadow-2">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-chart-pie text-primary"></i>
+              <span class="font-semibold text-lg">Categorías</span>
+            </div>
+          </div>
+        </ng-template>
+        <div class="p-3 flex justify-content-center">
+          <p-chart
+            type="doughnut"
+            [data]="ventasPorCategoriaChart"
+            [options]="doughnutChartOptions"
+            [height]="'320px'"
+          ></p-chart>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid mt-3">
+    <div class="col-12">
+      <p-card class="border-round shadow-2">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-map-marker text-primary"></i>
+              <span class="font-semibold text-lg">Ventas por Distrito</span>
+            </div>
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="mesVentasDistrito"
+              (onChange)="onMesVentasDistritoChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-10rem"
+            />
+          </div>
+        </ng-template>
+        <div class="p-3">
+          <p-chart
+            type="bar"
+            [data]="ventasPorDistritoChart"
+            [options]="barChartOptions"
+            [height]="'300px'"
+          ></p-chart>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid mt-3">
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-wallet text-primary"></i>
+              <span class="font-semibold text-lg">Métodos de Pago</span>
+            </div>
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="mesMetodosPago"
+              (onChange)="onMesMetodosPagoChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-10rem"
+            />
+          </div>
+        </ng-template>
+        <div class="p-3">
+          <p-chart
+            type="bar"
+            [data]="metodosPagoChart"
+            [options]="barChartOptionsCompact"
+            [height]="'300px'"
+          ></p-chart>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-building text-primary"></i>
+              <span class="font-semibold text-lg">Ventas por Sede</span>
+            </div>
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="mesVentasSede"
+              (onChange)="onMesVentasSedeChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-10rem"
+            />
+          </div>
+        </ng-template>
+        <div class="p-3 flex justify-content-center">
+          <p-chart
+            type="doughnut"
+            [data]="ventasPorSedeChart"
+            [options]="doughnutChartOptions"
+            [height]="'300px'"
+          ></p-chart>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid mt-3">
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-star text-primary"></i>
+              <span class="font-semibold text-lg">Top 5 Productos</span>
+            </div>
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="mesTopProductos"
+              (onChange)="onMesTopProductosChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-10rem"
+            />
+          </div>
+        </ng-template>
+        <div class="p-3">
+          <div
+            *ngFor="let producto of topProductos; let last = last"
+            class="flex align-items-center gap-3 p-3 border-round mb-3"
+            [class.mb-0]="last"
+            style="background-color: var(--surface-50); border-left: 4px solid #ffa726"
+          >
+            <div class="flex-1">
+              <div class="font-bold text-lg mb-2">{{ producto.nombre }}</div>
+              <div class="flex align-items-center gap-2 text-500 text-sm">
+                <i class="pi pi-arrow-right" style="font-size: 0.75rem"></i>
+                <span>[{{ producto.ventas }}] Unidades</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-2xl" style="color: #ffa726">
+                {{ producto.ingresos }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-clock text-primary"></i>
+              <span class="font-semibold text-lg">Actividad Reciente</span>
+            </div>
+          </div>
+        </ng-template>
+        <div class="p-2 overflow-auto" style="max-height: 500px">
+          <div
+            *ngFor="let actividad of actividadReciente; let last = last"
+            class="flex gap-3 p-3"
+            [class.border-bottom-1]="!last"
+            [class.surface-border]="!last"
+          >
+            <div
+              class="flex align-items-center justify-content-center border-round flex-shrink-0"
+              [style.background-color]="actividad.color + '20'"
+              style="width: 40px; height: 40px"
+            >
+              <i [class]="actividad.icon" [style.color]="actividad.color"></i>
+            </div>
+            <div class="flex-1">
+              <div class="font-semibold text-sm mb-1">{{ actividad.titulo }}</div>
+              <div class="text-500 text-sm mb-1">{{ actividad.detalle }}</div>
+              <div class="text-500 text-xs italic">{{ actividad.tiempo }}</div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid mt-3">
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div
+            class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border"
+          >
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-star text-primary"></i>
+              <span class="font-semibold text-lg">Mejores Vendedores</span>
+            </div>
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="mesMejoresVendedores"
+              (onChange)="onMesMejoresVendedoresChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-8rem"
+            />
+          </div>
+        </ng-template>
+        <div class="p-3">
+          <div
+            *ngFor="let vendedor of mejoresVendedores; let i = index; let last = last"
+            class="flex align-items-center gap-3 p-3 border-round mb-3"
+            [class.mb-0]="last"
+            style="background-color: var(--surface-50)"
+          >
+            <div
+              class="flex align-items-center justify-content-center border-round bg-primary-100"
+              style="width: 48px; height: 48px; min-width: 48px"
+            >
+              <span class="font-bold text-2xl text-primary">{{ i + 1 }}</span>
+            </div>
+            <div class="flex-1">
+              <div class="font-bold text-lg mb-1">{{ vendedor.nombre }}</div>
+              <div class="flex align-items-center gap-2 text-500 text-sm mb-1">
+                <i class="pi pi-building" style="font-size: 0.75rem"></i>
+                <span>{{ vendedor.sede }}</span>
+              </div>
+              <div class="flex align-items-center gap-2 text-500 text-sm">
+                <i class="pi pi-shopping-cart" style="font-size: 0.75rem"></i>
+                <span>{{ vendedor.totalVentas }} ventas</span>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-2xl text-primary mb-1">{{ vendedor.montoTotal }}</div>
+              <div class="text-500 text-sm">Promedio: {{ vendedor.ticketPromedio }}</div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+</div>

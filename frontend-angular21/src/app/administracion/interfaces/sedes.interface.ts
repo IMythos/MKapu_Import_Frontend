@@ -13,3 +13,4 @@ export interface HeadquarterResponse {
   headquarters: Headquarter[];
   total: number;
 }
+

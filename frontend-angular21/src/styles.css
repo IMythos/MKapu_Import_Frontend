@@ -4,12 +4,12 @@ body {
   font-family: 'Inter', sans-serif;
   font-weight: 400;
   line-height: 1.5;
-  margin:0px;
+  margin: 0px;
 }
 
 /* Tema claro personalizado */
 :root {
-  --surface-ground: #f5f5f5; /* gris claro */
+  --surface-ground: #f5f5f5;
   --text-color: #333;
 }
 
@@ -23,4 +23,28 @@ body {
 body {
   background-color: var(--surface-ground);
   color: var(--text-color);
+}
+
+/* ── Scrollbar sidebar ── */
+.flex-1.overflow-auto {
+  scrollbar-width: thin;
+  scrollbar-color: #f59e0b transparent; /* Firefox */
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar {
+  width: 4px;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-thumb {
+  background-color: #f59e0b;
+  border-radius: 10px;
+  transition: background-color 0.3s;
+}
+
+.flex-1.overflow-auto::-webkit-scrollbar-thumb:hover {
+  background-color: #d97706;
 }

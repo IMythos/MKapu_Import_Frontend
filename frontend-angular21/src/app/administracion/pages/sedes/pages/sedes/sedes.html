@@ -1,18 +1,22 @@
 <div class="sedes-page">
-  <p-card styleClass="sedes-header-card">
+  <p-card class="sedes-header-card">
     <div class="flex align-items-center justify-content-between flex-wrap gap-3">
       <div class="flex align-items-center gap-3">
         <span class="sedes-title-icon">
           <i class="pi pi-list"></i>
         </span>
         <div>
-          <p class="sedes-kicker">ADMINISTRADOR - ADMINISTRACION - SEDE INACTIVAS</p>
+          <p class="sedes-kicker">ADMINISTRADOR - ADMINISTRACION - SEDES</p>
           <h2 class="sedes-title">GESTION DE SEDES</h2>
         </div>
       </div>
       <div class="flex justify-items-end gap-2">
-        <p-button label="Agregar Sede" icon="pi pi-plus" styleClass="sedes-pill"
-          [routerLink]="['/admin/sedes/agregar-sede']"></p-button>
+        <p-button
+          label="Agregar Sede"
+          icon="pi pi-plus"
+          styleClass="sedes-pill"
+          [routerLink]="['/admin/sedes/agregar-sede']"
+        ></p-button>
       </div>
     </div>
   </p-card>
@@ -21,11 +25,18 @@
     <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-between gap-3">
       <div class="sedes-search-container flex-1">
         <span class="sedes-search-label">Buscar Sede</span>
-        <p-autoComplete class="sedes-search-input" [(ngModel)]="searchTerm" [suggestions]="sedeSuggestions"
-          field="nombre" (completeMethod)="onSearch($event)" (ngModelChange)="onSearchChange($event)"
+        <p-autoComplete
+          class="sedes-search-input"
+          [ngModel]="searchTerm()"
+          (ngModelChange)="onSearchChange($event)"
+          [suggestions]="sedeSuggestions()"
+          field="nombre"
+          (completeMethod)="onSearch($event)"
           (onSelect)="onSelectSede($event)"
-          placeholder="Escribe codigo, nombre o ciudad..." style="background: transparent; color: var(--text-color);"
-          [inputStyle]="{ width: '100%', background: 'transparent', color: 'var(--text-color)' }">
+          placeholder="Escribe codigo, nombre o ciudad..."
+          style="background: transparent; color: var(--text-color);"
+          [inputStyle]="{ width: '100%', background: 'transparent', color: 'var(--text-color)' }"
+        >
           <ng-template let-item pTemplate="item">
             <div class="flex flex-column gap-1">
               <span class="font-medium">{{ item.nombre }}</span>
@@ -34,13 +45,35 @@
           </ng-template>
         </p-autoComplete>
       </div>
+
       <div class="flex align-items-center gap-2 sedes-filter-actions">
-        <p-button label="Limpiar Filtros" icon="pi pi-filter-slash" severity="danger"
-          styleClass="sedes-pill sedes-pill-danger" (click)="clearSearch()"></p-button>
+        <p-select
+          [options]="viewOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="viewMode()"
+          (ngModelChange)="onViewModeChange($event)"
+          placeholder="Todos"
+          class="sedes-filter-select"
+        ></p-select>
+        <p-button
+          label="Limpiar Filtros"
+          icon="pi pi-filter-slash"
+          severity="danger"
+          styleClass="sedes-pill sedes-pill-danger"
+          type="button"
+          (click)="clearSearch()"
+        ></p-button>
       </div>
     </div>
   </p-card>
+
   <p-toast position="top-right" />
+
+  <div class="mb-3">
+    <p-message *ngIf="loading()" severity="info" text="Cargando sedes..."></p-message>
+    <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e"></p-message>
+  </div>
 
   <p-card>
     <div class="flex align-items-center justify-content-between mb-3">
@@ -48,16 +81,26 @@
         <span class="sedes-section-icon">
           <i class="pi pi-user"></i>
         </span>
-        <span class="text-sm font-semibold text-700">SEDES INACTIVAS</span>
-        <p-tag [value]="'[' + filteredSedes.length + '] Sedes'" severity="danger"></p-tag>
+        <span class="text-sm font-semibold text-700">
+          {{
+            viewMode() === 'activas'
+              ? 'SEDES ACTIVAS'
+              : viewMode() === 'inactivas'
+                ? 'SEDES INACTIVAS'
+                : 'SEDES (TODAS)'
+          }}
+        </span>
+        <p-tag
+          class="sedes-count-tag"
+          [value]="'[' + filteredSedes().length + '] Sedes'"
+          [severity]="viewMode() === 'activas' ? 'success' : viewMode() === 'inactivas' ? 'danger' : 'info'"
+        ></p-tag>
       </div>
       <p-button icon="pi pi-id-card" text severity="secondary" styleClass="sedes-icon-btn"></p-button>
     </div>
 
-    <div *ngIf="filteredSedes.length === 0" class="sedes-empty-state">
-      <div class="sedes-empty-icon">
-        <i class="pi pi-search"></i>
-      </div>
+    <div *ngIf="filteredSedes().length === 0" class="sedes-empty-state">
+      <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
       <div class="sedes-empty-title">No hay sedes con ese filtro</div>
       <div class="sedes-empty-subtitle">
         Prueba con otro termino o limpia los filtros para ver todas las sedes.
@@ -67,17 +110,18 @@
         icon="pi pi-filter-slash"
         severity="danger"
         styleClass="sedes-pill sedes-pill-danger"
+        type="button"
         (click)="clearSearch()"
       ></p-button>
     </div>
 
     <p-table
-      *ngIf="filteredSedes.length > 0"
-      [value]="filteredSedes"
+      *ngIf="filteredSedes().length > 0"
+      [value]="filteredSedes()"
       styleClass="sedes-table"
       [paginator]="true"
-      [rows]="10"
-      [rowsPerPageOptions]="[10, 25, 50]"
+      [rows]="5"
+      [rowsPerPageOptions]="[5,10,20,50]"
       [tableStyle]="{ 'min-width': '60rem' }"
     >
       <ng-template pTemplate="header">
@@ -86,10 +130,10 @@
           <th>NOMBRE</th>
           <th>CIUDAD</th>
           <th>TELEFONO</th>
-          <th>DIRECCION</th>
           <th>ACCIONES</th>
         </tr>
       </ng-template>
+
       <ng-template pTemplate="body" let-sede>
         <tr>
           <td>{{ sede.codigo }}</td>
@@ -106,29 +150,144 @@
               {{ sede.telefono }}
             </span>
           </td>
-          <td>{{ sede.direccion }}</td>
           <td>
             <div class="flex align-items-center gap-2">
+
+              <!-- OJO -->
+              <p-button
+                icon="pi pi-eye"
+                text
+                severity="secondary"
+                styleClass="sedes-icon-btn"
+                (click)="verDetalle(sede)"
+                title="Ver detalle"
+              ></p-button>
+
               <p-button
                 icon="pi pi-pencil"
                 text
                 severity="secondary"
-                styleClass="sedes-icon-btn sedes-icon-warn"
+                styleClass="sedes-icon-btn sedes-action-edit"
                 [routerLink]="['/admin/sedes/editar-sede']"
-                [queryParams]="{ codigo: sede.codigo }"
+                [queryParams]="{ id: sede.id_sede }"
               ></p-button>
+
               <p-button
-                icon="pi pi-trash"
+                [icon]="sede.activo ? 'pi pi-times' : 'pi pi-check'"
                 text
-                severity="danger"
-                styleClass="sedes-icon-btn"
-                (click)="confirmDelete(sede)"
+                [severity]="sede.activo ? 'danger' : 'success'"
+                styleClass="sedes-icon-btn sedes-action-status"
+                (click)="confirmToggleStatus(sede)"
+                [title]="sede.activo ? 'Desactivar sede' : 'Activar sede'"
               ></p-button>
             </div>
           </td>
         </tr>
       </ng-template>
     </p-table>
+
     <p-confirmdialog />
   </p-card>
+
+  <!-- MODAL DETALLE SEDE -->
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [style]="{ width: '480px', 'border-radius': '16px', overflow: 'hidden' }"
+    [contentStyle]="{ padding: '0' }"
+    (onHide)="dialogVisible = false"
+  >
+    <ng-template pTemplate="header"><span></span></ng-template>
+
+    <ng-container *ngIf="sedeSeleccionada() as s">
+      <div class="sede-detail-modal">
+
+        <!-- BANNER -->
+        <div class="sdm-banner">
+          <div class="sdm-banner-icon">
+            <i class="pi pi-building"></i>
+          </div>
+          <div class="sdm-banner-info">
+            <span class="sdm-kicker">SEDE</span>
+            <h3 class="sdm-nombre">{{ s.nombre }}</h3>
+          </div>
+          <button class="sdm-close-btn" (click)="dialogVisible = false">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <!-- CÓDIGO + ESTADO -->
+        <div class="sdm-code-row">
+          <span class="sdm-code-badge">
+            <i class="pi pi-tag"></i>{{ s.codigo }}
+          </span>
+          <span class="sdm-status-badge"
+            [class.sdm-status--active]="s.activo"
+            [class.sdm-status--inactive]="!s.activo">
+            <span class="sdm-status-dot"></span>
+            {{ s.activo ? 'Activo' : 'Inactivo' }}
+          </span>
+        </div>
+
+        <!-- INFO GRID -->
+        <div class="sdm-info-grid">
+
+          <div class="sdm-info-item">
+            <span class="sdm-info-icon"><i class="pi pi-map"></i></span>
+            <div class="sdm-info-content">
+              <span class="sdm-info-label">Departamento</span>
+              <span class="sdm-info-value">{{ s.departamento ?? '—' }}</span>
+            </div>
+          </div>
+
+          <div class="sdm-info-item">
+            <span class="sdm-info-icon"><i class="pi pi-map-marker"></i></span>
+            <div class="sdm-info-content">
+              <span class="sdm-info-label">Ciudad</span>
+              <span class="sdm-info-value">{{ s.ciudad ?? '—' }}</span>
+            </div>
+          </div>
+
+          <div class="sdm-info-item">
+            <span class="sdm-info-icon"><i class="pi pi-phone"></i></span>
+            <div class="sdm-info-content">
+              <span class="sdm-info-label">Teléfono</span>
+              <span class="sdm-info-value">{{ s.telefono ?? '—' }}</span>
+            </div>
+          </div>
+
+          <div class="sdm-info-item sdm-info-item--full">
+            <span class="sdm-info-icon"><i class="pi pi-home"></i></span>
+            <div class="sdm-info-content">
+              <span class="sdm-info-label">Dirección</span>
+              <span class="sdm-info-value">{{ s.direccion ?? '—' }}</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="sdm-footer">
+          <p-button
+            label="Cerrar"
+            icon="pi pi-times"
+            severity="secondary"
+            [outlined]="true"
+            styleClass="sdm-btn-close"
+            (onClick)="dialogVisible = false">
+          </p-button>
+          <p-button
+            label="Editar Sede"
+            icon="pi pi-pencil"
+            styleClass="sdm-btn-edit"
+            [routerLink]="['/admin/sedes/editar-sede']"
+            [queryParams]="{ id: s.id_sede }"
+            (onClick)="dialogVisible = false">
+          </p-button>
+        </div>
+
+      </div>
+    </ng-container>
+  </p-dialog>
 </div>

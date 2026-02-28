@@ -1,3 +1,8 @@
+:host {
+    display: block;
+    
+}
+
 .agregar-cliente-page {
     min-height: 100%;
     padding: 4.5rem 2.5rem;
@@ -18,7 +23,7 @@
     display: grid;
     place-items: center;
     border-radius: 999px;
-    background: #f5c34d;
+    background: #f6af33;
     color: #1f2937;
     font-size: 18px;
 }
@@ -96,4 +101,12 @@
 
 :host ::ng-deep .cliente-btn-cancel .p-button-label {
     font-weight: 600;
+}
+
+:host-context(.app-dark) .clientes-kicker {
+  color: #94a3b8;
+}
+
+:host-context(.app-dark) .clientes-title {
+  color: #f8fafc;
 }

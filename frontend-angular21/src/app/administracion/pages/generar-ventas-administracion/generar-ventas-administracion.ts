@@ -61,7 +61,7 @@ import { MessageService, ConfirmationService } from 'primeng/api';
   styleUrl: './generar-ventas-administracion.css',
 })
 export class GenerarVentasAdministracion implements OnInit, OnDestroy {
-  tituloKicker = 'ADMINISTRACIÓN - GENERAR VENTAS';
+  tituloKicker = 'VENTAS - GENERAR VENTAS';
   subtituloKicker = 'GENERAR NUEVA VENTA (ADMIN)';
   iconoCabecera = 'pi pi-shopping-cart';
 

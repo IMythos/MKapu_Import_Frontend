@@ -1,7 +1,6 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { Location } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { Subscription } from 'rxjs';
 
 import { Card } from 'primeng/card';
@@ -11,147 +10,329 @@ import { Tag } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
 import { Skeleton } from 'primeng/skeleton';
 import { Tooltip } from 'primeng/tooltip';
+import { Toast } from 'primeng/toast';
+import { Paginator } from 'primeng/paginator'; // ← AÑADIDO
+import { MessageService } from 'primeng/api';
 
-import { VentasService, ComprobanteVenta } from '../../../core/services/ventas.service';
-import { PosService, Pago } from '../../../core/services/pos.service';
-import { ClientesService, Cliente } from '../../../core/services/clientes.service';
-import { SedeService, Sede } from '../../../core/services/sede.service';
-import { PromocionesService, Promocion } from '../../../core/services/promociones.service';
+import { VentasApiService } from '../../services/ventas-api.service';
+
+import type {
+  SalesReceiptWithHistoryDto,
+  SalesReceiptProductoDto,
+  RecentPurchase,
+  ReceiptStatus,
+} from '../../interfaces';
+
+// ─── View Models ─────────────────────────────────────────────────
+interface DetalleItem {
+  cod_prod: string;
+  descripcion: string;
+  cantidad: number;
+  pre_uni: number;
+  igv: number;
+  total: number;
+}
+
+interface ComprobanteVM {
+  id: number;
+  id_cliente: string;
+  id_sede: number;
+  sede_nombre: string;
+  serie: string;
+  numero: number;
+  tipo_comprobante: string;
+  fec_emision: string;
+  cliente_nombre: string;
+  cliente_doc: string;
+  cliente_tipo_doc: string;
+  cliente_direccion: string;
+  cliente_email: string;
+  cliente_telefono: string;
+  responsable: string;
+  medio_pago: string;
+  subtotal: number;
+  igv: number;
+  total: number;
+  moneda: string;
+  estado: boolean;
+  estadoLabel: ReceiptStatus;
+  detalles: DetalleItem[];
+}
+
+interface HistorialItemVM {
+  id: number;
+  serie: string;
+  numero: number;
+  numero_completo: string;
+  fec_emision: string;
+  responsable: string;
+  tipo_comprobante: string;
+  total: number;
+  estado: ReceiptStatus;
+  metodo_pago: string;
+}
+
+interface EstadisticasClienteVM {
+  totalCompras: number;
+  montoTotal: number;
+  promedioCompra: number;
+}
+
+interface HistorialPaginacionVM {
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+// ─── Respuesta paginada del historial ────────────────────────────
+interface HistorialPaginadoResponse {
+  data: RecentPurchase[];
+  pagination: HistorialPaginacionVM;
+}
+
+// ─── Mapas ───────────────────────────────────────────────────────
+const TIPO_MAP: Record<string, string> = {
+  'FACTURA DE VENTA': '01',
+  FACTURA: '01',
+  'BOLETA DE VENTA': '03',
+  BOLETA: '03',
+  'NOTA DE CREDITO': '07',
+  'NOTA DE DEBITO': '08',
+};
+
+const ICONO_PAGO: Record<string, string> = {
+  EFECTIVO: 'pi pi-money-bill',
+  TARJETA: 'pi pi-credit-card',
+  YAPE: 'pi pi-mobile',
+  PLIN: 'pi pi-mobile',
+  TRANSFERENCIA: 'pi pi-arrow-right-arrow-left',
+};
 
 @Component({
   selector: 'app-detalle-venta',
   standalone: true,
-  imports: [CommonModule, Card, Button, Divider, Tag, TableModule, Skeleton, Tooltip],
+  imports: [
+    CommonModule,
+    Card,
+    Button,
+    Divider,
+    Tag,
+    TableModule,
+    Skeleton,
+    Tooltip,
+    Toast,
+    Paginator, // ← AÑADIDO
+  ],
+  providers: [MessageService],
   templateUrl: './detalle-venta.html',
   styleUrls: ['./detalle-venta.css'],
 })
 export class DetalleVenta implements OnInit, OnDestroy {
-  comprobante: ComprobanteVenta | null = null;
-  cliente: Cliente | null = null;
-  pagos: Pago[] = [];
-  sedes: Sede[] = [];
-  promocion: Promocion | null = null;
+  // ─── Servicios ────────────────────────────────────────────────────
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly ventasApi = inject(VentasApiService); // nombre correcto
+  private readonly messageService = inject(MessageService);
 
-  historialCompras: ComprobanteVenta[] = [];
-  totalComprasCliente: number = 0;
-  cantidadComprasCliente: number = 0;
-  sedesVisitadas: string[] = [];
+  // ─── Cabecera ─────────────────────────────────────────────────────
+  readonly tituloKicker = 'VENTAS - HISTORIAL DE VENTAS - DETALLE DE VENTA';
+  readonly subtituloKicker = 'DETALLE DE VENTA';
+  readonly iconoCabecera = 'pi pi-file-edit';
 
-  loading: boolean = true;
-  loadingHistorial: boolean = true;
-  returnUrl: string = '/ventas/historial-ventas';
+  // ─── Estado principal ─────────────────────────────────────────────
+  comprobante = signal<ComprobanteVM | null>(null);
+  estadisticas = signal<EstadisticasClienteVM | null>(null);
+  historial = signal<HistorialItemVM[]>([]);
+  loading = signal(true);
+  returnUrl = signal('/ventas/historial-ventas');
 
-  tituloKicker = 'VENTAS - HISTORIAL DE VENTAS - DETALLE DE VENTA';
-  subtituloKicker = 'DETALLE DE VENTA';
-  iconoCabecera = 'pi pi-file-edit';
+  // ─── Paginación historial del cliente ─────────────────────────────
+  historialPage = signal(1);
+  historialPaginacion = signal<HistorialPaginacionVM | null>(null);
+  loadingHistorial = signal(false);
+  private ventaId = signal<number | null>(null);
 
-  private routeSubscription: Subscription | null = null;
+  hayMasPaginasHistorial = computed(() => {
+    const p = this.historialPaginacion();
+    return p ? p.page < p.total_pages : false;
+  });
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private location: Location,
-    private ventasService: VentasService,
-    private posService: PosService,
-    private clientesService: ClientesService,
-    private sedeService: SedeService,
-    private promocionesService: PromocionesService,
-  ) {}
+  // ─── Computeds de presentación ────────────────────────────────────
+  tipoLabel = computed(() => {
+    const t = this.comprobante()?.tipo_comprobante;
+    return t === '03' ? 'BOLETA' : t === '01' ? 'FACTURA' : 'COMPROBANTE';
+  });
 
+  tipoIcon = computed(() =>
+    this.comprobante()?.tipo_comprobante === '03' ? 'pi pi-file' : 'pi pi-file-edit',
+  );
+
+  estadoSeverity = computed<'success' | 'danger' | 'warn'>(() => {
+    const e = this.comprobante()?.estadoLabel;
+    if (e === 'EMITIDO') return 'success';
+    if (e === 'ANULADO') return 'warn';
+    return 'danger';
+  });
+
+  numeroFormateado = computed(() => {
+    const c = this.comprobante();
+    return c ? `${c.serie}-${c.numero.toString().padStart(8, '0')}` : '';
+  });
+
+  totalHistorial = computed(() => this.historial().reduce((s, h) => s + h.total, 0));
+
+  private subs = new Subscription();
+
+  // ─── Lifecycle ────────────────────────────────────────────────────
   ngOnInit(): void {
-    this.cargarSedes();
+    this.subs.add(
+      this.route.paramMap.subscribe((params) => {
+        const id = params.get('id');
+        id ? this.cargarDetalle(+id) : this.volver();
+      }),
+    );
 
-    this.routeSubscription = this.route.paramMap.subscribe((params) => {
-      const id = params.get('id');
-
-      if (id) {
-        this.cargarDetalle(+id);
-      } else {
-        this.volver();
-      }
-    });
-
-    this.route.queryParams.subscribe((params) => {
-      if (params['returnUrl']) {
-        this.returnUrl = params['returnUrl'];
-      }
-    });
+    this.subs.add(
+      this.route.queryParams.subscribe((params) => {
+        if (params['returnUrl']) this.returnUrl.set(params['returnUrl']);
+      }),
+    );
   }
 
   ngOnDestroy(): void {
-    if (this.routeSubscription) {
-      this.routeSubscription.unsubscribe();
-    }
+    this.subs.unsubscribe();
   }
 
-  cargarSedes(): void {
-    this.sedeService.getSedes().subscribe({
-      next: (sedes: Sede[]) => {
-        this.sedes = sedes;
-      },
-      error: (err: any) => {
-        console.error('Error al cargar sedes:', err);
-      },
+  // ─── Carga principal ──────────────────────────────────────────────
+  cargarDetalle(id: number): void {
+    this.ventaId.set(id);
+    this.historialPage.set(1);
+    this.loading.set(true);
+    this.comprobante.set(null);
+    this.historial.set([]);
+    this.estadisticas.set(null);
+
+    this.subs.add(
+      this.ventasApi.obtenerVentaConHistorial(id, 1).subscribe({
+        next: (res: SalesReceiptWithHistoryDto) => {
+          this.comprobante.set(this.mapReceipt(res));
+          this.mapearEstadisticas(res);
+          this.mapearHistorial(res.historial_cliente);
+          this.historialPaginacion.set(res.historial_pagination ?? null);
+          this.loading.set(false);
+        },
+        error: () => {
+          this.loading.set(false);
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: 'No se pudo cargar el detalle de la venta.',
+            life: 3000,
+          });
+          setTimeout(() => this.volver(), 2000);
+        },
+      }),
+    );
+  }
+
+  // ─── Paginación historial ─────────────────────────────────────────
+  private cargarHistorialCliente(pagina = 1): void {
+    const cliente = this.comprobante();
+    if (!cliente?.cliente_doc) return;
+
+    this.loadingHistorial.set(true);
+
+    this.ventasApi // ← corregido
+      .obtenerHistorialCliente(cliente.cliente_doc, pagina, 5)
+      .subscribe({
+        next: (response: HistorialPaginadoResponse) => {
+          // ← tipado explícito
+          this.historial.set(this.mapearHistorialItems(response.data));
+          this.historialPaginacion.set(response.pagination);
+          this.loadingHistorial.set(false);
+        },
+        error: () => this.loadingHistorial.set(false),
+      });
+  }
+
+  onHistorialPageChange(event: { first?: number; rows?: number }): void {
+    const nuevaPagina = Math.floor((event.first ?? 0) / 5) + 1;
+    this.cargarHistorialCliente(nuevaPagina);
+  }
+
+  // ─── Mappers ──────────────────────────────────────────────────────
+  private mapReceipt(r: SalesReceiptWithHistoryDto): ComprobanteVM {
+    return {
+      id: Number(r.id_comprobante),
+      id_cliente: String(r.cliente.id_cliente),
+      id_sede: r.responsable.sede,
+      sede_nombre: r.responsable.nombreSede || '—',
+      serie: r.serie,
+      numero: r.numero,
+      tipo_comprobante: TIPO_MAP[r.tipo_comprobante?.toUpperCase()] ?? '03',
+      fec_emision: r.fec_emision,
+      cliente_nombre: r.cliente.nombre || '—',
+      cliente_doc: r.cliente.documento || '—',
+      cliente_tipo_doc: r.cliente.tipo_documento || '—',
+      cliente_direccion: r.cliente.direccion || '—',
+      cliente_email: r.cliente.email || '—',
+      cliente_telefono: r.cliente.telefono || '—',
+      responsable: r.responsable.nombre || '—',
+      medio_pago: r.metodo_pago || 'N/A',
+      subtotal: Number(r.subtotal),
+      igv: Number(r.igv),
+      total: Number(r.total),
+      moneda: 'PEN',
+      estado: r.estado === 'EMITIDO',
+      estadoLabel: r.estado,
+      detalles: r.productos.map((p) => this.mapDetalle(p)),
+    };
+  }
+
+  private mapDetalle(p: SalesReceiptProductoDto): DetalleItem {
+    return {
+      cod_prod: p.cod_prod,
+      descripcion: p.descripcion,
+      cantidad: Number(p.cantidad),
+      pre_uni: Number(p.precio_unit),
+      igv: Number(p.igv),
+      total: Number(p.total),
+    };
+  }
+
+  private mapearEstadisticas(r: SalesReceiptWithHistoryDto): void {
+    const cantidad = r.cliente.cantidad_compras ?? 0;
+    const monto = r.cliente.total_gastado_cliente ?? 0;
+    this.estadisticas.set({
+      totalCompras: cantidad,
+      montoTotal: monto,
+      promedioCompra: cantidad > 0 ? monto / cantidad : 0,
     });
   }
 
-  cargarDetalle(id: number): void {
-    this.loading = true;
-
-    this.comprobante = null;
-    this.cliente = null;
-    this.pagos = [];
-    this.historialCompras = [];
-    this.promocion = null;
-
-    const resultado = this.ventasService.getComprobantePorIdNumerico(id);
-    this.comprobante = resultado || null;
-
-    if (!this.comprobante) {
-      console.error('Comprobante no encontrado');
-      this.loading = false;
-      this.volver();
-      return;
-    }
-
-    this.cliente = this.clientesService.getClientePorId(this.comprobante.id_cliente) || null;
-
-    this.pagos = this.posService.getPagosPorComprobante(this.comprobante.id_comprobante);
-
-    if (this.comprobante.id_promocion) {
-      this.promocion = this.promocionesService.getPromocionPorId(this.comprobante.id_promocion);
-    } else if (this.comprobante.codigo_promocion) {
-      this.promocion = this.promocionesService.buscarPorCodigo(this.comprobante.codigo_promocion);
-    }
-
-    this.cargarHistorialCliente();
-
-    this.loading = false;
+  private mapearHistorial(items: RecentPurchase[]): void {
+    this.historial.set(this.mapearHistorialItems(items));
   }
 
-  cargarHistorialCliente(): void {
-    if (!this.comprobante) return;
-
-    this.loadingHistorial = true;
-
-    this.historialCompras = this.ventasService
-      .getComprobantesPorCliente(this.comprobante.id_cliente)
-      .filter((c) => c.id !== this.comprobante!.id && c.estado === true)
-      .sort((a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime());
-
-    this.cantidadComprasCliente = this.historialCompras.length;
-    this.totalComprasCliente = this.historialCompras.reduce((sum, c) => sum + c.total, 0);
-
-    const sedesIds = [...new Set(this.historialCompras.map((c) => c.id_sede))];
-
-    this.sedesVisitadas = sedesIds
-      .map((id) => this.sedes.find((s) => s.id_sede === id))
-      .filter((sede): sede is Sede => sede !== undefined)
-      .map((sede) => sede.nombre);
-
-    this.loadingHistorial = false;
+  private mapearHistorialItems(items: RecentPurchase[]): HistorialItemVM[] {
+    return (items ?? []).map((p) => ({
+      id: Number(p.id_comprobante),
+      serie: p.numero_completo.split('-')[0] ?? '',
+      numero: Number(p.numero_completo.split('-')[1] ?? 0),
+      numero_completo: p.numero_completo,
+      fec_emision: p.fec_emision,
+      responsable: p.responsable || '—',
+      tipo_comprobante:
+        TIPO_MAP[p.numero_completo.charAt(0) === 'F' ? 'FACTURA' : 'BOLETA'] ?? '03',
+      total: Number(p.total),
+      estado: p.estado,
+      metodo_pago: p.metodo_pago || 'N/A',
+    }));
   }
 
+  // ─── Navegación ───────────────────────────────────────────────────
   volver(): void {
     this.location.back();
   }
@@ -160,132 +341,64 @@ export class DetalleVenta implements OnInit, OnDestroy {
     this.router.navigate(['/ventas/historial-ventas']);
   }
 
-  verDetalleHistorial(idComprobante: number): void {
+  verDetalleHistorial(id: number): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.router.navigate(['/ventas/ver-detalle', idComprobante]);
+    this.router.navigate(['/ventas/ver-detalle', id]);
   }
 
   imprimirComprobante(): void {
-    if (!this.comprobante) return;
-
+    const c = this.comprobante();
+    if (!c) return;
     this.router.navigate(['/ventas/imprimir-comprobante'], {
-      state: {
-        comprobante: this.comprobante,
-        rutaRetorno: `/ventas/ver-detalle/${this.comprobante.id}`,
-      },
+      state: { comprobante: c, rutaRetorno: `/ventas/ver-detalle/${c.id}` },
     });
   }
 
-  imprimirComprobanteHistorial(venta: ComprobanteVenta): void {
+  imprimirDesdeHistorial(item: HistorialItemVM): void {
+    const c = this.comprobante();
     this.router.navigate(['/ventas/imprimir-comprobante'], {
-      state: {
-        comprobante: venta,
-        rutaRetorno: `/ventas/ver-detalle/${this.comprobante?.id}`,
-      },
+      state: { comprobante: item, rutaRetorno: `/ventas/ver-detalle/${c?.id}` },
     });
   }
 
-  descargarPDFHistorial(venta: ComprobanteVenta): void {
-    this.router.navigate(['/ventas/imprimir-comprobante'], {
-      state: {
-        comprobante: venta,
-        rutaRetorno: `/ventas/ver-detalle/${this.comprobante?.id}`,
-      },
-    });
-  }
-
-  enviarEmailHistorial(venta: ComprobanteVenta): void {
-    if (!this.cliente?.email) {
-      console.warn('Cliente no tiene email registrado');
-      alert('El cliente no tiene un correo electrónico registrado.');
+  enviarEmailHistorial(_item: HistorialItemVM): void {
+    const email = this.comprobante()?.cliente_email;
+    if (!email || email === '—') {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sin email',
+        detail: 'El cliente no tiene correo registrado.',
+        life: 3000,
+      });
       return;
     }
-
-    console.log('Enviando comprobante a:', this.cliente.email);
-    console.log('Comprobante:', venta.id_comprobante);
-
-    alert(`Email enviado a: ${this.cliente.email}\nComprobante: ${venta.serie}-${venta.numero}`);
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Email enviado',
+      detail: `Comprobante enviado a: ${email}`,
+      life: 3000,
+    });
   }
 
-  getSede(comprobante: ComprobanteVenta): string {
-    const sede = this.sedes.find((s) => s.id_sede === comprobante.id_sede);
-    return sede ? sede.nombre : 'N/A';
+  // ─── Helpers UI ───────────────────────────────────────────────────
+  getIconoPago(medio: string): string {
+    return ICONO_PAGO[medio?.toUpperCase()] ?? 'pi pi-wallet';
   }
 
-  getTipoComprobanteLabel(): string {
-    return this.comprobante?.tipo_comprobante === '03' ? 'BOLETA' : 'FACTURA';
+  getTipoLabel(tipo: string): string {
+    return tipo === '03' ? 'BOLETA' : tipo === '01' ? 'FACTURA' : tipo;
   }
 
-  getTipoComprobanteIcon(): string {
-    return this.comprobante?.tipo_comprobante === '03' ? 'pi pi-file' : 'pi pi-file-edit';
-  }
-
-  getEstadoSeverity(): 'success' | 'danger' {
-    return this.comprobante?.estado ? 'success' : 'danger';
-  }
-
-  getEstadoLabel(): string {
-    return this.comprobante?.estado ? 'ACTIVO' : 'ANULADO';
-  }
-
-  getTipoDocumento(): string {
-    return this.cliente?.tipo_doc || (this.comprobante?.tipo_comprobante === '03' ? 'DNI' : 'RUC');
-  }
-
-  getIconoMedioPago(medio: string): string {
-    const iconos: { [key: string]: string } = {
-      EFECTIVO: 'pi pi-money-bill',
-      TARJETA: 'pi pi-credit-card',
-      YAPE: 'pi pi-mobile',
-      PLIN: 'pi pi-mobile',
-      TRANSFERENCIA: 'pi pi-arrow-right-arrow-left',
+  getSeverityEstadoHistorial(estado: string): 'success' | 'warn' | 'danger' | 'info' {
+    const map: Record<string, 'success' | 'warn' | 'danger' | 'info'> = {
+      EMITIDO: 'success',
+      ANULADO: 'warn',
+      RECHAZADO: 'danger',
     };
-    return iconos[medio] || 'pi pi-wallet';
+    return map[estado] ?? 'info';
   }
 
-  formatearSerieNumero(serie: string, numero: number): string {
+  formatNumero(serie: string, numero: number): string {
     return `${serie}-${numero.toString().padStart(8, '0')}`;
-  }
-
-  calcularTotalItem(cantidad: number, precio: number): number {
-    return cantidad * precio;
-  }
-
-  tienePromocion(): boolean {
-    return !!(
-      this.comprobante?.codigo_promocion &&
-      this.comprobante?.descuento_promocion &&
-      this.comprobante.descuento_promocion > 0
-    );
-  }
-
-  getDescripcionPromocion(): string {
-    if (this.comprobante?.descripcion_promocion) {
-      return this.comprobante.descripcion_promocion;
-    }
-    
-    if (this.promocion?.descripcion) {
-      return this.promocion.descripcion;
-    }
-
-    return 'Descuento especial';
-  }
-
-  getCodigoPromocion(): string {
-    return this.comprobante?.codigo_promocion || '';
-  }
-
-  getDescuentoPromocion(): number {
-    return this.comprobante?.descuento_promocion || 0;
-  }
-
-  getSubtotalAntesDescuento(): number {
-    if (!this.comprobante) return 0;
-    
-    if (this.tienePromocion()) {
-      return this.comprobante.subtotal + (this.comprobante.descuento_promocion || 0);
-    }
-    
-    return this.comprobante.subtotal;
   }
 }

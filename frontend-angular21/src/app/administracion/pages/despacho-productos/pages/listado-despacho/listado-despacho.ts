@@ -1,4 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -6,7 +12,6 @@ import { RouterModule } from '@angular/router';
 import { CardModule } from 'primeng/card';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
-import { AutoCompleteModule } from 'primeng/autocomplete';
 import { InputTextModule } from 'primeng/inputtext';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
@@ -15,31 +20,9 @@ import { TooltipModule } from 'primeng/tooltip';
 import { SelectModule } from 'primeng/select';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
+import { DispatchService } from '../../../../services/dispatch.service';
+import { Dispatch, DispatchStatus } from '../../../../interfaces/dispatch.interfaces';
 import { EmpleadosService, Empleado } from '../../../../../core/services/empleados.service';
-import { VentasService, ComprobanteVenta } from '../../../../../core/services/ventas.service';
-
-interface DespachoRow {
-  codigo: string;
-  descripcion: string;
-  cantidad: number;
-  comprobante: string;
-  despachador: string;
-  asesor: string;
-  salida: string;
-  ubicacion: string;
-  agencia: string;
-  hora: string;
-  estado: 'DESPACHADO' | 'SIN DESPACHAR';
-}
-
-interface DespachoBase {
-  cantidad: number;
-  comprobante: string;
-  salida: string;
-  ubicacion: string;
-  agencia: string;
-  hora: string;
-}
 
 @Component({
   selector: 'app-listado-despacho',
@@ -51,7 +34,6 @@ interface DespachoBase {
     CardModule,
     TableModule,
     ButtonModule,
-    AutoCompleteModule,
     InputTextModule,
     TagModule,
     SelectModule,
@@ -63,254 +45,189 @@ interface DespachoBase {
   styleUrl: './listado-despacho.css',
   providers: [ConfirmationService, MessageService],
 })
-export class ListadoDespacho implements OnInit {
-  tituloKicker = 'ADMINISTRADOR - DESPACHO - PRODUCTOS';
+export class ListadoDespacho {
+
+  // ================================
+  // 🔥 INYECCIÓN
+  // ================================
+  readonly dispatchService         = inject(DispatchService); // public para usarlo en el template (reintentar)
+  private readonly empleadosService    = inject(EmpleadosService);
+  private readonly messageService      = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
+
+  // ================================
+  // 🏷️ CABECERA
+  // ================================
+  tituloKicker    = 'ADMINISTRADOR - DESPACHO - PRODUCTOS';
   subtituloKicker = 'LISTADO DE DESPACHO';
-  iconoCabecera = 'pi pi-truck';
+  iconoCabecera   = 'pi pi-truck';
 
-  searchTerm: string | null = null;
-  sugerencias: DespachoRow[] = [];
+  // ================================
+  // 🔥 SIGNALS BASE
+  // ================================
+  searchTerm   = signal<string | null>(null);
+  estadoFiltro = signal<string>('TODOS');
+  empleados    = signal<Empleado[]>([]);
 
-  filas: DespachoRow[] = [];
-  filasFiltradas: DespachoRow[] = [];
-  estadoFiltro: 'TODOS' | DespachoRow['estado'] = 'TODOS';
+  // Incluye CANCELADO alineado a DispatchStatus
   estadoOptions = [
-    { label: 'Todos', value: 'TODOS' },
-    { label: 'Despachado', value: 'DESPACHADO' },
-    { label: 'Sin despachar', value: 'SIN DESPACHAR' },
+    { label: 'Todos',      value: 'TODOS'      },
+    { label: 'Pendiente',  value: 'PENDIENTE'  },
+    { label: 'Enviado',    value: 'ENVIADO'    },
+    { label: 'Entregado',  value: 'ENTREGADO'  },
+    { label: 'Cancelado',  value: 'CANCELADO'  },
   ];
 
-  private empleados: Empleado[] = [];
-  private ventas: ComprobanteVenta[] = [];
+  // ================================
+  // 🔗 SIGNALS DEL SERVICIO (fuente de verdad)
+  // ================================
+  dispatches = this.dispatchService.dispatches; // computed → Dispatch[]
+  loading    = this.dispatchService.loading;    // computed → boolean
+  error      = this.dispatchService.error;      // computed → string | null
 
-  private readonly baseDespachos: DespachoBase[] = [
-    {
-      cantidad: 1,
-      comprobante: '8060',
-      salida: 'PROVINCIA',
-      ubicacion: 'TRUJILLO',
-      agencia: 'SHALOM',
-      hora: '09:45',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8061',
-      salida: 'PROVINCIA',
-      ubicacion: 'CUSCO',
-      agencia: 'MARVISUR',
-      hora: '09:46',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8061',
-      salida: 'PROVINCIA',
-      ubicacion: 'AREQUIPA',
-      agencia: 'MARVISUR',
-      hora: '09:46',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8065',
-      salida: 'PROVINCIA',
-      ubicacion: 'FERRENAFE',
-      agencia: 'SHALOM',
-      hora: '11:43',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8065',
-      salida: 'PROVINCIA',
-      ubicacion: 'FERRENAFE',
-      agencia: 'SHALOM',
-      hora: '11:43',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8065',
-      salida: 'PROVINCIA',
-      ubicacion: 'FERRENAFE',
-      agencia: 'SHALOM',
-      hora: '11:43',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8065',
-      salida: 'PROVINCIA',
-      ubicacion: 'FERRENAFE',
-      agencia: 'SHALOM',
-      hora: '11:43',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8065',
-      salida: 'PROVINCIA',
-      ubicacion: 'RICA',
-      agencia: 'SHALOM',
-      hora: '10:17',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8067',
-      salida: 'PROVINCIA',
-      ubicacion: 'CUSCO',
-      agencia: 'SHALOM',
-      hora: '12:01',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8069',
-      salida: 'PROVINCIA',
-      ubicacion: 'CANETE',
-      agencia: 'SHALOM',
-      hora: '12:02',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8066',
-      salida: 'PROVINCIA',
-      ubicacion: 'CHINCHA',
-      agencia: 'SHALOM',
-      hora: '11:47',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8063',
-      salida: 'PROVINCIA',
-      ubicacion: 'ICA',
-      agencia: 'SHALOM',
-      hora: '10:22',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8080',
-      salida: 'PROVINCIA',
-      ubicacion: 'CHICLAYO',
-      agencia: 'SHALOM',
-      hora: '14:46',
-    },
-    {
-      cantidad: 1,
-      comprobante: '8079',
-      salida: 'PROVINCIA',
-      ubicacion: 'LIMA',
-      agencia: 'SHALOM',
-      hora: '14:46',
-    },
-  ];
-
-  constructor(
-    private empleadosService: EmpleadosService,
-    private ventasService: VentasService,
-    private messageService: MessageService,
-  ) {}
-
-  ngOnInit(): void {
-    this.cargarVentas();
-    this.cargarEmpleados();
-  }
-
-  private cargarEmpleados(): void {
-    this.empleadosService.getEmpleados().subscribe({
-      next: (empleados) => {
-        this.empleados = empleados;
-        this.actualizarResponsables();
-      },
+  // ================================
+  // 🏗️ CONSTRUCTOR — carga inicial
+  // ================================
+  constructor() {
+    // Dispara GET /dispatch → rellena el signal interno del servicio
+    this.dispatchService.loadDispatches().subscribe({
       error: () => {
-        this.empleados = [];
-        this.actualizarResponsables();
-      },
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error de carga',
+          detail: 'No se pudieron cargar los despachos. Intenta de nuevo.',
+          life: 4000,
+        });
+      }
+    });
+
+    // Empleados para mostrar nombre del almacenero y asesor
+    this.empleadosService.getEmpleados().subscribe({
+      next: (lista) => this.empleados.set(lista),
+      error: () => {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Advertencia',
+          detail: 'No se pudieron cargar los empleados.',
+          life: 3000,
+        });
+      }
     });
   }
 
-  private cargarVentas(): void {
-    this.ventas = this.ventasService.getComprobantes();
-    const despachador = this.obtenerNombreEmpleado('ALMACENERO');
-    const asesor = this.obtenerNombreEmpleado('VENTAS');
+  // ================================
+  // 🔥 COMPUTED: RESPONSABLES
+  // ================================
+  despachador = computed(() => this.obtenerNombreEmpleado('ALMACENERO'));
+  asesor      = computed(() => this.obtenerNombreEmpleado('VENTAS'));
 
-    this.filas = this.ventas.map((venta, index) =>
-      this.armarFila(venta, index, despachador, asesor),
-    );
-    this.sugerencias = [...this.filas];
-    this.aplicarFiltros();
-  }
+  // ================================
+  // 🔥 COMPUTED: CONTADORES
+  // Sobre el total de dispatches (no filasFiltradas) para
+  // reflejar la realidad completa del catálogo.
+  // ================================
+  totalPendientes = computed(() =>
+    this.dispatches().filter(d => d.estado === 'PENDIENTE').length
+  );
 
-  private actualizarResponsables(): void {
-    const despachador = this.obtenerNombreEmpleado('ALMACENERO');
-    const asesor = this.obtenerNombreEmpleado('VENTAS');
-    this.filas = this.filas.map((fila) => ({
-      ...fila,
-      despachador,
-      asesor,
-    }));
-    this.aplicarFiltros();
-  }
+  totalEnviados = computed(() =>
+    this.dispatches().filter(d => d.estado === 'ENVIADO').length
+  );
 
-  private armarFila(
-    venta: ComprobanteVenta,
-    index: number,
-    despachador: string,
-    asesor: string,
-  ): DespachoRow {
-    const base = this.baseDespachos[index % this.baseDespachos.length];
-    const estado = venta.estado ? 'DESPACHADO' : 'SIN DESPACHAR';
-    const totalCantidad = venta.detalles?.reduce((sum, d) => sum + (d.cantidad || 0), 0) || 0;
-    const descripcion = venta.cliente_nombre || venta.cliente_doc || 'Venta sin cliente';
-    const comprobante = `${venta.serie}-${String(venta.numero).padStart(8, '0')}`;
+  totalEntregados = computed(() =>
+    this.dispatches().filter(d => d.estado === 'ENTREGADO').length
+  );
 
-    return {
-      codigo: venta.id_comprobante,
-      descripcion,
-      cantidad: Math.max(1, totalCantidad || base.cantidad),
-      comprobante,
-      despachador,
-      asesor,
-      salida: base.salida,
-      ubicacion: base.ubicacion,
-      agencia: base.agencia,
-      hora: base.hora,
-      estado,
-    };
-  }
+  totalCancelados = computed(() =>
+    this.dispatches().filter(d => d.estado === 'CANCELADO').length
+  );
 
-  private obtenerNombreEmpleado(cargo: Empleado['cargo']): string {
-    const empleado = this.empleados.find((item) => item.cargo === cargo && item.estado);
-    if (!empleado) return 'Sin asignar';
-    return `${empleado.nombres} ${empleado.apellidos}`.trim();
-  }
+  // ================================
+  // 🔥 COMPUTED: FILTRADO REACTIVO
+  // Se recalcula automáticamente cuando cambia:
+  //   dispatches()   → nueva data del backend
+  //   estadoFiltro() → usuario cambia el select
+  //   searchTerm()   → usuario escribe en el input
+  // ================================
+  filasFiltradas = computed(() => {
+    let data = this.dispatches();
 
-  editarFila(fila: DespachoRow): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Editar',
-      detail: `Editar venta ${fila.codigo}`,
-      life: 2000,
-    });
-  }
-
-  limpiarFiltros(): void {
-    this.searchTerm = null;
-    this.estadoFiltro = 'TODOS';
-    this.aplicarFiltros();
-  }
-
-  aplicarFiltros(): void {
-    if (this.estadoFiltro === 'TODOS') {
-      this.filasFiltradas = [...this.filas];
-      return;
+    // 1. Filtro por estado
+    if (this.estadoFiltro() !== 'TODOS') {
+      data = data.filter(d => d.estado === this.estadoFiltro());
     }
 
-    this.filasFiltradas = this.filas.filter((fila) => fila.estado === this.estadoFiltro);
+    // 2. Filtro por búsqueda: id_despacho, id_venta_ref o tipo_envio
+    const term = this.searchTerm()?.trim().toLowerCase();
+    if (term) {
+      data = data.filter(d =>
+        d.id_despacho?.toString().includes(term)      ||
+        d.id_venta_ref?.toString().includes(term)     ||
+        d.tipo_envio?.toLowerCase().includes(term)
+      );
+    }
+
+    return data;
+  });
+
+  // ================================
+  // 🔥 ACCIONES
+  // ================================
+
+  /** Confirmación + DELETE al backend */
+  eliminar(despacho: Dispatch): void {
+    this.confirmationService.confirm({
+      header: 'Confirmar eliminación',
+      message: `¿Eliminar el despacho <strong>#${despacho.id_despacho}</strong>? Esta acción no se puede deshacer.`,
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-danger',
+      accept: () => {
+        this.dispatchService.deleteDispatch(despacho.id_despacho).subscribe({
+          next: () => {
+            // El servicio ya elimina del cache → la tabla se actualiza sola vía signal
+            this.messageService.add({
+              severity: 'success',
+              summary: 'Eliminado',
+              detail: `Despacho #${despacho.id_despacho} eliminado correctamente.`,
+              life: 3000,
+            });
+          },
+          error: () => {
+            this.messageService.add({
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo eliminar el despacho.',
+              life: 4000,
+            });
+          }
+        });
+      }
+    });
   }
 
-
-  getSalidaSeverity(salida: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' {
-    const salidaUpper = salida.toUpperCase();
-    if (salidaUpper === 'LIMA') return 'success';
-    if (salidaUpper === 'PROVINCIA') return 'info';
-    return 'secondary';
+  /** Resetea los filtros activos */
+  limpiarFiltros(): void {
+    this.searchTerm.set(null);
+    this.estadoFiltro.set('TODOS');
   }
 
-  getEstadoSeverity(estado: DespachoRow['estado']): 'success' | 'danger' {
-    return estado === 'DESPACHADO' ? 'success' : 'danger';
+  /** Severity de p-tag según DispatchStatus */
+  getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' {
+    switch (estado) {
+      case 'ENTREGADO':  return 'success';
+      case 'ENVIADO':    return 'warn';
+      case 'CANCELADO':  return 'secondary';
+      default:           return 'danger';   // PENDIENTE
+    }
+  }
+
+  // ================================
+  // 🔒 PRIVADOS
+  // ================================
+  private obtenerNombreEmpleado(cargo: Empleado['cargo']): string {
+    const emp = this.empleados().find(e => e.cargo === cargo && e.estado);
+    return emp ? `${emp.nombres} ${emp.apellidos}` : 'Sin asignar';
   }
 }

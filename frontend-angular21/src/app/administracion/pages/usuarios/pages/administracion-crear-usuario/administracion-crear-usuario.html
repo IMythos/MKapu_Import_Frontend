@@ -1,8 +1,7 @@
 <!-- HEADER -->
 <section class="wizard-content">
-  <p-card styleClass="usuarios-header-card">
-    <div
-      class="usuarios-header-row flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
+  <p-card class="usuarios-header-card">
+    <div class="usuarios-header-row flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
       <div class="usuarios-header-title flex align-items-center gap-3 w-full md:w-auto">
         <span class="usuarios-title-icon">
           <i class="pi pi-users"></i>
@@ -13,8 +12,12 @@
         </div>
       </div>
       <div class="usuarios-header-actions flex w-full md:w-auto md:justify-content-end">
-        <p-button label="Nuevo Usuario" icon="pi pi-user-plus" styleClass="usuarios-pill w-full md:w-auto"
-          (onClick)="nuevoUsuario()"></p-button>
+        <p-button
+          label="Nuevo Usuario"
+          icon="pi pi-user-plus"
+          styleClass="usuarios-pill w-full md:w-auto"
+          (onClick)="nuevoUsuario()">
+        </p-button>
       </div>
     </div>
   </p-card>
@@ -23,10 +26,17 @@
 <!-- BUSCADOR -->
 <section class="wizard-content mt-3">
   <p-card>
-    <h4 class="mb-3">Buscar Usuario</h4>
+    <span class="usuario-search-label">Buscar Usuario</span>
 
     <div class="flex align-items-center gap-3">
-      <input pInputText type="text" maxlength="8" placeholder="Ingrese DNI (8 dígitos)..." [(ngModel)]="filtroDni"
+
+      <input
+        pInputText
+        type="text"
+        maxlength="8"
+        placeholder="Ingrese DNI (8 dígitos)..."
+        [(ngModel)]="filtroDni"
+        (input)="aplicarFiltros()"
         class="w-full" />
 
       <p-select
@@ -37,6 +47,26 @@
         (onChange)="onEstadoChange()"
         class="w-full md:w-15rem"
         placeholder="Estado">
+      </p-select>
+
+      <p-select
+        [options]="Sede"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="filtroSede"
+        (onChange)="onSedeChange()"
+        class="w-full md:w-15rem"
+        placeholder="Sede">
+      </p-select>
+
+      <p-select
+        [options]="Rol"
+        optionLabel="label"
+        optionValue="value"
+        [(ngModel)]="filtroRol"
+        (onChange)="onRolChange()"
+        class="w-full md:w-15rem"
+        placeholder="Rol">
       </p-select>
 
       <button
@@ -50,6 +80,14 @@
   </p-card>
 </section>
 
+<!-- BARRA DE CARGA y ERRORES -->
+<div class="mb-3">
+  <div *ngIf="cargandoUsuarios" class="usuarios-cargando-bar">
+    <i class="pi pi-spinner pi-spin"></i> Cargando usuarios...
+  </div>
+  <p-message *ngIf="!cargandoUsuarios && errorUsuarios" severity="error" [text]="errorUsuarios"></p-message>
+</div>
+
 <!-- TABLA -->
 <section class="wizard-content mt-4">
   <p-card>
@@ -57,7 +95,11 @@
       <div class="flex align-items-center gap-2">
         <i class="pi pi-user"></i>
         <strong>Usuarios</strong>
-        <p-tag *ngIf="totalusers > 0" [value]="totalusers + ' Usuarios'" severity="info"></p-tag>
+        <p-tag
+          *ngIf="totalusers > 0"
+          [value]="totalusers + ' Usuarios'"
+          severity="info">
+        </p-tag>
       </div>
     </div>
 
@@ -66,18 +108,18 @@
       responsiveLayout="scroll"
       class="p-datatable-sm usuarios-table--espaciada"
       [rows]="5"
+      [rowsPerPageOptions]="[5, 10, 20, 50]"
       [paginator]="true">
+
       <ng-template pTemplate="header">
         <tr>
           <th>Usuario</th>
           <th>DNI</th>
-          <th>Email</th>
           <th>Celular</th>
           <th>Rol</th>
-          <th>Dirección</th>
           <th>Sede</th>
           <th>Estado</th>
-          <th style="width: 110px">Acciones</th>
+          <th class="text-center">Acciones</th>
         </tr>
       </ng-template>
 
@@ -88,32 +130,120 @@
             <div class="helper-text">{{ user.ape_pat }} {{ user.ape_mat }}</div>
           </td>
           <td>{{ user.dni }}</td>
-          <td>{{ user.email }}</td>
           <td>{{ user.celular }}</td>
           <td>{{ user.rolNombre || user.rol_nombre || user.rol || user.role || 'Sin rol' }}</td>
-          <td>{{ user.direccion }}</td>
           <td>{{ user.sedeNombre || 'N/A' }}</td>
           <td>
-            <p-tag [value]="user.activo ? 'Activo' : 'Inactivo'"
-              [severity]="user.activo ? 'success' : 'danger'"></p-tag>
+            <p-tag
+              [value]="user.activo ? 'Activo' : 'Inactivo'"
+              [severity]="user.activo ? 'success' : 'danger'">
+            </p-tag>
           </td>
           <td class="text-center">
-            <button pButton icon="pi pi-eye" class="p-button-text p-button-sm"></button>
+            <p-button
+                icon="pi pi-eye"
+                text
+                severity="secondary"
+                styleClass="user-icon-btn"
+                (click)="verDetalle(user)"
+                title="Ver detalle"
+            ></p-button>
+
             <button
               pButton
               icon="pi pi-pencil"
+              text
+              styleClass="user-icon-btn"
+              severity="secondary"
               class="p-button-text p-button-sm"
-              [routerLink]="['/admin/usuarios/editar-usuario', user.id_usuario]">
-            </button>
+              [routerLink]="['/admin/usuarios/editar-usuario', user.id_usuario]"
+            ></button>
+
+            <p-button
+                [icon]="user.activo ? 'pi pi-times' : 'pi pi-check'"
+                text
+                [severity]="user.activo ? 'danger' : 'success'"
+                styleClass="user-icon-btn user-action-status"
+                (click)="confirmToggleStatus(user)"
+                [title]="user.activo ? 'Desactivar usuario' : 'Activar usuario'"
+            ></p-button>
           </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="9" class="text-center">No hay usuarios registrados</td>
+          <td colspan="8" class="text-center">No hay usuarios registrados</td>
         </tr>
       </ng-template>
     </p-table>
+    <p-confirmdialog />
   </p-card>
+
+  <!-- MODAL DETALLE USUARIO -->
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [modal]="true"
+    [draggable]="false"
+    [style]="{ width: '480px', 'border-radius': '16px', overflow: 'hidden' }"
+    [contentStyle]="{ padding: '0' }"
+    (onHide)="dialogVisible = false"
+  >
+    <ng-template pTemplate="header">
+      <span>Detalle de Usuario</span>
+    </ng-template>
+
+    <ng-container *ngIf="usuarioSeleccionado() as u">
+      <div class="usuario-detail-modal">
+
+        <!-- BANNER -->
+        <div class="usuario-banner">
+          <div class="usuario-banner-icon">
+            <i class="pi pi-user"></i>
+          </div>
+          <div class="usuario-banner-info">
+            <span class="usuario-kicker">USUARIO</span>
+            <h3 class="usuario-nombre">{{ u.usu_nom }} {{ u.ape_pat }} {{ u.ape_mat }}</h3>
+          </div>
+          <button class="usuario-close-btn" (click)="dialogVisible = false">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <!-- INFO GRID -->
+        <div class="usuario-info-grid">
+          <div class="usuario-info-item"><b>DNI:</b> {{ u.dni }}</div>
+          <div class="usuario-info-item"><b>Email:</b> {{ u.email || '—' }}</div>
+          <div class="usuario-info-item"><b>Celular:</b> {{ u.celular || '—' }}</div>
+          <div class="usuario-info-item"><b>Rol:</b> {{ u.rolNombre || 'Sin rol' }}</div>
+          <div class="usuario-info-item"><b>Sede:</b> {{ u.sedeNombre || '—' }}</div>
+          <div class="usuario-info-item"><b>Dirección:</b> {{ u.direccion || '—' }}</div>
+          <div class="usuario-info-item">
+            <b>Estado:</b>
+            <p-tag [value]="u.activo ? 'Activo' : 'Inactivo'" [severity]="u.activo ? 'success' : 'danger'"></p-tag>
+          </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="usuario-footer flex justify-content-end gap-2">
+          <p-button
+            label="Cerrar"
+            icon="pi pi-times"
+            severity="secondary"
+            outlined="true"
+            class="user-btn-close"
+            (onClick)="dialogVisible = false">
+          </p-button>
+          <p-button
+            label="Editar Usuario"
+            icon="pi pi-pencil"
+            class="user-btn-edit"
+            [routerLink]="['/admin/usuarios/editar-usuario']"
+            [queryParams]="{ id: u.id_usuario }"
+            (onClick)="dialogVisible = false">
+          </p-button>
+        </div>
+      </div>
+    </ng-container>
+  </p-dialog>
 </section>

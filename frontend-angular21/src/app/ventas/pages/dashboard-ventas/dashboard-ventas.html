@@ -1,1 +1,217 @@
-<p>dashboard-ventas works!</p>
+<div class="p-3">
+  <div class="flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="text-3xl font-semibold m-0 mb-1">
+        Hola, {{ username || 'Usuario' }}
+      </h1>
+      <p class="text-500 m-0">
+        Resumen comercial de ventas, productos y clientes atendidos
+      </p>
+    </div>
+  </div>
+
+  <div class="grid mb-3">
+    <div class="col-12 md:col-6 lg:col-3" *ngFor="let kpi of kpis">
+      <p-card class="border-round shadow-2">
+        <div class="flex align-items-center gap-3 p-2">
+          <div
+            class="flex align-items-center justify-content-center border-round"
+            style="width: 50px; height: 50px"
+            [ngStyle]="{ 'background-color': kpi.color + '33' }"
+          >
+            <i class="{{ kpi.icon }} text-xl" [ngStyle]="{ color: kpi.color }"></i>
+          </div>
+          <div class="flex-1">
+            <span class="text-500 text-xs block mb-1">{{ kpi.label }}</span>
+            <div class="text-xl font-bold mb-1">{{ kpi.value }}</div>
+            <span class="text-500 text-xs">{{ kpi.trend }}</span>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-users" style="color:#FFA726"></i>
+              <span class="font-semibold text-lg">Rendimiento por Vendedor</span>
+            </div>
+
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="anioSeleccionado"
+              (onChange)="onAnioChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-7rem"
+            ></p-select>
+          </div>
+        </ng-template>
+
+        <div class="p-3">
+          <p-chart
+            type="bar"
+            [data]="rendimientoVendedoresChart"
+            [options]="rendimientoVendedoresOptions"
+            [height]="'320px'"
+          ></p-chart>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-box" style="color:#FFA726"></i>
+              <span class="font-semibold text-lg">Productos Más Vendidos</span>
+            </div>
+
+            <p-select
+              [options]="aniosOptions"
+              [(ngModel)]="anioSeleccionado"
+              (onChange)="onAnioChange()"
+              optionLabel="label"
+              optionValue="value"
+              styleClass="w-7rem"
+            ></p-select>
+          </div>
+        </ng-template>
+
+        <div class="p-3">
+          <div
+            *ngFor="let prod of productosTopTabla; let i = index; let last = last"
+            class="flex align-items-center gap-3 p-3 border-round mb-3"
+            [class.mb-0]="last"
+            style="background-color: var(--surface-50); border-left: 4px solid #FFA726;"
+          >
+            <div
+              class="flex align-items-center justify-content-center border-round"
+              style="width: 40px; height: 40px; background-color: #FFF3E0;"
+            >
+              <span class="font-bold text-sm" style="color:#FFA726">#{{ i + 1 }}</span>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold mb-1" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ prod.descripcion }}
+              </div>
+              <div class="text-500 text-xs" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ prod.codigo }} · {{ prod.unidades }} unidades
+              </div>
+            </div>
+
+            <div class="text-right">
+              <div class="font-bold" style="color:#FFA726">
+                S/ {{ prod.monto | number:'1.0-0' }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <div class="grid mt-3">
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-comment" style="color:#FFA726"></i>
+              <span class="font-semibold text-lg">Reclamos Recientes</span>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="p-3">
+          <div
+            *ngFor="let r of reclamosRecientes; let last = last"
+            class="flex align-items-center gap-3 p-3 border-bottom-1 surface-border"
+            [class.border-bottom-none]="last"
+          >
+            <div
+              class="flex align-items-center justify-content-center border-round flex-shrink-0"
+              style="width: 40px; height: 40px; background-color:#FFF3E0;"
+            >
+              <i class="pi pi-flag" style="color:#FFA726; font-size:0.9rem;"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ r.cliente }}
+              </div>
+              <div class="text-500 text-sm" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ r.motivo }}
+              </div>
+            </div>
+
+            <div class="flex align-items-center gap-4" style="flex: 0 0 auto;">
+              <div class="text-500 text-xs" style="width: 96px; text-align: right; white-space: nowrap;">
+                {{ r.fecha | date:'dd/MM/yyyy' }}
+              </div>
+
+              <div style="width: 110px; display: flex; justify-content: flex-end;">
+                <p-tag [value]="r.estado" [severity]="getEstadoReclamoSeverity(r.estado)"></p-tag>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12 lg:col-6">
+      <p-card class="border-round shadow-2 h-full">
+        <ng-template pTemplate="header">
+          <div class="flex justify-content-between align-items-center p-3 border-bottom-1 surface-border">
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-user-check" style="color:#FFA726"></i>
+              <span class="font-semibold text-lg">Clientes Atendidos Recientemente</span>
+            </div>
+          </div>
+        </ng-template>
+
+        <div class="p-3">
+          <div
+            *ngFor="let c of clientesAtendidos; let last = last"
+            class="flex align-items-center gap-3 p-3 border-bottom-1 surface-border"
+            [class.border-bottom-none]="last"
+          >
+            <div
+              class="flex align-items-center justify-content-center border-round flex-shrink-0"
+              style="width: 40px; height: 40px; background-color:#F3E5F5;"
+            >
+              <i class="pi pi-user" style="color:#AB47BC; font-size:0.9rem;"></i>
+            </div>
+
+            <div class="flex-1 min-w-0">
+              <div class="font-semibold text-sm" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ c.cliente }}
+              </div>
+              <div class="text-500 text-sm" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                Responsable: {{ c.vendedor }}
+              </div>
+            </div>
+
+            <div class="flex align-items-center gap-4" style="flex: 0 0 auto;">
+              <div class="text-500 text-xs" style="width: 96px; text-align: right; white-space: nowrap;">
+                {{ c.fecha | date:'dd/MM/yyyy' }}
+              </div>
+
+              <div style="width: 96px; text-align: right; white-space: nowrap;">
+                <span class="font-semibold text-sm" style="color:#FFA726;">
+                  S/ {{ c.total | number:'1.0-0' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+  </div>
+</div>

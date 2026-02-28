@@ -1,0 +1,193 @@
+<div class="p-2">
+  <p-card styleClass="promociones-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="promociones-title-icon"><i class="pi pi-tag"></i></span>
+        <div>
+          <p class="promociones-kicker mb-0">ADMINISTRACIÓN - CAMPAÑAS</p>
+          <h2 class="promociones-title mb-0">Detalle de Promoción</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button label="Editar" icon="pi pi-pencil"     styleClass="ventas-pill ventas-pill-warning" (onClick)="irEditar()" />
+        <p-button label="Volver" icon="pi pi-arrow-left" severity="secondary" styleClass="ventas-pill" (onClick)="volver()" />
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- LOADING -->
+@if (cargando()) {
+  <div class="p-2 flex justify-content-center align-items-center" style="min-height:300px">
+    <i class="pi pi-spin pi-spinner" style="font-size:2rem;color:#f6af33"></i>
+  </div>
+}
+
+<!-- DETALLE -->
+@if (!cargando() && promocion()) {
+  <div class="p-2 grid">
+
+    <!-- COLUMNA IZQUIERDA -->
+    <div class="col-12 md:col-8 flex flex-column gap-3">
+      <p-card styleClass="tarjeta-principal border-round-xl">
+
+        <!-- Información General -->
+        <div class="col-12 mb-3">
+          <h3 class="form-section-title"><i class="pi pi-info-circle"></i> Información General</h3>
+        </div>
+
+        <div class="formgrid grid">
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">ID Promoción</span>
+            <div class="detalle-valor">
+              <span class="codigo-badge">#{{ promocion()!.idPromocion }}</span>
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Concepto</span>
+            <div class="detalle-valor">{{ promocion()!.concepto }}</div>
+          </div>
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Tipo de Descuento</span>
+            <div class="detalle-valor">
+              <p-tag
+                [value]="promocion()!.tipo"
+                [severity]="promocion()!.tipo === 'PORCENTAJE' ? 'info' : 'warn'"
+              />
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6 mb-4">
+            <span class="form-label">Estado</span>
+            <div class="detalle-valor">
+              <p-tag [value]="estadoActual()" [severity]="severidadEstado()" />
+            </div>
+          </div>
+
+          <!-- Reglas -->
+          @if (promocion()!.reglas.length) {
+            <div class="col-12"><div class="border-top-1 surface-border mb-4"></div></div>
+            <div class="col-12 mb-3">
+              <h3 class="form-section-title"><i class="pi pi-shield"></i> Reglas de Aplicación</h3>
+            </div>
+            @for (regla of promocion()!.reglas; track regla.idRegla) {
+              <div class="col-12 md:col-6 mb-3">
+                <div class="regla-card p-3 border-round border-1 surface-border">
+                  <div class="flex align-items-center gap-2 mb-1">
+                    <i class="pi pi-check-circle text-primary"></i>
+                    <strong>{{ regla.tipoCondicion }}</strong>
+                  </div>
+                  <small class="text-500">Valor condición: {{ regla.valorCondicion }}</small>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Descuentos aplicados -->
+          @if (promocion()!.descuentosAplicados.length) {
+            <div class="col-12"><div class="border-top-1 surface-border mb-4"></div></div>
+            <div class="col-12 mb-3">
+              <h3 class="form-section-title"><i class="pi pi-percentage"></i> Descuentos Aplicados</h3>
+            </div>
+            @for (desc of promocion()!.descuentosAplicados; track desc.idDescuento) {
+              <div class="col-12 md:col-4 mb-3">
+                <div class="descuento-aplicado-card p-3 border-round border-1 surface-border text-center">
+                  <small class="text-500">Descuento #{{ desc.idDescuento }}</small>
+                  <div class="font-bold text-lg mt-1">S/. {{ desc.monto | number:'1.2-2' }}</div>
+                </div>
+              </div>
+            }
+            <div class="col-12 mt-1">
+              <span class="form-label">Total descontado:</span>
+              <strong class="ml-2">S/. {{ totalDescuentosAplicados() | number:'1.2-2' }}</strong>
+            </div>
+          }
+
+        </div>
+      </p-card>
+    </div>
+
+    <!-- COLUMNA DERECHA -->
+    <div class="col-12 md:col-4 flex flex-column gap-3">
+
+      <!-- Valor del descuento -->
+      <div class="descuento-card border-round-xl shadow-2 p-4 text-center">
+        <p class="form-label mb-3" style="text-align:center">Valor del Descuento</p>
+        <div class="descuento-valor-grande">{{ valorFormateado() }}</div>
+        <p class="descuento-tipo-label mt-2">
+          {{ promocion()!.tipo === 'PORCENTAJE' ? 'Descuento porcentual' : 'Descuento de monto fijo' }}
+        </p>
+      </div>
+
+      <!-- Estado + acciones -->
+      <p-card styleClass="tarjeta-principal border-round-xl">
+        <div class="flex flex-column gap-3">
+
+          <div>
+            <span class="form-label">Estado Actual</span>
+            <div class="mt-2">
+              <p-tag [value]="estadoActual()" [severity]="severidadEstado()" styleClass="text-sm font-bold" />
+            </div>
+          </div>
+
+          <div class="border-top-1 surface-border"></div>
+
+          <!-- Resumen de reglas y descuentos -->
+          <div class="flex justify-content-between">
+            <span class="form-label">Reglas activas</span>
+            <strong>{{ promocion()!.reglas.length }}</strong>
+          </div>
+          <div class="flex justify-content-between">
+            <span class="form-label">Descuentos aplicados</span>
+            <strong>{{ promocion()!.descuentosAplicados.length }}</strong>
+          </div>
+
+          <div class="border-top-1 surface-border"></div>
+
+          <div>
+            <span class="form-label">Acciones Rápidas</span>
+            <div class="flex flex-column gap-2 mt-2">
+              <p-button
+                label="Editar Promoción"
+                icon="pi pi-pencil"
+                styleClass="ventas-pill ventas-pill-warning w-full"
+                (click)="irEditar()"
+              ></p-button>
+              <p-button
+                label="Eliminar Promoción"
+                icon="pi pi-trash"
+                severity="danger"
+                [outlined]="true"
+                styleClass="ventas-pill w-full"
+                (click)="confirmarEliminar()"
+              ></p-button>
+            </div>
+          </div>
+
+        </div>
+      </p-card>
+
+    </div>
+
+  </div>
+}
+
+<!-- NO ENCONTRADO -->
+@if (!cargando() && !promocion()) {
+  <div class="p-2">
+    <p-card styleClass="tarjeta-principal border-round-xl">
+      <div class="flex flex-column align-items-center justify-content-center py-8 gap-3">
+        <i class="pi pi-inbox" style="font-size:3rem;color:#94a3b8"></i>
+        <p class="text-900 font-semibold m-0">Promoción no encontrada</p>
+        <p class="text-500 m-0">El ID solicitado no existe o fue eliminado</p>
+        <p-button label="Volver al listado" icon="pi pi-arrow-left" severity="secondary" styleClass="ventas-pill mt-2" (onClick)="volver()" />
+      </div>
+    </p-card>
+  </div>
+}
+
+<p-toast />
+<p-confirmDialog />

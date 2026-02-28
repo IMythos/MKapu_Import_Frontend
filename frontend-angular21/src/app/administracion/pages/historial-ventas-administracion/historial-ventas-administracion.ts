@@ -56,7 +56,7 @@ interface FiltroVentasAdmin {
   styleUrl: './historial-ventas-administracion.css',
 })
 export class HistorialVentasAdministracion implements OnInit, OnDestroy {
-  tituloKicker = 'ADMINISTRACIÓN - HISTORIAL DE VENTAS';
+  tituloKicker = 'VENTAS - HISTORIAL DE VENTAS';
   subtituloKicker = 'CONSULTA Y GESTIÓN DE VENTAS';
   iconoCabecera = 'pi pi-list';
 

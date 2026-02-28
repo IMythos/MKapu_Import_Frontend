@@ -23,6 +23,8 @@
   "private": true,
   "packageManager": "npm@11.6.2",
   "dependencies": {
+    "@angular/animations": "^21.2.0",
+    "@angular/cdk": "^21.2.0",
     "@angular/common": "^21.0.0",
     "@angular/compiler": "^21.0.0",
     "@angular/core": "^21.0.0",
@@ -36,8 +38,9 @@
     "jspdf-autotable": "^5.0.7",
     "primeflex": "^4.0.0",
     "primeicons": "^7.0.0",
-    "primeng": "^21.0.2",
+    "primeng": "^21.1.1",
     "rxjs": "~7.8.0",
+    "socket.io-client": "^4.8.3",
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5"
   },

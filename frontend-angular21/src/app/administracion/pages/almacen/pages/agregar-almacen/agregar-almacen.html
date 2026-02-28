@@ -1,0 +1,151 @@
+<div class="agregar-sede-page">
+  <p-toast position="top-right"></p-toast>
+
+  <!-- Confirm dialog correcto (mayúscula D) y appendTo para evitar problemas de z-index -->
+  <p-confirmDialog appendTo="body"></p-confirmDialog>
+
+  <p-card styleClass="sedes-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="sedes-title-icon"><i class="pi pi-list"></i></span>
+        <div>
+          <p class="sedes-kicker">ADMINISTRADOR - ALMACÉN - CREAR</p>
+          <h2 class="sedes-title">CREAR ALMACÉN</h2>
+        </div>
+      </div>
+    </div>
+  </p-card>
+
+  <div class="mb-3">
+    <p-message *ngIf="busy()" severity="info" text="Procesando..."></p-message>
+    <p-message *ngIf="!busy() && sedesError() as sedeError" severity="warn" [text]="sedeError"></p-message>
+  </div>
+
+  <p-card styleClass="sede-card border-none">
+    <form #sedeForm="ngForm" novalidate (ngSubmit)="saveSede(sedeForm)">
+      <div class="sede-section">
+        <div class="sede-section-title">UBICACIÓN:</div>
+        <p-divider></p-divider>
+      </div>
+
+      <div class="grid form-grid">
+        <!-- Código -->
+        <div class="col-12 md:col-6">
+          <label for="codigo">CÓDIGO</label>
+          <input
+            id="codigo"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese código"
+            [(ngModel)]="sede.codigo"
+            (ngModelChange)="onCodigoModelChange($event)"
+            name="codigo"
+            required
+            #codigo="ngModel"
+          />
+          <p-message
+            *ngIf="(sedeForm.submitted || codigo.touched) && codigo.invalid"
+            severity="error"
+            [text]="getCodigoErrorText()"
+          />
+        </div>
+
+        <!-- Nombre -->
+        <div class="col-12 md:col-6">
+          <label for="nombre">NOMBRE</label>
+          <input id="nombre" pInputText class="w-full" placeholder="Ingrese nombre" [(ngModel)]="sede.nombre" name="nombre" required #nombre="ngModel" (input)="toUpperCase('nombre')" (keypress)="onlyLetters($event)" />
+          <p-message *ngIf="(sedeForm.submitted || nombre.touched) && nombre.invalid" severity="error" text="El nombre es obligatorio y solo puede contener letras." />
+        </div>
+
+        <!-- Sede -->
+        <div class="col-12 md:col-6">
+          <label for="idSede">SEDE</label>
+          <p-select
+            inputId="idSede"
+            name="idSede"
+            [options]="sedeOptions()"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="selectedSedeId()"
+            (ngModelChange)="selectedSedeId.set($event)"
+            [filter]="true"
+            filterBy="label"
+            [showClear]="true"
+            [disabled]="sedesLoading() || sedeOptions().length === 0"
+            placeholder="Seleccione sede"
+            appendTo="body"
+            styleClass="w-full"
+            required
+            #idSede="ngModel"
+          />
+          <p-message
+            *ngIf="(sedeForm.submitted || idSede.touched) && idSede.invalid"
+            severity="error"
+            text="La sede es obligatoria."
+          />
+          <small
+            class="sede-field-hint"
+            *ngIf="!sedesLoading() && sedeOptions().length === 0"
+          >
+            No hay sedes disponibles.
+            <a class="sede-reload-link" (click)="reloadSedeOptions()">Reintentar</a>
+          </small>
+        </div>
+
+        <!-- Departamento -->
+        <div class="col-12 md:col-4">
+          <label for="departamento">DEPARTAMENTO</label>
+          <p-autocomplete id="departamento" [(ngModel)]="sede.departamento" [suggestions]="filteredDepartamentos" (completeMethod)="filterDepartamentos($event)" (onSelect)="onDepartamentoSelect()" placeholder="Escriba para buscar..." name="departamento" required #departamento="ngModel" [dropdown]="true" [forceSelection]="true" [minLength]="1" appNoNumbers (onClear)="sede.provincia=''; sede.ciudad=''; provincias=[]; distritos=[]" styleClass="w-full" />
+          <p-message *ngIf="(sedeForm.submitted || departamento.touched) && departamento.invalid" severity="error" text="El departamento es obligatorio." />
+        </div>
+
+        <!-- Provincia -->
+        <div class="col-12 md:col-4">
+          <label for="provincia">PROVINCIA</label>
+          <p-autocomplete id="provincia" [(ngModel)]="sede.provincia" [suggestions]="filteredProvincias" (completeMethod)="filterProvincias($event)" (onSelect)="onProvinciaSelect()" placeholder="Seleccione primero departamento" name="provincia" required #provincia="ngModel" [disabled]="!sede.departamento" [dropdown]="true" [forceSelection]="true" [minLength]="1" appNoNumbers (onClear)="sede.ciudad=''; distritos=[]" styleClass="w-full" />
+          <p-message *ngIf="(sedeForm.submitted || provincia.touched) && provincia.invalid" severity="error" text="La provincia es obligatoria." />
+        </div>
+
+        <!-- Distrito -->
+        <div class="col-12 md:col-4">
+          <label for="ciudad">DISTRITO</label>
+          <p-autocomplete id="ciudad" [(ngModel)]="sede.ciudad" [suggestions]="filteredDistritos" (completeMethod)="filterDistritos($event)" placeholder="Seleccione primero provincia" name="ciudad" required #ciudad="ngModel" [disabled]="!sede.provincia" [dropdown]="true" [forceSelection]="true" [minLength]="1" appNoNumbers styleClass="w-full" />
+          <p-message *ngIf="(sedeForm.submitted || ciudad.touched) && ciudad.invalid" severity="error" text="El distrito es obligatorio." />
+        </div>
+
+        <!-- Teléfono -->
+        <div class="col-12 md:col-6">
+          <label for="telefono">TELÉFONO</label>
+          <p-inputnumber class="w-full" [(ngModel)]="sede.telefono" inputId="telefono" placeholder="Ingrese 9 dígitos" [useGrouping]="false" [min]="100000000" [max]="999999999" name="telefono" required #telefono="ngModel" [inputStyleClass]="(sedeForm.submitted || telefono.touched) && telefono.invalid ? 'p-invalid' : ''" />
+          <p-message *ngIf="(sedeForm.submitted || telefono.touched) && telefono.invalid" severity="error" text="El teléfono es obligatorio y debe tener 9 dígitos." />
+        </div>
+
+        <!-- Dirección -->
+        <div class="col-12">
+          <label for="direccion">DIRECCIÓN</label>
+          <input id="direccion" pInputText class="w-full" placeholder="Ingrese dirección" [(ngModel)]="sede.direccion" name="direccion" required #direccion="ngModel" (input)="toUpperCase('direccion')" />
+          <p-message *ngIf="(sedeForm.submitted || direccion.touched) && direccion.invalid" severity="error" text="La dirección es obligatoria." />
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex align-items-center justify-content-center gap-3 mt-3">
+        <p-button label="Cancelar"
+          outlined severity="secondary"
+          styleClass="sede-btn-cancel"
+          type="button"
+          (click)="confirmCancel()">
+        </p-button>
+
+        <p-button
+          label="Registrar Almacén"
+          icon="pi pi-check"
+          styleClass="sede-btn-primary"
+          type="submit"
+          [disabled]="sedeForm.invalid || busy()">
+        </p-button>
+      </div>
+    </form>
+  </p-card>
+</div>

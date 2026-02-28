@@ -29,7 +29,7 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #f5c34d; /* 🔥 amarillo exacto */
+  background: #f5c34d; 
   color: #1f2937;
   font-size: 18px;
 }
@@ -69,6 +69,12 @@
   padding: 0.35rem 0.75rem;
   background: #ffffff;
   box-shadow: 0 6px 14px rgba(0, 0, 0, 0.06);
+}
+
+.usuarios-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
 }
 
 .usuarios-search-input {
@@ -161,6 +167,14 @@
   color: #1f2937;
 }
 
+
+.usuario-search-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+
 .usuarios-search-container {
   display: flex;
   flex-direction: column;
@@ -169,9 +183,194 @@
 
 .usuarios-search-hint {
   font-size: 0.75rem;
-  color: #64748b;
+  color: #c6a271;
 }
 
 .usuarios-filter-actions {
   align-self: flex-end;
+}
+
+/* ============================================
+   USUARIO DETAIL MODAL — agregar a usuarios.css
+   ============================================ */
+
+/* Override PrimeNG dialog para quitar padding y bordes extra */
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 0 !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+:host ::ng-deep .p-dialog .p-dialog-header {
+  display: none !important;
+}
+:host ::ng-deep .p-dialog {
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.6) !important;
+}
+
+/* ── Contenedor principal ─────────────────── */
+.usuario-detail-modal {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Banner superior ─────────────────────── */
+.usuario-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  position: relative;
+}
+
+.usuario-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: rgba(242, 233, 54, 0.2);
+  color: #f59f0b;
+  border: 1px solid rgba(227, 166, 35, 0.426);
+  flex-shrink: 0;
+}
+
+.usuario-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.usuario-kicker {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 0.2rem;
+  color: #f59f0bd0;
+}
+
+.usuario-nombre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.usuario-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #f59f0bc2;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.usuario-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+/* ── Info grid ────────────────────────────── */
+.usuario-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 0.5rem 0;
+  gap: 0;
+}
+
+.usuario-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  font-size: 0.95rem;
+  color: #e5e7eb;
+}
+
+.usuario-info-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+/* Si quieres hacer algunas en una sola línea usa: usuario-info-item--full */
+.usuario-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.usuario-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+:host ::ng-deep .user-btn-edit.p-button {
+  background:#f59f0bd0 !important;
+  border-color: #f59f0bd0 !important;
+  color: #111827 !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .user-btn-edit.p-button:hover {
+  background: #f59f0bd0 !important;
+}
+
+:host ::ng-deep .user-btn-close.p-button {
+  border-radius: 8px;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #94a3b8 !important;
+}
+
+:host ::ng-deep .user-btn-close.p-button:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+/* Estado Tag en info grid */
+.usuario-info-item p-tag,
+.usuario-info-item .p-tag {
+  font-size: 0.95em;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .usuario-info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.usuarios-cargando-bar {
+  background: #20293e;
+  color: #38bdf8;
+  padding: 0.5rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  letter-spacing: 0.08em;
+  display: flex;
+  align-items: center;
+  gap: 0.8em;
+}
+.usuarios-cargando-bar .pi {
+  font-size: 1.15em;
 }

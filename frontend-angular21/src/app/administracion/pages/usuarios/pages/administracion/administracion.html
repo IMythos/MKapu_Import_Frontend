@@ -1,6 +1,6 @@
-<div class="p-2 pt-5 md:pt-2">
+<div class="usuarios-page ">
   <p-toast position="top-right"></p-toast>
-  <p-card styleClass="usuarios-header-card">
+  <p-card class="usuarios-header-card">
     <div class="flex flex-column md:flex-row align-items-start md:align-items-center justify-content-between gap-3">
       <div class="flex align-items-center gap-3 w-full md:w-auto">
         <span class="usuarios-title-icon">
@@ -18,416 +18,247 @@
           severity="secondary"
           [outlined]="true"
           styleClass="usuarios-header-btn w-full md:w-auto"
-          [routerLink]="['/admin/usuarios']"
-        ></p-button>
-        <div class="usuarios-toggle">
-          <p-button
-            label="Usuario"
-            icon="pi pi-user"
-            [outlined]="activeWizard !== 'usuario'"
-            styleClass="usuarios-toggle-btn w-full md:w-auto"
-            (onClick)="activeWizard = 'usuario'">
-          </p-button>
-          <p-button
-            label="Cuenta"
-            icon="pi pi-lock"
-            [outlined]="activeWizard !== 'cuenta'"
-            styleClass="usuarios-toggle-btn w-full md:w-auto"
-            (onClick)="activeWizard = 'cuenta'">
-          </p-button>
-        </div>
+          [routerLink]="['/admin/usuarios']">
+        </p-button>
       </div>
     </div>
   </p-card>
 </div>
 
-<div class="p-2">
-  <p-card styleClass="usuarios-wizard-card">
-    <div *ngIf="activeWizard === 'usuario'">
-      <div class="usuarios-wizard-steps flex flex-wrap md:flex-nowrap md:align-items-center md:justify-content-between gap-3 p-3 md:p-4 pb-2">
-        <div
-          *ngFor="let step of stepsUsuario; let i = index"
-          class="usuarios-wizard-step"
-          [class.active]="activeStepUsuario === i"
-          [class.completed]="activeStepUsuario > i"
-        >
-          <div class="usuarios-step-number">
-            <i *ngIf="activeStepUsuario > i" class="pi pi-check"></i>
-            <span *ngIf="activeStepUsuario <= i">{{ i + 1 }}</span>
-          </div>
-          <div class="usuarios-step-title">{{ step }}</div>
+<div class="mt-3">
+  <p-card class="usuarios-wizard-card">
+
+    <!-- STEPS -->
+    <div class="usuarios-wizard-steps flex flex-wrap md:flex-nowrap md:align-items-center md:justify-content-between gap-3 p-3 md:p-4 pb-2">
+      <div
+        *ngFor="let step of stepsUsuario; let i = index"
+        class="usuarios-wizard-step"
+        [class.active]="activeStepUsuario === i"
+        [class.completed]="activeStepUsuario > i">
+        <div class="usuarios-step-number">
+          <i *ngIf="activeStepUsuario > i" class="pi pi-check"></i>
+          <span *ngIf="activeStepUsuario <= i">{{ i + 1 }}</span>
         </div>
-      </div>
-
-      <p-divider styleClass="usuarios-wizard-divider" />
-
-      <div class="usuarios-wizard-content p-3 md:p-4">
-        <div *ngIf="activeStepUsuario === 0" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-id-card usuarios-step-icon"></i>
-            <h3>Datos personales</h3>
-          </div>
-          <div class="grid">
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Nombre</label>
-              <input
-                pInputText
-                [(ngModel)]="usuarioRequestForm.usu_nom"
-                (keypress)="allowOnlyLetters($event)"
-                (input)="usuarioRequestForm.usu_nom = sanitizeOnlyLetters(usuarioRequestForm.usu_nom)"
-                (blur)="trimUsuarioField('usu_nom')"
-                class="w-full" />
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Apellido Paterno</label>
-              <input
-                pInputText
-                [(ngModel)]="usuarioRequestForm.ape_pat"
-                (keypress)="allowOnlyLetters($event)"
-                (input)="usuarioRequestForm.ape_pat = sanitizeOnlyLetters(usuarioRequestForm.ape_pat)"
-                (blur)="trimUsuarioField('ape_pat')"
-                class="w-full" />
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Apellido Materno</label>
-              <input
-                pInputText
-                [(ngModel)]="usuarioRequestForm.ape_mat"
-                (keypress)="allowOnlyLetters($event)"
-                (input)="usuarioRequestForm.ape_mat = sanitizeOnlyLetters(usuarioRequestForm.ape_mat)"
-                (blur)="trimUsuarioField('ape_mat')"
-                class="w-full" />
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">DNI</label>
-              <p-inputNumber
-                [(ngModel)]="dniInput"
-                [useGrouping]="false"
-                [maxFractionDigits]="0"
-                class="w-full">
-              </p-inputNumber>
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Genero</label>
-              <p-select
-                [options]="generos"
-                optionLabel="label"
-                optionValue="value"
-                placeholder="Seleccionar"
-                [(ngModel)]="usuarioRequestForm.genero"
-                class="w-full">
-              </p-select>
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Fecha Nac.</label>
-              <p-datepicker
-                [(ngModel)]="usuarioRequestForm.fec_nac"
-                dateFormat="dd/mm/yy"
-                placeholder="dd/mm/aaaa"
-                showIcon="true"
-                class="w-full">
-              </p-datepicker>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="activeStepUsuario === 1" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-map-marker usuarios-step-icon"></i>
-            <h3>Contacto y sede</h3>
-          </div>
-          <div class="grid">
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Email</label>
-              <input
-                pInputText
-                type="email"
-                [(ngModel)]="usuarioRequestForm.email"
-                (input)="trimUsuarioField('email')"
-                (blur)="trimUsuarioField('email')"
-                class="w-full" />
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Celular</label>
-              <p-inputNumber
-                [(ngModel)]="celularInput"
-                (ngModelChange)="onCelularChange($event)"
-                (onKeyDown)="onCelularKeyDown($event)"
-                [useGrouping]="false"
-                [maxFractionDigits]="0"
-                [min]="0"
-                [max]="999999999"
-                class="w-full">
-              </p-inputNumber>
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Direccion</label>
-              <input
-                pInputText
-                [(ngModel)]="usuarioRequestForm.direccion"
-                (input)="trimUsuarioField('direccion')"
-                (blur)="trimUsuarioField('direccion')"
-                class="w-full" />
-            </div>
-            <div class="col-12 md:col-6 usuarios-field">
-              <label class="usuarios-label">Sede</label>
-              <p-select
-                [options]="sedes"
-                optionLabel="label"
-                optionValue="value"
-                [(ngModel)]="usuarioRequestForm.id_sede"
-                class="w-full">
-              </p-select>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="activeStepUsuario === 2" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-check-circle usuarios-step-icon"></i>
-            <h3>Confirmación</h3>
-          </div>
-          <div class="usuarios-summary">
-            <div class="usuarios-summary-row">
-              <span>Nombre completo</span>
-              <strong>{{ buildNombreCompleto() || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>DNI</span>
-              <strong>{{ dniInput || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>Email</span>
-              <strong>{{ usuarioRequestForm.email || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>Celular</span>
-              <strong>{{ celularInput || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>Sede</span>
-              <strong>{{ getSedeNombre() }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>Estado</span>
-              <strong>Activo</strong>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="usuarios-step-actions flex flex-column md:flex-row md:justify-content-between gap-3 p-3 md:p-4">
-        <p-button
-          label="Anterior"
-          severity="secondary"
-          [outlined]="true"
-          styleClass="w-full md:w-auto"
-          (onClick)="prevStep()"
-          [disabled]="activeStepUsuario === 0"
-        ></p-button>
-
-        <p-button
-          *ngIf="activeStepUsuario < stepsUsuario.length - 1"
-          label="Siguiente"
-          icon="pi pi-arrow-right"
-          styleClass="usuarios-wizard-primary w-full md:w-auto"
-          (onClick)="nextStep()"
-        ></p-button>
-
-        <p-button
-          *ngIf="activeStepUsuario === stepsUsuario.length - 1"
-          label="Crear usuario"
-          icon="pi pi-check"
-          styleClass="usuarios-wizard-primary w-full md:w-auto"
-          (onClick)="enviarUsuarioRequestPrueba()"
-        ></p-button>
+        <div class="usuarios-step-title">{{ step }}</div>
       </div>
     </div>
 
-    <div *ngIf="activeWizard === 'cuenta'">
-      <div class="usuarios-wizard-steps flex flex-wrap md:flex-nowrap md:align-items-center md:justify-content-between gap-3 p-3 md:p-4 pb-2">
-        <div
-          *ngFor="let step of stepsCuenta; let i = index"
-          class="usuarios-wizard-step"
-          [class.active]="activeStepCuenta === i"
-          [class.completed]="activeStepCuenta > i"
-        >
-          <div class="usuarios-step-number">
-            <i *ngIf="activeStepCuenta > i" class="pi pi-check"></i>
-            <span *ngIf="activeStepCuenta <= i">{{ i + 1 }}</span>
-          </div>
-          <div class="usuarios-step-title">{{ step }}</div>
+    <p-divider styleClass="usuarios-wizard-divider" />
+
+    <div class="usuarios-wizard-content p-3 md:p-4">
+
+      <!-- PASO 1: Datos personales -->
+      <div *ngIf="activeStepUsuario === 0" class="usuarios-step-content">
+        <div class="usuarios-step-header">
+          <i class="pi pi-id-card usuarios-step-icon"></i>
+          <h3>Datos personales</h3>
         </div>
-      </div>
-
-      <p-divider styleClass="usuarios-wizard-divider" />
-
-      <div class="usuarios-wizard-content p-3 md:p-4">
-        <div *ngIf="activeStepCuenta === 0" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-users usuarios-step-icon"></i>
-            <h3>Seleccionar usuario</h3>
+        <div class="grid">
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Nombre</label>
+            <input pInputText [(ngModel)]="usuarioRequestForm.usu_nom"
+              (keypress)="allowOnlyLetters($event)"
+              (input)="usuarioRequestForm.usu_nom = sanitizeOnlyLetters(usuarioRequestForm.usu_nom)"
+              (blur)="trimUsuarioField('usu_nom')" class="w-full" />
           </div>
-          <div class="usuarios-search-field mb-3">
-            <label class="usuarios-label">Buscar usuario</label>
-            <p-autoComplete
-              [(ngModel)]="filtroUsuarioCuenta"
-              [suggestions]="usuariosSugeridosCuenta"
-              (completeMethod)="filtrarUsuariosCuenta($event)"
-              (onSelect)="seleccionarUsuarioCuenta($event.value)"
-              (onClear)="usuarioCuentaSeleccionado = null"
-              [forceSelection]="true"
-              [minLength]="1"
-              field="nombreCompleto"
-              placeholder="Buscar por nombre o DNI..."
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Apellido Paterno</label>
+            <input pInputText [(ngModel)]="usuarioRequestForm.ape_pat"
+              (keypress)="allowOnlyLetters($event)"
+              (input)="usuarioRequestForm.ape_pat = sanitizeOnlyLetters(usuarioRequestForm.ape_pat)"
+              (blur)="trimUsuarioField('ape_pat')" class="w-full" />
+          </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Apellido Materno</label>
+            <input pInputText [(ngModel)]="usuarioRequestForm.ape_mat"
+              (keypress)="allowOnlyLetters($event)"
+              (input)="usuarioRequestForm.ape_mat = sanitizeOnlyLetters(usuarioRequestForm.ape_mat)"
+              (blur)="trimUsuarioField('ape_mat')" class="w-full" />
+          </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">DNI</label>
+            <p-inputNumber
+              [(ngModel)]="dniInput"
+              [useGrouping]="false"
+              [maxFractionDigits]="0"
+              placeholder="8 dígitos"
+              (onKeyDown)="onDniKeyDown($event)"
+              (ngModelChange)="onDniChange($event)"
               class="w-full">
-              <ng-template pTemplate="item" let-user>
-                <div class="flex flex-column">
-                  <span class="usuarios-user-name">{{ getNombreCompleto(user) }}</span>
-                  <small class="usuarios-user-meta">DNI: {{ user.dni }}</small>
-                </div>
-              </ng-template>
-            </p-autoComplete>
+            </p-inputNumber>
+            <small *ngIf="dniInput !== null && dniInput.toString().length !== 8" class="p-error">
+              El DNI debe tener exactamente 8 dígitos
+            </small>
           </div>
-
-          <p-card *ngIf="usuarioCuentaSeleccionado" styleClass="usuarios-user-card">
-            <div class="usuarios-user-detail">
-              <i class="pi pi-user usuarios-user-icon"></i>
-              <div>
-                <div class="usuarios-user-detail-title">
-                  {{ getNombreCompleto(usuarioCuentaSeleccionado) }}
-                </div>
-                <div class="usuarios-user-detail-sub">DNI: {{ usuarioCuentaSeleccionado.dni }}</div>
-              </div>
-            </div>
-            <div class="usuarios-user-detail-grid">
-              <div class="usuarios-user-detail-row">
-                <i class="pi pi-envelope"></i>
-                <span>{{ usuarioCuentaSeleccionado.email || 'Sin email' }}</span>
-              </div>
-              <div class="usuarios-user-detail-row">
-                <i class="pi pi-phone"></i>
-                <span>{{ usuarioCuentaSeleccionado.celular || 'Sin celular' }}</span>
-              </div>
-              <div class="usuarios-user-detail-row">
-                <i class="pi pi-map-marker"></i>
-                <span>{{ usuarioCuentaSeleccionado.direccion || 'Sin direccion' }}</span>
-              </div>
-              <div class="usuarios-user-detail-row">
-                <i class="pi pi-building"></i>
-                <span>{{ usuarioCuentaSeleccionado.sedeNombre || 'Sin sede' }}</span>
-              </div>
-            </div>
-          </p-card>
-        </div>
-
-        <div *ngIf="activeStepCuenta === 1" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-lock usuarios-step-icon"></i>
-            <h3>Credenciales</h3>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Género</label>
+            <p-select [options]="generos" optionLabel="label" optionValue="value"
+              placeholder="Seleccionar" [(ngModel)]="usuarioRequestForm.genero" class="w-full">
+            </p-select>
           </div>
-          <div class="grid">
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Nombre de usuario</label>
-              <input
-                pInputText
-                [(ngModel)]="cuentaForm.username"
-                (ngModelChange)="cuentaForm.username = removeAllSpaces($event)"
-                class="w-full" />
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Contraseña</label>
-              <p-password
-                [(ngModel)]="cuentaForm.password"
-                (ngModelChange)="cuentaForm.password = removeAllSpaces($event)"
-                [toggleMask]="true"
-                styleClass="w-full">
-              </p-password>
-            </div>
-            <div class="col-12 md:col-4 usuarios-field">
-              <label class="usuarios-label">Confirmar contraseña</label>
-              <p-password
-                [(ngModel)]="cuentaForm.confirmPassword"
-                (ngModelChange)="cuentaForm.confirmPassword = removeAllSpaces($event)"
-                [toggleMask]="true"
-                styleClass="w-full">
-              </p-password>
-            </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Fecha Nac.</label>
+            <p-datepicker [(ngModel)]="usuarioRequestForm.fec_nac"
+              dateFormat="dd/mm/yy" placeholder="dd/mm/aaaa" showIcon="true" class="w-full">
+            </p-datepicker>
           </div>
         </div>
+      </div>
 
-        <div *ngIf="activeStepCuenta === 2" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-shield usuarios-step-icon"></i>
-            <h3>Rol</h3>
+      <!-- PASO 2: Contacto y sede -->
+      <div *ngIf="activeStepUsuario === 1" class="usuarios-step-content">
+        <div class="usuarios-step-header">
+          <i class="pi pi-map-marker usuarios-step-icon"></i>
+          <h3>Contacto y sede</h3>
+        </div>
+        <div class="grid">
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Email</label>
+            <input pInputText type="email" [(ngModel)]="usuarioRequestForm.email"
+              (blur)="trimUsuarioField('email')" class="w-full" />
           </div>
-          <div class="grid">
-            <div class="col-12 md:col-4" *ngFor="let rol of roles">
-              <div
-                class="usuarios-role-card"
-                [class.selected]="rolCuentaSeleccionado === rol.value"
-                (click)="rolCuentaSeleccionado = rol.value"
-              >
-                <i class="pi {{ rol.icon }} usuarios-role-icon"></i>
-                <h4>{{ rol.label }}</h4>
-                <p>{{ rol.description }}</p>
-              </div>
-            </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Celular</label>
+            <p-inputNumber [(ngModel)]="celularInput"
+              (ngModelChange)="onCelularChange($event)"
+              (onKeyDown)="onCelularKeyDown($event)"
+              [useGrouping]="false" [maxFractionDigits]="9"
+              [min]="0" [max]="999999999" class="w-full">
+            </p-inputNumber>
+          </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Dirección</label>
+            <input pInputText [(ngModel)]="usuarioRequestForm.direccion"
+              (blur)="trimUsuarioField('direccion')" class="w-full" />
+          </div>
+          <div class="col-12 md:col-6 usuarios-field">
+            <label class="usuarios-label">Sede</label>
+            <p-select [options]="sedes" optionLabel="label" optionValue="value"
+              [(ngModel)]="usuarioRequestForm.id_sede" class="w-full">
+            </p-select>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASO 3: Credenciales y Rol -->
+      <div *ngIf="activeStepUsuario === 2" class="usuarios-step-content">
+        <div class="usuarios-step-header">
+          <i class="pi pi-lock usuarios-step-icon"></i>
+          <h3>Credenciales</h3>
+        </div>
+        <div class="grid mb-4">
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Nombre de usuario</label>
+            <input pInputText [(ngModel)]="cuentaForm.username"
+              (ngModelChange)="cuentaForm.username = removeAllSpaces($event)" class="w-full" />
+          </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Contraseña</label>
+            <p-password [(ngModel)]="cuentaForm.password"
+              (ngModelChange)="cuentaForm.password = removeAllSpaces($event)"
+              [toggleMask]="true" styleClass="w-full">
+            </p-password>
+          </div>
+          <div class="col-12 md:col-4 usuarios-field">
+            <label class="usuarios-label">Confirmar contraseña</label>
+            <p-password [(ngModel)]="cuentaForm.confirmPassword"
+              (ngModelChange)="cuentaForm.confirmPassword = removeAllSpaces($event)"
+              [toggleMask]="true" styleClass="w-full">
+            </p-password>
           </div>
         </div>
 
-        <div *ngIf="activeStepCuenta === 3" class="usuarios-step-content">
-          <div class="usuarios-step-header">
-            <i class="pi pi-check-circle usuarios-step-icon"></i>
-            <h3>Confirmación</h3>
-          </div>
-          <div class="usuarios-summary">
-            <div class="usuarios-summary-row">
-              <span>Usuario</span>
-              <strong>{{ usuarioCuentaSeleccionado?.nombreCompleto || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>User ID</span>
-              <strong>{{ usuarioCuentaSeleccionado?.id_usuario || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>Username</span>
-              <strong>{{ cuentaForm.username || '-' }}</strong>
-            </div>
-            <div class="usuarios-summary-row">
-              <span>Rol</span>
-              <strong>{{ rolCuentaSeleccionado || '-' }}</strong>
+        <p-divider />
+
+        <div class="usuarios-step-header mt-3">
+          <i class="pi pi-shield usuarios-step-icon"></i>
+          <h3>Rol</h3>
+        </div>
+        <div class="grid">
+          <div class="col-12 md:col-4" *ngFor="let rol of roles">
+            <div class="usuarios-role-card"
+              [class.selected]="rolCuentaSeleccionado === rol.value"
+              (click)="rolCuentaSeleccionado = rol.value">
+              <i class="pi {{ rol.icon }} usuarios-role-icon"></i>
+              <h4>{{ rol.label }}</h4>
+              <p>{{ rol.description }}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div class="usuarios-step-actions flex flex-column md:flex-row md:justify-content-between gap-3 p-3 md:p-4">
-        <p-button
-          label="Anterior"
-          severity="secondary"
-          [outlined]="true"
-          styleClass="w-full md:w-auto"
-          (onClick)="prevStep()"
-          [disabled]="activeStepCuenta === 0"
-        ></p-button>
-
-        <p-button
-          *ngIf="activeStepCuenta < stepsCuenta.length - 1"
-          label="Siguiente"
-          icon="pi pi-arrow-right"
-          styleClass="usuarios-wizard-primary w-full md:w-auto"
-          (onClick)="nextStep()"
-        ></p-button>
-
-        <p-button
-          *ngIf="activeStepCuenta === stepsCuenta.length - 1"
-          label="Crear cuenta"
-          icon="pi pi-check"
-          styleClass="usuarios-wizard-primary w-full md:w-auto"
-          (onClick)="crearCuentaUsuario()"
-        ></p-button>
+      <!-- PASO 4: Confirmación -->
+      <div *ngIf="activeStepUsuario === 3" class="usuarios-step-content">
+        <div class="usuarios-step-header">
+          <i class="pi pi-check-circle usuarios-step-icon"></i>
+          <h3>Confirmación</h3>
+        </div>
+        <div class="usuarios-summary">
+          <div class="usuarios-summary-row">
+            <span>Nombre completo</span>
+            <strong>{{ buildNombreCompleto() || '-' }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>DNI</span>
+            <strong>{{ dniInput || '-' }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>Email</span>
+            <strong>{{ usuarioRequestForm.email || '-' }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>Celular</span>
+            <strong>{{ celularInput || '-' }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>Sede</span>
+            <strong>{{ getSedeNombre() }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>Username</span>
+            <strong>{{ cuentaForm.username || '-' }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>Rol</span>
+            <strong>{{ rolCuentaSeleccionado || '-' }}</strong>
+          </div>
+          <div class="usuarios-summary-row">
+            <span>Estado</span>
+            <strong>Activo</strong>
+          </div>
+        </div>
       </div>
+
     </div>
+
+    <!-- ACCIONES -->
+    <div class="usuarios-step-actions flex flex-column md:flex-row md:justify-content-between gap-3 p-3 md:p-4">
+      <p-button
+        label="Anterior"
+        severity="secondary"
+        [outlined]="true"
+        styleClass="w-full md:w-auto"
+        (onClick)="prevStep()"
+        [disabled]="activeStepUsuario === 0">
+      </p-button>
+
+      <p-button
+        *ngIf="activeStepUsuario < stepsUsuario.length - 1"
+        label="Siguiente"
+        icon="pi pi-arrow-right"
+        styleClass="usuarios-wizard-primary w-full md:w-auto"
+        (onClick)="nextStep()">
+      </p-button>
+
+      <p-button
+        *ngIf="activeStepUsuario === stepsUsuario.length - 1"
+        label="Crear usuario y cuenta"
+        icon="pi pi-check"
+        styleClass="usuarios-wizard-primary w-full md:w-auto"
+        [loading]="enviando"
+        (onClick)="enviarUsuarioRequestPrueba()">
+      </p-button>
+    </div>
+
   </p-card>
 </div>

@@ -305,16 +305,16 @@
   overflow: visible;
 }
 
-.transfer-panel-grid {
+/* .transfer-panel-grid {
   row-gap: 1.5rem;
   margin-left: -1rem;
   margin-right: -1rem;
-}
+} */
 
-.transfer-panel-grid > [class*='col-'] {
+/* .transfer-panel-grid > [class*='col-'] {
   padding-left: 1rem;
   padding-right: 1rem;
-}
+} */
 
 .transfer-panel-title {
   display: flex;
@@ -380,6 +380,11 @@
 .helper-text {
   font-size: 0.8rem;
   color: var(--transfer-muted);
+}
+
+.sede-note {
+  display: block;
+  min-height: 1.2rem;
 }
 
 .transfer-textarea {
@@ -459,3 +464,15 @@
   border-color: #e69a27;
 }
 
+.transfer-subcard-conflict {
+  border: 1px solid #ef4444;
+}
+
+.transfer-conflict-note {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #dc2626;
+  font-weight: 600;
+  font-size: 0.85rem;
+}

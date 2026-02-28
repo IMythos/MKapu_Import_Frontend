@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-
+import { RouterModule, ActivatedRoute, Router } from '@angular/router';
+import { MessageModule } from 'primeng/message';
+import { DividerModule } from 'primeng/divider';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -10,8 +11,8 @@ import { ToastModule } from 'primeng/toast';
 import { SelectModule } from 'primeng/select';
 import { MessageService } from 'primeng/api';
 
-import { ActivatedRoute, Router } from '@angular/router';
 import { UsuarioService } from '../../../../services/usuario.service';
+import { SedeService } from '../../../../services/sede.service';
 import { UsuarioInterfaceResponse, UsuarioStatusUpdateRequest, UsuarioUpdateRequest } from '../../../../interfaces/usuario.interface';
 
 @Component({
@@ -25,191 +26,183 @@ import { UsuarioInterfaceResponse, UsuarioStatusUpdateRequest, UsuarioUpdateRequ
     ButtonModule,
     InputTextModule,
     ToastModule,
-    SelectModule
+    SelectModule,
+    MessageModule,
+    DividerModule
+
   ],
   providers: [MessageService],
   templateUrl: './administracion-editar-usuario.html',
   styleUrls: ['./administracion-editar-usuario.css'],
 })
 export class AdministracionEditarUsuario implements OnInit {
-  testUpdateForm: {
-    id: number | null;
-    usu_nom: string;
-    celular: string;
-    direccion: string;
-    activo: boolean;
-  } = {
+  // Estado reactivo con signals:
+  loading = signal<boolean>(false);
+  error = signal<string | null>(null);
+
+  // Formulario editable reactivo
+  form = signal<any>({
     id: null,
     usu_nom: '',
+    ape_pat: '',
+    ape_mat: '',
     celular: '',
+    email: '',
     direccion: '',
+    fec_nac: '',
+    id_sede: null,
+    sedeNombre: '',
+    rolNombre: '',
     activo: true
-  };
+  });
+
+  sedesOptions = signal<{ label: string; value: any }[]>([]);
+  rolesOptions = signal<{ label: string; value: any }[]>([
+    { label: 'ADMINISTRADOR', value: 'ADMINISTRADOR' },
+    { label: 'ALMACEN', value: 'ALMACEN' },
+    { label: 'VENTAS', value: 'VENTAS' }
+  ]);
+
+
 
   constructor(
     private usuarioService: UsuarioService,
+    private sedeService: SedeService,
     private messageService: MessageService,
     private route: ActivatedRoute,
     private router: Router
   ) {}
 
+  setFormField(field: keyof ReturnType<typeof this.form>, value: any) {
+    this.form.update(formData => ({ ...formData, [field]: value }));
+  }
+
   ngOnInit(): void {
+    // 1. Cargar SEDES dinamicamente
+    this.sedeService.getSedes().subscribe({
+      next: (res: any) => {
+        this.sedesOptions.set(
+          (res.headquarters || []).map((s: any) => ({
+            label: s.nombre,
+            value: s.id_sede
+          }))
+        );
+      },
+      error: () => {
+        this.error.set('No se pudo cargar la lista de sedes');
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar la lista de sedes',
+          life: 2200
+        });
+      }
+    });
+
+    // 2. Traer datos del usuario por ID usando signal
     const idParam = this.route.snapshot.paramMap.get('id');
     const id = idParam ? Number(idParam) : null;
+    if (!id || Number.isNaN(id)) return;
+    this.loading.set(true);
+    this.form.update(f => ({ ...f, id }));
 
-    if (!id || Number.isNaN(id)) {
-      return;
-    }
-
-    this.testUpdateForm.id = id;
     this.usuarioService.getUsuarioById(id).subscribe({
       next: (usuario: UsuarioInterfaceResponse) => {
-        this.testUpdateForm.usu_nom = usuario.usu_nom || '';
-        this.testUpdateForm.celular = usuario.celular ? String(usuario.celular) : '';
-        this.testUpdateForm.direccion = usuario.direccion || '';
-        this.testUpdateForm.activo = !!usuario.activo;
+        this.form.set({
+          ...this.form(),
+          ...usuario,
+          id: usuario.id_usuario ?? id
+        });
+        this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error al cargar usuario', err);
+        this.loading.set(false);
+        this.error.set('No se pudo cargar el usuario');
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
           detail: 'No se pudo cargar el usuario',
-          life: 2000
-        });
-      }
-    });
-  }
-
-  actualizarDatosUsuario(): void {
-    if (!this.testUpdateForm.id) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'ID requerido',
-        detail: 'Ingrese el ID del usuario',
-        life: 2000
-      });
-      return;
-    }
-
-    const payload: UsuarioUpdateRequest = {
-      usu_nom: this.testUpdateForm.usu_nom,
-      celular: this.testUpdateForm.celular,
-      direccion: this.testUpdateForm.direccion
-    };
-
-    this.usuarioService.updateUsuario(this.testUpdateForm.id, payload).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Actualizado',
-          detail: 'Datos del usuario actualizados',
-          life: 2000
-        });
-      },
-      error: (err) => {
-        console.error('Error al actualizar usuario', err);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo actualizar el usuario',
-          life: 2000
-        });
-      }
-    });
-  }
-
-  actualizarEstadoUsuario(): void {
-    if (!this.testUpdateForm.id) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'ID requerido',
-        detail: 'Ingrese el ID del usuario',
-        life: 2000
-      });
-      return;
-    }
-
-    const payload: UsuarioStatusUpdateRequest = {
-      activo: this.testUpdateForm.activo
-    };
-
-    this.usuarioService.updateUsuarioStatus(this.testUpdateForm.id, payload).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Estado actualizado',
-          detail: 'Estado del usuario actualizado',
-          life: 2000
-        });
-      },
-      error: (err) => {
-        console.error('Error al actualizar estado', err);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo actualizar el estado',
-          life: 2000
+          life: 2200
         });
       }
     });
   }
 
   actualizarUsuarioCompleto(): void {
-    if (!this.testUpdateForm.id) {
+    const value = this.form();
+    if (!value.id) {
       this.messageService.add({
         severity: 'warn',
         summary: 'ID requerido',
         detail: 'No se encontró el ID del usuario',
-        life: 2000
+        life: 1800
       });
       return;
     }
 
     const payloadDatos: UsuarioUpdateRequest = {
-      usu_nom: this.testUpdateForm.usu_nom,
-      celular: this.testUpdateForm.celular,
-      direccion: this.testUpdateForm.direccion
+      usu_nom: value.usu_nom,
+      ape_pat: value.ape_pat,
+      ape_mat: value.ape_mat,
+      celular: value.celular,
+      email: value.email,
+      direccion: value.direccion,
+      fec_nac: value.fec_nac,
+      id_sede: value.id_sede,
+      rolNombre: value.rolNombre
     };
+    const payloadEstado: UsuarioStatusUpdateRequest = { activo: value.activo };
 
-    const payloadEstado: UsuarioStatusUpdateRequest = {
-      activo: this.testUpdateForm.activo
-    };
+    this.loading.set(true);
 
-    this.usuarioService.updateUsuario(this.testUpdateForm.id, payloadDatos).subscribe({
+    this.usuarioService.updateUsuario(value.id, payloadDatos).subscribe({
       next: () => {
-        this.usuarioService.updateUsuarioStatus(this.testUpdateForm.id!, payloadEstado).subscribe({
+        this.usuarioService.updateUsuarioStatus(value.id, payloadEstado).subscribe({
           next: () => {
+            this.loading.set(false);
             this.messageService.add({
               severity: 'success',
               summary: 'Actualizado',
               detail: 'Usuario actualizado correctamente',
               life: 2000
             });
-            setTimeout(() => {
-              this.router.navigate(['/admin/usuarios']);
-            }, 1200);
+            setTimeout(() => this.router.navigate(['/admin/usuarios']), 1200);
           },
-          error: (err) => {
-            console.error('Error al actualizar estado', err);
+          error: () => {
+            this.loading.set(false);
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
               detail: 'Se actualizó los datos, pero falló el estado',
-              life: 2000
+              life: 2200
             });
           }
         });
       },
-      error: (err) => {
-        console.error('Error al actualizar usuario', err);
+      error: () => {
+        this.loading.set(false);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
           detail: 'No se pudo actualizar el usuario',
-          life: 2000
+          life: 2200
         });
       }
     });
   }
+
+    
+  toUpperCase(field: keyof ReturnType<typeof this.form>): void {
+    const value = this.form();
+    if (typeof value[field] === 'string') {
+      this.form.update(f => ({ ...f, [field]: (value[field] as string).toUpperCase() }));
+    }
+  }
+    goBack(): void {
+      this.router.navigate(['/admin/usuarios']);
+    }
+  }
+  function goBack() {
+    throw new Error('Function not implemented.');
 }
+

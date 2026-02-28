@@ -1,0 +1,144 @@
+<!-- (archivo completo actualizado con checkbox para generación automática) -->
+<div class="registro-page">
+  <p-card styleClass="registro-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="registro-title-icon"><i class="pi pi-file-edit"></i></span>
+        <div>
+          <p class="registro-kicker">ALMACÉN · REMATES</p>
+          <h2 class="registro-title">REGISTRO DE REMATE</h2>
+        </div>
+      </div>
+      <p-button icon="pi pi-arrow-left" label="Volver" [outlined]="true" severity="secondary" [routerLink]="['/admin/remates']"></p-button>
+    </div>
+  </p-card>
+
+  <div class="grid mt-3">
+    <div class="col-12">
+      <p-card styleClass="form-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Información del Producto</h3>
+            <p class="section-subtitle">Busque el producto por código y especifique cantidad para remate</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="col-12 md:col-8">
+            <label class="field-label">PRODUCTO (CÓDIGO)</label>
+            <div class="flex align-items-center gap-2">
+              <input pInputText [(ngModel)]="codigoProducto" class="w-full codigo-uppercase" placeholder="Ej: R6601"
+                     (input)="codigoProducto = (codigoProducto||'').toUpperCase()" (keydown.enter)="buscarProductoPorCodigo()" />
+              <p-button type="button" icon="pi pi-search" label="Buscar" (onClick)="buscarProductoPorCodigo()"></p-button>
+            </div>
+
+            <div class="mt-2" *ngIf="productoNoEncontrado">
+              <small class="p-error">No hay producto con el código ingresado.</small>
+            </div>
+
+            <div *ngIf="productoSeleccionado" class="producto-info-card mt-3">
+              <div class="producto-info-row"><span class="info-label">Código:</span><span class="info-value">{{ productoSeleccionado.codigo }}</span></div>
+              <div class="producto-info-row"><span class="info-label">Producto:</span><span class="info-value">{{ productoSeleccionado.anexo }}</span></div>
+              <div class="producto-info-row"><span class="info-label">Categoría:</span><span class="info-value">{{ productoSeleccionado.categoriaNombre }}</span></div>
+              <div class="producto-info-row"><span class="info-label">Stock disponible:</span><span class="info-value">{{ productoSeleccionado.stock ?? 0 }} unidades</span></div>
+              <div class="producto-info-row"><span class="info-label">Precio unitario:</span><span class="info-value">S/ {{ productoSeleccionado.pre_unit | number:'1.2-2' }}</span></div>
+            </div>
+          </div>
+
+          <div class="col-12 md:col-4">
+            <label class="field-label">CANTIDAD</label>
+            <p-inputNumber [(ngModel)]="cantidad" [min]="1" [max]="productoSeleccionado?.stock || 0" [style]="{ width: '100%' }" [showButtons]="true"></p-inputNumber>
+            <small *ngIf="productoSeleccionado">Máximo: {{ productoSeleccionado.stock ?? 0 }} unidades</small>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12" *ngIf="productoSeleccionado">
+      <p-card styleClass="form-card">
+        <div class="section-header">
+          <div>
+            <h3 class="section-title">Detalle del Remate</h3>
+            <p class="section-subtitle">Configure código, precio, fechas y motivo</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <label class="field-label">CÓDIGO DE REMATE</label>
+
+            <div class="flex align-items-center gap-2">
+              <input pInputText [(ngModel)]="codigoRemate" [disabled]="generarCodigoAuto" class="w-full" placeholder="{{ generarCodigoAuto ? 'Se generará automáticamente (dejar en blanco)' : 'Ej: RMT-2026-001' }}" />
+              <label style="display:flex;align-items:center;gap:0.5rem;white-space:nowrap;">
+                <input type="checkbox" [(ngModel)]="generarCodigoAuto" />
+                <span style="font-size:0.85rem">Generar código automáticamente</span>
+              </label>
+            </div>
+
+            <small *ngIf="generarCodigoAuto" class="field-hint">El sistema asignará un código único (recomendado).</small>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label class="field-label">PRECIO DE REMATE</label>
+            <p-inputNumber [(ngModel)]="precioRemate" mode="currency" currency="PEN" locale="es-PE" [minFractionDigits]="2" [maxFractionDigits]="2" [style]="{ width: '100%' }"></p-inputNumber>
+          </div>
+
+          <!-- Date/time using native datetime-local inputs -->
+          <div class="col-12 md:col-6">
+            <label class="field-label">FECHA/HORA INICIO</label>
+            <input type="datetime-local" class="p-inputtext w-full" [(ngModel)]="fecInicioStr" />
+            <small class="field-hint">Hora local - se guardará en UTC automáticamente</small>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label class="field-label">FECHA/HORA FIN</label>
+            <input type="datetime-local" class="p-inputtext w-full" [(ngModel)]="fecFinStr" />
+            <small class="field-hint">La fecha de fin debe ser posterior a la de inicio</small>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label class="field-label">MOTIVO</label>
+            <p-select [(ngModel)]="motivo" [options]="motivosRemate" optionLabel="label" optionValue="value" placeholder="Seleccione motivo" styleClass="w-full"></p-select>
+          </div>
+
+          <div class="col-12">
+            <label class="field-label">OBSERVACIONES</label>
+            <textarea pInputTextarea [(ngModel)]="observaciones" rows="4" class="w-full" placeholder="Observaciones (opcional)"></textarea>
+          </div>
+
+          <div class="col-12">
+            <label class="field-label">RESPONSABLE</label>
+            <input pInputText [value]="responsableNombre" readonly class="w-full" />
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12" *ngIf="productoSeleccionado && precioRemate && motivo">
+      <p-card styleClass="resumen-card">
+        <h3 class="resumen-title">Resumen</h3>
+        <div class="resumen-grid">
+          <div class="resumen-item"><span class="resumen-label">Producto:</span><span class="resumen-value">{{ productoSeleccionado.anexo }}</span></div>
+          <div class="resumen-item"><span class="resumen-label">Cantidad:</span><span class="resumen-value">{{ cantidad }} unid.</span></div>
+          <div class="resumen-item"><span class="resumen-label">Código remate:</span><span class="resumen-value">{{ generarCodigoAuto ? '(se generará automáticamente)' : codigoRemate }}</span></div>
+          <div class="resumen-item"><span class="resumen-label">Precio remate:</span><span class="resumen-value">S/ {{ precioRemate | number:'1.2-2' }}</span></div>
+          <div class="resumen-item"><span class="resumen-label">Fecha inicio:</span><span class="resumen-value">{{ fecInicioStr }}</span></div>
+          <div class="resumen-item"><span class="resumen-label">Fecha fin:</span><span class="resumen-value">{{ fecFinStr }}</span></div>
+          <div class="resumen-item"><span class="resumen-label">Motivo:</span><span class="resumen-value">{{ getMotivoLabel(motivo) }}</span></div>
+          <div class="resumen-item"><span class="resumen-label">Responsable:</span><span class="resumen-value">{{ responsableNombre }}</span></div>
+        </div>
+      </p-card>
+    </div>
+
+    <div class="col-12">
+      <p-card styleClass="actions-card">
+        <div class="flex justify-content-center gap-3">
+          <p-button label="Cancelar" icon="pi pi-times" [outlined]="true" severity="secondary" (onClick)="cancelar()"></p-button>
+          <p-button label="Registrar Remate" icon="pi pi-check" styleClass="action-btn-submit" (onClick)="registrar()"></p-button>
+        </div>
+      </p-card>
+    </div>
+  </div>
+
+  <p-toast></p-toast>
+</div>

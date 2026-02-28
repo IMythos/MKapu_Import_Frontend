@@ -1,8 +1,16 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CuentaUsuarioRequest, CuentaUsuarioResponse, UsuarioInterfaceResponse, UsuarioRequest, UsuarioResponse, UsuarioStatusUpdateRequest, UsuarioUpdateRequest } from '../interfaces/usuario.interface';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '../../../enviroments/enviroment';
+import {
+  CuentaUsuarioRequest,
+  CuentaUsuarioResponse,
+  UsuarioInterfaceResponse,
+  UsuarioRequest,
+  UsuarioResponse,
+  UsuarioStatusUpdateRequest,
+  UsuarioUpdateRequest
+} from '../interfaces/usuario.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -10,10 +18,20 @@ import { environment } from '../../../enviroments/enviroment';
 export class UsuarioService {
 
   private api = environment.apiUrl;
+
   constructor(private http: HttpClient) {}
 
-  getUsuarios(): Observable<UsuarioResponse> {
-    return this.http.get<UsuarioResponse>(`${this.api}/admin/users`);
+  // Para AdministracionCrearUsuario (paginado)
+  getUsuarios(page: number = 1, pageSize: number = 20): Observable<UsuarioResponse> {
+    const params = new HttpParams()
+      .set('page', page)
+      .set('pageSize', pageSize);
+    return this.http.get<UsuarioResponse>(`${this.api}/admin/users`, { params });
+  }
+
+  // Para Administracion (todos de una vez)
+  getAllUsuarios(): Observable<UsuarioInterfaceResponse[]> {
+    return this.http.get<UsuarioInterfaceResponse[]>(`${this.api}/admin/users/all`);
   }
 
   getUsuariosPorEstado(activo: boolean): Observable<UsuarioResponse> {
@@ -26,15 +44,11 @@ export class UsuarioService {
   }
 
   postUsuarios(body: UsuarioRequest): Observable<UsuarioResponse> {
-    const headers = new HttpHeaders({
-      'x-role': 'Administrador'
-    });
-
+    const headers = new HttpHeaders({ 'x-role': 'Administrador' });
     return this.http.post<UsuarioResponse>(`${this.api}/admin/users`, body, { headers });
   }
 
   postCuentaUsuario(body: CuentaUsuarioRequest): Observable<CuentaUsuarioResponse> {
-    console.log('POST /auth/create-account url:', `${this.api}/auth/create-account`);
     return this.http.post<CuentaUsuarioResponse>(`${this.api}/auth/create-account`, body);
   }
 
@@ -45,5 +59,4 @@ export class UsuarioService {
   updateUsuario(id: number, body: UsuarioUpdateRequest): Observable<UsuarioInterfaceResponse> {
     return this.http.put<UsuarioInterfaceResponse>(`${this.api}/admin/users/${id}`, body);
   }
-
 }

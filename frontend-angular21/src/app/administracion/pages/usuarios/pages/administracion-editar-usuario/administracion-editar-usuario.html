@@ -1,147 +1,225 @@
-<p-toast position="top-right"></p-toast>
-
-<section class="edit-user-page">
-  <div class="p-2 pt-5 md:pt-2">
-    <p-card class="edit-user-header-card">
-      <div class="edit-user-header-row">
-        <div class="edit-user-header-title">
-          <span class="edit-user-title-icon">
-            <i class="pi pi-user-edit"></i>
-          </span>
-          <div>
-            <p class="edit-user-kicker mb-0">ADMINISTRACIÓN · USUARIOS</p>
-            <h2 class="edit-user-title mb-0">EDITAR USUARIO</h2>
-            <div class="edit-user-meta">
-              <span class="edit-user-chip">
-                <i class="pi pi-check"></i>
-                En edición
-              </span>
-              <span>Datos principales</span>
-            </div>
-          </div>
+<div class="editar-usuario-page">
+  <p-card class="usuarios-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="usuarios-title-icon">
+          <i class="pi pi-users"></i>
+        </span>
+        <div>
+          <p class="usuarios-kicker">ADMINISTRACIÓN · USUARIOS</p>
+          <h2 class="usuarios-title">GESTIÓN DE USUARIOS</h2>
         </div>
-        <div class="edit-user-header-actions">
-          <button
-            pButton
-            type="button"
-            label="Volver"
-            icon="pi pi-arrow-left"
-            class="p-button-outlined"
-            [routerLink]="['/admin/usuarios']">
-          </button>
-        </div>
-      </div>
-    </p-card>
-  </div>
-
-  <div class="p-2">
-    <p-card class="edit-user-form-card">
-    <div class="edit-user-section">
-      <div class="edit-user-section-header">
-        <div class="edit-user-section-title">
-          <i class="pi pi-id-card"></i>
-          <h3>Datos principales</h3>
-        </div>
-        <button
-          pButton
-          type="button"
-          label="Actualizar usuario"
-          icon="pi pi-save"
-          class="p-button-warning edit-user-update-btn"
-          (click)="actualizarUsuarioCompleto()">
-        </button>
-      </div>
-      <div class="edit-user-content">
-        <div class="edit-user-grid">
-          <div class="edit-user-field-icon">
-            <span class="edit-user-icon-lg">
-              <i class="pi pi-user"></i>
-            </span>
-            <div class="edit-user-field">
-              <label>Nombre</label>
-              <input pInputText class="w-full" [(ngModel)]="testUpdateForm.usu_nom" />
-            </div>
-          </div>
-
-          <div class="edit-user-field-icon">
-            <span class="edit-user-icon-lg">
-              <i class="pi pi-phone"></i>
-            </span>
-            <div class="edit-user-field">
-              <label>Celular</label>
-              <input pInputText class="w-full" [(ngModel)]="testUpdateForm.celular" />
-            </div>
-          </div>
-
-          <div class="edit-user-field-icon edit-user-field-wide">
-            <span class="edit-user-icon-lg">
-              <i class="pi pi-map-marker"></i>
-            </span>
-            <div class="edit-user-field">
-              <label>Dirección</label>
-              <input pInputText class="w-full" [(ngModel)]="testUpdateForm.direccion" />
-            </div>
-          </div>
-
-          <div class="edit-user-field-icon">
-            <span class="edit-user-icon-lg">
-              <i class="pi pi-check-circle"></i>
-            </span>
-            <div class="edit-user-field">
-              <label>Estado</label>
-              <p-select
-                class="w-full"
-                [options]="[{ label: 'Activo', value: true }, { label: 'Inactivo', value: false }]"
-                optionLabel="label"
-                optionValue="value"
-                [(ngModel)]="testUpdateForm.activo">
-              </p-select>
-            </div>
-          </div>
-        </div>
-
-        <aside class="edit-user-aside">
-          <div class="edit-user-aside-card">
-            <div class="edit-user-aside-header">
-              <span class="edit-user-aside-icon">
-                <i class="pi pi-user"></i>
-              </span>
-              <div>
-                <p class="edit-user-aside-title">Resumen rápido</p>
-                <span class="edit-user-aside-subtitle">Verifica antes de actualizar</span>
-              </div>
-            </div>
-
-            <div class="edit-user-aside-row">
-              <span>Nombre</span>
-              <strong>{{ testUpdateForm.usu_nom || 'Sin nombre' }}</strong>
-            </div>
-            <div class="edit-user-aside-row">
-              <span>Celular</span>
-              <strong>{{ testUpdateForm.celular || '-' }}</strong>
-            </div>
-            <div class="edit-user-aside-row">
-              <span>Dirección</span>
-              <strong>{{ testUpdateForm.direccion || '-' }}</strong>
-            </div>
-            <div class="edit-user-aside-row">
-              <span>Estado</span>
-              <strong
-                class="edit-user-aside-status"
-                [class.is-active]="testUpdateForm.activo"
-                [class.is-inactive]="!testUpdateForm.activo">
-                {{ testUpdateForm.activo ? 'Activo' : 'Inactivo' }}
-              </strong>
-            </div>
-
-            <div class="edit-user-aside-hint">
-              <i class="pi pi-info-circle"></i>
-              <span>Los cambios se verán reflejados inmediatamente.</span>
-            </div>
-          </div>
-        </aside>
       </div>
     </div>
-    </p-card>
+  </p-card>
+
+  <div class="mb-3">
+    <p-message *ngIf="loading()" severity="info" text="Cargando usuario..."></p-message>
+    <p-message *ngIf="!loading() && error()" severity="error" [text]="error() || undefined"></p-message>
   </div>
-</section>
+
+  <p-card class="usuario-form-card border-none">
+    <form #userForm="ngForm" novalidate (ngSubmit)="actualizarUsuarioCompleto()">
+      <div class="usuario-section">
+        <div class="usuario-section-title">DATOS DEL USUARIO:</div>
+        <p-divider></p-divider>
+      </div>
+
+      <div class="grid form-grid">
+        <!-- Nombre -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="usu_nom">NOMBRE:</label>
+          <input
+            id="usu_nom"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese nombres"
+            [ngModel]="form().usu_nom"
+            (ngModelChange)="setFormField('usu_nom', $event)"
+            name="usu_nom"
+            required
+            #usu_nom="ngModel"
+            (input)="toUpperCase('usu_nom')"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || usu_nom.touched) && usu_nom.invalid }"
+          />
+          <p-message
+            *ngIf="(userForm.submitted || usu_nom.touched) && usu_nom.invalid"
+            severity="error"
+            text="El nombre es obligatorio."
+          />
+        </div>
+        <!-- Apellido Paterno -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="ape_pat">APELLIDO PATERNO:</label>
+          <input
+            id="ape_pat"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese apellido paterno"
+            [ngModel]="form().ape_pat"
+            (ngModelChange)="setFormField('ape_pat', $event)"
+            name="ape_pat"
+            required
+            #ape_pat="ngModel"
+            (input)="toUpperCase('ape_pat')"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || ape_pat.touched) && ape_pat.invalid }"
+          />
+          <p-message
+            *ngIf="(userForm.submitted || ape_pat.touched) && ape_pat.invalid"
+            severity="error"
+            text="El apellido paterno es obligatorio."
+          />
+        </div>
+        <!-- Apellido Materno -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="ape_mat">APELLIDO MATERNO:</label>
+          <input
+            id="ape_mat"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese apellido materno"
+            [ngModel]="form().ape_mat"
+            (ngModelChange)="setFormField('ape_mat', $event)"
+            name="ape_mat"
+            required
+            #ape_mat="ngModel"
+            (input)="toUpperCase('ape_mat')"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || ape_mat.touched) && ape_mat.invalid }"
+          />
+          <p-message
+            *ngIf="(userForm.submitted || ape_mat.touched) && ape_mat.invalid"
+            severity="error"
+            text="El apellido materno es obligatorio."
+          />
+        </div>
+        <!-- Email -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="email">EMAIL:</label>
+          <input
+            id="email"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese correo"
+            [ngModel]="form().email"
+            (ngModelChange)="setFormField('email', $event)"            
+            name="email"
+            required
+            email
+            #email="ngModel"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || email.touched) && email.invalid }"
+          />
+          <p-message
+            *ngIf="(userForm.submitted || email.touched) && email.invalid"
+            severity="error"
+            text="Correo obligatorio o incorrecto."
+          />
+        </div>
+        <!-- Celular -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="celular">CELULAR:</label>
+          <input
+            id="celular"
+            pInputText
+            class="w-full"
+            maxlength="9"
+            placeholder="Ingrese celular"
+            [ngModel]="form().celular"
+            (ngModelChange)="setFormField('celular', $event)"
+            name="celular"
+            required
+            #celular="ngModel"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || celular.touched) && celular.invalid }"
+          />
+          <p-message
+            *ngIf="(userForm.submitted || celular.touched) && celular.invalid"
+            severity="error"
+            text="Celular obligatorio."
+          />
+        </div>
+        <!-- Sede -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="id_sede">SEDE:</label>
+          <p-select
+            [options]="sedesOptions()"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            [ngModel]="form().id_sede"
+            (ngModelChange)="setFormField('id_sede', $event)"
+            name="id_sede"
+            required
+            #id_sede="ngModel"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || id_sede.touched) && id_sede.invalid }"
+          ></p-select>
+          <p-message
+            *ngIf="(userForm.submitted || id_sede.touched) && id_sede.invalid"
+            severity="error"
+            text="Campo obligatorio."
+          />
+        </div>
+        <!-- Rol -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="rolNombre">ROL:</label>
+          <p-select
+            [options]="rolesOptions()"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full"
+            name="rolNombre"
+            required
+            [(ngModel)]="form().rolNombre"
+            #rolNombre="ngModel"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || rolNombre.touched) && rolNombre.invalid }"
+          ></p-select>
+          <p-message
+            *ngIf="(userForm.submitted || rolNombre.touched) && rolNombre.invalid"
+            severity="error"
+            text="Campo obligatorio."
+          ></p-message>
+        </div>
+        <!-- Dirección -->
+        <div class="col-12 md:col-6">
+          <label class="field-label" for="direccion">DIRECCIÓN:</label>
+          <input
+            id="direccion"
+            pInputText
+            class="w-full"
+            placeholder="Ingrese dirección"
+            [ngModel]="form().direccion"
+            (ngModelChange)="setFormField('direccion', $event)"
+            name="direccion"
+            required
+            #direccion="ngModel"
+            [ngClass]="{ 'p-invalid': (userForm.submitted || direccion.touched) && direccion.invalid }"
+          />
+          <p-message
+            *ngIf="(userForm.submitted || direccion.touched) && direccion.invalid"
+            severity="error"
+            text="La dirección es obligatoria."
+          />
+        </div>
+      </div>
+
+      <p-divider></p-divider>
+
+      <div class="flex align-items-center justify-content-center gap-3 mt-3">
+        <p-button
+          label="Cancelar"
+          outlined
+          severity="secondary"
+          styleClass="usuario-btn-cancel"
+          type="button"
+          (click)="goBack()"
+        ></p-button>
+        <p-button
+          label="Modificar Usuario"
+          icon="pi pi-check"
+          styleClass="usuario-btn-primary"
+          type="submit"
+          [disabled]="userForm.invalid || loading()"
+        ></p-button>
+      </div>
+    </form>
+  </p-card>
+  <p-toast position="top-right" />
+</div>

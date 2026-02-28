@@ -1,0 +1,280 @@
+/* src/app/ventas/pages/cotizaciones/cotizaciones.css */
+
+/* === HEADER CARD === */
+.cotiz-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.cotiz-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f6af33;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.cotiz-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.cotiz-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+/* === BOTÓN PILL === */
+.cotiz-pill {
+  border-radius: 9999px !important;
+  padding: 0.9rem 1.8rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 600;
+  box-shadow: 0 6px 12px #00000026 !important;
+  transition: all 0.2s;
+}
+
+.cotiz-pill-primary {
+  background: #f6af33 !important;
+  border: 2px solid #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+.cotiz-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px #00000033 !important;
+}
+
+/* === LAYOUT FILTROS (una fila) === */
+.cotiz-filtros-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0;
+  width: 100%;
+}
+
+.cotiz-filtro-label {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 0.5rem;
+}
+
+/* Buscar ocupa el espacio restante */
+.cotiz-filtro-buscar {
+  flex: 1 1 0%;
+  min-width: 0;
+  padding-right: 1rem;
+}
+
+/* Fechas: separador visual con borde izquierdo y derecho */
+.cotiz-filtro-fechas {
+  flex: 0 0 auto;
+  padding: 0 1rem;
+  border-left: 1px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
+}
+
+/* Estado tamaño fijo cómodo */
+.cotiz-filtro-estado {
+  flex: 0 0 180px;
+  min-width: 0;
+  padding: 0 1rem;
+}
+
+/* Limpiar solo su tamaño */
+.cotiz-filtro-acciones {
+  flex: 0 0 auto;
+  padding-left: 1rem;
+}
+
+/* === INPUT / AUTOCOMPLETE === */
+.cotiz-input {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* for PrimeNG AutoComplete */
+:host ::ng-deep .cotiz-autocomplete .p-inputtext {
+  width: 100% !important;
+  padding: 0.55rem 0.75rem !important;
+  font-size: 0.9rem !important;
+}
+
+/* ancho del dropdown alineado con el input */
+:host ::ng-deep .p-autocomplete-panel {
+  min-width: 320px;
+}
+
+/* Sugeridos ricos */
+.cotiz-sug-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.35rem 0.5rem;
+}
+
+.cotiz-sug-main {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cotiz-sug-numero {
+  font-weight: 600;
+  color: #0f172a;
+  font-size: 0.85rem;
+}
+
+.cotiz-sug-cliente {
+  font-size: 0.8rem;
+  color: #475569;
+}
+
+.cotiz-sug-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.cotiz-sug-ruc {
+  font-family: monospace;
+}
+
+.cotiz-sug-estado {
+  padding: 0.05rem 0.35rem;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
+}
+
+/* === SELECT === */
+:host ::ng-deep .cotiz-select,
+:host ::ng-deep .cotiz-select .p-select {
+  display: flex !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+:host ::ng-deep .cotiz-select .p-select-label {
+  flex: 1 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+/* === DATEPICKER FECHAS === */
+.cotiz-fecha-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cotiz-fecha-sep {
+  color: #cbd5e1;
+  font-weight: 400;
+  flex-shrink: 0;
+  font-size: 1.1rem;
+}
+
+:host ::ng-deep .cotiz-datepicker {
+  width: 148px !important;
+}
+
+:host ::ng-deep .cotiz-datepicker .p-inputtext {
+  width: 100% !important;
+}
+
+/* === TABLA === */
+.cotiz-table .p-datatable-thead > tr > th {
+  background: var(--surface-50) !important;
+  border-bottom: 2px solid var(--surface-border) !important;
+  color: var(--text-color) !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  padding: 0.9rem 0.75rem !important;
+}
+
+.cotiz-table .p-datatable-tbody > tr > td {
+  border-bottom: 1px solid var(--surface-border-light) !important;
+  padding: 0.9rem 0.75rem !important;
+}
+
+:host ::ng-deep .cotiz-table .p-datatable-tbody > tr:hover {
+  background-color: #f6af3326 !important;
+  transition: background-color 0.2s ease;
+  cursor: pointer;
+}
+
+/* === BADGE DOCUMENTO === */
+.doc-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 0.8rem;
+  color: #0f172a;
+  gap: 0.3rem;
+}
+
+.doc-badge strong {
+  font-weight: 600;
+}
+
+.doc-separator {
+  opacity: 0.6;
+}
+
+/* === DARK MODE === */
+:host-context(.app-dark) .cotiz-title-icon {
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+}
+
+:host-context(.app-dark) .cotiz-kicker {
+  color: #94a3b8 !important;
+}
+
+:host-context(.app-dark) .cotiz-title {
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) .cotiz-pill-primary {
+  background: #e8a424 !important;
+  border-color: #d69520 !important;
+  color: #1f2937 !important;
+}
+
+:host-context(.app-dark) .doc-badge {
+  background: #1e293b !important;
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) .cotiz-filtro-label {
+  color: #64748b !important;
+}
+
+:host-context(.app-dark) .cotiz-fecha-sep {
+  color: #334155 !important;
+}
+
+:host-context(.app-dark) .cotiz-filtro-fechas {
+  border-left-color: #334155 !important;
+  border-right-color: #334155 !important;
+}

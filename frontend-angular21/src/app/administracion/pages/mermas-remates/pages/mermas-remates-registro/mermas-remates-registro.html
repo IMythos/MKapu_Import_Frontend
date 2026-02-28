@@ -1,6 +1,6 @@
 <div class="registro-page">
     <!-- Header Card -->
-    <p-card styleClass="registro-header-card">
+    <p-card class="registro-header-card">
         <div class="flex align-items-center justify-content-between flex-wrap gap-3">
             <div class="flex align-items-center gap-3">
                 <span class="registro-title-icon">
@@ -21,7 +21,7 @@
     <div class="grid">
         <!-- PASO 1: Selección de Tipo -->
         <div class="col-12">
-            <p-card styleClass="form-card">
+            <p-card class="form-card">
                 <div class="section-header">
                     <div class="section-number">1</div>
                     <div>
@@ -70,7 +70,7 @@
 
         <!-- PASO 2: Información del Producto -->
         <div class="col-12" *ngIf="tipoRegistro">
-            <p-card styleClass="form-card">
+            <p-card class="form-card">
                 <div class="section-header">
                     <div class="section-number">2</div>
                     <div>
@@ -145,7 +145,7 @@
 
         <!-- PASO 3: Motivo y Detalles -->
         <div class="col-12" *ngIf="tipoRegistro && productoSeleccionado">
-            <p-card styleClass="form-card">
+            <p-card class="form-card">
                 <div class="section-header">
                     <div class="section-number">3</div>
                     <div>
@@ -188,7 +188,7 @@
 
         <!-- PASO 4: Información de Remate (solo si es remate) -->
         <div class="col-12" *ngIf="tipoRegistro === 'remate' && productoSeleccionado">
-            <p-card styleClass="form-card remate-card">
+            <p-card class="form-card remate-card">
                 <div class="section-header">
                     <div class="section-number">4</div>
                     <div>
@@ -254,7 +254,7 @@
 
         <!-- Resumen Final -->
         <div class="col-12" *ngIf="tipoRegistro && productoSeleccionado && motivo">
-            <p-card styleClass="resumen-card">
+            <p-card class="resumen-card">
                 <h3 class="resumen-title">Resumen del Registro</h3>
 
                 <div class="resumen-grid">
@@ -302,7 +302,7 @@
 
         <!-- Botones de Acción -->
         <div class="col-12">
-            <p-card styleClass="actions-card">
+            <p-card class="actions-card">
                 <div class="flex justify-content-center gap-3">
                     <p-button label="Cancelar" icon="pi pi-times" [outlined]="true" severity="secondary"
                         styleClass="action-btn-cancel" (onClick)="cancelar()">

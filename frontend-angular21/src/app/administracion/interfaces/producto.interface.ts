@@ -94,3 +94,63 @@ export interface ProductoStockDetalle {
   cantidad: number;
   estado: string;
 }
+
+export interface CreateProductoDto {
+  id_categoria: number;
+  codigo: string;
+  anexo?: string;
+  descripcion: string;
+  pre_compra: number;
+  pre_venta: number;
+  pre_unit: number;
+  pre_may: number;
+  pre_caja: number;
+  uni_med: string;
+}
+
+// ===== INVENTARIO =====
+
+export interface MovimientoInventarioItem {
+  productId: number;
+  warehouseId: number;
+  sedeId: number;      // <--- ¡NUEVO CAMPO AGREGADO AQUÍ!
+  quantity: number;
+  type: 'INGRESO' | 'SALIDA';
+}
+
+export interface MovimientoInventarioDto {
+  originType: string;
+  refId: number;
+  refTable: string;
+  observation?: string;
+  items: MovimientoInventarioItem[];
+}
+
+export interface MovimientoInventarioResponse {
+  message: string;
+  data: {
+    reference: string;
+  };
+}
+
+// ===== ACTUALIZACIÓN DE PRODUCTOS =====
+
+// 1. DTO para actualizar info básica
+export interface UpdateProductoDto {
+  id_producto: number;
+  id_categoria: number;
+  codigo: string;
+  anexo: string;
+  descripcion: string;
+  uni_med: string;
+}
+
+// 2. DTO para actualizar solo precios
+export interface UpdateProductoPreciosDto {
+  id_producto: number;
+  pre_compra: number;
+  pre_venta: number;
+  pre_unit: number;
+  pre_may: number;
+  pre_caja: number;
+}

@@ -1,0 +1,84 @@
+<div class="card p-3">
+  <h2 class="mb-4">Reporte General de Ventas</h2>
+
+  <div class="flex flex-wrap gap-3 mb-4 align-items-end">
+    <div class="field mb-0">
+      <label class="block mb-2 font-medium">Rango de Fechas</label>
+      <p-calendar 
+        [ngModel]="rangoFechas()" 
+        (ngModelChange)="rangoFechas.set($event)"
+        selectionMode="range" 
+        dateFormat="dd/mm/yy"
+        placeholder="Selecciona el rango">
+      </p-calendar>
+    </div>
+
+    <div class="field mb-0">
+      <p-button
+        label="Filtrar Reporte"
+        icon="pi pi-filter"
+        (onClick)="cargarReporte()"
+        [loading]="loading"
+      >
+      </p-button>
+    </div>
+  </div>
+
+  <p-table
+    [value]="salesReportData()"
+    [loading]="loading"
+    [paginator]="true"
+    [rows]="10"
+    responsiveLayout="scroll"
+    styleClass="p-datatable-sm p-datatable-striped"
+  >
+    <ng-template pTemplate="header">
+      <tr>
+        <th>Documento</th>
+        <th>Emisión</th>
+        <th>Cliente</th>
+        <th>Vendedor</th>
+        <th>Sede</th>
+        <th>Total</th>
+        <th>Estado</th>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="body" let-row>
+      <tr>
+        <td>
+          <span class="font-bold">{{ row.tipoComprobanteDescripcion }}</span
+          ><br />
+          <small class="text-500">{{ row.serie }}-{{ row.numero }}</small>
+        </td>
+        <td>{{ row.fechaEmision | date: 'dd/MM/yyyy' }}</td>
+        <td>
+          {{ row.clienteNombre }}<br />
+          <small class="text-500">{{ row.clienteDocumentoIdentidad }}</small>
+        </td>
+        <td>{{ row.vendedorNombreCompleto }}</td>
+        <td>{{ row.sedeNombre }}</td>
+        <td class="font-bold text-blue-600">
+          {{ row.monedaCodigo }} {{ row.totalOperacion | number: '1.2-2' }}
+        </td>
+        <td>
+          <p-tag
+            [value]="row.estadoActual"
+            [severity]="
+              row.estadoActual === 'EMITIDO' || row.estadoActual === 'PAGADO' ? 'success' : 'danger'
+            "
+          >
+          </p-tag>
+        </td>
+      </tr>
+    </ng-template>
+
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="text-center p-4">
+          No se encontraron ventas para los filtros seleccionados.
+        </td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

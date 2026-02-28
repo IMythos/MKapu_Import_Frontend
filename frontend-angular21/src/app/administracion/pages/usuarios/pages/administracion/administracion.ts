@@ -1,8 +1,7 @@
 import { Component, inject, AfterViewInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
-import { Router } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -28,6 +27,7 @@ import { ROLE_NAMES, UserRole } from '../../../../../core/constants/roles.consta
 
 @Component({
   selector: 'app-administracion',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -45,59 +45,45 @@ import { ROLE_NAMES, UserRole } from '../../../../../core/constants/roles.consta
     SelectModule,
     InputNumberModule,
     AutoCompleteModule,
-    ToastModule
+    ToastModule,
   ],
   providers: [MessageService],
   templateUrl: './administracion.html',
   styleUrls: ['./administracion.css'],
 })
 export class Administracion implements AfterViewInit {
-  activeWizard: 'usuario' | 'cuenta' = 'usuario';
 
+  // Wizard unificado — un solo flujo
   stepsUsuario = [
     'Datos personales',
     'Contacto y sede',
-    'Confirmacion'
-  ];
-
-  stepsCuenta = [
-    'Seleccionar usuario',
-    'Credenciales',
-    'Rol',
-    'Confirmacion'
+    'Credenciales y Rol',
+    'Confirmación',
   ];
 
   activeStepUsuario = 0;
-  activeStepCuenta = 0;
-
-  breadcrumbItems = [
-    { label: 'Inicio' },
-    { label: 'Administrador' },
-    { label: 'Crear Nuevo Usuario' }
-  ];
 
   roles = [
     {
       label: 'Administrador',
       value: 'ADMIN',
       icon: 'pi pi-shield',
-      description: 'Acceso total al sistema y configuración.'
+      description: 'Acceso total al sistema y configuración.',
     },
     {
       label: 'Ventas',
       value: 'VENTAS',
       icon: 'pi pi-money-bill',
-      description: 'Ventas, caja y facturación.'
+      description: 'Ventas, caja y facturación.',
     },
     {
-      label: 'Almacen',
+      label: 'Almacén',
       value: 'ALMACEN',
       icon: 'pi pi-warehouse',
-      description: 'Inventario y control de stock.'
-    }
+      description: 'Inventario y control de stock.',
+    },
   ];
 
-  rolSeleccionado: string | null = null;
   rolCuentaSeleccionado: string | null = null;
 
   sedes: { label: string; value: number }[] = [];
@@ -105,19 +91,8 @@ export class Administracion implements AfterViewInit {
 
   generos: { label: string; value: 'M' | 'F' }[] = [
     { label: 'Masculino', value: 'M' },
-    { label: 'Femenino', value: 'F' }
+    { label: 'Femenino', value: 'F' },
   ];
-
-
-  usuario = {
-    dni: '',
-    nombre: '',
-    sede: null as number | null,
-    correo: '',
-    username: '',
-    password: '',
-    confirmPassword: ''
-  };
 
   usuarioRequestForm: UsuarioRequest = {
     usu_nom: '',
@@ -132,39 +107,34 @@ export class Administracion implements AfterViewInit {
     activo: true,
     id_sede: 1,
     sedeNombre: 'Sede Principal',
-    nombreCompleto: ''
+    nombreCompleto: '',
   };
 
-  usuarios: UsuarioInterfaceResponse[] = [];
-  cargandoUsuarios = false;
   dniInput: number | null = null;
   celularInput: number | null = null;
-  filtroUsuarioCuenta = '';
-  usuarioCuentaSeleccionado: UsuarioInterfaceResponse | null = null;
-  usuariosSugeridosCuenta: UsuarioInterfaceResponse[] = [];
+
   cuentaForm = {
     username: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   };
 
-  private usuarioService = inject(UsuarioService);
-  private sedeService = inject(SedeService);
-  private messageService = inject(MessageService);
-  private router = inject(Router);
+  enviando = false;
 
-  ngAfterViewInit() {
+  private usuarioService = inject(UsuarioService);
+  private sedeService    = inject(SedeService);
+  private messageService = inject(MessageService);
+  private router         = inject(Router);
+
+  ngAfterViewInit(): void {
     setTimeout(() => {
       this.cargarSedes();
-      this.listarUsuarios();
     }, 0);
   }
 
   private cargarSedes(): void {
-    console.log('[Usuarios] Llamando getSedes()');
     this.sedeService.getSedes().subscribe({
       next: (response) => {
-        console.log('[Usuarios] Respuesta getSedes():', response);
         const sedesResponse = Array.isArray(response)
           ? response
           : response?.headquarters ?? [];
@@ -176,172 +146,149 @@ export class Administracion implements AfterViewInit {
 
         if (this.sedes.length > 0) {
           const sedeExiste = this.sedes.some(
-            (sede) => sede.value === this.usuarioRequestForm.id_sede,
+            (s) => s.value === this.usuarioRequestForm.id_sede,
           );
           if (!sedeExiste) {
-            this.usuarioRequestForm.id_sede = this.sedes[0].value;
+            this.usuarioRequestForm.id_sede    = this.sedes[0].value;
             this.usuarioRequestForm.sedeNombre = this.sedes[0].label;
           }
         }
       },
-      error: (error) => {
-        console.error('Error al cargar sedes:', error);
+      error: () => {
         this.sedes = [];
       },
     });
   }
 
   prevStep(): void {
-    if (this.activeWizard === 'usuario') {
-      if (this.activeStepUsuario > 0) {
-        this.activeStepUsuario -= 1;
-      }
-      return;
-    }
-
-    if (this.activeStepCuenta > 0) {
-      this.activeStepCuenta -= 1;
+    if (this.activeStepUsuario > 0) {
+      this.activeStepUsuario -= 1;
     }
   }
 
   nextStep(): void {
-    if (this.activeWizard === 'usuario') {
-      if (this.activeStepUsuario < this.stepsUsuario.length - 1) {
-        this.activeStepUsuario += 1;
-      }
+    if (this.activeStepUsuario < this.stepsUsuario.length - 1) {
+      this.activeStepUsuario += 1;
+    }
+  }
+
+  enviarUsuarioRequestPrueba(): void {
+    // Validaciones antes de enviar
+    if (!this.cuentaForm.username.trim()) {
+      this.messageService.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Ingresa el nombre de usuario.' });
       return;
     }
-
-    if (this.activeStepCuenta < this.stepsCuenta.length - 1) {
-      this.activeStepCuenta += 1;
-    }
-  }
-
-  get usuariosSinRolCuenta(): UsuarioInterfaceResponse[] {
-    const filtro = this.filtroUsuarioCuenta.trim().toLowerCase();
-
-    if (!filtro) {
-      return this.usuarios;
-    }
-
-    return this.usuarios.filter((usuario) => {
-      const nombreCompleto =
-        usuario.nombreCompleto ||
-        [usuario.usu_nom, usuario.ape_pat, usuario.ape_mat].filter(Boolean).join(' ');
-      const dni = usuario.dni || '';
-
-      return (
-        nombreCompleto.toLowerCase().includes(filtro) ||
-        dni.toLowerCase().includes(filtro)
-      );
-    });
-  }
-
-  filtrarUsuariosCuenta(event: { query: string }): void {
-    const filtro = event.query.trim().toLowerCase();
-
-    if (!filtro) {
-      this.usuariosSugeridosCuenta = this.usuarios.map((usuario) => ({
-        ...usuario,
-        nombreCompleto: this.getNombreCompleto(usuario)
-      }));
+    if (!this.cuentaForm.password) {
+      this.messageService.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Ingresa la contraseña.' });
       return;
     }
-
-    this.usuariosSugeridosCuenta = this.usuarios
-      .map((usuario) => ({
-        ...usuario,
-        nombreCompleto: this.getNombreCompleto(usuario)
-      }))
-      .filter((usuario) => {
-        const nombreCompleto = (usuario.nombreCompleto || '').toLowerCase();
-        const dni = usuario.dni || '';
-        return nombreCompleto.includes(filtro) || dni.toLowerCase().includes(filtro);
-      });
-  }
-
-  getNombreCompleto(usuario: UsuarioInterfaceResponse): string {
-    return (
-      usuario.nombreCompleto ||
-      [usuario.usu_nom, usuario.ape_pat, usuario.ape_mat].filter(Boolean).join(' ')
-    );
-  }
-
-  seleccionarUsuarioCuenta(usuario: UsuarioInterfaceResponse): void {
-    this.usuarioCuentaSeleccionado = {
-      ...usuario,
-      nombreCompleto: this.getNombreCompleto(usuario)
-    };
-    this.filtroUsuarioCuenta = this.getNombreCompleto(this.usuarioCuentaSeleccionado);
-  }
-
-  crearCuentaUsuario(): void {
-    if (!this.usuarioCuentaSeleccionado) {
-      alert('Seleccione un usuario');
-      return;
-    }
-
-    if (!this.cuentaForm.username || !this.cuentaForm.password || !this.cuentaForm.confirmPassword) {
-      alert('Complete las credenciales');
-      return;
-    }
-
     if (this.cuentaForm.password !== this.cuentaForm.confirmPassword) {
-      alert('Las contraseñas no coinciden');
+      this.messageService.add({ severity: 'warn', summary: 'Error', detail: 'Las contraseñas no coinciden.' });
       return;
     }
-
     if (!this.rolCuentaSeleccionado) {
-      alert('Seleccione un rol');
+      this.messageService.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Selecciona un rol.' });
       return;
     }
 
-    const roleId =
-      this.rolCuentaSeleccionado === 'ADMIN'
-        ? UserRole.ADMIN
-        : this.rolCuentaSeleccionado === 'VENTAS'
-          ? UserRole.VENTAS
-          : UserRole.ALMACEN;
+    this.enviando = true;
 
-    const payload = {
-      userId: this.usuarioCuentaSeleccionado.id_usuario,
-      username: this.cuentaForm.username,
-      password: this.cuentaForm.password,
-      roleId
+    const payload: UsuarioRequest = {
+      ...this.usuarioRequestForm,
+      dni:            this.dniInput === null ? '' : String(this.dniInput),
+      celular:        this.celularInput === null ? 0 : this.celularInput,
+      nombreCompleto: this.buildNombreCompleto(),
+      fec_nac:        this.formatFechaNac(this.usuarioRequestForm.fec_nac as unknown as string | Date),
+      sedeNombre:     this.getSedeNombre(),
+      activo:         true,
     };
 
-    console.log('POST /create-account payload:', JSON.stringify(payload));
+    // Paso 1: crear usuario
+    this.usuarioService.postUsuarios(payload).subscribe({
+      next: (usuarioCreado: any) => {
 
-    this.usuarioService.postCuentaUsuario(payload).subscribe({
-      next: () => {
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Cuenta creada',
-          detail: 'La cuenta se registro correctamente.',
-          life: 1500
+        const roleId =
+          this.rolCuentaSeleccionado === 'ADMIN'  ? UserRole.ADMIN  :
+          this.rolCuentaSeleccionado === 'VENTAS' ? UserRole.VENTAS :
+          UserRole.ALMACEN;
+
+        const cuentaPayload = {
+          userId:   usuarioCreado.id_usuario,
+          username: this.cuentaForm.username,
+          password: this.cuentaForm.password,
+          roleId,
+        };
+
+        // Paso 2: crear cuenta inmediatamente
+        this.usuarioService.postCuentaUsuario(cuentaPayload).subscribe({
+          next: () => {
+            this.enviando = false;
+            this.messageService.add({
+              severity: 'success',
+              summary:  '¡Listo!',
+              detail:   'Usuario y cuenta creados correctamente.',
+              life:     2000,
+            });
+            setTimeout(() => {
+              this.router.navigate(['/admin/usuarios']);
+            }, 2000);
+          },
+          error: (err) => {
+            this.enviando = false;
+            this.messageService.add({
+              severity: 'warn',
+              summary:  'Usuario creado',
+              detail:   'El usuario fue creado pero hubo un error al crear la cuenta. Puedes asignarle una cuenta después.',
+            });
+          },
         });
-        setTimeout(() => {
-          this.router.navigate(['/admin/usuarios']);
-        }, 1500);
       },
       error: (err) => {
-        console.error('Error al crear cuenta', {
-          status: err?.status,
-          message: err?.message,
-          error: err?.error,
-          url: err?.url
+        this.enviando = false;
+        this.messageService.add({
+          severity: 'error',
+          summary:  'Error',
+          detail:   err?.error?.message ?? 'No se pudo crear el usuario.',
         });
-        alert('Error al crear cuenta');
-      }
+      },
     });
+  }
+
+  buildNombreCompleto(): string {
+    return [
+      this.usuarioRequestForm.usu_nom?.trim(),
+      this.usuarioRequestForm.ape_pat?.trim(),
+      this.usuarioRequestForm.ape_mat?.trim(),
+    ].filter(Boolean).join(' ');
+  }
+
+  getSedeNombre(): string {
+    const sede = this.sedes.find((s) => s.value === this.usuarioRequestForm.id_sede);
+    return sede?.label ?? 'Sede Principal';
+  }
+
+  private formatFechaNac(value: string | Date): string {
+    if (!value) return '';
+    if (value instanceof Date) return value.toISOString().slice(0, 10);
+    return value;
+  }
+
+  private resetFormulario(): void {
+    this.usuarioRequestForm = {
+      usu_nom: '', ape_mat: '', ape_pat: '', dni: '', email: '',
+      celular: 0, direccion: '', genero: '', fec_nac: '',
+      activo: true, id_sede: 1, sedeNombre: 'Sede Principal', nombreCompleto: '',
+    };
+    this.dniInput          = null;
+    this.celularInput      = null;
+    this.cuentaForm        = { username: '', password: '', confirmPassword: '' };
+    this.rolCuentaSeleccionado = null;
+    this.activeStepUsuario = 0;
   }
 
   allowOnlyLetters(event: KeyboardEvent): void {
-    const key = event.key;
-    if (key.length !== 1) return;
-    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]$/.test(key)) {
-      event.preventDefault();
-    }
+    if (event.key.length !== 1) return;
+    if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]$/.test(event.key)) event.preventDefault();
   }
 
   sanitizeOnlyLetters(value: string): string {
@@ -352,179 +299,73 @@ export class Administracion implements AfterViewInit {
     key: keyof Pick<UsuarioRequest, 'usu_nom' | 'ape_pat' | 'ape_mat' | 'email' | 'direccion'>
   ): void {
     const value = this.usuarioRequestForm[key];
-    if (typeof value !== 'string') return;
-    this.usuarioRequestForm[key] = value.trim();
+    if (typeof value === 'string') this.usuarioRequestForm[key] = value.trim();
   }
 
   removeAllSpaces(value: string): string {
-    if (typeof value !== 'string') return '';
-    return value.replace(/\s+/g, '');
+    return typeof value === 'string' ? value.replace(/\s+/g, '') : '';
   }
 
   onCelularChange(value: number | null): void {
-    if (value === null || value === undefined) {
-      this.celularInput = null;
-      return;
-    }
-
-    const digits = String(value).replace(/\D/g, '');
-    if (!digits) {
-      this.celularInput = null;
-      return;
-    }
-
-    const trimmed = digits.length > 9 ? digits.slice(0, 9) : digits;
-    this.celularInput = Number(trimmed);
+    if (value === null || value === undefined) { this.celularInput = null; return; }
+    const digits  = String(value).replace(/\D/g, '');
+    if (!digits)  { this.celularInput = null; return; }
+    this.celularInput = Number(digits.length > 9 ? digits.slice(0, 9) : digits);
   }
 
   onCelularKeyDown(event: KeyboardEvent): void {
-    const key = event.key;
-    if (key.length !== 1 || !/\d/.test(key)) return;
+    if (event.key.length !== 1 || !/\d/.test(event.key)) return;
+    const input = event.target as HTMLInputElement | null;
+    if (!input) return;
+    const value        = input.value?.replace(/\D/g, '') ?? '';
+    const selStart     = input.selectionStart ?? value.length;
+    const selEnd       = input.selectionEnd   ?? value.length;
+    if (selEnd <= selStart && value.length >= 9) event.preventDefault();
+  }
+
+  getEstadoSeverity(activo: boolean): 'success' | 'danger' {
+    return activo ? 'success' : 'danger';
+  }
+    
+  onDniChange(value: number | null): void {
+    if (value === null || value === undefined) {
+      this.dniInput = null;
+      return;
+    }
+    // Trunca a 8 dígitos máximo
+    const digits = String(value).replace(/\D/g, '');
+    if (digits.length > 8) {
+      this.dniInput = Number(digits.slice(0, 8));
+    } else {
+      this.dniInput = Number(digits);
+    }
+  }
+
+  onDniKeyDown(event: KeyboardEvent): void {
+    if (event.key.length !== 1 || !/\d/.test(event.key)) return;
 
     const input = event.target as HTMLInputElement | null;
     if (!input) return;
 
     const value = input.value?.replace(/\D/g, '') ?? '';
-    const selectionStart = input.selectionStart ?? value.length;
-    const selectionEnd = input.selectionEnd ?? value.length;
-    const hasSelection = selectionEnd > selectionStart;
+    const selStart = input.selectionStart ?? value.length;
+    const selEnd   = input.selectionEnd   ?? value.length;
+    const hasSelection = selEnd > selStart;
 
-    if (!hasSelection && value.length >= 9) {
+    // Bloquea si ya tiene 8 dígitos y no hay texto seleccionado
+    if (!hasSelection && value.length >= 8) {
       event.preventDefault();
     }
   }
-
-  listarUsuarios() {
-    this.cargandoUsuarios = true;
-
-    this.usuarioService.getUsuarios().subscribe({
-      next: (data) => {
-        console.log('Usuarios obtenidos:', data);
-        this.usuarios = data.users;
-        this.cargandoUsuarios = false;
-      },
-      error: (err) => {
-        console.error('Error al obtener usuarios:', err);
-        this.cargandoUsuarios = false;
-      }
-    });
-  }
-
-  guardarUsuario() {
-    console.log('Rol:', this.rolSeleccionado);
-    console.log('Usuario:', this.usuario);
-
-    setTimeout(() => {
-      this.listarUsuarios();
-    }, 0);
-  }
-
-  enviarUsuarioRequestPrueba() {
-    const payload: UsuarioRequest = {
-      ...this.usuarioRequestForm,
-      dni: this.dniInput === null ? '' : String(this.dniInput),
-      celular: this.celularInput === null ? 0 : this.celularInput,
-      nombreCompleto: this.buildNombreCompleto(),
-      fec_nac: this.formatFechaNac(this.usuarioRequestForm.fec_nac as unknown as string | Date),
-      sedeNombre: this.getSedeNombre(),
-      activo: true
-    };
-
-    console.log('[Usuarios] Payload create user:', payload);
-    console.log('POST /admin/users payload:', JSON.stringify(payload));
-
-    this.usuarioService.postUsuarios(payload).subscribe({
-      next: (data) => {
-        console.log('Usuario creado (prueba):', data);
-        this.listarUsuarios();
-        this.resetFormularioPrueba();
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Usuario creado',
-          detail: 'El usuario se registró correctamente.',
-          life: 1500
-        });
-        setTimeout(() => {
-          this.router.navigate(['/admin/usuarios']);
-        }, 1500);
-      },
-      error: (err) => {
-        console.error('Error al crear usuario (prueba):', err);
-      }
-    });
-  }
-
-  buildNombreCompleto(): string {
-    const nombre = this.usuarioRequestForm.usu_nom?.trim();
-    const apePat = this.usuarioRequestForm.ape_pat?.trim();
-    const apeMat = this.usuarioRequestForm.ape_mat?.trim();
-
-    return [nombre, apePat, apeMat].filter(Boolean).join(' ');
-  }
-
-  getSedeNombre(): string {
-    const sede = this.sedes.find((item) => item.value === this.usuarioRequestForm.id_sede);
-    return sede?.label ?? 'Sede Principal';
-  }
-
-  private formatFechaNac(value: string | Date): string {
-    if (!value) return '';
-    if (value instanceof Date) {
-      return value.toISOString().slice(0, 10);
-    }
-    return value;
-  }
-
-  private resetFormularioPrueba(): void {
-    this.usuarioRequestForm = {
-      usu_nom: '',
-      ape_mat: '',
-      ape_pat: '',
-      dni: '',
-      email: '',
-      celular: 0,
-      direccion: '',
-      genero: '',
-      fec_nac: '',
-      activo: true,
-      id_sede: 1,
-      sedeNombre: 'Sede Principal',
-      nombreCompleto: ''
-    };
-    this.dniInput = null;
-    this.celularInput = null;
-  }
-
-  getRolSeverity(rol: string): 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' {
-    if (!rol) return 'info';
-
-    const rolUpper = rol.toUpperCase();
-
-    if (rolUpper === 'ADMINISTRADOR' || rolUpper === 'ADMIN') {
-      return 'success';
-    }
-    if (rolUpper === 'CAJERO' || rolUpper === 'VENTAS' || rolUpper === 'VENDEDOR') {
-      return 'info';
-    }
-    if (rolUpper === 'ALMACEN' || rolUpper === 'ALMACENERO') {
-      return 'warn';
-    }
-
-    return 'info';
-  }
-
   getRolDisplay(usuario: UsuarioInterfaceResponse): string {
-    const rolTexto =
-      usuario.rolNombre ||
+    return (
+      usuario.rolNombre  ||
       usuario.rol_nombre ||
-      usuario.rol ||
-      usuario.role ||
-      (typeof usuario.roleId === 'number' ? ROLE_NAMES[usuario.roleId as keyof typeof ROLE_NAMES] : '');
-
-    return rolTexto || 'Sin rol';
-  }
-
-  getEstadoSeverity(activo: boolean): 'success' | 'danger' {
-    return activo ? 'success' : 'danger';
+      usuario.rol        ||
+      usuario.role       ||
+      (typeof usuario.roleId === 'number'
+        ? ROLE_NAMES[usuario.roleId as keyof typeof ROLE_NAMES]
+        : '') || 'Sin rol'
+    );
   }
 }

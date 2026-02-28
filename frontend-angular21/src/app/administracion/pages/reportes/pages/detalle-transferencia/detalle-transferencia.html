@@ -1,170 +1,274 @@
-<div class="p-4" *ngIf="transferencia">
-  <div class="surface-card border-1 border-300 border-round-xl shadow-1 p-4 mb-4">
-    <div class="flex justify-content-between align-items-center flex-wrap gap-3">
-      <div class="flex align-items-center gap-3">
-        <span class="transfer-title-icon">
-          <i class="pi pi-truck"></i>
+<p-toast position="top-right" />
+<p-confirmDialog />
+
+<div class="detalle-wrap p-2">
+  <p-card class="detalle-header-card">
+    <div class="detalle-header-content">
+      <div class="detalle-header-left">
+        <span class="detalle-title-icon">
+          <i class="pi pi-arrow-right-arrow-left"></i>
         </span>
         <div>
-          <p class="transfer-kicker mb-0">DETALLE DE TRANSFERENCIA</p>
-          <h2 class="transfer-title mb-0">{{ transferencia.codigo }}</h2>
+          <p class="detalle-kicker mb-0">ADMINISTRACION - LOGISTICA - TRANSFERENCIAS</p>
+          <h2 class="detalle-title mb-0">
+            Solicitud Transferencia
+            @if (transferencia?.codigo) {
+              <span class="detalle-id">#{{ transferencia?.codigo }}</span>
+            }
+          </h2>
         </div>
       </div>
-      <div class="flex gap-2 flex-wrap">
+      <div class="detalle-header-right">
+        @if (transferencia) {
+          <p-tag
+            [value]="transferencia.estado"
+            [severity]="getEstadoSeverity(transferencia.estado)"
+            class="detalle-status-tag"
+          ></p-tag>
+        }
+        @if (canResolverSolicitud) {
+          <div class="detalle-actions-group">
+            <p-button
+              label="Aprobar solicitud"
+              icon="pi pi-check-circle"
+              severity="success"
+              styleClass="detalle-action-approve"
+              [disabled]="submittingDecision"
+              (onClick)="aprobarSolicitud()"
+            />
+            <p-button
+              label="Rechazar solicitud"
+              icon="pi pi-times-circle"
+              severity="danger"
+              [outlined]="true"
+              styleClass="detalle-action-reject"
+              [disabled]="submittingDecision"
+              (onClick)="rechazarSolicitud()"
+            />
+          </div>
+        }
+        @if (canCompletarSolicitud) {
+          <div class="detalle-actions-group">
+            <p-button
+              label="Marcar COMPLETADA"
+              icon="pi pi-verified"
+              severity="info"
+              styleClass="detalle-action-complete"
+              [disabled]="submittingDecision"
+              (onClick)="completarSolicitud()"
+            />
+          </div>
+        }
         <p-button
           label="Volver"
           icon="pi pi-arrow-left"
           severity="secondary"
-          styleClass="transfer-pill transfer-pill-secondary"
+          styleClass="detalle-pill"
           (onClick)="volver()"
-        ></p-button>
+        />
       </div>
     </div>
-  </div>
-
-  <div class="grid">
-    <div class="col-12 lg:col-8">
-      <p-card styleClass="border-1 border-300 border-round-xl shadow-2 h-full">
-        <div class="flex align-items-center gap-3 mb-4">
-          <i class="pi pi-info-circle text-3xl text-primary"></i>
-          <h3 class="m-0 text-xl font-bold text-900">Informacion General</h3>
-        </div>
-
-        <p-divider></p-divider>
-
-        <div class="grid">
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">CODIGO</label>
-            <div class="flex align-items-center gap-2 p-3 bg-primary-50 border-round-lg">
-              <i class="pi pi-tag text-primary text-xl"></i>
-              <span class="text-2xl font-black text-primary">{{ transferencia.codigo }}</span>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">ESTADO</label>
-            <div class="p-3">
-              <p-tag
-                [value]="transferencia.estado"
-                [severity]="getEstadoSeverity(transferencia.estado)"
-                styleClass="text-lg font-bold px-4 py-2"
-              ></p-tag>
-            </div>
-          </div>
-
-          <div class="col-12 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">PRODUCTO</label>
-            <div class="p-3 surface-50 border-round-lg border-1 border-300">
-              <p class="m-0 text-xl font-semibold text-900">{{ transferencia.producto }}</p>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">RESPONSABLE</label>
-            <div class="flex align-items-center gap-3 p-3 surface-50 border-round-lg border-1 border-300">
-              <i class="pi pi-user text-2xl text-primary"></i>
-              <span class="text-lg font-bold text-900">{{ transferencia.responsable }}</span>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">CANTIDAD</label>
-            <div class="flex align-items-center gap-3 p-3 bg-orange-50 border-round-lg border-1 border-orange-200">
-              <i class="pi pi-box text-orange-600 text-2xl"></i>
-              <span class="text-lg font-bold text-orange-700">{{ transferencia.cantidad }} unidades</span>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">ORIGEN</label>
-            <div class="flex align-items-center gap-3 p-3 surface-50 border-round-lg border-1 border-300">
-              <i class="pi pi-home text-2xl text-primary"></i>
-              <span class="text-lg font-bold text-900">{{ transferencia.origen }}</span>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">DESTINO</label>
-            <div class="flex align-items-center gap-3 p-3 bg-amber-50 border-round-lg border-1 border-amber-200">
-              <i class="pi pi-map-marker text-2xl text-amber-600"></i>
-              <span class="text-lg font-bold text-amber-700">{{ transferencia.destino }}</span>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">FECHA DE ENVIO</label>
-            <div class="p-3 surface-50 border-round-lg border-1 border-300">
-              <span class="text-lg font-semibold text-900">{{ transferencia.fechaEnvio }}</span>
-            </div>
-          </div>
-
-          <div class="col-12 md:col-6 mb-4">
-            <label class="block text-sm font-semibold text-600 mb-2">FECHA DE LLEGADA</label>
-            <div class="p-3 surface-50 border-round-lg border-1 border-300">
-              <span class="text-lg font-semibold text-900">{{ transferencia.fechaLlegada }}</span>
-            </div>
-          </div>
-
-          <div class="col-12 mb-4" *ngIf="transferencia.observacion">
-            <label class="block text-sm font-semibold text-600 mb-2">OBSERVACION</label>
-            <div class="p-3 surface-50 border-round-lg border-1 border-300">
-              <p class="m-0 text-base text-700 line-height-3">{{ transferencia.observacion }}</p>
-            </div>
-          </div>
-        </div>
-      </p-card>
-    </div>
-
-    <div class="col-12 lg:col-4">
-      <p-card styleClass="border-1 border-300 border-round-xl shadow-2 h-full">
-        <div class="flex align-items-center gap-3 mb-4">
-          <i class="pi pi-chart-line text-3xl text-green-600"></i>
-          <h3 class="m-0 text-xl font-bold text-900">Resumen Operativo</h3>
-        </div>
-
-        <p-divider></p-divider>
-
-        <div class="flex flex-column gap-4">
-          <div class="p-4 bg-blue-50 border-round-xl border-2 border-blue-200">
-            <label class="block text-xs font-bold text-blue-700 mb-2 uppercase">Ruta</label>
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-map-marker text-blue-600 text-xl"></i>
-              <span class="text-lg font-bold text-blue-700">{{ transferencia.origen }} → {{ transferencia.destino }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 bg-green-50 border-round-xl border-2 border-green-200">
-            <label class="block text-xs font-bold text-green-700 mb-2 uppercase">Fechas</label>
-            <div class="flex flex-column gap-1">
-              <span class="text-base font-semibold text-green-700">Envio: {{ transferencia.fechaEnvio }}</span>
-              <span class="text-base font-semibold text-green-700">Llegada: {{ transferencia.fechaLlegada }}</span>
-            </div>
-          </div>
-
-          <div class="p-4 bg-orange-50 border-round-xl border-2 border-orange-200">
-            <label class="block text-xs font-bold text-orange-700 mb-2 uppercase">Cantidad</label>
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-box text-orange-600 text-xl"></i>
-              <span class="text-2xl font-black text-orange-600">{{ transferencia.cantidad }} uds</span>
-            </div>
-          </div>
-
-          <div class="p-4 bg-purple-50 border-round-xl border-2 border-purple-200">
-            <label class="block text-xs font-bold text-purple-700 mb-2 uppercase">Responsable</label>
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-user text-purple-600 text-xl"></i>
-              <span class="text-xl font-bold text-purple-700">{{ transferencia.responsable }}</span>
-            </div>
-          </div>
-        </div>
-      </p-card>
-    </div>
-  </div>
-</div>
-
-<div class="p-4" *ngIf="!transferencia">
-  <p-card styleClass="border-1 border-300 border-round-xl shadow-1 text-center p-4">
-    <div class="text-xl font-bold text-900">No se encontro la transferencia</div>
-    <div class="text-sm text-600 mt-2">Revisa el codigo e intenta nuevamente.</div>
   </p-card>
+
+  @if (loading) {
+    <p-card class="detalle-main-card mt-3">
+      <div class="empty-state">
+        <i class="pi pi-spin pi-spinner"></i>
+        <p>Cargando detalle de transferencia...</p>
+      </div>
+    </p-card>
+  } @else if (transferencia) {
+    <section class="metrics-strip mt-3">
+      <article class="metric">
+        <span class="metric-label"><i class="pi pi-box"></i> Cantidad Total</span>
+        <span class="metric-value">{{ transferencia.cantidad }} uds</span>
+      </article>
+      <article class="metric">
+        <span class="metric-label"><i class="pi pi-map-marker"></i> Origen</span>
+        <span class="metric-value">{{ transferencia.origen }}</span>
+      </article>
+      <article class="metric">
+        <span class="metric-label"><i class="pi pi-compass"></i> Destino</span>
+        <span class="metric-value">{{ transferencia.destino }}</span>
+      </article>
+      <article class="metric">
+        <span class="metric-label"><i class="pi pi-user"></i> Responsable</span>
+        <span class="metric-value">{{ transferencia.responsable }}</span>
+      </article>
+    </section>
+
+    <section class="panel-grid mt-3">
+      <p-card class="detalle-main-card panel-producto">
+        <div class="section-header">
+          <h3><i class="pi pi-box"></i> Producto</h3>
+          <div class="section-header-actions">
+            <span class="mini-chip">
+              <i class="pi pi-tag"></i>
+              {{ transferencia.productoCategoria }}
+            </span>
+          </div>
+        </div>
+
+        <div class="producto-hero">
+          <div class="producto-main">
+            <span class="producto-name">{{ transferencia.producto }}</span>
+            <div class="producto-subline">
+              <i class="pi pi-barcode"></i>
+              <span>SKU principal de la transferencia</span>
+            </div>
+          </div>
+          <div class="producto-code">{{ transferencia.productoCodigo }}</div>
+        </div>
+
+        <div class="detalle-grid">
+          <div class="detalle-field detalle-field-wide">
+            <label><i class="pi pi-align-left field-icon"></i> Descripcion</label>
+            <p>{{ transferencia.productoDescripcion }}</p>
+          </div>
+          <div class="detalle-field">
+            <label><i class="pi pi-hashtag field-icon"></i> Codigo producto</label>
+            <p>{{ transferencia.productoCodigo }}</p>
+          </div>
+          <div class="detalle-field">
+            <label><i class="pi pi-sitemap field-icon"></i> Categoria</label>
+            <p>{{ transferencia.productoCategoria }}</p>
+          </div>
+        </div>
+
+        <div class="producto-footer mt-3">
+          <div class="producto-footer-item">
+            <span class="producto-footer-label"><i class="pi pi-list"></i> Items asociados</span>
+            <strong>{{ detalleItems.length }}</strong>
+          </div>
+          <div class="producto-footer-item">
+            <span class="producto-footer-label"><i class="pi pi-ticket"></i> Series registradas</span>
+            <strong>{{ getTotalSeriesRegistradas() }}</strong>
+          </div>
+          <div class="producto-footer-item">
+            <span class="producto-footer-label"><i class="pi pi-clone"></i> Total solicitado</span>
+            <strong>{{ transferencia.cantidad }} uds</strong>
+          </div>
+        </div>
+      </p-card>
+
+      <p-card class="detalle-main-card panel-general">
+        <div class="section-header">
+          <h3><i class="pi pi-chart-line"></i> Informacion General</h3>
+          <div class="section-header-actions">
+            <span class="mini-chip mini-chip-soft">
+              <i class="pi pi-sync"></i>
+              {{ transferencia.estado }}
+            </span>
+          </div>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-item">
+            <i class="pi pi-calendar-plus timeline-icon"></i>
+            <div>
+              <span class="timeline-label">Solicitud registrada</span>
+              <p>{{ transferencia.fechaEnvio }}</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <i class="pi pi-clock timeline-icon"></i>
+            <div>
+              <span class="timeline-label">Llegada estimada</span>
+              <p>{{ transferencia.fechaLlegada }}</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <i class="pi pi-user timeline-icon"></i>
+            <div>
+              <span class="timeline-label">Responsable</span>
+              <p>{{ transferencia.responsable }}</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <i class="pi pi-warehouse timeline-icon"></i>
+            <div>
+              <span class="timeline-label">Almacen de origen</span>
+              <p>{{ transferencia.almacenOrigen }}</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <i class="pi pi-warehouse timeline-icon"></i>
+            <div>
+              <span class="timeline-label">Almacen de destino</span>
+              <p>{{ transferencia.almacenDestino }}</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="observacion-box mt-2">
+          <label><i class="pi pi-comment field-icon"></i> Observacion</label>
+          <p>{{ transferencia.observacion || '-' }}</p>
+        </div>
+      </p-card>
+    </section>
+
+    <p-card class="detalle-main-card mt-3">
+      <div class="section-header">
+        <h3><i class="pi pi-list"></i> Items de la transferencia</h3>
+      </div>
+
+      @if (detalleItems.length > 0) {
+        <div class="items-grid">
+          @for (item of detalleItems; track item.codigo + '-' + $index; let idx = $index) {
+            <article class="item-card">
+              <div class="item-card-header">
+                <span class="item-index">Item {{ idx + 1 }}</span>
+                <span class="item-cantidad">{{ item.cantidad }} uds</span>
+              </div>
+              <div class="item-card-body">
+                <div class="item-field">
+                  <label><i class="pi pi-box"></i> Producto</label>
+                  <p>{{ item.producto }}</p>
+                </div>
+                <div class="item-field">
+                  <label><i class="pi pi-hashtag"></i> Codigo</label>
+                  <p>{{ item.codigo }}</p>
+                </div>
+                <div class="item-field">
+                  <label><i class="pi pi-sitemap"></i> Categoria</label>
+                  <p>{{ item.categoria }}</p>
+                </div>
+                <div class="item-field item-field-wide">
+                  <label><i class="pi pi-ticket"></i> Series</label>
+                  @if (item.seriesList.length > 0) {
+                    <div class="series-chips">
+                      @for (serie of getVisibleSeries(item, idx); track serie) {
+                        <span class="serie-chip">{{ serie }}</span>
+                      }
+                    </div>
+                    @if (hasMoreSeries(item)) {
+                      <p-button
+                        [label]="isSeriesExpanded(item, idx) ? 'Ver menos' : 'Ver más'"
+                        [icon]="isSeriesExpanded(item, idx) ? 'pi pi-angle-up' : 'pi pi-angle-down'"
+                        text
+                        size="small"
+                        severity="secondary"
+                        (onClick)="toggleSeriesVisibility(item, idx)"
+                      />
+                    }
+                  } @else {
+                    <p class="series-cell">-</p>
+                  }
+                </div>
+              </div>
+            </article>
+          }
+        </div>
+      } @else {
+        <div class="empty-inline">No hay items registrados para esta transferencia.</div>
+      }
+    </p-card>
+  } @else {
+    <p-card class="detalle-main-card mt-3">
+      <div class="empty-state">
+        <i class="pi pi-inbox"></i>
+        <p>{{ errorMensaje || 'No se encontro la transferencia' }}</p>
+      </div>
+    </p-card>
+  }
 </div>
