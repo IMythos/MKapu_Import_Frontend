@@ -279,18 +279,18 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'generar-ventas-administracion',
     loadComponent: () =>
-      import('../ventas/pages/generar-venta/generar-venta').then((m) => m.GenerarVenta),
+      import('./pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
   },
   {
     path: 'historial-ventas-administracion',
     loadComponent: () =>
-      import('../ventas/pages/historial-ventas/historial-ventas').then((m) => m.HistorialVentas),
+      import('./pages/historial-ventas-administracion/historial-ventas-administracion').then((m) => m.HistorialVentasAdministracion),
   },
   {
     path: 'detalles-ventas-administracion/:id',
     loadComponent: () =>
-      import('./shared/detalles-ventas-administracion/detalles-ventas-administracion').then(
-        (m) => m.DetallesVentasAdministracion,
+      import('../ventas/shared/detalles-venta/detalle-venta').then(
+        (m) => m.DetalleVenta,
       ),
   },
   {

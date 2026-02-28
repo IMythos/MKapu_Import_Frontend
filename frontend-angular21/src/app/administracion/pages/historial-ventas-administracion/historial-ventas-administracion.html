@@ -208,30 +208,39 @@
       <p-table
         [value]="comprobantesFiltrados"
         [paginator]="true"
-        [rows]="5"
-        [rowsPerPageOptions]="[5,10, 20, 50]"
+        [rows]="limitePorPagina"
+        [totalRecords]="totalRegistros"
+        [lazy]="true"
+        (onLazyLoad)="onPageChange($event)"
+        [first]="firstRow"
+        [rowsPerPageOptions]="[5, 10, 20, 50]"
         [loading]="loading"
         [tableStyle]="{ 'min-width': '75rem' }"
-        styleClass="p-datatable-striped"
+        styleClass="p-datatablea-striped"
         currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
         [showCurrentPageReport]="true"
-        paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
       >
         <ng-template pTemplate="header">
           <tr>
             <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
-            <th pSortableColumn="tipo_comprobante">Tipo <p-sortIcon field="tipo_comprobante" /></th>
-            <th pSortableColumn="fec_emision">Fecha Emisión <p-sortIcon field="fec_emision" /></th>
-            <th pSortableColumn="cliente_nombre">Cliente</th>
-            <th pSortableColumn="cliente_doc">Documento</th>
+            <th pSortableColumn="tipoComprobante">Tipo <p-sortIcon field="tipoComprobante" /></th>
+            <th pSortableColumn="fecEmision">Fecha Emisión <p-sortIcon field="fecEmision" /></th>
+            <th pSortableColumn="clienteNombre">Cliente</th>
+            <th pSortableColumn="clienteDocumento">Documento</th>
 
-            <th pSortableColumn="id_sede">Sede <p-sortIcon field="id_sede" /></th>
-            <th pSortableColumn="tipo_pago">Tipo Pago <p-sortIcon field="tipo_pago" /></th>
-            <th pSortableColumn="responsable">Responsable <p-sortIcon field="responsable" /></th>
-            <th pSortableColumn="total" class="text-right" style="min-width: 125px; width: 125px">
+            <th pSortableColumn="sedeNombre">Sede <p-sortIcon field="sedeNombre" /></th>
+            <th pSortableColumn="metodoPago">Tipo Pago <p-sortIcon field="metodoPago" /></th>
+            <th pSortableColumn="responsableNombre">
+              Responsable <p-sortIcon field="responsableNombre" />
+            </th>
+            <th
+              pSortableColumn="total"
+              class="text-right"
+              style="min-width: 125px; width: 125px"
+            >
               Total <p-sortIcon field="total" />
             </th>
-            <th>Estado</th>
+            <th pSortableColumn="estado">Estado</th>
             <th class="text-center">Acciones</th>
           </tr>
         </ng-template>
@@ -240,40 +249,50 @@
           <tr>
             <td>
               <strong>{{ getNumeroFormateado(comprobante) }}</strong>
+              <!-- si prefieres usar numeroCompleto:
+              <strong>{{ comprobante.numeroCompleto }}</strong> -->
             </td>
             <td>
               <p-tag
-                [value]="getTipoComprobanteLabel(comprobante.tipo_comprobante)"
-                [severity]="comprobante.tipo_comprobante === '03' ? 'info' : 'warn'"
+                [value]="getTipoComprobanteLabel(comprobante.tipoComprobante)"
+                [severity]="
+                  getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta'
+                    ? 'info'
+                    : 'warn'
+                "
               ></p-tag>
             </td>
-            <td>{{ comprobante.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ comprobante.cliente_nombre }}</td>
-            <td>{{ comprobante.cliente_doc }}</td>
+            <td>{{ comprobante.fecEmision | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td>{{ comprobante.clienteNombre }}</td>
+            <td>{{ comprobante.clienteDocumento }}</td>
 
-            <td>{{ getSede(comprobante) }}</td>
+            <td>{{ comprobante.sedeNombre }}</td>
 
             <td>
               <div class="tipo-pago-cell">
                 <p-tag
-                  [value]="getTipoPagoLabel(comprobante.tipo_pago)"
-                  [severity]="getSeverityTipoPago(comprobante.tipo_pago)"
+                  [value]="getTipoPagoLabel(comprobante.metodoPago)"
+                  [severity]="getSeverityTipoPago(comprobante.metodoPago)"
                   styleClass="tipo-pago-tag"
                 ></p-tag>
               </div>
             </td>
+
             <td>
-              <span class="responsable-text">{{ comprobante.responsable }}</span>
+              <span class="responsable-text">{{ comprobante.responsableNombre }}</span>
             </td>
+
             <td class="text-right">
               <strong>S/. {{ comprobante.total | number: '1.2-2' }}</strong>
             </td>
+
             <td>
               <p-tag
                 [value]="getEstadoComprobante(comprobante)"
                 [severity]="getSeverityEstado(getEstadoComprobante(comprobante))"
               ></p-tag>
             </td>
+
             <td class="text-center">
               <div class="acciones-tabla">
                 <p-button
@@ -300,7 +319,7 @@
                   [rounded]="true"
                   [text]="true"
                   severity="danger"
-                  [disabled]="!comprobante.estado"
+                  [disabled]="comprobante.estado !== 'EMITIDO'"
                   pTooltip="Anular"
                   tooltipPosition="top"
                 ></p-button>

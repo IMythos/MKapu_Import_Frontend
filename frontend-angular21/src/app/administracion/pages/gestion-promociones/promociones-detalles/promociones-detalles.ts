@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
-import { CommonModule, DecimalPipe, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule, DecimalPipe, DatePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
 // PrimeNG Modules
@@ -22,7 +22,6 @@ import { PromocionesService, Promocion } from '../../../services/promociones.ser
     CommonModule,
     DatePipe,
     DecimalPipe,
-    CurrencyPipe,
     ButtonModule,
     CardModule,
     TagModule,
