@@ -220,6 +220,12 @@
         label: 'Remates',
         icon: 'pi pi-tag',
       },
+      {
+        path: '/ventas/promociones',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Promociones',
+        icon: 'pi pi-gift',
+      },
 
       // ==================== ALMACÉN ====================
       {
