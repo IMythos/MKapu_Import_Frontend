@@ -6,222 +6,235 @@
           <i [class]="iconoCabecera()"></i>
         </span>
         <div>
-          <p class="promociones-kicker mb-0">{{ tituloKicker() }}</p>
+          <p class="promociones-kicker mb-0">ADMINISTRACIÓN - CAMPAÑAS</p>
           <h2 class="promociones-title mb-0">{{ tituloPrincipal() }}</h2>
         </div>
       </div>
-      <div class="flex gap-2">
-        <p-button
-          label="Volver"
-          icon="pi pi-arrow-left"
-          (onClick)="cancelar()"
-          styleClass="ventas-pill"
-          severity="secondary"
-        />
-      </div>
+      <p-button label="Volver" icon="pi pi-arrow-left" (click)="cancelar()" styleClass="ventas-pill" severity="secondary"></p-button>
     </div>
   </p-card>
 </div>
 
 <div class="p-2">
   <p-card styleClass="tarjeta-principal border-round-xl">
-    <form [formGroup]="promocionForm" (ngSubmit)="guardarPromocion()" class="formgrid grid">
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="formgrid grid">
 
-      <!-- ── Sección: Configuración General ── -->
+      <!-- ── Información General ── -->
       <div class="col-12 mb-3">
-        <h3 class="form-section-title">
-          <i class="pi pi-info-circle"></i>
-          Configuración General
-        </h3>
-      </div>
-
-      <div class="field col-12 md:col-6 mb-4">
-        <label for="codigo" class="form-label">Código de Cupón <span class="text-red-400">*</span></label>
-        <input
-          pInputText
-          id="codigo"
-          formControlName="codigo"
-          class="w-full uppercase"
-          placeholder="Ej: VERANO2026"
-        />
-        @if (promocionForm.get('codigo')?.invalid && promocionForm.get('codigo')?.touched) {
-          <small class="text-red-500 block mt-1">
-            <i class="pi pi-exclamation-circle mr-1"></i>El código es requerido (mínimo 3 caracteres)
-          </small>
-        }
-      </div>
-
-      <div class="field col-12 md:col-6 mb-4">
-        <label for="tipo_descuento" class="form-label">Tipo de Descuento <span class="text-red-400">*</span></label>
-        <p-select
-          id="tipo_descuento"
-          formControlName="tipo_descuento"
-          [options]="tiposPromocion()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Seleccionar tipo"
-          styleClass="w-full"
-        />
-        @if (promocionForm.get('tipo_descuento')?.invalid && promocionForm.get('tipo_descuento')?.touched) {
-          <small class="text-red-500 block mt-1">
-            <i class="pi pi-exclamation-circle mr-1"></i>El tipo de descuento es requerido
-          </small>
-        }
+        <h3 class="form-section-title"><i class="pi pi-info-circle"></i> Información General</h3>
       </div>
 
       <div class="field col-12 mb-4">
-        <label for="descripcion" class="form-label">Descripción <span class="text-red-400">*</span></label>
-        <textarea
-          pInputTextarea
-          id="descripcion"
-          formControlName="descripcion"
-          rows="3"
-          class="w-full"
-          placeholder="Describe el beneficio de la promoción..."
-        ></textarea>
-        @if (promocionForm.get('descripcion')?.invalid && promocionForm.get('descripcion')?.touched) {
-          <small class="text-red-500 block mt-1">
-            <i class="pi pi-exclamation-circle mr-1"></i>La descripción es requerida
-          </small>
+        <label class="form-label">Concepto <span class="text-red-400">*</span></label>
+        <input pInputText formControlName="concepto" class="w-full" placeholder="Ej: DESCUENTO LANZAMIENTO 2026" />
+        @if (form.get('concepto')?.invalid && form.get('concepto')?.touched) {
+          <small class="text-red-500 block mt-1"><i class="pi pi-exclamation-circle mr-1"></i>Mínimo 3 caracteres, máximo 100</small>
         }
       </div>
 
-      <!-- Divider -->
+      <div class="col-12"><div class="border-top-1 surface-border mb-4"></div></div>
+
+      <!-- ── Configuración del Descuento ── -->
       <div class="col-12 mb-3">
-        <div class="border-top-1 surface-border"></div>
+        <h3 class="form-section-title"><i class="pi pi-percentage"></i> Configuración del Descuento</h3>
       </div>
 
-      <!-- ── Sección: Vigencia y Beneficio ── -->
-      <div class="col-12 mb-3">
-        <h3 class="form-section-title">
-          <i class="pi pi-calendar"></i>
-          Vigencia y Beneficio
-        </h3>
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">Tipo de Descuento <span class="text-red-400">*</span></label>
+        <p-select formControlName="tipo" [options]="tiposPromocion" optionLabel="label" optionValue="value" placeholder="Seleccionar tipo" styleClass="w-full" />
       </div>
 
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Fecha Inicio <span class="text-red-400">*</span></label>
-        <p-datepicker
-          formControlName="fecha_inicio"
-          [showIcon]="true"
-          dateFormat="dd/mm/yy"
-          placeholder="dd/mm/aaaa"
-          styleClass="w-full"
-        />
-        @if (promocionForm.get('fecha_inicio')?.invalid && promocionForm.get('fecha_inicio')?.touched) {
-          <small class="text-red-500 block mt-1">
-            <i class="pi pi-exclamation-circle mr-1"></i>La fecha de inicio es requerida
-          </small>
+      <!-- Campo valor: se destruye y recrea al cambiar tipo gracias a mostrarInputValor -->
+      <div class="field col-12 md:col-6 mb-4">
+        @if (mostrarInputValor()) {
+          @if (esModoMonto()) {
+            <label class="form-label">
+              Monto del Descuento <span class="text-red-400">*</span>
+              <small class="text-400 ml-1">(S/.)</small>
+            </label>
+            <p-inputNumber
+              formControlName="valor"
+              mode="currency"
+              currency="PEN"
+              locale="es-PE"
+              [min]="0.01"
+              placeholder="S/. 0.00"
+              styleClass="w-full"
+            />
+          } @else {
+            <label class="form-label">
+              Porcentaje de Descuento <span class="text-red-400">*</span>
+              <small class="text-400 ml-1">(0 – 100%)</small>
+            </label>
+            <p-inputNumber
+              formControlName="valor"
+              mode="decimal"
+              suffix=" %"
+              [min]="0.01"
+              [max]="100"
+              [maxFractionDigits]="2"
+              placeholder="0 %"
+              styleClass="w-full"
+            />
+          }
+
+          @if (form.get('valor')?.invalid && form.get('valor')?.touched) {
+            <small class="text-red-500 block mt-1">
+              <i class="pi pi-exclamation-circle mr-1"></i>
+              {{ esModoMonto() ? 'Ingrese un monto mayor a 0' : 'Ingrese un porcentaje entre 0 y 100' }}
+            </small>
+          }
         }
       </div>
 
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Fecha Fin <span class="text-red-400">*</span></label>
-        <p-datepicker
-          formControlName="fecha_fin"
-          [showIcon]="true"
-          dateFormat="dd/mm/yy"
-          placeholder="dd/mm/aaaa"
-          styleClass="w-full"
-        />
-        @if (promocionForm.get('fecha_fin')?.invalid && promocionForm.get('fecha_fin')?.touched) {
-          <small class="text-red-500 block mt-1">
-            <i class="pi pi-exclamation-circle mr-1"></i>La fecha de fin es requerida
-          </small>
+      <div class="col-12"><div class="border-top-1 surface-border mb-4"></div></div>
+
+      <!-- ── Reglas de Aplicación ── -->
+      <div class="col-12 mb-3">
+        <div class="flex align-items-center justify-content-between">
+          <h3 class="form-section-title mb-0">
+            <i class="pi pi-shield"></i> Reglas de Aplicación
+            <span class="text-400 text-sm font-normal ml-2">(opcional)</span>
+          </h3>
+          <p-button type="button" label="Agregar Regla" icon="pi pi-plus" size="small" severity="secondary" [outlined]="true" (click)="agregarRegla()"></p-button>
+        </div>
+      </div>
+
+      <div class="col-12" formArrayName="reglas">
+        @if (reglas.length === 0) {
+          <div class="text-400 text-sm mb-4 p-3 border-1 surface-border border-round text-center">
+            <i class="pi pi-info-circle mr-1"></i>Sin reglas — la promoción aplica sin restricciones
+          </div>
+        }
+
+        @for (regla of reglas.controls; track $index; let i = $index) {
+          <div [formGroupName]="i" class="grid mb-3 align-items-end">
+
+            <div class="field col-12 md:col-5 mb-0">
+              <label class="form-label">Tipo de Condición</label>
+              <p-select
+                formControlName="tipoCondicion"
+                [options]="tiposCondicion"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Seleccionar condición"
+                styleClass="w-full"
+                (onChange)="onTipoCondicionChange(i)"
+              />
+            </div>
+
+            <div class="field col-12 md:col-5 mb-0">
+              @switch (tipoRegla(i)) {
+                @case ('MINIMO_COMPRA') {
+                  <label class="form-label">Monto mínimo (S/.)</label>
+                  <p-inputNumber
+                    formControlName="valorCondicion"
+                    mode="currency"
+                    currency="PEN"
+                    locale="es-PE"
+                    [min]="0"
+                    placeholder="S/. 0.00"
+                    styleClass="w-full"
+                  />
+                }
+                @case ('CLIENTE_NUEVO') {
+                  <label class="form-label">Condición</label>
+                  <div class="p-3 border-1 surface-border border-round flex align-items-center gap-2 text-sm surface-ground">
+                    <i class="pi pi-check-circle text-green-400 text-lg"></i>
+                    <span class="text-color-secondary">Se activa automáticamente para clientes nuevos</span>
+                  </div>
+                }
+                @case ('CATEGORIA') {
+                  <label class="form-label">Categoría</label>
+                  <p-select
+                    formControlName="valorCondicion"
+                    [options]="categorias()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Seleccionar categoría"
+                    [filter]="true"
+                    filterPlaceholder="Buscar..."
+                    styleClass="w-full"
+                  />
+                }
+                @case ('PRODUCTO') {
+                  <label class="form-label">Código de Producto</label>
+                  <input
+                    pInputText
+                    formControlName="valorCondicion"
+                    class="w-full"
+                    placeholder="Ej: PROD-001"
+                  />
+                }
+                @default {
+                  <label class="form-label">&nbsp;</label>
+                  <div class="p-3 border-1 surface-border border-round text-400 text-sm">
+                    Selecciona un tipo de condición
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="col-12 md:col-2 flex justify-content-end">
+              <p-button type="button" icon="pi pi-trash" severity="danger" [outlined]="true" [rounded]="true" pTooltip="Eliminar regla" (click)="eliminarRegla(i)"></p-button>
+            </div>
+
+          </div>
         }
       </div>
 
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Valor del Descuento <span class="text-red-400">*</span></label>
-        <p-inputNumber
-          formControlName="valor_descuento"
-          [mode]="esModoMonto() ? 'currency' : 'decimal'"
-          currency="PEN"
-          locale="es-PE"
-          [suffix]="esModoMonto() ? '' : ' %'"
-          [min]="0"
-          [max]="esModoMonto() ? null : 100"
-          placeholder="0.00"
-          styleClass="w-full"
-        />
-        @if (promocionForm.get('valor_descuento')?.invalid && promocionForm.get('valor_descuento')?.touched) {
-          <small class="text-red-500 block mt-1">
-            <i class="pi pi-exclamation-circle mr-1"></i>Ingrese un valor mayor a 0
-          </small>
+      <div class="col-12"><div class="border-top-1 surface-border mb-4"></div></div>
+
+      <!-- ── Descuentos Aplicados ── -->
+      <div class="col-12 mb-3">
+        <div class="flex align-items-center justify-content-between">
+          <h3 class="form-section-title mb-0">
+            <i class="pi pi-tag"></i> Descuentos Aplicados
+            <span class="text-400 text-sm font-normal ml-2">(opcional)</span>
+          </h3>
+          <p-button type="button" label="Agregar Descuento" icon="pi pi-plus" size="small" severity="secondary" [outlined]="true" (click)="agregarDescuento()"></p-button>
+        </div>
+      </div>
+
+      <div class="col-12" formArrayName="descuentosAplicados">
+        @if (descuentos.length === 0) {
+          <div class="text-400 text-sm mb-4 p-3 border-1 surface-border border-round text-center">
+            <i class="pi pi-info-circle mr-1"></i>Sin descuentos adicionales aplicados
+          </div>
+        }
+
+        @for (desc of descuentos.controls; track $index; let i = $index) {
+          <div [formGroupName]="i" class="grid mb-3 align-items-end">
+            <div class="field col-12 md:col-10 mb-0">
+              <label class="form-label">
+                Monto del Descuento (S/.)
+                @if (desc.get('idDescuento')?.value) {
+                  <small class="text-400 ml-1">— ID #{{ desc.get('idDescuento')?.value }}</small>
+                }
+              </label>
+              <p-inputNumber formControlName="monto" mode="currency" currency="PEN" locale="es-PE" [min]="0.01" placeholder="S/. 0.00" styleClass="w-full" />
+              @if (desc.get('monto')?.invalid && desc.get('monto')?.touched) {
+                <small class="text-red-500 block mt-1">El monto debe ser mayor a 0</small>
+              }
+            </div>
+            <div class="col-12 md:col-2 flex justify-content-end">
+              <p-button type="button" icon="pi pi-trash" severity="danger" [outlined]="true" [rounded]="true" pTooltip="Eliminar" (click)="eliminarDescuento(i)"></p-button>
+            </div>
+          </div>
         }
       </div>
 
-      <!-- Divider -->
-      <div class="col-12 mb-3">
-        <div class="border-top-1 surface-border"></div>
-      </div>
-
-      <!-- ── Sección: Restricciones de Uso ── -->
-      <div class="col-12 mb-3">
-        <h3 class="form-section-title">
-          <i class="pi pi-shield"></i>
-          Restricciones de Uso
-        </h3>
-      </div>
-
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Monto Mínimo de Compra</label>
-        <p-inputNumber
-          formControlName="monto_minimo"
-          mode="currency"
-          currency="PEN"
-          locale="es-PE"
-          [min]="0"
-          placeholder="S/ 0.00"
-          styleClass="w-full"
-        />
-        <small class="form-hint">Dejar en 0 si no aplica mínimo</small>
-      </div>
-
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Límite Total de Usos</label>
-        <p-inputNumber
-          formControlName="uso_maximo"
-          [min]="0"
-          placeholder="Vacío / ilimitado"
-          styleClass="w-full"
-        />
-        <small class="form-hint">Dejar vacío para usos ilimitados</small>
-      </div>
-
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">Tipo de Comprobante</label>
-        <p-select
-          formControlName="tipo_comprobante"
-          [options]="tiposComprobante()"
-          optionLabel="label"
-          optionValue="value"
-          styleClass="w-full"
-        />
-      </div>
-
-      <!-- Divider + Acciones -->
-      <div class="col-12">
-        <div class="border-top-1 surface-border mb-4"></div>
-      </div>
-
+      <!-- ── Acciones ── -->
+      <div class="col-12"><div class="border-top-1 surface-border mb-4"></div></div>
       <div class="col-12 flex gap-2 justify-content-end">
-        <p-button
-          type="button"
-          label="Cancelar"
-          icon="pi pi-times"
-          severity="secondary"
-          [outlined]="true"
-          styleClass="ventas-pill"
-          (onClick)="cancelar()"
-        />
+        <p-button type="button" label="Cancelar" icon="pi pi-times" severity="secondary" [outlined]="true" styleClass="ventas-pill" (click)="cancelar()"></p-button>
         <p-button
           type="submit"
           [label]="esModoEdicion() ? 'Actualizar Promoción' : 'Guardar Promoción'"
           [icon]="isSubmitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
-          [disabled]="promocionForm.invalid || isSubmitting()"
+          [disabled]="form.invalid || isSubmitting()"
           styleClass="ventas-pill ventas-pill-warning"
-        />
+        ></p-button>
       </div>
 
     </form>

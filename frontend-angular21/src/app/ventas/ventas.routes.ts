@@ -71,6 +71,11 @@ export const VENTAS_ROUTES: Routes = [
         (m) => m.ReclamosDetalles,
       ),
   },
+  {
+    path: 'reporte-ventas',
+    canActivate: [CashboxGuard],
+    loadComponent: () => import('./pages/dashboard-ventas/dashboard-ventas').then((m) => m.DashboardVentas)
+  },
 
   // ─── COTIZACIONES ───────────────────────────────────────────
   {
@@ -158,13 +163,4 @@ export const VENTAS_ROUTES: Routes = [
       import('../logistica/pages/conteo-detalle/conteodetalle')
         .then((m) => m.ConteoDetalle),
   },
-
-
-
-
-
-
-
-
-
 ];

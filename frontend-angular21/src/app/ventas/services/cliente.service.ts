@@ -9,7 +9,7 @@ import {
   ActualizarClienteRequest,
   // OUT
   ClienteBusquedaResponse,
-  ClienteResponse,          // ← antes era CrearClienteResponse
+  ClienteResponse,          
   ListarClientesResponse,
   TipoDocumento,
 } from '../interfaces';

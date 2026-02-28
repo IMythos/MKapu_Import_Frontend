@@ -46,139 +46,35 @@ export class Sidebar implements OnInit {
 
   private readonly SIDEBAR_ROUTES: RouteConfig[] = [
     // ==================== ADMIN ====================
-    {
-      path: '/admin/dashboard',
-      allowedRoles: [UserRole.ADMIN],
-      label: 'Dashboard',
-      icon: 'pi pi-home',
-    },
+    { path: '/admin/dashboard-admin',allowedRoles: [UserRole.ADMIN],label: 'Dashboard',icon: 'pi pi-home',},
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],  label: 'VENTAS', isSection: true },
+    { path: '/admin/dashboard-ventas',                allowedRoles: [UserRole.ADMIN],  label: 'Dashboard Ventas', icon: 'pi pi-chart-line' },
+    { path: '/admin/generar-ventas-administracion',   allowedRoles: [UserRole.ADMIN], label: 'Crear Venta Administración', icon: 'pi pi-plus-circle' },
+    { path: '/admin/historial-ventas-administracion', allowedRoles: [UserRole.ADMIN], label: 'Historial Ventas Administración', icon: 'pi pi-list' },
+    { path: '/admin/nota-credito',                    allowedRoles: [UserRole.ADMIN], label: 'Notas de Crédito', icon: 'pi pi-credit-card' },
+    { path: '/admin/descuentos',                       allowedRoles: [UserRole.ADMIN], label: 'Descuentos', icon: 'pi pi-tag' },
+    { path: '/admin/promociones',                     allowedRoles: [UserRole.ADMIN], label: 'Promociones', icon: 'pi pi-percentage' },
+    { path: '/admin/reporte-ventas',                  allowedRoles: [UserRole.ADMIN], label: 'Reporte de Ventas', icon: 'pi pi-chart-bar' },
+    { path: '/admin/ventas-por-cobrar',               allowedRoles: [UserRole.ADMIN], label: 'Ventas por Cobrar', icon: 'pi pi-wallet' },
+    { path: '/admin/clientes',                        allowedRoles: [UserRole.ADMIN],  label: 'Clientes', icon: 'pi pi-users' },
+    { path: '/admin/cotizaciones',                    allowedRoles: [UserRole.ADMIN],  label: 'Cotizaciones', icon: 'pi pi-id-card' },
 
-      {
-        path: '',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'VENTAS',
-        isSection: true,
-      },
-      {
-        path: '/admin/dashboard-ventas',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Dashboard Ventas',
-        icon: 'pi pi-chart-line',
-      },
-      {
-        path: '/admin/generar-ventas-administracion',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Crear Venta Administración',
-        icon: 'pi pi-plus-circle',
-      },
-      {
-        path: '/admin/historial-ventas-administracion',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Historial Ventas Administración',
-        icon: 'pi pi-list',
-      },
-      {
-        path: '/admin/clientes',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Clientes',
-        icon: 'pi pi-users',
-      },
-      {
-        path: '',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'ALMACÉN',
-        isSection: true,
-      },
-      {
-        path: '/admin/dashboard-almacen',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Dashboard Almacén',
-        icon: 'pi pi-chart-bar',
-      },
-      {
-        path: '/admin/almacen',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Almacen',
-        icon: 'pi pi-box',
-      },
-      {
-        path: '/admin/ingresos-almacen',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Ingresos Almacén',
-        icon: 'pi pi-download',
-      },
-      {
-        path: '',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'ADMINISTRACIÓN',
-        isSection: true,
-      },
-      {
-        path: '/admin/transferencia',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Transferencias',
-        icon: 'pi pi-arrows-h',
-      },
-      {
-        path: '/admin/despacho-productos',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Despacho',
-        icon: 'pi pi-truck',
-      },
-      {
-        path: '/admin/usuarios',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Usuarios',
-        icon: 'pi pi-user-plus',
-      },
-      {
-        path: '/admin/gestion-productos',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Productos',
-        icon: 'pi pi-tags',
-      },
-      {
-        path: '/admin/categoria',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Categorías',
-        icon: 'pi pi-list',
-      },
-      {
-        path: '/admin/sedes',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Sedes',
-        icon: 'pi pi-building',
-      },
-      {
-        path: '/admin/comision',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Comisiones',
-        icon: 'pi pi-wallet',
-      },
-      {
-        path: '/admin/mermas',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Mermas',
-        icon: 'pi pi-exclamation-triangle',
-      },
-      {
-        path: '/admin/remates',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Remates',
-        icon: 'pi pi-tag',
-      },
-      {
-        path: '/admin/promociones',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Promociones',
-        icon: 'pi pi-gift',
-      },
-      {
-        path: '/admin/proveedores',
-        allowedRoles: [UserRole.ADMIN],
-        label: 'Proveedores',
-        icon: 'pi pi-truck',
-      },
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],  label: 'ALMACÉN', isSection: true },
+    { path: '/admin/dashboard-almacen',               allowedRoles: [UserRole.ADMIN],  label: 'Dashboard Almacén', icon: 'pi pi-chart-bar' },
+    { path: '/admin/almacen',                         allowedRoles: [UserRole.ADMIN],  label: 'Almacén', icon: 'pi pi-box' },
+    { path: '/admin/ingresos-almacen',                allowedRoles: [UserRole.ADMIN],  label: 'Ingresos Almacén', icon: 'pi pi-download' },
+
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],  label: 'ADMINISTRACIÓN', isSection: true },
+    { path: '/admin/transferencia',                   allowedRoles: [UserRole.ADMIN],  label: 'Transferencias', icon: 'pi pi-arrows-h' },
+    { path: '/admin/despacho-productos',              allowedRoles: [UserRole.ADMIN],  label: 'Despacho', icon: 'pi pi-truck' },
+    { path: '/admin/usuarios',                        allowedRoles: [UserRole.ADMIN],  label: 'Usuarios', icon: 'pi pi-user-plus' },
+    { path: '/admin/gestion-productos',               allowedRoles: [UserRole.ADMIN],  label: 'Productos', icon: 'pi pi-tags' },
+    { path: '/admin/categoria',                       allowedRoles: [UserRole.ADMIN],  label: 'Categorías', icon: 'pi pi-list' },
+    { path: '/admin/sedes',                           allowedRoles: [UserRole.ADMIN],  label: 'Sedes', icon: 'pi pi-building' },
+    { path: '/admin/comision',                        allowedRoles: [UserRole.ADMIN],  label: 'Comisiones', icon: 'pi pi-wallet' },
+    { path: '/admin/mermas',                          allowedRoles: [UserRole.ADMIN],  label: 'Mermas', icon: 'pi pi-exclamation-triangle' },
+    { path: '/admin/remates',                         allowedRoles: [UserRole.ADMIN],  label: 'Remates', icon: 'pi pi-tag' },
+    { path: '/admin/proveedores',                     allowedRoles: [UserRole.ADMIN],  label: 'Proveedores', icon: 'pi pi-truck' },
 
     // ==================== VENTAS ====================
     { path: '/ventas/caja',                           allowedRoles: [UserRole.VENTAS], label: 'Estado Caja', icon: 'pi pi-wallet' },
@@ -221,6 +117,12 @@ export class Sidebar implements OnInit {
       label: 'Conteo Inventario',
       icon: 'pi pi-folder',
     },
+    {
+      path: '/logistica/movimiento-inventario',
+      allowedRoles: [UserRole.ADMIN],
+      label: 'Movimiento Inventario',
+      icon: 'pi pi-database'
+    }
   ];
 
   // ========== Ciclo de vida ==========
@@ -238,8 +140,6 @@ export class Sidebar implements OnInit {
     this.loadMenu();
   }
 
-  // ========== Métodos de UI ==========
-
   private loadUserInfo(): void {
     const user = this.roleService.getCurrentUser();
     if (user) {
@@ -256,15 +156,11 @@ export class Sidebar implements OnInit {
     }
     this.menuItems = this.SIDEBAR_ROUTES.filter(route => route.allowedRoles.includes(currentRole));
   }
-
   isSection(item: RouteConfig): boolean {
     return item.isSection === true;
   }
 
-  /**
-   * Navega a una ruta, bloqueando ventas si la caja está cerrada.
-   */
-  navigateTo(path: string): void {
+  navigateTo(event: Event, path: string): void {
     const currentRole = this.roleService.getCurrentUserRole();
     const esRutaVentas = path.startsWith('/ventas');
     const esCaja = path === '/ventas/caja';
@@ -272,6 +168,10 @@ export class Sidebar implements OnInit {
     if (currentRole === UserRole.VENTAS && esRutaVentas && !esCaja) {
       const caja = this.cashboxSocket.caja();
       if (!caja || caja.estado !== 'ABIERTA') {
+        
+        event.preventDefault(); 
+        event.stopPropagation();
+        
         this.messageService.add({
           severity: 'warn',
           summary: 'Caja Cerrada',
@@ -281,16 +181,10 @@ export class Sidebar implements OnInit {
         return;
       }
     }
-    this.router.navigateByUrl(path);
   }
-
   toggleMenu(menu: string): void {
     this.activeMenu = this.activeMenu === menu ? null : menu;
   }
-
-  /**
-   * Confirmación de cierre de sesión
-   */
   confirm2(event: Event): void {
     this.confirmationService.confirm({
       target: event.target as EventTarget,

@@ -148,8 +148,15 @@ export class GestionCotizacionesComponent implements OnInit {
   }
 
   constructor(private router: Router) {}
+  irCrear() {
+    this.router.navigate(['/admin/agregar-cotizaciones']);
+  }
 
-  irCrear() { this.router.navigate(['/admin/gestion-cotizaciones/crear-cotizacion']); }
-  irEditar(id: number) { this.router.navigate(['/admin/gestion-cotizaciones/editar-cotizacion', id]); }
-  irDetalle(id: number) { this.router.navigate(['/admin/gestion-cotizaciones/ver-detalle-cotizacion', id]); }
+  irEditar(id: number) {
+    this.router.navigate(['/admin/editar-cotizacion', id]);
+  }
+
+  irDetalle(id: number) {
+    this.router.navigate(['/admin/ver-detalle-cotizacion', id]);
+  }
 }

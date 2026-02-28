@@ -6,16 +6,14 @@ import { environment } from '../../../enviroments/enviroment';
 export class CashboxSocketService {
   private socket: Socket;
 
-  private readonly _caja        = signal<any>(null);
-  private readonly _connected   = signal<boolean>(false);
+  private readonly _caja = signal<any>(null);
+  private readonly _connected = signal<boolean>(false);
 
-  readonly caja      = this._caja.asReadonly();
+  readonly caja = this._caja.asReadonly();
   readonly connected = this._connected.asReadonly();
 
-  // Signal derivado para el header
   readonly cajaAbierta = () => this._caja() !== null;
 
-  // Múltiples listeners — Set en lugar de un solo callback
   private readonly _listeners = new Set<() => void>();
 
   constructor() {

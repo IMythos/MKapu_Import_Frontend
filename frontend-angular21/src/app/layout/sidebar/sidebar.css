@@ -34,7 +34,6 @@
 
 .sidebar-root span {
   user-select: none;
-  cursor: default;
 }
 
 .sidebar-root .border-bottom-1 {
@@ -89,3 +88,7 @@
   background-color: #d97706;
 }
 
+.sidebar-root a, 
+.sidebar-root a * {
+  cursor: pointer !important;
+}

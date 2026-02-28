@@ -2,7 +2,7 @@ import { Component, OnInit, signal, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router'; 
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { of, forkJoin } from 'rxjs'; // <-- IMPORTANTE: Añadido forkJoin
+import { of, forkJoin } from 'rxjs'; 
 import { concatMap, catchError, finalize } from 'rxjs/operators';
 
 // PrimeNG

@@ -1,0 +1,14 @@
+:host {
+    display: block;
+    width: 100%;
+}
+
+.card {
+    /* PrimeNG detectará y cambiará automáticamente el color según el modo */
+    background: var(--surface-card);
+    color: var(--text-color);
+    border: 1px solid var(--surface-border);
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}

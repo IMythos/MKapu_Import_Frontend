@@ -14,35 +14,34 @@ export const routes: Routes = [
   { path: 'login', component: Login },
 
   {
-    path: 'admin',
+    path: '',
     component: Main,
-
-    canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: [UserRole.ADMIN] },
-    children: ADMIN_ROUTES,
-  },
-
-  {
-    path: 'almacen',
-    component: Main,
-    canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: [UserRole.ALMACEN] },
-    children: ALMACEN_ROUTES,
-  },
-
-  {
-    path: 'ventas',
-    component: Main,
-    canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: [UserRole.VENTAS] },
-    children: VENTAS_ROUTES,
-  },
-  
-  {
-    path: 'logistica',
-    component: Main,
-    //canActivate: [authGuard, roleGuard],
-    data: { allowedRoles: [UserRole.LOGISTICA] },
-    children: LOGISTICA_ROUTES,
-  },
+    canActivate: [authGuard],
+    children: [
+      {
+        path: 'admin',
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRole.ADMIN] },
+        children: ADMIN_ROUTES,
+      },
+      {
+        path: 'almacen',
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRole.ALMACEN] },
+        children: ALMACEN_ROUTES,
+      },
+      {
+        path: 'ventas',
+        canActivate: [roleGuard],
+        data: { allowedRoles: [UserRole.VENTAS] },
+        children: VENTAS_ROUTES,
+      },
+      {
+        path: 'logistica',
+        //canActivate: [roleGuard],
+        data: { allowedRoles: [UserRole.LOGISTICA] },
+        children: LOGISTICA_ROUTES,
+      }
+    ]
+  }
 ];
