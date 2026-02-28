@@ -36,9 +36,8 @@ export class TransferApiService {
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AuthService, { optional: true });
 
-  private readonly logisticsApi =
-    environment.apiLogistics || environment.apiUrl || 'http://localhost:3005';
-  private readonly transferBase = `${this.logisticsApi}/warehouse/transfer`;
+  private readonly logisticsApi = environment.apiUrl;
+  private readonly transferBase = `${this.logisticsApi}/logistics/warehouse/transfer`;
   private readonly productsBase = `${this.logisticsApi}/products`;
 
   requestAggregated(

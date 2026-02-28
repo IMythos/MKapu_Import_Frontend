@@ -112,7 +112,7 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
 
   // Paginación
   paginaActual = 1;
-  limitePorPagina = 10;
+  limitePorPagina = 5;
   totalRegistros = 0;
   totalPaginas = 0;
   firstRow = 0;
