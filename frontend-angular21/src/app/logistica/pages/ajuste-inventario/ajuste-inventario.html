@@ -1,0 +1,133 @@
+<div class="p-4">
+  <h2>Ajuste de Stock Manual</h2>
+
+  <div class="card mb-4 p-4 shadow-2 border-round">
+    <form [formGroup]="ajusteForm" (ngSubmit)="agregarATabla()">
+      <div class="grid formgrid p-fluid">
+        <div class="col-12 md:col-5 field">
+          <label>Buscar Producto (Código)</label>
+          <p-autoComplete
+            formControlName="productoInput"
+            [suggestions]="productosSugeridos"
+            (completeMethod)="buscarProductoPorCodigo($event)"
+            optionLabel="codigo"
+            dataKey="id_producto"
+            [dropdown]="true"
+            placeholder="Ej: PROD-..."
+            styleClass="w-full"
+            [inputStyle]="{ width: '100%' }"
+          >
+            <ng-template let-producto pTemplate="item">
+              <div>
+                <strong>{{ producto.codigo }}</strong> - {{ producto.descripcion }}
+              </div>
+            </ng-template>
+          </p-autoComplete>
+        </div>
+
+        <div class="col-12 md:col-3 field flex flex-column">
+          <label>Tipo</label>
+          <p-selectButton
+            [options]="tiposAjuste"
+            formControlName="tipo"
+            optionLabel="label"
+            optionValue="value"
+          ></p-selectButton>
+        </div>
+
+        <div class="col-12 md:col-2 field">
+          <label>Cantidad</label>
+          <p-inputNumber
+            formControlName="cantidad"
+            [min]="1"
+            mode="decimal"
+            class="w-full"
+          ></p-inputNumber>
+        </div>
+
+        <div class="col-12 md:col-12 field mt-2">
+          <label>Motivo del Ajuste</label>
+          <input
+            pInputText
+            formControlName="reason"
+            placeholder="Ej: Error de conteo, Merma, etc."
+            class="w-full"
+          />
+        </div>
+
+        <div class="col-12 flex justify-content-end mt-2">
+          <p-button
+            label="Agregar a Lista"
+            icon="pi pi-plus"
+            type="submit"
+            [disabled]="ajusteForm.invalid"
+            severity="info"
+          ></p-button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <div class="card p-4 shadow-2 border-round" *ngIf="productosTabla.length > 0">
+    <h3 class="mt-0">Resumen de Ajustes a Aplicar</h3>
+
+    <p-table [value]="productosTabla" responsiveLayout="scroll" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th class="text-right">Cantidad</th>
+          <th>Motivo</th>
+          <th class="text-center" style="width: 5rem">Acciones</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-item let-i="rowIndex">
+        <tr>
+          <td>
+            <strong>{{ item.codigo }}</strong>
+          </td>
+          <td>{{ item.nombre }}</td>
+          <td>
+            <span
+              class="px-2 py-1 border-round text-sm"
+              [ngClass]="
+                item.tipo === 'POS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              "
+            >
+              {{ item.tipo === 'POS' ? 'Ingreso (+)' : 'Salida (-)' }}
+            </span>
+          </td>
+          <td class="text-right">{{ item.cantidad }}</td>
+          <td>{{ item.reason }}</td>
+          <td class="text-center">
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              [rounded]="true"
+              [text]="true"
+              (onClick)="eliminarDeTabla(i)"
+            ></p-button>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <div class="flex justify-content-end mt-4 gap-2">
+      <p-button
+        label="Limpiar Tabla"
+        icon="pi pi-times"
+        severity="secondary"
+        [text]="true"
+        (onClick)="limpiarTabla()"
+      ></p-button>
+      <p-button
+        label="Guardar Todos los Ajustes"
+        icon="pi pi-save"
+        severity="success"
+        (onClick)="guardarAjustes()"
+        [loading]="guardando"
+      ></p-button>
+    </div>
+  </div>
+</div>

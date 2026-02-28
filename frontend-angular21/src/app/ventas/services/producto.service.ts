@@ -82,7 +82,6 @@ export class ProductoService {
     );
   }
 
-  // ─── Mappers: API response → modelo UI ───────────────────────────────────
   mapearProductoConStock(prod: ProductoStockVentas): ProductoUI {
     return {
       id: prod.id_producto,
@@ -111,5 +110,9 @@ export class ProductoService {
       precioMayorista: prod.precio_mayor,
       sede: sedeNombre,
     };
+  }
+  buscarPorCodigo(codigo: string): Observable<any[]> {
+    const params = new HttpParams().set('codigo', codigo);
+    return this.http.get<any[]>(`${this.apiUrl}/inventory-movements/autocomplete`, { params });
   }
 }
