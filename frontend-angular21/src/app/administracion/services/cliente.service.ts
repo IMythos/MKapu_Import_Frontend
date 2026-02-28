@@ -1,7 +1,3 @@
-/* ============================================
-   sales/src/core/customer/infrastructure/services/cliente.service.ts
-   ============================================ */
-
 import { Injectable, computed, signal, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { environment } from '../../../enviroments/enviroment'; // Ajusta la ruta según tu proyecto
@@ -216,9 +212,6 @@ export class ClienteService {
       );
   }
 
-  /**
-   * Helper para actualizar un cliente específico dentro del cache de la lista
-   */
   private patchCachedCustomer(id: string, updated: Customer): void {
     const prev = this._customerResponse();
     if (!prev) return;

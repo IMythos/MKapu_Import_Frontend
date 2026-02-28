@@ -26,7 +26,6 @@ export class AuthService {
 
   private api = environment.apiUrl || 'http://localhost:3000';
   private currentUser: User | null = null;
-
   constructor() {
     this.verificarSesionActiva();
   }
@@ -76,9 +75,9 @@ export class AuthService {
   private redirectByRole(roleId: UserRole): void {
     const routes: Record<UserRole, string> = {
       [UserRole.ADMIN]: '/admin/dashboard-admin',
-      [UserRole.VENTAS]: '/ventas/caja', 
+      [UserRole.VENTAS]: '/ventas/caja',
       [UserRole.ALMACEN]: '/almacen/dashboard',
-      [UserRole.LOGISTICA]: '/logistica/dashboard'
+      [UserRole.LOGISTICA]: '/logistica/dashboard',
     };
 
     const route = routes[roleId];
@@ -124,7 +123,7 @@ export class AuthService {
       [UserRole.ADMIN]: 'admin',
       [UserRole.VENTAS]: 'ventas',
       [UserRole.ALMACEN]: 'almacen',
-      [UserRole.LOGISTICA]: 'logistica'
+      [UserRole.LOGISTICA]: 'logistica',
     };
 
     return roleNames[this.currentUser.roleId as UserRole] || null; // ✅ Cast

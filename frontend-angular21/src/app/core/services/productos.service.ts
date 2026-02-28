@@ -641,4 +641,5 @@ export class ProductosService {
       ...familiasUnicas.map((f) => ({ label: f, value: f })),
     ];
   }
+  
 }

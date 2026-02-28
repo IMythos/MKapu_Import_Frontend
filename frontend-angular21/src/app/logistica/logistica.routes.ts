@@ -39,5 +39,9 @@ export const LOGISTICA_ROUTES: Routes = [
   {
     path: 'movimiento-inventario',
     loadComponent: () => import('./pages/movimientos-inventario/movimientos-inventario').then((m) => m.MovimientosInventario)
+  },
+  {
+    path: 'ajuste-inventario',
+    loadComponent: () => import('./pages/ajuste-inventario/ajuste-inventario').then(m => m.AjusteInventario)
   }
 ];
