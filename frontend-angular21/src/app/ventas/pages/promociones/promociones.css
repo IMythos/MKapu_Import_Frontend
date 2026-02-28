@@ -1,0 +1,799 @@
+/* ========================================
+   HEADER
+   ======================================== */
+
+.promo-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.promo-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f5c34d;
+  color: #1f2937;
+  font-size: 18px;
+}
+
+.promo-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.promo-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.promo-header-bordered {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden;
+}
+
+/* ========================================
+   KPI / ESTADÍSTICAS
+   ======================================== */
+
+.promo-estadisticas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  background: #ffffff;
+}
+
+.promo-stat-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-right: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.promo-stat-card:last-child {
+  border-right: none;
+}
+
+.promo-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #f6af33 0%, #e8a424 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.promo-stat-card:hover::before {
+  transform: scaleX(1);
+}
+
+.promo-stat-card:hover {
+  background: #fefce8;
+}
+
+.promo-stat-card i {
+  font-size: 2.5rem;
+  color: #f6af33;
+  transition: all 0.3s ease;
+}
+
+.promo-stat-card:hover i {
+  transform: scale(1.1);
+  color: #e8a424;
+}
+
+.promo-stat-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.promo-stat-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.promo-stat-valor {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+/* ========================================
+   FILTROS
+   ======================================== */
+
+.promo-filtros-container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.promo-filtros h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.promo-filtros h3 i {
+  color: #f6af33;
+}
+
+.promo-filtros-linea {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.promo-filtro-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.promo-filtro-item label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin: 0;
+  line-height: 1;
+}
+
+.promo-filtro-busqueda {
+  flex: 2;
+  min-width: 200px;
+}
+
+.promo-filtro-compacto {
+  flex: 1;
+  min-width: 140px;
+}
+
+.promo-filtro-boton {
+  flex: 0 0 auto;
+}
+
+.promo-filtro-boton label {
+  visibility: hidden;
+  height: 14px;
+}
+
+:host ::ng-deep .promo-filtros-linea input[pInputText],
+:host ::ng-deep .promo-filtros-linea .p-select {
+  height: 38px !important;
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  font-size: 0.8125rem !important;
+  width: 100% !important;
+}
+
+:host ::ng-deep .promo-filtros-linea input[pInputText]:hover,
+:host ::ng-deep .promo-filtros-linea .p-select:hover {
+  border-color: #f6af33 !important;
+}
+
+:host ::ng-deep .promo-filtros-linea input[pInputText]:focus {
+  border-color: #f6af33 !important;
+  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
+  outline: none !important;
+}
+
+:host ::ng-deep .promo-filtros-linea .p-select .p-select-label {
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.8125rem !important;
+}
+
+:host ::ng-deep .btn-limpiar {
+  height: 38px !important;
+  padding: 0 1rem !important;
+  border-radius: 6px !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
+
+/* ========================================
+   GRID DE TARJETAS
+   ======================================== */
+
+.promo-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+.promo-card {
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06), 0 2px 8px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  border: 1.5px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+}
+
+.promo-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(246, 175, 51, 0.14);
+  border-color: #f6af33;
+}
+
+/* Franja lateral de color tipo */
+.promo-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.875rem 0.5rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+/* Bloque de descuento — limpio, sin degradado */
+.promo-card-descuento {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.75rem 0.875rem 0.5rem;
+}
+
+.promo-descuento-valor {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #d97706;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.promo-descuento-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Cuerpo */
+.promo-card-body {
+  padding: 0 0.875rem 0.75rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.promo-card-codigo {
+  display: inline-block;
+  background: #fefce8;
+  border: 1px solid #fde68a;
+  color: #b45309;
+  font-weight: 700;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
+  width: fit-content;
+  margin-bottom: 0.2rem;
+}
+
+.promo-card-nombre {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1f2937;
+  line-height: 1.3;
+  /* clamp a 2 líneas */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.promo-card-descripcion {
+  margin: 0;
+  font-size: 0.75rem;
+  color: #9ca3af;
+  line-height: 1.45;
+  /* clamp a 2 líneas */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Footer */
+.promo-card-footer {
+  padding: 0.6rem 0.875rem;
+  border-top: 1px solid #f3f4f6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.promo-vigencia,
+.promo-dias {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+
+.promo-vigencia i,
+.promo-dias i {
+  color: #f6af33;
+  font-size: 0.72rem;
+  flex-shrink: 0;
+}
+
+/* Vacío */
+.promo-vacio {
+  padding: 4rem;
+  text-align: center;
+  color: #94a3b8;
+}
+
+.promo-vacio i {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  opacity: 0.4;
+  display: block;
+}
+
+.promo-vacio p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* ========================================
+   DIALOG DETALLE
+   ======================================== */
+
+:host ::ng-deep .promo-dialog {
+  width: 560px !important;
+  max-width: 95vw !important;
+}
+
+:host ::ng-deep .promo-dialog .p-dialog-header {
+  padding: 1.25rem 1.5rem 0.75rem !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+  border-bottom: 2px solid #e5e7eb !important;
+}
+
+:host ::ng-deep .promo-dialog .p-dialog-content {
+  padding: 1.25rem 1.5rem !important;
+}
+
+:host ::ng-deep .promo-dialog .p-dialog-footer {
+  padding: 0.75rem 1.5rem 1.25rem !important;
+  border-top: 1px solid #e5e7eb !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+.promo-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.promo-dialog-descuento {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+  border: 2px solid #fde68a;
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.promo-dialog-valor {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #92400e;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.promo-dialog-tipo {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #b45309;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.3rem;
+}
+
+.promo-dialog-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.promo-dialog-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.promo-dialog-campo.col-full {
+  grid-column: 1 / -1;
+}
+
+.promo-dialog-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.promo-dialog-valor-texto {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #1f2937;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.promo-codigo-badge {
+  display: inline-flex;
+  align-items: center;
+  background: #fefce8;
+  border: 1.5px solid #fcd34d;
+  color: #92400e;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  padding: 0.3rem 0.85rem;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  width: fit-content;
+}
+
+:host ::ng-deep .promo-progress .p-progressbar-value {
+  background: linear-gradient(90deg, #f6af33 0%, #e8a424 100%) !important;
+}
+
+:host ::ng-deep .promo-progress {
+  height: 8px !important;
+  border-radius: 999px !important;
+  background: #e5e7eb !important;
+}
+
+/* pill heredado de ventas */
+:host ::ng-deep .ventas-pill {
+  border-radius: 8px !important;
+  border: none !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  min-height: 42px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s ease !important;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+/* Laptop / pantallas medianas — 4 columnas se mantienen, tamaños ya son compactos */
+@media (max-width: 1400px) {
+  .promo-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.875rem;
+  }
+}
+
+/* Tablet landscape / laptop pequeño */
+@media (max-width: 1100px) {
+  .promo-estadisticas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .promo-stat-card:nth-child(2) {
+    border-right: none;
+  }
+
+  .promo-stat-card:nth-child(1),
+  .promo-stat-card:nth-child(2) {
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  .promo-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.875rem;
+  }
+}
+
+/* Tablet portrait */
+@media (max-width: 768px) {
+  .promo-estadisticas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .promo-stat-card:nth-child(2n) {
+    border-right: none;
+  }
+
+  .promo-stat-card:nth-child(1),
+  .promo-stat-card:nth-child(2) {
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  /* KPI más compacto en tablet */
+  .promo-stat-card {
+    padding: 1.1rem;
+    gap: 0.5rem;
+  }
+
+  .promo-stat-card i {
+    font-size: 2rem;
+  }
+
+  .promo-stat-valor {
+    font-size: 1.5rem;
+  }
+
+  .promo-filtros-linea {
+    flex-direction: column;
+  }
+
+  .promo-filtro-busqueda,
+  .promo-filtro-compacto,
+  .promo-filtro-boton {
+    width: 100%;
+    flex: unset;
+  }
+
+  .promo-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+}
+
+/* Móvil */
+@media (max-width: 480px) {
+  .promo-estadisticas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .promo-stat-card {
+    padding: 1rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .promo-stat-card i {
+    font-size: 1.6rem;
+    flex-shrink: 0;
+  }
+
+  .promo-stat-valor {
+    font-size: 1.35rem;
+  }
+
+  .promo-stat-label {
+    font-size: 0.65rem;
+  }
+
+  .promo-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Card en móvil — layout horizontal compacto */
+  .promo-card {
+    flex-direction: row;
+    align-items: stretch;
+    border-radius: 10px;
+  }
+
+  .promo-card-descuento {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    min-width: 76px;
+    border-right: 1px solid #f3f4f6;
+    border-bottom: none;
+    gap: 0;
+  }
+
+  .promo-descuento-valor {
+    font-size: 1.5rem;
+  }
+
+  .promo-descuento-label {
+    font-size: 0.6rem;
+    text-align: center;
+  }
+
+  .promo-card-header {
+    padding: 0.6rem 0.75rem 0.3rem;
+    border-bottom: none;
+    order: -1;
+  }
+
+  .promo-card-body {
+    padding: 0.3rem 0.75rem 0.5rem;
+  }
+
+  .promo-card-nombre {
+    font-size: 0.8rem;
+  }
+
+  .promo-card-descripcion {
+    display: none; /* ocultar descripción en móvil para no saturar */
+  }
+
+  .promo-card-footer {
+    padding: 0.4rem 0.75rem;
+    flex-direction: column;
+    gap: 0.2rem;
+    align-items: flex-start;
+  }
+
+  .promo-vigencia,
+  .promo-dias {
+    font-size: 0.65rem;
+  }
+}
+
+/* ========================================
+   DARK MODE
+   ======================================== */
+
+:host-context(.app-dark) .promo-title {
+  color: #ffffff;
+}
+
+:host-context(.app-dark) .promo-kicker {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .promo-estadisticas {
+  background: #18181b;
+}
+
+:host-context(.app-dark) .promo-stat-card {
+  background: #18181b;
+  border-right-color: #27272a;
+}
+
+:host-context(.app-dark) .promo-stat-card:hover {
+  background: #27272a;
+}
+
+:host-context(.app-dark) .promo-stat-label {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .promo-stat-valor {
+  color: #ffffff;
+}
+
+:host-context(.app-dark) .promo-filtros-container {
+  background: #18181b;
+}
+
+:host-context(.app-dark) .promo-filtros h3 {
+  color: #f1f5f9;
+  border-bottom-color: #27272a;
+}
+
+:host-context(.app-dark) .promo-filtro-item label {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .promo-card {
+  background: #18181b;
+  border-color: #27272a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+:host-context(.app-dark) .promo-card:hover {
+  border-color: #f6af33;
+  box-shadow: 0 6px 20px rgba(246, 175, 51, 0.1);
+}
+
+:host-context(.app-dark) .promo-card-header {
+  border-bottom-color: #27272a;
+}
+
+:host-context(.app-dark) .promo-descuento-valor {
+  color: #fbbf24;
+}
+
+:host-context(.app-dark) .promo-descuento-label {
+  color: #71717a;
+}
+
+:host-context(.app-dark) .promo-card-codigo {
+  background: #2a1f00;
+  border-color: #78350f;
+  color: #fcd34d;
+}
+
+:host-context(.app-dark) .promo-card-nombre {
+  color: #f1f5f9;
+}
+
+:host-context(.app-dark) .promo-card-descripcion {
+  color: #71717a;
+}
+
+:host-context(.app-dark) .promo-card-footer {
+  border-top-color: #27272a;
+}
+
+:host-context(.app-dark) .promo-vigencia,
+:host-context(.app-dark) .promo-dias {
+  color: #71717a;
+}
+
+:host-context(.app-dark) .promo-dialog-descuento {
+  background: linear-gradient(135deg, #2a2000 0%, #3a2d00 100%);
+  border-color: #92400e;
+}
+
+:host-context(.app-dark) .promo-dialog-valor {
+  color: #fcd34d;
+}
+
+:host-context(.app-dark) .promo-dialog-tipo {
+  color: #f6af33;
+}
+
+:host-context(.app-dark) .promo-dialog-label {
+  color: #71717a;
+}
+
+:host-context(.app-dark) .promo-dialog-valor-texto {
+  color: #f1f5f9;
+}
+
+:host-context(.app-dark) .promo-codigo-badge {
+  background: #2a1f00;
+  border-color: #92400e;
+  color: #fcd34d;
+}
+
+:host-context(.app-dark) :host ::ng-deep .promo-progress {
+  background: #27272a !important;
+}

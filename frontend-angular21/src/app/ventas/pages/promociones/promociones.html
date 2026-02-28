@@ -1,1 +1,309 @@
-<p>promociones works!</p>
+<div class="p-2">
+  <p-card styleClass="promo-header-card mb-4 promo-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="promo-title-icon">
+          <i class="pi pi-tags"></i>
+        </span>
+        <div>
+          <p class="promo-kicker mb-0">VENTAS - PROMOCIONES</p>
+          <h2 class="promo-title mb-0">Promociones Disponibles</h2>
+        </div>
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- KPI SECTION -->
+<div class="p-2">
+  <div class="promo-header-bordered mb-4">
+    <div class="promo-estadisticas">
+
+      <div class="promo-stat-card">
+        <i class="pi pi-gift"></i>
+        <div>
+          <span class="promo-stat-label">Promociones Activas</span>
+          <span class="promo-stat-valor">{{ kpiActivas() }}</span>
+        </div>
+      </div>
+
+      <div class="promo-stat-card">
+        <i class="pi pi-percentage"></i>
+        <div>
+          <span class="promo-stat-label">Descuentos por %</span>
+          <span class="promo-stat-valor">{{ kpiPorcentaje() }}</span>
+        </div>
+      </div>
+
+      <div class="promo-stat-card">
+        <i class="pi pi-dollar"></i>
+        <div>
+          <span class="promo-stat-label">Descuentos por Monto</span>
+          <span class="promo-stat-valor">{{ kpiMonto() }}</span>
+        </div>
+      </div>
+
+      <div class="promo-stat-card">
+        <i class="pi pi-calendar"></i>
+        <div>
+          <span class="promo-stat-label">Próximas a Expirar</span>
+          <span class="promo-stat-valor">{{ kpiProximasExpirar() }}</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="p-2">
+  <div class="promo-filtros-container mb-4">
+    <div class="promo-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <div class="promo-filtros-linea">
+
+        <div class="promo-filtro-item promo-filtro-busqueda">
+          <label>Buscar Promoción</label>
+          <input
+            pInputText
+            type="text"
+            placeholder="Código, nombre o descripción..."
+            [(ngModel)]="filtros.busqueda"
+            (keyup)="aplicarFiltros()"
+            class="w-full"
+          />
+        </div>
+
+        <div class="promo-filtro-item promo-filtro-compacto">
+          <label>Tipo</label>
+          <p-select
+            [(ngModel)]="filtros.tipo"
+            [options]="tiposPromocion"
+            placeholder="Todos"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full"
+          />
+        </div>
+
+        <div class="promo-filtro-item promo-filtro-compacto">
+          <label>Descuento</label>
+          <p-select
+            [(ngModel)]="filtros.rangoDescuento"
+            [options]="rangosDescuento"
+            placeholder="Todos"
+            optionLabel="label"
+            optionValue="value"
+            (onChange)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full"
+          />
+        </div>
+
+        <div class="promo-filtro-item promo-filtro-boton">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar"
+            icon="pi pi-filter-slash"
+            (onClick)="limpiarFiltros()"
+            severity="danger"
+            styleClass="btn-limpiar"
+          />
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GRID DE TARJETAS -->
+<div class="p-2">
+
+  @if (loading()) {
+    <div class="flex justify-content-center align-items-center py-8">
+      <i class="pi pi-spin pi-spinner" style="font-size: 2rem; color: #f6af33"></i>
+    </div>
+  }
+
+  @if (!loading() && filteredPromociones().length === 0) {
+    <div class="promo-vacio">
+      <i class="pi pi-inbox"></i>
+      <p>No se encontraron promociones activas</p>
+    </div>
+  }
+
+  @if (!loading() && filteredPromociones().length > 0) {
+    <div class="promo-grid">
+
+      @for (promo of filteredPromociones(); track promo.id) {
+        <div class="promo-card" (click)="verDetalle(promo)">
+
+          <!-- Header de la tarjeta -->
+          <div class="promo-card-header">
+            <div class="promo-card-tipo">
+              <p-tag
+                [value]="promo.tipo"
+                [severity]="promo.tipo === 'Porcentaje' ? 'info' : 'warn'"
+              />
+            </div>
+            <div class="promo-card-estado">
+              <p-tag
+                [value]="promo.estado"
+                [severity]="getSeveridadEstado(promo.estado)"
+              />
+            </div>
+          </div>
+
+          <!-- Valor del descuento destacado -->
+          <div class="promo-card-descuento">
+            <span class="promo-descuento-valor">
+              @if (promo.tipo === 'Porcentaje') {
+                {{ promo.porcentaje }}%
+              } @else {
+                S/{{ promo.monto | number:'1.2-2' }}
+              }
+            </span>
+            <span class="promo-descuento-label">desc.</span>
+          </div>
+
+          <!-- Info principal -->
+          <div class="promo-card-body">
+            <span class="promo-card-codigo">{{ promo.codigo }}</span>
+            <h4 class="promo-card-nombre">{{ promo.nombre }}</h4>
+            <p class="promo-card-descripcion">{{ promo.descripcion | slice:0:80 }}...</p>
+          </div>
+
+          <!-- Footer con vigencia -->
+          <div class="promo-card-footer">
+            <div class="promo-vigencia">
+              <i class="pi pi-calendar"></i>
+              <span>{{ promo.fechaInicio | date:'dd/MM/yy' }} — {{ promo.fechaFin | date:'dd/MM/yy' }}</span>
+            </div>
+            <div class="promo-dias">
+              <i class="pi pi-clock"></i>
+              <span>{{ getDiasRestantes(promo) }}</span>
+            </div>
+          </div>
+
+        </div>
+      }
+
+    </div>
+  }
+
+</div>
+
+<!-- DIALOG DETALLE -->
+<p-dialog
+  [(visible)]="dialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [draggable]="false"
+  [resizable]="false"
+  styleClass="promo-dialog"
+  header="Detalle de Promoción"
+>
+  @if (promocionSeleccionada) {
+    <div class="promo-dialog-content">
+
+      <div class="promo-dialog-descuento">
+        <span class="promo-dialog-valor">
+          @if (promocionSeleccionada.tipo === 'Porcentaje') {
+            {{ promocionSeleccionada.porcentaje }}%
+          } @else {
+            S/ {{ promocionSeleccionada.monto | number:'1.2-2' }}
+          }
+        </span>
+        <span class="promo-dialog-tipo">{{ promocionSeleccionada.tipo === 'Porcentaje' ? 'Descuento porcentual' : 'Descuento fijo' }}</span>
+      </div>
+
+      <div class="promo-dialog-grid">
+
+        <div class="promo-dialog-campo">
+          <span class="promo-dialog-label">Código de Cupón</span>
+          <span class="promo-codigo-badge">{{ promocionSeleccionada.codigo }}</span>
+        </div>
+
+        <div class="promo-dialog-campo">
+          <span class="promo-dialog-label">Estado</span>
+          <p-tag
+            [value]="promocionSeleccionada.estado"
+            [severity]="getSeveridadEstado(promocionSeleccionada.estado)"
+          />
+        </div>
+
+        <div class="promo-dialog-campo col-full">
+          <span class="promo-dialog-label">Descripción</span>
+          <span class="promo-dialog-valor-texto">{{ promocionSeleccionada.descripcion }}</span>
+        </div>
+
+        <div class="promo-dialog-campo">
+          <span class="promo-dialog-label">Fecha Inicio</span>
+          <span class="promo-dialog-valor-texto">
+            <i class="pi pi-calendar-plus" style="color:#f6af33"></i>
+            {{ promocionSeleccionada.fechaInicio | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <div class="promo-dialog-campo">
+          <span class="promo-dialog-label">Fecha Fin</span>
+          <span class="promo-dialog-valor-texto">
+            <i class="pi pi-calendar-minus" style="color:#f6af33"></i>
+            {{ promocionSeleccionada.fechaFin | date:'dd/MM/yyyy' }}
+          </span>
+        </div>
+
+        <div class="promo-dialog-campo col-full">
+          <span class="promo-dialog-label">Progreso de Vigencia</span>
+          <div class="mt-2">
+            <div class="flex justify-content-between mb-1">
+              <small style="color:#94a3b8">{{ promocionSeleccionada.fechaInicio | date:'dd/MM/yy' }}</small>
+              <small style="color:#94a3b8">{{ promocionSeleccionada.fechaFin | date:'dd/MM/yy' }}</small>
+            </div>
+            <p-progressbar
+              [value]="getProgresoVigencia(promocionSeleccionada)"
+              [showValue]="false"
+              styleClass="promo-progress"
+            />
+            <small style="color:#94a3b8; display:block; text-align:center; margin-top:0.25rem">
+              {{ getProgresoVigencia(promocionSeleccionada) }}% transcurrido
+            </small>
+          </div>
+        </div>
+
+        @if (promocionSeleccionada.montoMinimo && promocionSeleccionada.montoMinimo > 0) {
+          <div class="promo-dialog-campo">
+            <span class="promo-dialog-label">Monto Mínimo de Compra</span>
+            <span class="promo-dialog-valor-texto">S/ {{ promocionSeleccionada.montoMinimo | number:'1.2-2' }}</span>
+          </div>
+        }
+
+        @if (promocionSeleccionada.productosCantidad) {
+          <div class="promo-dialog-campo">
+            <span class="promo-dialog-label">Productos Aplicables</span>
+            <span class="promo-dialog-valor-texto">
+              <i class="pi pi-box" style="color:#f6af33"></i>
+              {{ promocionSeleccionada.productosCantidad }} productos
+            </span>
+          </div>
+        }
+
+      </div>
+    </div>
+  }
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cerrar"
+      icon="pi pi-times"
+      severity="secondary"
+      styleClass="ventas-pill"
+      (onClick)="cerrarDialog()"
+    />
+  </ng-template>
+</p-dialog>
+
+<p-toast />

@@ -64,6 +64,56 @@ export class Sidebar implements OnInit {
     { path: '/admin/almacen',                         allowedRoles: [UserRole.ADMIN],  label: 'Almacén', icon: 'pi pi-box' },
     { path: '/admin/ingresos-almacen',                allowedRoles: [UserRole.ADMIN],  label: 'Ingresos Almacén', icon: 'pi pi-download' },
 
+      // ==================== VENTAS ====================
+      {
+        path: '/ventas/caja',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Estado Caja',
+        icon: 'pi pi-wallet',
+      },
+      {
+        path: '/ventas/dashboard-ventas',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Dashboard',
+        icon: 'pi pi-chart-line',
+      },
+      {
+        path: '/ventas/generar-ventas',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Generar Venta',
+        icon: 'pi pi-plus-circle',
+      },
+      {
+        path: '/ventas/historial-ventas',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Historial Ventas',
+        icon: 'pi pi-list',
+      },
+      {
+        path: '/ventas/reclamos-listado',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Reclamos y Garantías',
+        icon: 'pi pi-exclamation-circle',
+      },
+      {
+        path: '/ventas/cotizaciones',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Cotizaciones',
+        icon: 'pi pi-file',
+      },
+      {
+        path: '/ventas/remates',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Remates',
+        icon: 'pi pi-tag',
+      },
+      {
+        path: '/ventas/promociones',
+        allowedRoles: [UserRole.VENTAS],
+        label: 'Promociones',
+        icon: 'pi pi-gift',
+      },
+
     { path: '',                                       allowedRoles: [UserRole.ADMIN],  label: 'ADMINISTRACIÓN', isSection: true },
     { path: '/admin/transferencia',                   allowedRoles: [UserRole.ADMIN],  label: 'Transferencias', icon: 'pi pi-arrows-h' },
     { path: '/admin/despacho-productos',              allowedRoles: [UserRole.ADMIN],  label: 'Despacho', icon: 'pi pi-truck' },
