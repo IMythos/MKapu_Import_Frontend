@@ -55,10 +55,6 @@ export class DashboardAdmin implements OnInit {
   Math = Math;
   // --- ESTADO GENERAL ---
   username = signal<string>('');
-<<<<<<< HEAD
-  idsede = signal<number | null>(null);
-=======
->>>>>>> fc343cbbb372a7975ca39a2b9150fd353f70ad2d
   isLoading = signal<boolean>(true); // Útil para mostrar spinners
   
   // --- KPIs ---
@@ -110,11 +106,6 @@ export class DashboardAdmin implements OnInit {
 
   ngOnInit(): void {
     this.username.set(this.getUserName());
-<<<<<<< HEAD
-    this.idsede.set(this.getSedeUsuarioActual());
-    console.log('ID SEDE:', this.idsede()); 
-=======
->>>>>>> fc343cbbb372a7975ca39a2b9150fd353f70ad2d
     // this.inicializarFechas(); -> Ya no es estrictamente necesario si los signals inician con 'anio'
     // this.generarOpcionesAnios(); -> Puedes adaptarlo para enviar años específicos a la DB si tu backend lo soporta, 
     // por ahora usamos los periodos dinámicos ('mes', 'anio', etc).
@@ -144,25 +135,11 @@ export class DashboardAdmin implements OnInit {
     }
   }
 
-<<<<<<< HEAD
-  private getSedeUsuarioActual(): number | null {
-    try {
-      const userString = localStorage.getItem('user');
-      if (userString) {
-        const user = JSON.parse(userString);
-        return user.idSede ?? null;
-      }
-    } catch (e) {
-      console.error('Error parseando usuario', e);
-    }
-    return null;
-=======
   // --- EVENTOS DE LOS SELECTS ---
   // El HTML debe tener (ngModelChange)="onPeriodoVentasDiaChange($event)"
   onPeriodoVentasDiaChange(value: string): void {
     this.periodoVentasDia.set(value);
     this.cargarGraficoVentasPorDia();
->>>>>>> fc343cbbb372a7975ca39a2b9150fd353f70ad2d
   }
   onMesVentasDistritoChange(value: string): void {
     this.mesVentasDistrito.set(value);
@@ -188,83 +165,6 @@ export class DashboardAdmin implements OnInit {
   
   cargarEstadisticas(): void {
   this.dashboardService.getKpis(this.periodoVentasDia()).subscribe({
-    next: (kpis) => {
-      // 1. Extraemos los valores principales con fallback a 0
-      const vnt = Number(kpis.totalVentas) || 0;
-      const ord = Number(kpis.totalOrdenes) || 0;
-      const clie = Number(kpis.nuevosClientes) || 0;
-
-      this.totalVentas.set(vnt);
-      this.totalOrdenes.set(ord);
-      this.nuevosClientes.set(clie);
-
-      // 2. Cálculo seguro del Ticket Promedio para evitar NaN
-      const ticket = ord > 0 ? vnt / ord : 0;
-      this.ticketPromedio.set(ticket);
-
-      // 3. LIMPIEZA DE VARIACIONES: Accedemos a las sub-propiedades
-      // Aquí es donde estaba el [object Object]
-      if (kpis.variaciones) {
-        this.variacionVentas.set(Number(kpis.variaciones.ventas) || 0);
-        this.variacionOrdenes.set(Number(kpis.variaciones.ordenes) || 0);
-        this.variacionTicket.set(Number(kpis.variaciones.ticket) || 0);
-        this.variacionClientes.set(Number(kpis.variaciones.clientes) || 0);
-      } else {
-        // Fallback si el backend no envía el objeto variaciones
-        this.variacionVentas.set(0);
-        this.variacionOrdenes.set(0);
-        this.variacionTicket.set(0);
-        this.variacionClientes.set(0);
-      }
-    },
-    error: (err) => {
-      console.error('Error cargando KPIs', err);
-    }
-  });
-}
-
-// Método auxiliar para limpiar negativos en el HTML si no quieres usar Math.abs
-getAbs(value: number): number {
-  return Math.abs(value);
-}
-
-  // --- EVENTOS DE LOS SELECTS ---
-  // El HTML debe tener (ngModelChange)="onPeriodoVentasDiaChange($event)"
-  onPeriodoVentasDiaChange(value: string): void {
-    this.periodoVentasDia.set(value);
-    this.cargarGraficoVentasPorDia();
-  }
-  onMesVentasDistritoChange(value: string): void {
-    this.mesVentasDistrito.set(value);
-    this.cargarGraficoVentasPorDistrito();
-  }
-  onMesMetodosPagoChange(value: string): void {
-    this.mesMetodosPago.set(value);
-    this.cargarGraficoMetodosPago();
-  }
-  onMesVentasSedeChange(value: string): void {
-    this.mesVentasSede.set(value);
-    this.cargarGraficoVentasPorSede();
-  }
-  onMesTopProductosChange(value: string): void {
-    this.mesTopProductos.set(value);
-    this.cargarTopProductos();
-  }
-  onMesMejoresVendedoresChange(value: string): void {
-    this.mesMejoresVendedores.set(value);
-    this.cargarMejoresVendedores();
-  }
-
-  
-  cargarEstadisticas(): void {
-  const idSede = this.idsede();
-
-  if (!idSede) {
-    console.warn('No hay idSede disponible');
-    return;
-  }
-
-  this.dashboardService.getKpis(this.periodoVentasDia(), idSede.toString()).subscribe({
     next: (kpis) => {
       // 1. Extraemos los valores principales con fallback a 0
       const vnt = Number(kpis.totalVentas) || 0;
