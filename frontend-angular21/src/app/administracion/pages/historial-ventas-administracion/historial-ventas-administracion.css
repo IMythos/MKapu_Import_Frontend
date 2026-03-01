@@ -1,22 +1,15 @@
-
-
-
-
-
-
-
 .ventas-header-card .p-card-body {
   padding: 1rem 1.25rem;
 }
 
 .ventas-title-icon {
+  background: #e8a424 !important;
+  color: #1f2937 !important;
   width: 40px;
   height: 40px;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #F5C34D;
-  color: #1F2937;
   font-size: 18px;
 }
 

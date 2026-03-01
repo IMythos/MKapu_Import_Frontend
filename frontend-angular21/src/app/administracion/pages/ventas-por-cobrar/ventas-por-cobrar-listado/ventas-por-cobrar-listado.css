@@ -153,15 +153,10 @@
   }
 }
 
+
 /* ── Header card ── */
 .cotizaciones-header-card .p-card-body {
   padding: 1rem 1.25rem;
-}
-
-.cotizaciones-header-bordered {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
 }
 
 .cotizaciones-title-icon {
@@ -170,8 +165,8 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #f5c34d;
-  color: #1f2937;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
   font-size: 18px;
 }
 

@@ -17,7 +17,7 @@ export interface Headquarter {
   activo: boolean;
   createdAt?: string | Date;
   updatedAt?: string | Date;
-  sede?: SedeBasica | null; // ← nuevo
+  sede?: SedeBasica | null; 
 }
 
 export interface CreateWarehouseDto {

@@ -37,10 +37,11 @@
     display: grid;
     place-items: center;
     border-radius: 999px;
-    background: #f5c34d; /* 🔥 amarillo exacto */
-    color: #1f2937;
+    background: #e8a424 !important;
+    color: #1f2937 !important;
     font-size: 18px;
   }
+
 /* ================================
    TEXTOS HEADER
 ================================ */

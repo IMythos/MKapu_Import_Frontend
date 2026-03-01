@@ -53,7 +53,6 @@ import { ROLE_NAMES, UserRole } from '../../../../../core/constants/roles.consta
 })
 export class Administracion implements AfterViewInit {
 
-  // Wizard unificado — un solo flujo
   stepsUsuario = [
     'Datos personales',
     'Contacto y sede',
@@ -105,8 +104,8 @@ export class Administracion implements AfterViewInit {
     genero: '',
     fec_nac: '',
     activo: true,
-    id_sede: 1,
-    sedeNombre: 'Sede Principal',
+    id_sede: 0,
+    sedeNombre: '',
     nombreCompleto: '',
   };
 
@@ -138,20 +137,17 @@ export class Administracion implements AfterViewInit {
         const sedesResponse = Array.isArray(response)
           ? response
           : response?.headquarters ?? [];
+
         this.sedesRaw = sedesResponse;
         this.sedes = this.sedesRaw.map((sede) => ({
           label: sede.nombre,
           value: sede.id_sede,
         }));
 
+        // Preselecciona la primera sede disponible
         if (this.sedes.length > 0) {
-          const sedeExiste = this.sedes.some(
-            (s) => s.value === this.usuarioRequestForm.id_sede,
-          );
-          if (!sedeExiste) {
-            this.usuarioRequestForm.id_sede    = this.sedes[0].value;
-            this.usuarioRequestForm.sedeNombre = this.sedes[0].label;
-          }
+          this.usuarioRequestForm.id_sede    = this.sedes[0].value;
+          this.usuarioRequestForm.sedeNombre = this.sedes[0].label;
         }
       },
       error: () => {
@@ -173,7 +169,7 @@ export class Administracion implements AfterViewInit {
   }
 
   enviarUsuarioRequestPrueba(): void {
-    // Validaciones antes de enviar
+    // Validaciones
     if (!this.cuentaForm.username.trim()) {
       this.messageService.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Ingresa el nombre de usuario.' });
       return;
@@ -191,6 +187,10 @@ export class Administracion implements AfterViewInit {
       return;
     }
 
+    // ✅ Captura la sede ANTES de cualquier envío para evitar que se pierda
+    const sedeIdCapturada     = this.usuarioRequestForm.id_sede;
+    const sedeNombreCapturada = this.getSedeNombre();
+
     this.enviando = true;
 
     const payload: UsuarioRequest = {
@@ -199,7 +199,8 @@ export class Administracion implements AfterViewInit {
       celular:        this.celularInput === null ? 0 : this.celularInput,
       nombreCompleto: this.buildNombreCompleto(),
       fec_nac:        this.formatFechaNac(this.usuarioRequestForm.fec_nac as unknown as string | Date),
-      sedeNombre:     this.getSedeNombre(),
+      sedeNombre:     sedeNombreCapturada,
+      id_sede:        sedeIdCapturada,
       activo:         true,
     };
 
@@ -207,20 +208,22 @@ export class Administracion implements AfterViewInit {
     this.usuarioService.postUsuarios(payload).subscribe({
       next: (usuarioCreado: any) => {
 
+        // ✅ Resuelve el roleId según el rol seleccionado
         const roleId =
           this.rolCuentaSeleccionado === 'ADMIN'  ? UserRole.ADMIN  :
           this.rolCuentaSeleccionado === 'VENTAS' ? UserRole.VENTAS :
           UserRole.ALMACEN;
 
+        // ✅ Usa sedeIdCapturada (no id_sede: 1 hardcodeado)
         const cuentaPayload = {
           userId:   usuarioCreado.id_usuario,
           username: this.cuentaForm.username,
           password: this.cuentaForm.password,
-          id_sede: this.usuarioRequestForm.id_sede,
+          id_sede:  sedeIdCapturada,
           roleId,
         };
 
-        // Paso 2: crear cuenta inmediatamente
+        // Paso 2: crear cuenta
         this.usuarioService.postCuentaUsuario(cuentaPayload).subscribe({
           next: () => {
             this.enviando = false;
@@ -234,7 +237,7 @@ export class Administracion implements AfterViewInit {
               this.router.navigate(['/admin/usuarios']);
             }, 2000);
           },
-          error: (err) => {
+          error: () => {
             this.enviando = false;
             this.messageService.add({
               severity: 'warn',
@@ -265,7 +268,7 @@ export class Administracion implements AfterViewInit {
 
   getSedeNombre(): string {
     const sede = this.sedes.find((s) => s.value === this.usuarioRequestForm.id_sede);
-    return sede?.label ?? 'Sede Principal';
+    return sede?.label ?? '';
   }
 
   private formatFechaNac(value: string | Date): string {
@@ -278,13 +281,17 @@ export class Administracion implements AfterViewInit {
     this.usuarioRequestForm = {
       usu_nom: '', ape_mat: '', ape_pat: '', dni: '', email: '',
       celular: 0, direccion: '', genero: '', fec_nac: '',
-      activo: true, id_sede: 1, sedeNombre: 'Sede Principal', nombreCompleto: '',
+      activo: true,
+      // ✅ Ya no hardcodea id_sede: 1, usa la primera sede cargada
+      id_sede:        this.sedes[0]?.value ?? 0,
+      sedeNombre:     this.sedes[0]?.label ?? '',
+      nombreCompleto: '',
     };
-    this.dniInput          = null;
-    this.celularInput      = null;
-    this.cuentaForm        = { username: '', password: '', confirmPassword: '' };
+    this.dniInput              = null;
+    this.celularInput          = null;
+    this.cuentaForm            = { username: '', password: '', confirmPassword: '' };
     this.rolCuentaSeleccionado = null;
-    this.activeStepUsuario = 0;
+    this.activeStepUsuario     = 0;
   }
 
   allowOnlyLetters(event: KeyboardEvent): void {
@@ -309,7 +316,7 @@ export class Administracion implements AfterViewInit {
 
   onCelularChange(value: number | null): void {
     if (value === null || value === undefined) { this.celularInput = null; return; }
-    const digits  = String(value).replace(/\D/g, '');
+    const digits = String(value).replace(/\D/g, '');
     if (!digits)  { this.celularInput = null; return; }
     this.celularInput = Number(digits.length > 9 ? digits.slice(0, 9) : digits);
   }
@@ -318,46 +325,36 @@ export class Administracion implements AfterViewInit {
     if (event.key.length !== 1 || !/\d/.test(event.key)) return;
     const input = event.target as HTMLInputElement | null;
     if (!input) return;
-    const value        = input.value?.replace(/\D/g, '') ?? '';
-    const selStart     = input.selectionStart ?? value.length;
-    const selEnd       = input.selectionEnd   ?? value.length;
+    const value    = input.value?.replace(/\D/g, '') ?? '';
+    const selStart = input.selectionStart ?? value.length;
+    const selEnd   = input.selectionEnd   ?? value.length;
     if (selEnd <= selStart && value.length >= 9) event.preventDefault();
   }
 
   getEstadoSeverity(activo: boolean): 'success' | 'danger' {
     return activo ? 'success' : 'danger';
   }
-    
+
   onDniChange(value: number | null): void {
     if (value === null || value === undefined) {
       this.dniInput = null;
       return;
     }
-    // Trunca a 8 dígitos máximo
     const digits = String(value).replace(/\D/g, '');
-    if (digits.length > 8) {
-      this.dniInput = Number(digits.slice(0, 8));
-    } else {
-      this.dniInput = Number(digits);
-    }
+    this.dniInput = Number(digits.length > 8 ? digits.slice(0, 8) : digits);
   }
 
   onDniKeyDown(event: KeyboardEvent): void {
     if (event.key.length !== 1 || !/\d/.test(event.key)) return;
-
     const input = event.target as HTMLInputElement | null;
     if (!input) return;
-
-    const value = input.value?.replace(/\D/g, '') ?? '';
-    const selStart = input.selectionStart ?? value.length;
-    const selEnd   = input.selectionEnd   ?? value.length;
+    const value      = input.value?.replace(/\D/g, '') ?? '';
+    const selStart   = input.selectionStart ?? value.length;
+    const selEnd     = input.selectionEnd   ?? value.length;
     const hasSelection = selEnd > selStart;
-
-    // Bloquea si ya tiene 8 dígitos y no hay texto seleccionado
-    if (!hasSelection && value.length >= 8) {
-      event.preventDefault();
-    }
+    if (!hasSelection && value.length >= 8) event.preventDefault();
   }
+
   getRolDisplay(usuario: UsuarioInterfaceResponse): string {
     return (
       usuario.rolNombre  ||

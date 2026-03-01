@@ -18,17 +18,19 @@ import { CommonModule } from '@angular/common';
   standalone: true,
 })
 export class Header implements OnInit {
-  private router         = inject(Router);
-  private roleService    = inject(RoleService);
-  protected cashboxSocket= inject(CashboxSocketService);
-  protected themeService = inject(ThemeService);
+  private router          = inject(Router);
+  private roleService     = inject(RoleService);
+  protected cashboxSocket = inject(CashboxSocketService);
+  protected themeService  = inject(ThemeService);
 
   @Output() toggleSidebar = new EventEmitter<void>();
 
-  readonly isVentas  = this.roleService.getCurrentUserRole() === UserRole.VENTAS;
+  readonly isVentas = this.roleService.getCurrentUserRole() === UserRole.VENTAS;
   notifCount = this.loadNotifCount();
-
   readonly caja = this.cashboxSocket.caja;
+
+  // ✅ Lee sedeNombre del localStorage via RoleService
+  sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';
 
   ngOnInit(): void {
     this.router.events

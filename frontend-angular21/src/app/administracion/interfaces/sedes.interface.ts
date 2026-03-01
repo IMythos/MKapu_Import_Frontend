@@ -7,7 +7,7 @@ export interface Headquarter {
   direccion: string;
   telefono: string;
   activo: boolean;
-  almacenes?: AlmacenBasico[] | null; // ← nuevo
+  almacenes?: AlmacenBasico[] | null;
 }
 
 export interface HeadquarterResponse {

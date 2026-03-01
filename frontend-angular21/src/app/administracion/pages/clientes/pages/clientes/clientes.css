@@ -13,15 +13,16 @@
 }
 
 .clientes-title-icon {
-    width: 40px;
-    height: 40px;
-    display: grid;
-    place-items: center;
-    border-radius: 999px;
-    background: #f5c34d;
-    color: #1f2937;
-    font-size: 18px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+  font-size: 18px;
 }
+
 
 .clientes-kicker {
     margin: 0;

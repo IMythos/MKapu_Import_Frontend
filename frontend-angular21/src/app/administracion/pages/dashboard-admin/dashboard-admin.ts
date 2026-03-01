@@ -9,8 +9,6 @@ import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { DashboardService } from '../../services/dashboard.service';
 
-// Importa tu nuevo servicio unificado
-
 export interface TopProducto {
   nombre: string;
   ventas: number;
@@ -239,7 +237,6 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorCategoria(): void {
-    // Asumimos que usa el mismo periodo que el gráfico de ventas general (o crea un signal nuevo)
     this.dashboardService.getSalesByCategory(this.periodoVentasDia()).subscribe({
       next: (data) => {
         this.ventasPorCategoriaChart.set({

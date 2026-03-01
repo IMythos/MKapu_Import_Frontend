@@ -10,17 +10,27 @@
       />
 
       @if (isVentas) {
-        <span
-          class="caja-status-dot"
-          [ngClass]="caja() ? 'caja-abierta' : 'caja-cerrada'"
-        ></span>
-        <span class="caja-status-label">
-          {{ caja() ? 'Caja abierta' : 'Caja cerrada' }}
-        </span>
+        <div class="caja-status-wrapper" [ngClass]="caja() ? 'abierta' : 'cerrada'">
+          <span
+            class="caja-status-dot"
+            [ngClass]="caja() ? 'caja-abierta' : 'caja-cerrada'"
+          ></span>
+          <span class="caja-status-label">
+            {{ caja() ? 'Caja abierta' : 'Caja cerrada' }}
+          </span>
+        </div>
       }
     </ng-template>
 
     <ng-template pTemplate="end">
+
+      @if (sedeNombre) {
+        <div class="header-sede-badge">
+          <i class="pi pi-map-marker"></i>
+          <span>{{ sedeNombre }}</span>
+        </div>
+      }
+
       <div class="header-bell-wrapper">
         <p-button
           icon="pi pi-bell"
@@ -33,6 +43,7 @@
           <span class="header-bell-badge">{{ notifCount }}</span>
         }
       </div>
+
       <p-button
         [icon]="themeService.isDark() ? 'pi pi-sun' : 'pi pi-moon'"
         class="mr-2"

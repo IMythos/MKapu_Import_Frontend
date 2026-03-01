@@ -113,7 +113,7 @@ export interface CreateProductoDto {
 export interface MovimientoInventarioItem {
   productId: number;
   warehouseId: number;
-  sedeId: number;      // <--- ¡NUEVO CAMPO AGREGADO AQUÍ!
+  sedeId: number;      
   quantity: number;
   type: 'INGRESO' | 'SALIDA';
 }

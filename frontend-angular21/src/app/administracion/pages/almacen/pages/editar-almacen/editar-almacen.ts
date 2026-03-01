@@ -60,8 +60,8 @@ interface Provincia { nombre: string; distritos: string[]; }
     ToastModule,
     AutoCompleteModule,
     MessageModule,
-    SelectModule,  // ← nuevo
-    TagModule,     // ← nuevo
+    SelectModule,  
+    TagModule,   
     NoNumbersDirective,
   ],
   providers: [ConfirmationService, MessageService],

@@ -3,11 +3,16 @@
     [abierto]="sidebarVisible()"
     (onHide)="cerrarFormulario()"
   ></app-nueva-remision>
-  <p-card class="mb-4 shadow-1">
-    <div class="flex align-items-center justify-content-between">
+  <p-card class="sedes-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <i class="pi pi-truck text-primary text-2xl"></i>
-        <h2 class="m-0 font-bold">Historial de Guías de Remisión</h2>
+        <span class="sedes-title-icon">
+          <i class="pi pi-truck"></i>
+        </span>
+        <div>
+          <h2 class="sedes-kicker">Historial de Guías de Remisión</h2>
+          <h2 class="sedes-title">CONTEOS DE INVENTARIO</h2>        
+        </div>
       </div>
       <p-button
         label="Nueva Guía"

@@ -1996,7 +1996,9 @@
 
 :host-context(.app-dark) {
   .ventas-title-icon {
-    background: #f0d067 !important;
+    background: #e8a424 !important;
+    color: #1f2937 !important;
+}
   }
 
   .ventas-title,
@@ -2481,7 +2483,7 @@
   .carrito-vacio p {
     color: #a1a1aa !important;
   }
-}
+
 
 :host-context(.app-dark) ::ng-deep {
   .wizard-card,
