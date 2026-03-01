@@ -30,6 +30,7 @@ import {
 export class VentasAdminService {
   private readonly http = inject(HttpClient);
 
+  private readonly url = environment.apiUrl;
   private readonly salesUrl = `${environment.apiUrl}/sales`;
   private readonly adminUrl = `${environment.apiUrl}/admin`;
   private readonly logisticsUrl = `${environment.apiUrl}/logistics`;
@@ -166,11 +167,6 @@ export class VentasAdminService {
       { headers: this.headers, params },
     );
   }
-
-  // ─────────────────────────────────────────────────────────────────────────
-  // CLIENTES
-  // ─────────────────────────────────────────────────────────────────────────
-
   buscarCliente(
     documentValue: string,
     receiptTypeId: number,
@@ -203,7 +199,7 @@ export class VentasAdminService {
 
   obtenerTiposDocumento(): Observable<TipoDocumentoAdmin[]> {
     return this.http.get<TipoDocumentoAdmin[]>(
-      `${this.adminUrl}/document-types`,
+      `${this.url}/sales/customers/document-types`,
       { headers: this.headers },
     );
   }

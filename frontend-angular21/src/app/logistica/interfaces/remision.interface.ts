@@ -1,7 +1,6 @@
 export enum RemissionType { REMITENTE = 0, TRANSPORTISTA = 1 }
 export enum TransportMode { PUBLICO = 0, PRIVADO = 1 }
 
-// DTO de entrada (POST)
 export interface CreateRemissionDto {
   id_comprobante_ref: number;
   id_almacen_origen: number;

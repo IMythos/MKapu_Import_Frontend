@@ -74,7 +74,7 @@ export class DashboardAdmin implements OnInit {
   topProductos = signal<TopProducto[]>([]);
   actividadReciente = signal<ActividadReciente[]>([]);
   mejoresVendedores = signal<MejorVendedor[]>([]);
-
+  idSede = signal<string>('');
   periodoVentasDia = signal<string>('anio');
   mesVentasDistrito = signal<string>('anio');
   mesMetodosPago = signal<string>('anio');
@@ -98,7 +98,7 @@ export class DashboardAdmin implements OnInit {
 
   ngOnInit(): void {
     this.username.set(this.getUserName());
-
+    this.idSede.set(this.getUserSede());
     this.configurarOpcionesGraficos();
     this.cargarTodoElDashboard();
   }
@@ -112,7 +112,16 @@ export class DashboardAdmin implements OnInit {
     this.cargarMejoresVendedores();
     this.isLoading.set(false);
   }
-
+  getUserSede(): string {
+  const userString = localStorage.getItem('user');
+  if (!userString) return '';
+  try {
+    const user = JSON.parse(userString);
+    return user.id_sede ? String(user.id_sede) : ''; 
+  } catch (error) {
+    return '';
+  }
+}
   getUserName(): string {
     const userString = localStorage.getItem('user');
     if (!userString) return 'Administrador';
@@ -151,7 +160,7 @@ export class DashboardAdmin implements OnInit {
 
   
   cargarEstadisticas(): void {
-  this.dashboardService.getKpis(this.periodoVentasDia()).subscribe({
+  this.dashboardService.getKpis(this.periodoVentasDia(), this.idSede()).subscribe({
     next: (kpis) => {
       const vnt = Number(kpis.totalVentas) || 0;
       const ord = Number(kpis.totalOrdenes) || 0;
@@ -195,7 +204,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorDia(): void {
-    this.dashboardService.getSalesChart(this.periodoVentasDia()).subscribe({
+    this.dashboardService.getSalesChart(this.periodoVentasDia(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorDiaChart.set({
           labels: data.labels || [],
@@ -220,7 +229,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorCategoria(): void {
-    this.dashboardService.getSalesByCategory(this.periodoVentasDia()).subscribe({
+    this.dashboardService.getSalesByCategory(this.periodoVentasDia(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorCategoriaChart.set({
           labels: data.labels || [],
@@ -237,9 +246,9 @@ getAbs(value: number): number {
   }
 
   cargarGraficoMetodosPago(): void {
-    this.dashboardService.getPaymentMethods(this.mesMetodosPago()).subscribe({
+    this.dashboardService.getPaymentMethods(this.mesMetodosPago(), this.idSede()).subscribe({
       next: (data) => {
-        console.log('Data Métodos Pago:', data); // 👈 Revisa esto en la consola F12
+        console.log('Data Métodos Pago:', data);
         
         if (data && data.labels) {
           this.metodosPagoChart.set({
@@ -258,7 +267,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorSede(): void {
-    this.dashboardService.getSalesByHeadquarter(this.mesVentasSede()).subscribe({
+    this.dashboardService.getSalesByHeadquarter(this.mesVentasSede(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorSedeChart.set({
           labels: data.labels || [], 
@@ -275,7 +284,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorDistrito(): void {
-    this.dashboardService.getSalesByDistrict(this.mesVentasDistrito()).subscribe({
+    this.dashboardService.getSalesByDistrict(this.mesVentasDistrito(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorDistritoChart.set({
           labels: data.labels || [], 
@@ -294,7 +303,7 @@ getAbs(value: number): number {
   }
 
   cargarTopProductos(): void {
-    this.dashboardService.getTopProducts(this.mesTopProductos()).subscribe({
+    this.dashboardService.getTopProducts(this.mesTopProductos(), this.idSede()).subscribe({
       next: (data) => {
         this.topProductos.set(data || []);
       }
@@ -302,7 +311,7 @@ getAbs(value: number): number {
   }
 
   cargarMejoresVendedores(): void {
-    this.dashboardService.getTopSellers(this.mesMejoresVendedores()).subscribe({
+    this.dashboardService.getTopSellers(this.mesMejoresVendedores(), this.idSede()).subscribe({
       next: (data) => {
         this.mejoresVendedores.set(data || []);
       }
@@ -310,10 +319,8 @@ getAbs(value: number): number {
   }
 
   cargarActividadReciente(): void {
-    // Llama al endpoint getRecentSales que creamos
-    this.dashboardService.getRecentSales(this.periodoVentasDia()).subscribe({
+    this.dashboardService.getRecentSales(this.periodoVentasDia(), this.idSede()).subscribe({
       next: (data: any[]) => {
-        // Mapear los comprobantes a la interfaz ActividadReciente para el frontend
         const actividadMapeada: ActividadReciente[] = data.map((c) => {
           const minutos = Math.floor((Date.now() - new Date(c.fechaEmision || c.fec_emision).getTime()) / 60000);
           const tiempo = minutos < 60 ? `Hace ${minutos} min` : minutos < 1440 ? `Hace ${Math.floor(minutos / 60)} hrs` : `Hace ${Math.floor(minutos / 1440)} días`;
@@ -334,7 +341,6 @@ getAbs(value: number): number {
     });
   }
 
-  // --- CONFIGURACIÓN VISUAL CHART.JS ---
   configurarOpcionesGraficos(): void {
     const documentStyle = getComputedStyle(document.documentElement);
     const textColor = documentStyle.getPropertyValue('--text-color') || '#495057';
