@@ -373,13 +373,21 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   }
 
   private cargarFamilias(): void {
+    const sedeId = this.sedeSeleccionada();
+    if (!sedeId) {
+      console.warn('Esperando ID de sede para cargar familias...');
+      return;
+    }
     this.familiasLoading.set(true);
-    this.ventasService.obtenerCategoriasConStock(this.sedeSeleccionada() ?? undefined).subscribe({
+    this.ventasService.obtenerCategoriasConStock(Number(sedeId)).subscribe({
       next: (cats) => {
         this.familiasDisponibles.set(cats.map((c) => ({ label: c.nombre, value: c.id_categoria })));
         this.familiasLoading.set(false);
       },
-      error: () => this.familiasLoading.set(false),
+      error: (err : any) => {
+        console.error('Error al cargar familias con stock:', err);
+        this.familiasLoading.set(false);
+      },
     });
   }
 

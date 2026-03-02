@@ -51,11 +51,9 @@ export interface MejorVendedor {
 export class DashboardAdmin implements OnInit {
   private dashboardService = inject(DashboardService);
   Math = Math;
-  // --- ESTADO GENERAL ---
   username = signal<string>('');
-  isLoading = signal<boolean>(true); // Útil para mostrar spinners
+  isLoading = signal<boolean>(true);
   
-  // --- KPIs ---
   totalVentas = signal<number>(0);
   totalOrdenes = signal<number>(0);
   ticketPromedio = signal<number>(0);
@@ -66,21 +64,18 @@ export class DashboardAdmin implements OnInit {
   variacionTicket = signal<number>(0);
   variacionClientes = signal<number>(0);
 
-  // --- GRÁFICOS ---
   ventasPorDiaChart = signal<any>(null);
   ventasPorCategoriaChart = signal<any>(null);
   metodosPagoChart = signal<any>(null);
   ventasPorSedeChart = signal<any>(null);
   ventasPorDistritoChart = signal<any>(null);
 
-  // --- LISTAS / TABLAS ---
   topProductos = signal<TopProducto[]>([]);
   actividadReciente = signal<ActividadReciente[]>([]);
   mejoresVendedores = signal<MejorVendedor[]>([]);
-
-  // --- FILTROS (SIGNALS) ---
+  idSede = signal<string>('');
   periodoVentasDia = signal<string>('anio');
-  mesVentasDistrito = signal<string>('anio'); // Ahora usamos 'anio' en lugar del string del año por defecto
+  mesVentasDistrito = signal<string>('anio');
   mesMetodosPago = signal<string>('anio');
   mesVentasSede = signal<string>('anio');
   mesTopProductos = signal<string>('anio');
@@ -88,7 +83,6 @@ export class DashboardAdmin implements OnInit {
 
   aniosOptions = signal<any[]>([]);
   
-  // Opciones estáticas para los selectores
   periodosOptions = [
     { label: 'Última Semana', value: 'semana' },
     { label: 'Último Mes', value: 'mes' },
@@ -96,7 +90,6 @@ export class DashboardAdmin implements OnInit {
     { label: 'Año Actual', value: 'anio' },
   ];
 
-  // Configuración de Chart.js
   chartOptions: any;
   barChartOptions: any;
   barChartOptionsCompact: any;
@@ -104,10 +97,7 @@ export class DashboardAdmin implements OnInit {
 
   ngOnInit(): void {
     this.username.set(this.getUserName());
-    // this.inicializarFechas(); -> Ya no es estrictamente necesario si los signals inician con 'anio'
-    // this.generarOpcionesAnios(); -> Puedes adaptarlo para enviar años específicos a la DB si tu backend lo soporta, 
-    // por ahora usamos los periodos dinámicos ('mes', 'anio', etc).
-
+    this.idSede.set(this.getUserSede());
     this.configurarOpcionesGraficos();
     this.cargarTodoElDashboard();
   }
@@ -121,7 +111,16 @@ export class DashboardAdmin implements OnInit {
     this.cargarMejoresVendedores();
     this.isLoading.set(false);
   }
-
+  getUserSede(): string {
+  const userString = localStorage.getItem('user');
+  if (!userString) return '';
+  try {
+    const user = JSON.parse(userString);
+    return user.id_sede ? String(user.id_sede) : ''; 
+  } catch (error) {
+    return '';
+  }
+}
   getUserName(): string {
     const userString = localStorage.getItem('user');
     if (!userString) return 'Administrador';
@@ -133,8 +132,6 @@ export class DashboardAdmin implements OnInit {
     }
   }
 
-  // --- EVENTOS DE LOS SELECTS ---
-  // El HTML debe tener (ngModelChange)="onPeriodoVentasDiaChange($event)"
   onPeriodoVentasDiaChange(value: string): void {
     this.periodoVentasDia.set(value);
     this.cargarGraficoVentasPorDia();
@@ -162,9 +159,8 @@ export class DashboardAdmin implements OnInit {
 
   
   cargarEstadisticas(): void {
-  this.dashboardService.getKpis(this.periodoVentasDia()).subscribe({
+  this.dashboardService.getKpis(this.periodoVentasDia(), this.idSede()).subscribe({
     next: (kpis) => {
-      // 1. Extraemos los valores principales con fallback a 0
       const vnt = Number(kpis.totalVentas) || 0;
       const ord = Number(kpis.totalOrdenes) || 0;
       const clie = Number(kpis.nuevosClientes) || 0;
@@ -173,19 +169,15 @@ export class DashboardAdmin implements OnInit {
       this.totalOrdenes.set(ord);
       this.nuevosClientes.set(clie);
 
-      // 2. Cálculo seguro del Ticket Promedio para evitar NaN
       const ticket = ord > 0 ? vnt / ord : 0;
       this.ticketPromedio.set(ticket);
 
-      // 3. LIMPIEZA DE VARIACIONES: Accedemos a las sub-propiedades
-      // Aquí es donde estaba el [object Object]
       if (kpis.variaciones) {
         this.variacionVentas.set(Number(kpis.variaciones.ventas) || 0);
         this.variacionOrdenes.set(Number(kpis.variaciones.ordenes) || 0);
         this.variacionTicket.set(Number(kpis.variaciones.ticket) || 0);
         this.variacionClientes.set(Number(kpis.variaciones.clientes) || 0);
       } else {
-        // Fallback si el backend no envía el objeto variaciones
         this.variacionVentas.set(0);
         this.variacionOrdenes.set(0);
         this.variacionTicket.set(0);
@@ -198,7 +190,6 @@ export class DashboardAdmin implements OnInit {
   });
 }
 
-// Método auxiliar para limpiar negativos en el HTML si no quieres usar Math.abs
 getAbs(value: number): number {
   return Math.abs(value);
 }
@@ -212,7 +203,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorDia(): void {
-    this.dashboardService.getSalesChart(this.periodoVentasDia()).subscribe({
+    this.dashboardService.getSalesChart(this.periodoVentasDia(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorDiaChart.set({
           labels: data.labels || [],
@@ -237,7 +228,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorCategoria(): void {
-    this.dashboardService.getSalesByCategory(this.periodoVentasDia()).subscribe({
+    this.dashboardService.getSalesByCategory(this.periodoVentasDia(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorCategoriaChart.set({
           labels: data.labels || [],
@@ -254,9 +245,9 @@ getAbs(value: number): number {
   }
 
   cargarGraficoMetodosPago(): void {
-    this.dashboardService.getPaymentMethods(this.mesMetodosPago()).subscribe({
+    this.dashboardService.getPaymentMethods(this.mesMetodosPago(), this.idSede()).subscribe({
       next: (data) => {
-        console.log('Data Métodos Pago:', data); // 👈 Revisa esto en la consola F12
+        console.log('Data Métodos Pago:', data);
         
         if (data && data.labels) {
           this.metodosPagoChart.set({
@@ -275,7 +266,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorSede(): void {
-    this.dashboardService.getSalesByHeadquarter(this.mesVentasSede()).subscribe({
+    this.dashboardService.getSalesByHeadquarter(this.mesVentasSede(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorSedeChart.set({
           labels: data.labels || [], 
@@ -292,7 +283,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorDistrito(): void {
-    this.dashboardService.getSalesByDistrict(this.mesVentasDistrito()).subscribe({
+    this.dashboardService.getSalesByDistrict(this.mesVentasDistrito(), this.idSede()).subscribe({
       next: (data) => {
         this.ventasPorDistritoChart.set({
           labels: data.labels || [], 
@@ -311,7 +302,7 @@ getAbs(value: number): number {
   }
 
   cargarTopProductos(): void {
-    this.dashboardService.getTopProducts(this.mesTopProductos()).subscribe({
+    this.dashboardService.getTopProducts(this.mesTopProductos(), this.idSede()).subscribe({
       next: (data) => {
         this.topProductos.set(data || []);
       }
@@ -319,7 +310,7 @@ getAbs(value: number): number {
   }
 
   cargarMejoresVendedores(): void {
-    this.dashboardService.getTopSellers(this.mesMejoresVendedores()).subscribe({
+    this.dashboardService.getTopSellers(this.mesMejoresVendedores(), this.idSede()).subscribe({
       next: (data) => {
         this.mejoresVendedores.set(data || []);
       }
@@ -327,10 +318,8 @@ getAbs(value: number): number {
   }
 
   cargarActividadReciente(): void {
-    // Llama al endpoint getRecentSales que creamos
-    this.dashboardService.getRecentSales(this.periodoVentasDia()).subscribe({
+    this.dashboardService.getRecentSales(this.periodoVentasDia(), this.idSede()).subscribe({
       next: (data: any[]) => {
-        // Mapear los comprobantes a la interfaz ActividadReciente para el frontend
         const actividadMapeada: ActividadReciente[] = data.map((c) => {
           const minutos = Math.floor((Date.now() - new Date(c.fechaEmision || c.fec_emision).getTime()) / 60000);
           const tiempo = minutos < 60 ? `Hace ${minutos} min` : minutos < 1440 ? `Hace ${Math.floor(minutos / 60)} hrs` : `Hace ${Math.floor(minutos / 1440)} días`;
@@ -351,7 +340,6 @@ getAbs(value: number): number {
     });
   }
 
-  // --- CONFIGURACIÓN VISUAL CHART.JS ---
   configurarOpcionesGraficos(): void {
     const documentStyle = getComputedStyle(document.documentElement);
     const textColor = documentStyle.getPropertyValue('--text-color') || '#495057';
