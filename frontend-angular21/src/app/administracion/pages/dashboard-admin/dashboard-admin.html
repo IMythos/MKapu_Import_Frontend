@@ -4,37 +4,51 @@
         <i class="pi pi-spin pi-spinner text-primary" style="font-size: 3rem"></i>
     </div>
   } @else {
-    <div class="flex justify-content-between align-items-center mb-4">
+    <div class="flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
       <div>
         <h1 class="text-3xl font-semibold m-0 mb-2">Bienvenido, {{ username() }}</h1>
         <p class="text-500 m-0">Aquí tienes el resumen de operaciones de hoy</p>
+      </div>
+      
+      <div class="flex align-items-center gap-2">
+        <span class="font-medium text-700">Sede:</span>
+        <p-select 
+          [options]="sedesOptions()" 
+          optionLabel="nombre" 
+          optionValue="id_sede" 
+          [ngModel]="idSede() === '' ? null : idSede()" 
+          (ngModelChange)="onSedeGlobalChange($event)" 
+          placeholder="Todas las sedes" 
+          [showClear]="true"
+          styleClass="w-15rem">
+        </p-select>
       </div>
     </div>
 
     <div class="grid">
       <div class="col-12 md:col-6 lg:col-3">
-  <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">
-    <div class="flex align-items-center gap-3 p-2">
-      <div class="flex align-items-center justify-content-center border-round"
-           style="width: 60px; height: 60px; background-color: #fff3e0">
-        <i class="pi pi-dollar text-4xl" style="color: #ffa726"></i>
-      </div>
+        <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">
+          <div class="flex align-items-center gap-3 p-2">
+            <div class="flex align-items-center justify-content-center border-round"
+                 style="width: 60px; height: 60px; background-color: #fff3e0">
+              <i class="pi pi-dollar text-4xl" style="color: #ffa726"></i>
+            </div>
 
-      <div class="flex-1">
-        <span class="text-500 text-sm block mb-1">Total Ventas</span>
-        <h2 class="text-3xl font-bold m-0 mb-1">
-          S/ {{ totalVentas().toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
-        </h2>
+            <div class="flex-1">
+              <span class="text-500 text-sm block mb-1">Total Ventas</span>
+              <h2 class="text-3xl font-bold m-0 mb-1">
+                S/ {{ totalVentas().toLocaleString('es-PE', { minimumFractionDigits: 2 }) }}
+              </h2>
 
-        <span [ngClass]="variacionVentas() >= 0 ? 'text-green-500' : 'text-red-500'" class="text-xs font-medium">
-          <i [ngClass]="variacionVentas() >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" class="text-xs"></i>
-          {{ Math.abs(variacionVentas()) }}% 
-          <span class="text-500 font-normal">vs. mes ant.</span>
-        </span>
+              <span [ngClass]="variacionVentas() >= 0 ? 'text-green-500' : 'text-red-500'" class="text-xs font-medium">
+                <i [ngClass]="variacionVentas() >= 0 ? 'pi pi-arrow-up' : 'pi pi-arrow-down'" class="text-xs"></i>
+                {{ Math.abs(variacionVentas()) }}% 
+                <span class="text-500 font-normal">vs. mes ant.</span>
+              </span>
+            </div>
+          </div>
+        </p-card>
       </div>
-    </div>
-  </p-card>
-</div>
 
       <div class="col-12 md:col-6 lg:col-3">
         <p-card class="border-round shadow-2 hover:shadow-4 transition-duration-200">

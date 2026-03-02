@@ -13,8 +13,8 @@ export class DashboardService {
 
   private buildParams(periodo: string, idSede?: string | null): HttpParams {
     let params = new HttpParams().set('periodo', periodo);
-    if (idSede) {
-      params = params.set('id_sede', idSede); 
+    if (idSede !== null && idSede !== undefined && idSede !== '') {
+      params = params.set('id_sede', String(idSede));
     }
     return params;
   }
