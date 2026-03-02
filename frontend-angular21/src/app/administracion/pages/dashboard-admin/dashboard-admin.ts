@@ -184,8 +184,7 @@ export class DashboardAdmin implements OnInit {
   }
   
   cargarEstadisticas(): void {
-    // Aquí el servicio recibe idSede(), si está vacío viaja como nulo y consulta todo
-    this.dashboardService.getKpis(this.periodoVentasDia(), this.idSede() || undefined).subscribe({
+    this.dashboardService.getKpis(this.periodoVentasDia()).subscribe({
       next: (kpis) => {
         const vnt = Number(kpis.totalVentas) || 0;
         const ord = Number(kpis.totalOrdenes) || 0;

@@ -19,10 +19,12 @@ export class DashboardService {
     return params;
   }
 
-  getKpis(periodo: string = 'anio', idSede?: string | null): Observable<any> {
-    return this.http.get(`${this.apiUrl}/dashboard/kpis`, {
-      params: this.buildParams(periodo, idSede),
-    });
+  getKpis(filtros?: any): Observable<any> {
+    let params = new HttpParams();
+    if (filtros?.sedeId) {
+      params = params.set('sede', filtros.sedeId);
+    }    
+    return this.http.get(`${this.apiUrl}/dashboard/kpis`, { params });
   }
 
   getSalesChart(periodo: string = 'anio', idSede?: string | null): Observable<any> {
