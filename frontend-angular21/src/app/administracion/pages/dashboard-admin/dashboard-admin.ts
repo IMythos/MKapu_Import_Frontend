@@ -8,7 +8,8 @@ import { TagModule } from 'primeng/tag';
 import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { DashboardService } from '../../services/dashboard.service';
-
+// 1. IMPORTAR EL SERVICIO DE SEDES
+import { SedeService } from '../../services/sede.service';
 
 export interface TopProducto {
   nombre: string;
@@ -51,6 +52,9 @@ export interface MejorVendedor {
 })
 export class DashboardAdmin implements OnInit {
   private dashboardService = inject(DashboardService);
+  // 2. INYECTAR SERVICIO
+  private sedeService = inject(SedeService);
+
   Math = Math;
   username = signal<string>('');
   isLoading = signal<boolean>(true);
@@ -74,7 +78,11 @@ export class DashboardAdmin implements OnInit {
   topProductos = signal<TopProducto[]>([]);
   actividadReciente = signal<ActividadReciente[]>([]);
   mejoresVendedores = signal<MejorVendedor[]>([]);
+  
+  // 3. SEÑALES PARA LA SEDE
   idSede = signal<string>('');
+  sedesOptions = signal<any[]>([]);
+
   periodoVentasDia = signal<string>('anio');
   mesVentasDistrito = signal<string>('anio');
   mesMetodosPago = signal<string>('anio');
@@ -99,7 +107,24 @@ export class DashboardAdmin implements OnInit {
   ngOnInit(): void {
     this.username.set(this.getUserName());
     this.idSede.set(this.getUserSede());
+    
     this.configurarOpcionesGraficos();
+    this.cargarSedes();
+    this.cargarTodoElDashboard();
+  }
+
+  cargarSedes(): void {
+    this.sedeService.getSedes().subscribe({
+      next: (res) => {
+        const sedes = res.headquarters || [];
+        this.sedesOptions.set(sedes);
+      },
+      error: (err) => console.error('Error cargando sedes', err)
+    });
+  }
+
+  onSedeGlobalChange(sedeId: string | null): void {
+    this.idSede.set(sedeId || '');
     this.cargarTodoElDashboard();
   }
 
@@ -112,16 +137,18 @@ export class DashboardAdmin implements OnInit {
     this.cargarMejoresVendedores();
     this.isLoading.set(false);
   }
+
   getUserSede(): string {
-  const userString = localStorage.getItem('user');
-  if (!userString) return '';
-  try {
-    const user = JSON.parse(userString);
-    return user.id_sede ? String(user.id_sede) : ''; 
-  } catch (error) {
-    return '';
+    const userString = localStorage.getItem('user');
+    if (!userString) return '';
+    try {
+      const user = JSON.parse(userString);
+      return user.id_sede ? String(user.id_sede) : ''; 
+    } catch (error) {
+      return '';
+    }
   }
-}
+
   getUserName(): string {
     const userString = localStorage.getItem('user');
     if (!userString) return 'Administrador';
@@ -157,43 +184,43 @@ export class DashboardAdmin implements OnInit {
     this.mesMejoresVendedores.set(value);
     this.cargarMejoresVendedores();
   }
-
   
   cargarEstadisticas(): void {
-  this.dashboardService.getKpis(this.periodoVentasDia(), this.idSede()).subscribe({
-    next: (kpis) => {
-      const vnt = Number(kpis.totalVentas) || 0;
-      const ord = Number(kpis.totalOrdenes) || 0;
-      const clie = Number(kpis.nuevosClientes) || 0;
+    // Aquí el servicio recibe idSede(), si está vacío viaja como nulo y consulta todo
+    this.dashboardService.getKpis(this.periodoVentasDia(), this.idSede() || undefined).subscribe({
+      next: (kpis) => {
+        const vnt = Number(kpis.totalVentas) || 0;
+        const ord = Number(kpis.totalOrdenes) || 0;
+        const clie = Number(kpis.nuevosClientes) || 0;
 
-      this.totalVentas.set(vnt);
-      this.totalOrdenes.set(ord);
-      this.nuevosClientes.set(clie);
+        this.totalVentas.set(vnt);
+        this.totalOrdenes.set(ord);
+        this.nuevosClientes.set(clie);
 
-      const ticket = ord > 0 ? vnt / ord : 0;
-      this.ticketPromedio.set(ticket);
+        const ticket = ord > 0 ? vnt / ord : 0;
+        this.ticketPromedio.set(ticket);
 
-      if (kpis.variaciones) {
-        this.variacionVentas.set(Number(kpis.variaciones.ventas) || 0);
-        this.variacionOrdenes.set(Number(kpis.variaciones.ordenes) || 0);
-        this.variacionTicket.set(Number(kpis.variaciones.ticket) || 0);
-        this.variacionClientes.set(Number(kpis.variaciones.clientes) || 0);
-      } else {
-        this.variacionVentas.set(0);
-        this.variacionOrdenes.set(0);
-        this.variacionTicket.set(0);
-        this.variacionClientes.set(0);
+        if (kpis.variaciones) {
+          this.variacionVentas.set(Number(kpis.variaciones.ventas) || 0);
+          this.variacionOrdenes.set(Number(kpis.variaciones.ordenes) || 0);
+          this.variacionTicket.set(Number(kpis.variaciones.ticket) || 0);
+          this.variacionClientes.set(Number(kpis.variaciones.clientes) || 0);
+        } else {
+          this.variacionVentas.set(0);
+          this.variacionOrdenes.set(0);
+          this.variacionTicket.set(0);
+          this.variacionClientes.set(0);
+        }
+      },
+      error: (err) => {
+        console.error('Error cargando KPIs', err);
       }
-    },
-    error: (err) => {
-      console.error('Error cargando KPIs', err);
-    }
-  });
-}
+    });
+  }
 
-getAbs(value: number): number {
-  return Math.abs(value);
-}
+  getAbs(value: number): number {
+    return Math.abs(value);
+  }
 
   cargarGraficos(): void {
     this.cargarGraficoVentasPorDia();
@@ -204,7 +231,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorDia(): void {
-    this.dashboardService.getSalesChart(this.periodoVentasDia(), this.idSede()).subscribe({
+    this.dashboardService.getSalesChart(this.periodoVentasDia(), this.idSede() || undefined).subscribe({
       next: (data) => {
         this.ventasPorDiaChart.set({
           labels: data.labels || [],
@@ -229,7 +256,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorCategoria(): void {
-    this.dashboardService.getSalesByCategory(this.periodoVentasDia(), this.idSede()).subscribe({
+    this.dashboardService.getSalesByCategory(this.periodoVentasDia(), this.idSede() || undefined).subscribe({
       next: (data) => {
         this.ventasPorCategoriaChart.set({
           labels: data.labels || [],
@@ -246,10 +273,8 @@ getAbs(value: number): number {
   }
 
   cargarGraficoMetodosPago(): void {
-    this.dashboardService.getPaymentMethods(this.mesMetodosPago(), this.idSede()).subscribe({
+    this.dashboardService.getPaymentMethods(this.mesMetodosPago(), this.idSede() || undefined).subscribe({
       next: (data) => {
-        console.log('Data Métodos Pago:', data);
-        
         if (data && data.labels) {
           this.metodosPagoChart.set({
             labels: data.labels,
@@ -267,7 +292,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorSede(): void {
-    this.dashboardService.getSalesByHeadquarter(this.mesVentasSede(), this.idSede()).subscribe({
+    this.dashboardService.getSalesByHeadquarter(this.mesVentasSede(), this.idSede() || undefined).subscribe({
       next: (data) => {
         this.ventasPorSedeChart.set({
           labels: data.labels || [], 
@@ -284,7 +309,7 @@ getAbs(value: number): number {
   }
 
   cargarGraficoVentasPorDistrito(): void {
-    this.dashboardService.getSalesByDistrict(this.mesVentasDistrito(), this.idSede()).subscribe({
+    this.dashboardService.getSalesByDistrict(this.mesVentasDistrito(), this.idSede() || undefined).subscribe({
       next: (data) => {
         this.ventasPorDistritoChart.set({
           labels: data.labels || [], 
@@ -303,7 +328,7 @@ getAbs(value: number): number {
   }
 
   cargarTopProductos(): void {
-    this.dashboardService.getTopProducts(this.mesTopProductos(), this.idSede()).subscribe({
+    this.dashboardService.getTopProducts(this.mesTopProductos(), this.idSede() || undefined).subscribe({
       next: (data) => {
         this.topProductos.set(data || []);
       }
@@ -311,7 +336,7 @@ getAbs(value: number): number {
   }
 
   cargarMejoresVendedores(): void {
-    this.dashboardService.getTopSellers(this.mesMejoresVendedores(), this.idSede()).subscribe({
+    this.dashboardService.getTopSellers(this.mesMejoresVendedores(), this.idSede() || undefined).subscribe({
       next: (data) => {
         this.mejoresVendedores.set(data || []);
       }
@@ -319,7 +344,7 @@ getAbs(value: number): number {
   }
 
   cargarActividadReciente(): void {
-    this.dashboardService.getRecentSales(this.periodoVentasDia(), this.idSede()).subscribe({
+    this.dashboardService.getRecentSales(this.periodoVentasDia(), this.idSede() || undefined).subscribe({
       next: (data: any[]) => {
         const actividadMapeada: ActividadReciente[] = data.map((c) => {
           const minutos = Math.floor((Date.now() - new Date(c.fechaEmision || c.fec_emision).getTime()) / 60000);
@@ -368,6 +393,5 @@ getAbs(value: number): number {
         y: { ticks: { color: textColorSecondary, callback: (value: any) => 'S/ ' + (value / 1000).toFixed(0) + 'k' }, grid: { color: surfaceBorder, drawBorder: false } },
       },
     };
-
   }
 }
