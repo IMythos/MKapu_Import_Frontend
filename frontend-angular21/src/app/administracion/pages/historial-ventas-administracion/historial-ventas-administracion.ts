@@ -131,6 +131,10 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
     this.calcularRangoSemana();
     this.cargarEmpleadoActual();
     this.cargarSedes();
+
+    const sedeDefault = this.getSedeUsuarioActual(); 
+    if (sedeDefault) this.filtros.sedeSeleccionada = sedeDefault; 
+
     this.cargarComprobantes();
     this.cargarKpis();
   }
@@ -436,6 +440,18 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
         rutaRetorno: '/admin/historial-ventas-administracion',
       },
     });
+  }
+  private getSedeUsuarioActual(): number | null {
+    try {
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const user = JSON.parse(userString);
+        return user.idSede ?? null;
+      }
+    } catch (e) {
+      console.error('Error parseando usuario', e);
+    }
+    return null;
   }
 
   anularComprobante(comprobante: SalesReceiptSummaryAdmin): void {

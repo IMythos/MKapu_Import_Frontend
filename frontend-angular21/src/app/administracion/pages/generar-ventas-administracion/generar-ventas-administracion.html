@@ -413,10 +413,15 @@
         <div class="productos-container">
           <!-- FILTROS -->
           <div class="seccion-busquedas">
-            <small *ngIf="!sedeSeleccionada()" class="text-orange-500 mt-1 block">
-              <i class="pi pi-exclamation-circle mr-1"></i>
-              Seleccione una sede para ver y agregar productos
-            </small>
+              <!-- Reemplaza el small de advertencia actual -->
+              <small *ngIf="!sedeSeleccionada()" class="text-orange-500 mt-1 block">
+                <i class="pi pi-exclamation-circle mr-1"></i>
+                Seleccione una sede para ver sus almacenes disponibles
+              </small>
+              <small *ngIf="sedeSeleccionada() && !almacenSeleccionado()" class="text-orange-500 mt-1 block">
+                <i class="pi pi-exclamation-circle mr-1"></i>
+                Seleccione un almacén para poder agregar productos
+              </small>
             <br />
             <div class="filtros-productos">
               <!-- BUSCAR PRODUCTO -->
@@ -481,6 +486,22 @@
                   styleClass="w-full"
                 />
               </div>
+
+                <div class="familia-selector">
+                  <label class="font-semibold mb-2 block">Almacén</label>
+                  <p-select
+                    [ngModel]="almacenSeleccionado()"
+                    (ngModelChange)="onAlmacenChange($event)"
+                    [options]="almacenesOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Seleccione un almacén"
+                    [loading]="almacenesLoading()"
+                    [showClear]="true"
+                    [disabled]="!sedeSeleccionada() || almacenesLoading()"
+                    styleClass="w-full"
+                  />
+                </div>
 
               <div class="familia-selector">
                 <label class="font-semibold mb-2 block">Familia</label>

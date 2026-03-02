@@ -21,6 +21,11 @@ import { TooltipModule } from 'primeng/tooltip';
 import { AuthService } from '../../../auth/services/auth.service';
 import { VentasAdminService } from '../../services/ventas.service';
 
+import { AlmacenService } from '../../services/almacen.service';
+import {SedeAlmacenService} from "../../services/sede-almacen.service";
+
+
+
 import {
   ClienteBusquedaAdminResponse,
   CrearClienteAdminRequest,
@@ -68,6 +73,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router = inject(Router);
+  private readonly sedeAlmacenService = inject(SedeAlmacenService);
 
   readonly tituloKicker = 'VENTAS - GENERAR VENTAS';
   readonly subtituloKicker = 'GENERAR NUEVA VENTA (ADMIN)';
@@ -119,6 +125,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   creandoCliente = signal(false);
   editandoCliente = signal(false);
   guardandoCliente = signal(false);
+
+  // Señales Almacenes
+  almacenSeleccionado = signal<number | null>(null);
+  almacenesOptions = signal<{ label: string; value: number }[]>([]);
+  almacenesLoading = signal(false);
+
 
   nuevoClienteForm: {
     documentTypeId: number | null;
@@ -268,12 +280,37 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
+  // Reemplaza onSedeChange completo
   onSedeChange(sedeId: number | null): void {
     this.sedeSeleccionada.set(sedeId);
+    this.almacenSeleccionado.set(null);
+    this.almacenesOptions.set([]);
     this.familiaSeleccionada.set(null);
     this.productoTemp.set(null);
     this.cargarProductos(true);
     this.cargarFamilias();
+
+    if (!sedeId) return;
+
+    this.almacenesLoading.set(true);
+    this.sedeAlmacenService.loadWarehouseOptionsBySede(sedeId).subscribe({
+      next: (options) => {
+        this.almacenesOptions.set(options); 
+        this.almacenesLoading.set(false);
+      },
+      error: () => {
+        this.almacenesLoading.set(false);
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Almacenes',
+          detail: 'No se pudieron cargar los almacenes de esta sede',
+        });
+      },
+    });
+  }
+
+  onAlmacenChange(almacenId: number | null): void {
+    this.almacenSeleccionado.set(almacenId);
   }
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -688,25 +725,30 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           return false;
         }
         return true;
-      case 1:
-        if (!this.sedeSeleccionada()) {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Sede Requerida',
-            detail: 'Debe seleccionar una sede para continuar',
-          });
-          return false;
-        }
-        if (this.productosSeleccionados().length === 0) {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Carrito Vacío',
-            detail: 'Debe agregar al menos un producto',
-          });
-          return false;
-        }
-        return true;
-      case 2:
+        case 1:
+          if (!this.sedeSeleccionada()) {
+            this.messageService.add({
+              severity: 'warn', summary: 'Sede Requerida',
+              detail: 'Debe seleccionar una sede para continuar',
+            });
+            return false;
+          }
+          if (!this.almacenSeleccionado()) {   
+            this.messageService.add({
+              severity: 'warn', summary: 'Almacén Requerido',
+              detail: 'Debe seleccionar un almacén para continuar',
+            });
+            return false;
+          }
+          if (this.productosSeleccionados().length === 0) {
+            this.messageService.add({
+              severity: 'warn', summary: 'Carrito Vacío',
+              detail: 'Debe agregar al menos un producto',
+            });
+            return false;
+          }
+          return true;
+        case 2:
         if (this.metodoPagoSeleccionado() === 1 && this.montoRecibido() < this.total()) {
           this.messageService.add({
             severity: 'warn',
@@ -858,6 +900,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.activeStep.set(0);
     this.cargarProductos(true);
     this.cargarFamilias();
+    this.almacenSeleccionado.set(null);
+    this.almacenesOptions.set([]);
   }
 
   obtenerSeveridadStock(stock: number | undefined): 'success' | 'warn' | 'danger' {
