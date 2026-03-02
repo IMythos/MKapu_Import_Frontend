@@ -36,7 +36,7 @@ export class RemissionService {
     page: number = 1,
     limit: number = 10,
     search?: string,
-    estado?: number | null,
+    estado?: string | number | null,
     startDate?: string,
     endDate?: string,
   ): Observable<RemisionPaginatedResponse> {

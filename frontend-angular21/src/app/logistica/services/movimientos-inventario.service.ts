@@ -17,7 +17,7 @@ export class MovimientosInventarioService {
     if (filtros.estado > 0) params = params.set('tipoId', filtros.estado);
     if (filtros.fechaInicio) params = params.set('fechaInicio', filtros.fechaInicio);
     if (filtros.fechaFin) params = params.set('fechaFin', filtros.fechaFin);
-
+    if (filtros.sedeId) params = params.set('sedeId', filtros.sedeId);
     return this.http.get<any>(this.apiUrl + "/movements", { params });
   }
 }

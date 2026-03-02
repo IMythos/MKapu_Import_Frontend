@@ -9,14 +9,18 @@ import { DatePicker } from 'primeng/datepicker';
 import { NuevaRemision } from './nueva-remision/nueva-remision';
 import { InputTextModule } from 'primeng/inputtext';
 import { RemissionService } from '../../services/remission.service';
-import { RemissionResponse, RemissionSummaryResponse } from '../../interfaces/remision.interface';
+import { 
+  RemissionResponse, 
+  RemissionSummaryResponse, 
+  RemisionPaginatedResponse 
+} from '../../interfaces/remision.interface';
 import { DialogModule } from 'primeng/dialog';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Badge } from 'primeng/badge';
 
 @Component({
   selector: 'app-remision',
+  standalone: true,
   imports: [
     CommonModule,
     FormsModule,
@@ -36,25 +40,29 @@ import { Badge } from 'primeng/badge';
 export class Remision implements OnInit {
   private readonly router = inject(Router);
   private readonly remissionService = inject(RemissionService);
+  
   opcionesEstado = [
     { label: 'Todos', value: null },
-    { label: 'Emitido', value: 1 },
-    { label: 'Anulado', value: 2 },
-    { label: 'Procesado', value: 3 }
+    { label: 'Emitido', value: 'EMITIDO' },
+    { label: 'Procesado', value: 'PROCESADO' },
+    { label: 'Anulado', value: 'ANULADO' }
   ];
+
   remisiones = signal<RemissionResponse[]>([]);
   totalRecords = signal<number>(0);
   loading = signal<boolean>(false);
 
   filtroTexto = signal<string>('');
-  filtroEstado = signal<number | null>(null);
+  filtroEstado = signal<string | null>(null);
   filtroFechas = signal<Date[] | null>(null);
+  
   resumen = signal<RemissionSummaryResponse>({
     totalMes: 0,
     enTransito: 0,
     entregadas: 0,
     observadas: 0,
   });
+
   protected sidebarVisible = signal<boolean>(false);
 
   ngOnInit() {
@@ -62,12 +70,11 @@ export class Remision implements OnInit {
     this.cargarResumen();
   }
 
-  cargarDatos(page: number = 1, limit: number = 10, search: string = ''): void {
+  cargarDatos(page: number = 1, limit: number = 10): void {
     this.loading.set(true);
 
     let startDate = '';
     let endDate = '';
-
     const fechas = this.filtroFechas();
 
     if (fechas && fechas[0] && fechas[1]) {
@@ -76,19 +83,20 @@ export class Remision implements OnInit {
       fin.setHours(23, 59, 59, 999);
       endDate = fin.toISOString();
     }
+
     this.remissionService
       .getRemisiones(
         page,
         limit,
-        this.filtroTexto(),
-        this.filtroEstado() ?? undefined,
-        startDate,
-        endDate,
+        this.filtroTexto() || undefined,
+        this.filtroEstado() as any,
+        startDate || undefined,
+        endDate || undefined,
       )
       .subscribe({
-        next: (res) => {
+        next: (res: RemisionPaginatedResponse) => {
           this.remisiones.set(res.data);
-          this.totalRecords.set(res.total);
+          this.totalRecords.set(Number(res.total)); 
           this.loading.set(false);
         },
         error: (err) => {
@@ -113,14 +121,17 @@ export class Remision implements OnInit {
     this.filtroFechas.set(null);
     this.cargarDatos(1, 10);
   }
+
   cargarResumen() {
     this.remissionService.getRemissionSummary().subscribe({
-      next: (data) => this.resumen.set(data),
+      next: (data: RemissionSummaryResponse) => this.resumen.set(data),
       error: (err) => console.error('Error cargando el resumen', err),
     });
   }
+
   onSearch(term: string) {
-    this.cargarDatos(1, 10, term);
+    this.filtroTexto.set(term);
+    this.cargarDatos(1, 10);
   }
 
   abrirFormulario(): void {
@@ -129,7 +140,7 @@ export class Remision implements OnInit {
 
   cerrarFormulario(): void {
     this.sidebarVisible.set(false);
-    this.cargarDatos();
+    this.cargarDatos(); // Recargar datos al cerrar por si se creó una nueva
   }
 
   verDetalles(idGuia: string) {
