@@ -81,7 +81,7 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
   filtros: FiltroVentasAdmin = {
     sedeSeleccionada: null,
     tipoComprobante: null,
-    estado: null,
+    estado: 'EMITIDO',  
     fechaInicio: null,
     fechaFin: null,
     busqueda: '',
@@ -230,7 +230,7 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
       limit: this.limitePorPagina,
       sedeId: this.filtros.sedeSeleccionada ?? undefined,
       receiptTypeId: this.filtros.tipoComprobante ?? undefined,
-      status: (this.filtros.estado as any) ?? undefined,
+      status: (this.filtros.estado as any) ?? 'EMITIDO',
       paymentMethodId: this.filtros.tipoPago ?? undefined,
       dateFrom: this.filtros.fechaInicio
         ? this.filtros.fechaInicio.toISOString().split('T')[0]

@@ -29,7 +29,6 @@ export class Header implements OnInit {
   notifCount = this.loadNotifCount();
   readonly caja = this.cashboxSocket.caja;
 
-  // ✅ Lee sedeNombre del localStorage via RoleService
   sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';
 
   ngOnInit(): void {
