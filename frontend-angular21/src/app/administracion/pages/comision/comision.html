@@ -33,30 +33,31 @@
   <!-- CONTADORES -->
   <div class="contadores-productos mb-4">
 
-    <div class="contador-card">
-      <i class="pi pi-list"></i>
+    <div class="contador-card" [class.contador-activo]="filtroActivo() === true"
+      style="cursor:pointer" (click)="filtroActivo.set(true)">
+      <i class="pi pi-check-circle"></i>
       <div>
-        <span class="contador-label">Total Reglas</span>
+        <span class="contador-label">Activas</span>
         <span class="contador-valor">{{ totalReglasActivas() }}</span>
-        <span class="contador-detalle"><i class="pi pi-check-circle"></i> Activas</span>
+        <span class="contador-detalle"><i class="pi pi-list"></i> Reglas vigentes</span>
       </div>
     </div>
 
-    <div class="contador-card">
-      <i class="pi pi-tags"></i>
+    <div class="contador-card" [class.contador-inactivo]="filtroActivo() === false"
+      style="cursor:pointer" (click)="filtroActivo.set(false)">
+      <i class="pi pi-ban"></i>
       <div>
-        <span class="contador-label">Categorías</span>
-        <span class="contador-valor">{{ totalCategorias() }}</span>
-        <span class="contador-detalle"><i class="pi pi-sitemap"></i> Con comisión</span>
+        <span class="contador-label">Inactivas</span>
+        <span class="contador-valor">{{ totalInactivas() }}</span>
+        <span class="contador-detalle"><i class="pi pi-eye-slash"></i> Desactivadas</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-percentage"></i>
       <div>
         <span class="contador-label">Promedio</span>
         <span class="contador-valor">S/ {{ promedioComision() | number:'1.2-2' }}</span>
-        <span class="contador-detalle"><i class="pi pi-arrow-up"></i> Por regla</span>
+        <span class="contador-detalle"><i class="pi pi-arrow-up"></i> Por regla activa</span>
       </div>
     </div>
 
@@ -70,7 +71,6 @@
     </div>
 
   </div>
-
   <!-- FILTROS -->
   <div class="surface-card border-round-xl shadow-1 mb-4">
     <div class="p-3">
@@ -78,30 +78,43 @@
 
         <div class="flex-1 p-fluid">
           <label class="font-medium mb-2 block">Buscar Regla</label>
-          <span class="p-input-icon-left w-full">
-            <input pInputText [(ngModel)]="filtroBusqueda"
-              placeholder="Nombre de la regla..."
-              class="w-full" />
-          </span>
+          <input pInputText
+            [ngModel]="filtroBusqueda()"
+            (ngModelChange)="filtroBusqueda.set($event)"
+            placeholder="Nombre de la regla..."
+            class="w-full" />
         </div>
 
-        <div class="flex flex-column w-16rem">
+        <div class="flex flex-column w-12rem">
+          <label class="font-medium mb-2 block">Estado</label>
+          <p-select
+            [options]="estadosFiltro"
+            [ngModel]="filtroActivo()"
+            (ngModelChange)="filtroActivo.set($event)"
+            optionLabel="label"
+            optionValue="value"
+            class="w-full" />
+        </div>
+
+        <div class="flex flex-column w-14rem">
           <label class="font-medium mb-2 block">Tipo de Objetivo</label>
           <p-select
             [options]="tiposObjetivo"
-            [(ngModel)]="filtroTipo"
+            [ngModel]="filtroTipo()"
+            (ngModelChange)="filtroTipo.set($event)"
             optionLabel="label"
             optionValue="value"
-            placeholder="Todos los tipos"
+            placeholder="Todos"
             [showClear]="true"
             class="w-full" />
         </div>
 
-        <div class="flex flex-column w-16rem">
+        <div class="flex flex-column w-14rem">
           <label class="font-medium mb-2 block">Tipo de Comisión</label>
           <p-select
             [options]="tiposRecompensa"
-            [(ngModel)]="filtroRecompensa"
+            [ngModel]="filtroRecompensa()"
+            (ngModelChange)="filtroRecompensa.set($event)"
             optionLabel="label"
             optionValue="value"
             placeholder="Todos"

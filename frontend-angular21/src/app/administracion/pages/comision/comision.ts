@@ -26,15 +26,15 @@ export class Comision implements OnInit {
   private readonly commissionService = inject(CommissionService);
   private readonly categoriaService  = inject(CategoriaService);
 
-  readonly activeRules = this.commissionService.activeRules;
-  readonly loading     = this.commissionService.loading;
-  readonly error       = this.commissionService.error;
-  readonly categorias  = this.categoriaService.categorias;
+  readonly loading  = this.commissionService.loading;
+  readonly error    = this.commissionService.error;
+  readonly categorias = this.categoriaService.categorias;
 
-  // ── Filtros ────────────────────────────────────────────────────────────────
-  filtroBusqueda   = '';
-  filtroTipo:       string | null = null;
-  filtroRecompensa: string | null = null;
+  // ── Filtros como signals ───────────────────────────────────────────────────
+  readonly filtroBusqueda   = signal('');
+  readonly filtroTipo       = signal<string | null>(null);
+  readonly filtroRecompensa = signal<string | null>(null);
+  readonly filtroActivo     = signal<boolean | null>(true);
 
   tiposObjetivo = [
     { label: 'Categoría', value: 'CATEGORIA' },
@@ -42,14 +42,21 @@ export class Comision implements OnInit {
   ];
 
   tiposRecompensa = [
-    { label: 'Monto Fijo',  value: 'MONTO_FIJO' },
-    { label: 'Porcentaje',  value: 'PORCENTAJE' },
+    { label: 'Monto Fijo', value: 'MONTO_FIJO' },
+    { label: 'Porcentaje', value: 'PORCENTAJE' },
+  ];
+
+  estadosFiltro = [
+    { label: 'Activas',   value: true },
+    { label: 'Inactivas', value: false },
+    { label: 'Todas',     value: null },
   ];
 
   limpiarFiltros() {
-    this.filtroBusqueda   = '';
-    this.filtroTipo       = null;
-    this.filtroRecompensa = null;
+    this.filtroBusqueda.set('');
+    this.filtroTipo.set(null);
+    this.filtroRecompensa.set(null);
+    this.filtroActivo.set(true);
   }
 
   // ── Computed rows ──────────────────────────────────────────────────────────
@@ -57,13 +64,13 @@ export class Comision implements OnInit {
     const catMap = new Map(
       this.categorias().map(c => [c.id_categoria, c.nombre])
     );
-    return this.activeRules().map(r => ({
+    return this.commissionService.rules().map(r => ({
       id:           `RC-${String(r.id_regla).padStart(3, '0')}`,
       nombre:       r.nombre,
       descripcion:  r.descripcion ?? '',
       familia:      catMap.get(r.id_objetivo) ?? `ID: ${r.id_objetivo}`,
       tipo:         r.tipo_objetivo === 'PRODUCTO' ? 'Producto' : 'Categoría',
-      tipoSeverity: r.tipo_objetivo === 'PRODUCTO' ? 'info' : 'success' as any,
+      tipoSeverity: (r.tipo_objetivo === 'PRODUCTO' ? 'info' : 'success') as any,
       condicion:    r.meta_unidades > 1 ? `Lote (≥${r.meta_unidades} uds.)` : 'Por Unidad',
       recompensa:   r.tipo_recompensa === 'PORCENTAJE' ? '%' : 'S/',
       comision:     Number(r.valor_recompensa),
@@ -74,39 +81,43 @@ export class Comision implements OnInit {
 
   readonly reglasFiltradas = computed(() => {
     let data = this.reglas();
+    const activo     = this.filtroActivo();
+    const busqueda   = this.filtroBusqueda().trim().toLowerCase();
+    const tipo       = this.filtroTipo();
+    const recompensa = this.filtroRecompensa();
 
-    if (this.filtroBusqueda.trim()) {
-      const q = this.filtroBusqueda.toLowerCase();
-      data = data.filter(r => r.nombre.toLowerCase().includes(q));
+    if (activo !== null) {
+      data = data.filter(r => r.activo === activo);
     }
-    if (this.filtroTipo) {
-      data = data.filter(r => r.raw.tipo_objetivo === this.filtroTipo);
+    if (busqueda) {
+      data = data.filter(r => r.nombre.toLowerCase().includes(busqueda));
     }
-    if (this.filtroRecompensa) {
-      data = data.filter(r => r.raw.tipo_recompensa === this.filtroRecompensa);
+    if (tipo) {
+      data = data.filter(r => r.raw.tipo_objetivo === tipo);
+    }
+    if (recompensa) {
+      data = data.filter(r => r.raw.tipo_recompensa === recompensa);
     }
     return data;
   });
 
   // ── KPIs ───────────────────────────────────────────────────────────────────
-  readonly totalReglasActivas = computed(() => this.activeRules().length);
+  readonly totalReglasActivas = computed(() =>
+    this.commissionService.rules().filter(r => r.activo).length
+  );
 
-  readonly totalCategorias = computed(() =>
-    new Set(
-      this.activeRules()
-        .filter(r => r.tipo_objetivo === 'CATEGORIA')
-        .map(r => r.id_objetivo)
-    ).size
+  readonly totalInactivas = computed(() =>
+    this.commissionService.rules().filter(r => !r.activo).length
   );
 
   readonly promedioComision = computed(() => {
-    const lista = this.activeRules();
+    const lista = this.commissionService.activeRules();
     if (!lista.length) return 0;
     return lista.reduce((acc, r) => acc + Number(r.valor_recompensa), 0) / lista.length;
   });
 
   readonly reglasConMeta = computed(() =>
-    this.activeRules().filter(r => r.meta_unidades > 1).length
+    this.commissionService.activeRules().filter(r => r.meta_unidades > 1).length
   );
 
   // ── Lifecycle ──────────────────────────────────────────────────────────────
