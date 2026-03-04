@@ -45,7 +45,6 @@ export class Sidebar implements OnInit {
   // ========== Definición de rutas del menú ==========
 
   private readonly SIDEBAR_ROUTES: RouteConfig[] = [
-    // ==================== ADMIN ====================
     { path: '/admin/dashboard-admin',                 allowedRoles: [UserRole.ADMIN],   label: 'Dashboard',icon: 'pi pi-home',},
     { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'VENTAS', isSection: true },
     { path: '/admin/generar-ventas-administracion',   allowedRoles: [UserRole.ADMIN],   label: 'Crear Venta Administración', icon: 'pi pi-plus-circle' },
@@ -63,6 +62,7 @@ export class Sidebar implements OnInit {
     { path: '/logistica/remision',                    allowedRoles: [UserRole.ADMIN],   label: 'Remision', icon: 'pi pi-truck',},
     { path: '/logistica/conteo-inventario',           allowedRoles: [UserRole.ADMIN],   label: 'Conteo Inventario', icon: 'pi pi-folder', },
     { path: '/logistica/movimiento-inventario',       allowedRoles: [UserRole.ADMIN],   label: 'Movimiento Inventario', icon: 'pi pi-database' },
+    { path: '/logistica/ajuste-inventario', allowedRoles:[UserRole.ADMIN], label: 'Ajuste Inventario', icon: 'pi pi-cog'},
 
     { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'ADMINISTRACIÓN', isSection: true },
     { path: '/admin/transferencia',                   allowedRoles: [UserRole.ADMIN],   label: 'Transferencias', icon: 'pi pi-arrows-h' },
@@ -77,7 +77,6 @@ export class Sidebar implements OnInit {
     { path: '/admin/proveedores',                     allowedRoles: [UserRole.ADMIN],   label: 'Proveedores',   icon: 'pi pi-truck' },
 
 
-    // ==================== VENTAS ====================
     { path: '/ventas/caja',                            allowedRoles: [UserRole.VENTAS],   label: 'Estado Caja',   icon: 'pi pi-wallet'},
     { path: '/ventas/dashboard-ventas',                allowedRoles: [UserRole.VENTAS],   label: 'Dashboard',     icon: 'pi pi-chart-line'},
     { path: '/ventas/generar-ventas',                  allowedRoles: [UserRole.VENTAS],   label: 'Generar Venta',icon: 'pi pi-plus-circle'},

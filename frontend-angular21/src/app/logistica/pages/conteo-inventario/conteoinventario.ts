@@ -44,13 +44,12 @@ export class ConteoInventarios implements OnInit {
   loading = this.conteoService.loading;
   conteosListado = this.conteoService.conteosListado;
 
-  idSedeSeleccionada = signal<number>(1);
-  fechaSeleccionada = signal<Date | string | null>(null); // Permitimos string por precaución con PrimeNG
+  idSedeSeleccionada = signal<number | null>(null);
+  fechaSeleccionada = signal<Date | string | null>(null);
   filtroBusqueda = signal<string>('');
   estadoSeleccionado = signal<any>(null);
   familiaSeleccionada = signal<any>(null);
 
-  // Variables de Paginación UI
   first = signal<number>(0);
   rows = signal<number>(10);
   totalRegistros = this.conteoService.totalRegistros;
@@ -113,7 +112,6 @@ export class ConteoInventarios implements OnInit {
         }
       }
 
-      // Añadimos coincideFecha a la condición final de retorno
       return coincideBusqueda && coincideEstado && coincideFamilia && coincideFecha;
     });
   });
@@ -125,6 +123,7 @@ export class ConteoInventarios implements OnInit {
   });
 
   ngOnInit() {
+    this.recuperarSedeDeLocalStorage();    
     this.cargarFamiliasDinamicamente();
     this.cargarHistorialBackend(1, this.rows());
   }
@@ -151,6 +150,23 @@ export class ConteoInventarios implements OnInit {
     this.first.set(0); 
     this.cargarHistorialBackend(1, this.rows());
   }
+  recuperarSedeDeLocalStorage() {
+    try {
+      const session = localStorage.getItem('user'); 
+      if (session) {
+        const userData = JSON.parse(session);
+        
+        const sedeId = userData.idSede || userData.id_sede || userData.sedeId;
+        
+        if (sedeId) {
+          console.log('Sede recuperada del storage:', sedeId);
+          this.idSedeSeleccionada.set(Number(sedeId));
+        }
+      }
+    } catch (error) {
+      console.error('Error recuperando sede del storage', error);
+    }
+  }
 
   cargarHistorialBackend(page: number = 1, limit: number = 10) {
     const payload: any = {
@@ -161,13 +177,11 @@ export class ConteoInventarios implements OnInit {
 
     let fecha = this.fechaSeleccionada();
     
-    // VALIDACIÓN DE SEGURIDAD PARA LA FECHA
     if (fecha) {
       if (typeof fecha === 'string') {
         fecha = new Date(fecha);
       }
       
-      // Aseguramos que sea una fecha válida antes de aplicar métodos como getFullYear
       if (!isNaN(fecha.getTime())) {
         const year = fecha.getFullYear();
         const month = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -179,6 +193,7 @@ export class ConteoInventarios implements OnInit {
       }
     }
 
+    console.log('Enviando petición con payload:', payload);
     this.conteoService.listarConteos(payload);
   }
 

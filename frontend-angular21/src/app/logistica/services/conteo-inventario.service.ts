@@ -26,30 +26,28 @@ export class ConteoInventarioService {
   });
   listarConteos(filtros: FiltrosConteo) {
     this.loading.set(true);
-    
-    let params = new HttpParams().set('id_sede', filtros.id_sede);
+
+    let params = new HttpParams();
+
+    if (filtros.id_sede !== null && filtros.id_sede !== undefined) {
+      params = params.set('id_sede', filtros.id_sede.toString());
+    }
+
     if (filtros.fecha_inicio) params = params.set('fecha_inicio', filtros.fecha_inicio);
-    if (filtros.fecha_fin) params = params.set('fecha_fin', filtros.fecha_fin);
-    
     if (filtros.page) params = params.set('page', filtros.page.toString());
     if (filtros.limit) params = params.set('limit', filtros.limit.toString());
 
-    this.http.get<{ status: number, data: any[], meta?: any }>(this.apiUrl, { params }).subscribe({
+    this.http.get<any>(this.apiUrl, { params }).subscribe({
       next: (res) => {
-        this.conteosListado.set(res.data);
-        
-        if (res.meta && res.meta.total !== undefined) {
-          this.totalRegistros.set(res.meta.total);
-        } else {
-          this.totalRegistros.set(res.data.length); 
-        }
-        
+        const data = res.data || res;
+        this.conteosListado.set(Array.isArray(data) ? data : []);
+        this.totalRegistros.set(res.meta?.total || data.length || 0);
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error fetching conteos', err);
         this.loading.set(false);
-      }
+        console.error(err);
+      },
     });
   }
 

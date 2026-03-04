@@ -129,7 +129,6 @@ export class AjusteInventario implements OnInit {
     this.guardando = true;
 
     const currentUser = this.authService.getCurrentUser();
-    // Usamos el motivo del primer elemento
     const motivoGeneral = this.productosTabla[0].reason || 'Ajuste manual múltiple';
 
     const payload = {

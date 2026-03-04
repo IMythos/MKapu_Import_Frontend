@@ -1,110 +1,91 @@
-<div class="p-2">
-  <div
-    *ngIf="loading()"
-    class="flex justify-content-center align-items-center"
-    style="height: 50vh"
-  >
-    <p-progressSpinner></p-progressSpinner>
+<div class="p-4 fadein animation-duration-300">
+  <p-toast></p-toast>
+
+  <div *ngIf="loading()" class="flex flex-column justify-content-center align-items-center" style="height: 60vh">
+    <p-progressSpinner strokeWidth="4"></p-progressSpinner>
+    <span class="text-color-secondary mt-3 font-medium text-lg">Cargando detalles de la guía...</span>
   </div>
 
-  <p-card *ngIf="!loading() && remision() as detalle">
-    <ng-template pTemplate="title">
-      <div class="flex justify-content-between align-items-center">
+  <p-card *ngIf="!loading() && remision() as detalle" styleClass="shadow-3 border-round-xl border-none">
+    <ng-template pTemplate="header">
+      <div class="flex flex-wrap align-items-center justify-content-between px-4 pt-4 pb-2 border-bottom-1 surface-border gap-3">
         <div class="flex align-items-center gap-3">
           <button
             pButton
             icon="pi pi-arrow-left"
             class="p-button-rounded p-button-secondary p-button-text"
             (click)="volver()"
-            pTooltip="Volver"
+            pTooltip="Regresar"
           ></button>
-          <span class="text-xl font-bold"
-            >Detalle de Remisión: {{ detalle.serie }}-{{ detalle.numero }}</span
-          >
-          <p-tag
-            [severity]="detalle.estado === 0 || detalle.estado === 'EMITIDO' ? 'success' : 'danger'"
-            value="{{ detalle.estado === 0 ? 'EMITIDO' : detalle.estado }}"
-          >
-          </p-tag>
+          
+          <div class="flex flex-column">
+            <div class="flex align-items-center gap-2">
+              <h2 class="m-0 text-xl font-bold text-color">Guía de Remisión</h2>
+              <p-tag
+                [severity]="detalle.estado === 0 || detalle.estado === 'EMITIDO' ? 'success' : 'danger'"
+                [value]="detalle.estado === 0 ? 'EMITIDO' : (detalle.estado).toString()"
+                styleClass="px-3 text-xs uppercase font-bold"
+              ></p-tag>
+            </div>
+            <span class="text-primary font-bold text-lg">{{ detalle.serie }}-{{ detalle.numero }}</span>
+          </div>
         </div>
-        <div>
-          <button
-            pButton
+
+        <div class="flex gap-2">
+          <p-button
             icon="pi pi-file-pdf"
             label="Descargar PDF"
-            class="p-button-outlined p-button-danger"
-          ></button>
+            severity="danger"
+            styleClass="p-button-outlined shadow-1"
+            (onClick)="descargarPdf()"
+          ></p-button>
+          <p-button
+            icon="pi pi-file-excel"
+            label="Descargar Excel"
+            severity="success"
+            styleClass="p-button-outlined shadow-1"
+            (onClick)="descargarExcel()"
+          ></p-button>
         </div>
       </div>
     </ng-template>
 
-    <div class="grid p-fluid mt-3 mb-4">
-      <div class="col-12 md:col-4">
-        <div class="text-500 mb-1">Motivo de Traslado</div>
-        <div class="font-semibold text-lg">{{ detalle.motivo_traslado }}</div>
-      </div>
-      <div class="col-12 md:col-4">
-        <div class="text-500 mb-1">Fecha Emisión / Inicio Traslado</div>
-        <div class="font-semibold text-lg">
-          {{ detalle.fecha_emision | date: 'dd/MM/yyyy' }} -
-          {{ detalle.fecha_inicio | date: 'dd/MM/yyyy' }}
-        </div>
-      </div>
-      <div class="col-12 md:col-4">
-        <div class="text-500 mb-1">Peso Total</div>
-        <div class="font-semibold text-lg">{{ detalle.peso_total }} {{ detalle.unidad_peso }}</div>
-      </div>
-      <div class="col-12 md:col-4">
-        <div class="text-500 mb-1">Comprobante de Ref.</div>
-        <div class="font-semibold text-lg">
-          {{ detalle.id_comprobante_ref ? '#' + detalle.id_comprobante_ref : 'Ninguno' }}
-        </div>
-      </div>
-      <div class="col-12 md:col-4">
-        <div class="text-500 mb-1">Modalidad</div>
-        <div class="font-semibold text-lg">
-          {{ detalle.modalidad === 0 ? 'Transporte Público' : 'Transporte Privado' }}
-        </div>
-      </div>
-      <div class="col-12 md:col-4">
-        <div class="text-500 mb-1">Tipo de Guía</div>
-        <div class="font-semibold text-lg">
-          {{ detalle.tipo_guia === 0 ? 'Remitente' : 'Transportista' }}
-        </div>
+    <div class="grid mt-2">
+      <div class="col-12">
+        <div class="grid p-3 surface-50 border-round-lg border-1 surface-border m-0">
+          <div class="col-12 md:col-4 lg:col-3 py-3 flex align-items-start gap-3">
+            <div class="icon-circle bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
+              <i class="pi pi-tag"></i>
+            </div>
+            <div>
+              <span class="block text-color-secondary text-xs font-bold uppercase mb-1">Motivo de Traslado</span>
+              <span class="text-color font-semibold">{{ detalle.motivo_traslado }}</span>
+            </div>
+          </div>
+          </div>
       </div>
     </div>
 
-    <p-divider></p-divider>
-
-    <h3 class="mb-3">Lista de Productos ({{ detalle.items?.length || 0 }})</h3>
-
-    <p-table
-      [value]="detalle.items || []"
-      responsiveLayout="scroll"
-      styleClass="p-datatable-sm p-datatable-gridlines"
-      [rowHover]="true"
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th style="width: 20%">Cod. Producto</th>
-          <th class="text-right" style="width: 20%">Cantidad</th>
-          <th class="text-right" style="width: 30%">Peso Unitario</th>
-          <th class="text-right" style="width: 30%">Peso Total</th>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="body" let-item>
-        <tr>
-          <td class="font-semibold">{{ item.cod_prod }}</td>
-          <td class="text-right">{{ item.cantidad }}</td>
-          <td class="text-right">{{ item.peso_unitario }}</td>
-          <td class="text-right font-bold text-primary">{{ item.peso_total }}</td>
-        </tr>
-      </ng-template>
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="4" class="text-center p-4">No hay productos registrados en esta guía.</td>
-        </tr>
-      </ng-template>
-    </p-table>
+    <div class="mt-5">
+      <h3 class="m-0 text-lg font-bold mb-3">Bienes Transportados ({{ detalle.items?.length || 0 }})</h3>
+      <p-table [value]="detalle.items || []" responsiveLayout="scroll" styleClass="p-datatable-sm shadow-1 border-1 surface-border border-round-lg overflow-hidden">
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="bg-surface-100">Código</th>
+            <th class="bg-surface-100 text-right">Cantidad</th>
+            <th class="bg-surface-100 text-right">Peso Unit.</th>
+            <th class="bg-surface-100 text-right">Peso Total</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td class="font-bold text-primary">{{ item.cod_prod }}</td>
+            <td class="text-right">{{ item.cantidad }}</td>
+            <td class="text-right">{{ item.peso_unitario | number:'1.3-3' }}</td>
+            <td class="text-right font-bold text-color">{{ item.peso_total | number:'1.3-3' }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
   </p-card>
 </div>

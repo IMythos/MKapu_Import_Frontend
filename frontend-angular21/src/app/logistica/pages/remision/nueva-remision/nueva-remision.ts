@@ -14,9 +14,8 @@ import { VentasService } from '../../../../core/services/ventas.service';
 import { RemissionService } from '../../../services/remission.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { ClientesService } from '../../../../core/services/clientes.service';
-import { ClienteService } from '../../../../administracion/services/cliente.service';
 import { SunatService } from '../../../services/sunat.service';
+import { TagModule } from 'primeng/tag';
 
 @Component({
   selector: 'app-nueva-remision',
@@ -31,7 +30,8 @@ import { SunatService } from '../../../services/sunat.service';
     TextareaModule,
     TableModule,
     ToastModule,
-    CardModule
+    CardModule,
+    TagModule,
   ],
   providers: [MessageService],
   templateUrl: './nueva-remision.html',
@@ -45,6 +45,7 @@ export class NuevaRemision implements OnInit {
   private sunatService = inject(SunatService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
+
   correlativoInicial = signal<string>('');
   remissionForm!: FormGroup;
 
@@ -61,11 +62,19 @@ export class NuevaRemision implements OnInit {
 
   ngOnInit() {
     this.initForm();
-    const correlativoParam = this.route.snapshot.queryParamMap.get('correlativo');
-    if (correlativoParam) {
-      this.correlativoInicial.set(correlativoParam);
-      this.buscarComprobante(correlativoParam);
-    }
+    
+    // 👇 Suscribirnos a los queryParams para recibir el comprobanteRef o ventaId
+    this.route.queryParams.subscribe(params => {
+      const comprobanteRef = params['comprobanteRef'];
+      const correlativo = params['correlativo']; 
+      
+      const paramAUsar = comprobanteRef || correlativo;
+
+      if (paramAUsar) {
+        this.correlativoInicial.set(paramAUsar);
+        this.buscarComprobante(paramAUsar);
+      }
+    });
   }
 
   initForm() {
@@ -121,6 +130,7 @@ export class NuevaRemision implements OnInit {
   get items(): FormArray {
     return this.remissionForm.get('items') as FormArray;
   }
+
   buscarRucTransportista() {
     const rucControl = this.remissionForm.get('datos_transporte.ruc');
     const ruc = rucControl?.value;
@@ -177,30 +187,51 @@ export class NuevaRemision implements OnInit {
     });
   }
 
+  // 👇 MÉTODO ADAPTADO PARA SETEAR TODOS LOS DATOS CORRECTAMENTE
   private cargarDatosVenta(venta: any) {
+    const comprobanteActual = this.correlativoInicial();
+    const idSede = (venta.id_sede || venta.sedeId)?.toString() || '';
+
     this.remissionForm.patchValue({
       id_comprobante_ref: venta.id,
-      id_almacen_origen: venta.id_almacen,
-      id_sede_origen: venta.id_sede.toString(),
+      id_almacen_origen: venta.id_almacen || venta.almacenId, 
+      id_sede_origen: idSede,
+      motivo_traslado: 'VENTA',
+      descripcion: `Traslado de mercadería por venta ${comprobanteActual}`,
       datos_traslado: {
-        direccion_destino: venta.cliente_direccion || '',
-        ubigeo_destino: venta.cliente_ubigeo || ''
+        direccion_destino: venta.cliente_direccion || venta.clienteDireccion || '',
+        ubigeo_destino: venta.cliente_ubigeo || venta.clienteUbigeo || ''
       },
     });
 
     this.items.clear();
+    
+    // Mapeo flexible para soportar tanto snake_case como camelCase en el DTO
     if (venta.detalles && venta.detalles.length > 0) {
       venta.detalles.forEach((d: any) => {
+        const idProd = d.id_producto || d.productoId;
+        const codProd = d.cod_prod || d.codigoProducto || d.codigo;
+        const cant = Number(d.cantidad);
+        const pesoU = Number(d.peso_unitario || d.pesoUnitario || 0);
+        const pesoT = Number(d.peso_total || (cant * pesoU));
+
         this.items.push(this.fb.group({
-          id_producto: [d.id_producto],
-          cod_prod: [d.cod_prod],
-          cantidad: [Number(d.cantidad), [Validators.required, Validators.min(1)]],
-          peso_unitario: [{ value: Number(d.peso_unitario), disabled: true }],
-          peso_total: [Number(d.peso_total)]
+          id_producto: [idProd],
+          cod_prod: [codProd],
+          cantidad: [cant, [Validators.required, Validators.min(1)]],
+          peso_unitario: [{ value: pesoU, disabled: true }],
+          peso_total: [pesoT]
         }));
       });
     }
+    
     this.itemsWeights.set(this.items.getRawValue());
+    
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Datos cargados',
+      detail: `Se cargaron ${venta.detalles?.length || 0} productos de la venta.`
+    });
   }
 
   calcularLinea(group: FormGroup) {
@@ -232,7 +263,7 @@ export class NuevaRemision implements OnInit {
     const payload = {
       ...formValue,
       peso_bruto_total: this.pesoBrutoTotal(),
-      id_usuario: 1,
+      id_usuario: 1, // Esto idealmente se saca del Auth Service/Token
       fecha_inicio_traslado: formValue.fecha_inicio_traslado.toISOString(),
     };
 

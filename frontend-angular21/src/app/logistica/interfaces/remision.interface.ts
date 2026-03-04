@@ -42,6 +42,7 @@ export interface RemissionResponse {
   peso_total: number;
   cantidad: number; 
   items?: RemissionItemDto[]; 
+  descripcion: string;
 }
 
 export interface RemisionPaginatedResponse {

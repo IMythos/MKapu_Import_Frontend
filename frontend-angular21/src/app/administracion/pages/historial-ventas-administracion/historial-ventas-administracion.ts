@@ -337,7 +337,14 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
     this.limitePorPagina = event.rows ?? this.limitePorPagina;
     this.cargarComprobantes();
   }
-
+  crearGuiaRemision(comprobante: any) {
+  this.router.navigate(['/logistica/remision/nueva'], {
+    queryParams: { 
+      ventaId: comprobante.id,
+      comprobanteRef: this.getNumeroFormateado(comprobante)
+    }
+  });
+}
   exportarExcel(): void {
     if (this.comprobantesFiltrados.length === 0) {
       this.messageService.add({

@@ -233,11 +233,7 @@
             <th pSortableColumn="responsableNombre">
               Responsable <p-sortIcon field="responsableNombre" />
             </th>
-            <th
-              pSortableColumn="total"
-              class="text-right"
-              style="min-width: 125px; width: 125px"
-            >
+            <th pSortableColumn="total" class="text-right" style="min-width: 125px; width: 125px">
               Total <p-sortIcon field="total" />
             </th>
             <th pSortableColumn="estado">Estado</th>
@@ -304,6 +300,7 @@
                   pTooltip="Ver detalle"
                   tooltipPosition="top"
                 ></p-button>
+
                 <p-button
                   icon="pi pi-print"
                   (onClick)="imprimirComprobante(comprobante)"
@@ -313,6 +310,18 @@
                   pTooltip="Imprimir"
                   tooltipPosition="top"
                 ></p-button>
+
+                <p-button
+                  icon="pi pi-truck"
+                  (onClick)="crearGuiaRemision(comprobante)"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="info"
+                  [disabled]="comprobante.estado !== 'EMITIDO'"
+                  pTooltip="Generar Guía de Remisión"
+                  tooltipPosition="top"
+                ></p-button>
+
                 <p-button
                   icon="pi pi-trash"
                   (onClick)="anularComprobante(comprobante)"

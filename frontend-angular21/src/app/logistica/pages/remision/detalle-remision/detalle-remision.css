@@ -1,0 +1,30 @@
+.icon-circle {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    font-size: 1rem;
+}
+
+.fadein {
+    animation: fadeInAnimation ease 0.4s;
+    animation-iteration-count: 1;
+    animation-fill-mode: forwards;
+}
+
+@keyframes fadeInAnimation {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+:host ::ng-deep .p-datatable {
+    border-radius: 8px;
+}
+
+:host ::ng-deep .p-card-header {
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+}

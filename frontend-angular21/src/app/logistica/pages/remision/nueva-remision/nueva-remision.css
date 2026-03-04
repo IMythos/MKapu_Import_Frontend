@@ -1,0 +1,59 @@
+/* nueva-remision.css */
+
+/* Contenedor de grupo de entrada personalizado */
+.custom-input-group {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: stretch !important;
+    width: 100%;
+}
+
+/* Base para los iconos/etiquetas laterales */
+.custom-addon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 0.85rem;
+    background: var(--surface-100);
+    border: 1px solid var(--surface-border);
+    color: var(--text-color-secondary);
+}
+
+/* CASO A: Icono a la IZQUIERDA, Input a la DERECHA */
+.custom-addon-left {
+    border-right: none;
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.custom-input-right {
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+    border-top-right-radius: 6px !important;
+    border-bottom-right-radius: 6px !important;
+}
+
+/* CASO B: Input a la IZQUIERDA, Etiqueta (kg) a la DERECHA */
+.custom-input-left {
+    border-top-left-radius: 6px !important;
+    border-bottom-left-radius: 6px !important;
+    border-top-right-radius: 0 !important;
+    border-bottom-right-radius: 0 !important;
+}
+
+.custom-addon-right {
+    border-left: none;
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+/* Círculos perfectos para los iconos de sección */
+.icon-circle {
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    min-width: 2.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+}

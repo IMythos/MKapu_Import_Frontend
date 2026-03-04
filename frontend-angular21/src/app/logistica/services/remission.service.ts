@@ -59,4 +59,11 @@ export class RemissionService {
   getRemissionSummary(): Observable<RemissionSummaryResponse> {
     return this.http.get<RemissionSummaryResponse>(`${this.apiUrl}/summary`);
   }
+  exportPdf(id: string) {
+    return this.http.get(`${this.apiUrl}/${id}/export/pdf`, { responseType: 'blob' });
+  }
+
+  exportExcel(id: string) {
+    return this.http.get(`${this.apiUrl}/${id}/export/excel`, { responseType: 'blob' });
+  }
 }
