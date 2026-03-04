@@ -6,7 +6,6 @@ import { TableModule } from 'primeng/table';
 import { Select } from 'primeng/select';
 import { Card } from 'primeng/card';
 import { DatePicker } from 'primeng/datepicker';
-import { NuevaRemision } from './nueva-remision/nueva-remision';
 import { InputTextModule } from 'primeng/inputtext';
 import { RemissionService } from '../../services/remission.service';
 import { 
@@ -14,7 +13,6 @@ import {
   RemissionSummaryResponse, 
   RemisionPaginatedResponse 
 } from '../../interfaces/remision.interface';
-import { DialogModule } from 'primeng/dialog';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 
@@ -30,9 +28,7 @@ import { FormsModule } from '@angular/forms';
     Card,
     DatePicker,
     Select,
-    NuevaRemision,
     InputTextModule,
-    DialogModule,
   ],
   templateUrl: './remision.html',
   styleUrl: './remision.css',
@@ -62,8 +58,6 @@ export class Remision implements OnInit {
     entregadas: 0,
     observadas: 0,
   });
-
-  protected sidebarVisible = signal<boolean>(false);
 
   ngOnInit() {
     this.cargarDatos();
@@ -135,12 +129,7 @@ export class Remision implements OnInit {
   }
 
   abrirFormulario(): void {
-    this.sidebarVisible.set(true);
-  }
-
-  cerrarFormulario(): void {
-    this.sidebarVisible.set(false);
-    this.cargarDatos(); // Recargar datos al cerrar por si se creó una nueva
+    this.router.navigate(['/logistica/remision/nueva']);
   }
 
   verDetalles(idGuia: string) {

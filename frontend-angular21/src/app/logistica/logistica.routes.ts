@@ -25,16 +25,20 @@ export const LOGISTICA_ROUTES: Routes = [
     loadComponent: () => import('./pages/remision/remision').then((m) => m.Remision),
   },
   {
-    path: 'conteo-crear',
-    loadComponent: () =>
-      import('./pages/conteo-inventario-crear/conteo-inventario-crear').then(
-        (m) => m.ConteoInventarioCrear,
-      ),
+    path: 'remision/nueva',
+    loadComponent: () => import('./pages/remision/nueva-remision/nueva-remision').then((m) => m.NuevaRemision),
   },
   {
     path: 'remision/detalle/:id',
     loadComponent: () =>
       import('./pages/remision/detalle-remision/detalle-remision').then((m) => m.DetalleRemision),
+  },
+  {
+    path: 'conteo-crear',
+    loadComponent: () =>
+      import('./pages/conteo-inventario-crear/conteo-inventario-crear').then(
+        (m) => m.ConteoInventarioCrear,
+      ),
   },
   {
     path: 'movimiento-inventario',

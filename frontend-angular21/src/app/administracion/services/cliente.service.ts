@@ -43,12 +43,10 @@ export class ClienteService {
   private readonly http = inject(HttpClient);
   private readonly api = `${environment.apiUrl}/sales/customers`;
 
-  // --- Signals de Estado Interno ---
   private readonly _customerResponse = signal<CustomerResponse | null>(null);
   private readonly _loading = signal(false);
   private readonly _error = signal<string | null>(null);
 
-  // --- Computed Signals Públicos ---
   readonly customerResponse = computed(() => this._customerResponse());
   readonly customers = computed(() => this._customerResponse()?.customers ?? []);
   readonly total = computed(() => this._customerResponse()?.total ?? 0);
@@ -58,11 +56,7 @@ export class ClienteService {
   private buildHeaders(role: string = 'Administrador'): HttpHeaders {
     return new HttpHeaders({ 'x-role': role });
   }
-
-  /**
-   * Carga la lista de clientes con soporte para filtros y paginación
-   * Ahora acepta filters.tipo para filtrar por tipo (ej. 'JURIDICA' | 'NATURAL' | 'ALL')
-   */
+  
   loadCustomers(filters?: LoadCustomersFilters, role: string = 'Administrador'): Observable<CustomerResponse> {
     this._loading.set(true);
     this._error.set(null);
@@ -71,10 +65,6 @@ export class ClienteService {
     if (filters?.search) params = params.set('search', filters.search);
     if (filters?.page) params = params.set('page', filters.page.toString());
     if (filters?.limit) params = params.set('limit', filters.limit.toString());
-
-    // Añadimos el parámetro tipo si viene
-    // Nota: asegúrate que el backend espera el parámetro 'tipo' con estos valores,
-    // o transforma aquí el valor para lo que el backend requiere (por ejemplo cod_sunat).
     if (filters?.tipo && filters.tipo !== 'ALL') {
       params = params.set('tipo', filters.tipo);
     }
@@ -94,7 +84,6 @@ export class ClienteService {
       );
   }
 
-  // para autocomplete server-side -->
   suggestCustomers(query: string, limit = 5, role: string = 'Administrador'): Observable<Customer[]> {
     let params = new HttpParams().set('limit', String(limit));
     if (query) params = params.set('q', query);
@@ -102,21 +91,16 @@ export class ClienteService {
       .get<Customer[]>(`${this.api}/suggest`, { headers: this.buildHeaders(role), params })
       .pipe(
         catchError((err) => {
-          // No seteo _error global aquí para no interferir con la lista; simplemente retorno vacío
           return throwError(() => err);
         })
       );
   }
 
 
-  // cliente.service.ts — busca algo así:
   obtenerTiposDocumento(): Observable<any[]> {
     return this.http.get<any[]>(`${environment.apiUrl}/sales/customers/document-types`);
   }
 
-  /**
-   * Crea un nuevo cliente
-   */
   createCustomer(payload: CreateCustomerRequest, role: string = 'Administrador'): Observable<Customer> {
     this._loading.set(true);
     this._error.set(null);
@@ -127,7 +111,6 @@ export class ClienteService {
         tap((created) => {
           const prev = this._customerResponse();
           if (!prev) return;
-          // Actualizamos el cache local
           this._customerResponse.set({
             customers: [created, ...prev.customers],
             total: prev.total + 1,
@@ -141,9 +124,6 @@ export class ClienteService {
       );
   }
 
-  /**
-   * Actualiza datos generales del cliente
-   */
   updateCustomer(id: string, payload: UpdateCustomerRequest, role: string = 'Administrador'): Observable<Customer> {
     this._loading.set(true);
     this._error.set(null);
@@ -160,9 +140,6 @@ export class ClienteService {
       );
   }
 
-  /**
-   * Actualiza solo el estado (activo/inactivo)
-   */
   updateCustomerStatus(id: string, status: boolean, role: string = 'Administrador'): Observable<Customer> {
     this._loading.set(true);
     this._error.set(null);
@@ -179,9 +156,6 @@ export class ClienteService {
       );
   }
 
-  /**
-   * Elimina un cliente
-   */
   deleteCustomer(id: string, role: string = 'Administrador'): Observable<any> {
     this._loading.set(true);
     return this.http
@@ -199,9 +173,6 @@ export class ClienteService {
       );
   }
 
-  /**
-   * Obtiene un cliente específico por su ID
-   */
   getCustomerById(id: string, role: string = 'Administrador'): Observable<Customer> {
     this._loading.set(true);
     this._error.set(null);

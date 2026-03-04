@@ -1,24 +1,28 @@
-import { Component, inject, model, output, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
-import { DrawerModule } from 'primeng/drawer';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TableModule } from 'primeng/table';
+import { CardModule } from 'primeng/card';
 import { CommonModule } from '@angular/common';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { VentasService } from '../../../../core/services/ventas.service';
 import { RemissionService } from '../../../services/remission.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { ClientesService } from '../../../../core/services/clientes.service';
+import { ClienteService } from '../../../../administracion/services/cliente.service';
+import { SunatService } from '../../../services/sunat.service';
+
 @Component({
   selector: 'app-nueva-remision',
   standalone: true,
   imports: [
     CommonModule,
-    DrawerModule,
     ButtonModule,
     ReactiveFormsModule,
     InputTextModule,
@@ -27,6 +31,7 @@ import { MessageService } from 'primeng/api';
     TextareaModule,
     TableModule,
     ToastModule,
+    CardModule
   ],
   providers: [MessageService],
   templateUrl: './nueva-remision.html',
@@ -37,15 +42,15 @@ export class NuevaRemision implements OnInit {
   private ventasService = inject(VentasService);
   private remissionService = inject(RemissionService);
   private messageService = inject(MessageService);
-
-  abierto = model<boolean>(false);
-  onHide = output<void>();
-
+  private sunatService = inject(SunatService);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  correlativoInicial = signal<string>('');
   remissionForm!: FormGroup;
 
   saleFound = signal<any | null>(null);
   isLoading = signal(false);
-
+  buscandoRuc = signal(false);
   itemsWeights = signal<any[]>([]);
 
   pesoBrutoTotal = computed(() => {
@@ -56,6 +61,11 @@ export class NuevaRemision implements OnInit {
 
   ngOnInit() {
     this.initForm();
+    const correlativoParam = this.route.snapshot.queryParamMap.get('correlativo');
+    if (correlativoParam) {
+      this.correlativoInicial.set(correlativoParam);
+      this.buscarComprobante(correlativoParam);
+    }
   }
 
   initForm() {
@@ -72,7 +82,7 @@ export class NuevaRemision implements OnInit {
       datos_traslado: this.fb.group({
         ubigeo_origen: ['150101', Validators.required],
         direccion_origen: ['Almacén Principal', Validators.required],
-        ubigeo_destino: ['', Validators.required],
+        ubigeo_destino: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]],
         direccion_destino: ['', Validators.required],
       }),
 
@@ -92,6 +102,7 @@ export class NuevaRemision implements OnInit {
     this.remissionForm
       .get('modalidad')
       ?.valueChanges.subscribe((val) => this.ajustarValidadoresTransporte(val));
+      
     this.items.valueChanges.subscribe(() => {
       this.items.controls.forEach((control) => {
         const cant = Number(control.get('cantidad')?.value) || 0;
@@ -109,6 +120,38 @@ export class NuevaRemision implements OnInit {
 
   get items(): FormArray {
     return this.remissionForm.get('items') as FormArray;
+  }
+  buscarRucTransportista() {
+    const rucControl = this.remissionForm.get('datos_transporte.ruc');
+    const ruc = rucControl?.value;
+
+    if (!ruc || ruc.length !== 11) {
+      return;
+    }
+
+    this.buscandoRuc.set(true);
+    this.sunatService.consultarRuc(ruc).subscribe({
+      next: (res: any) => {
+        const razonSocial = res.razonSocial || res.razon_social || res.nombre; 
+        if (razonSocial) {
+          this.remissionForm.get('datos_transporte.razon_social')?.setValue(razonSocial);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'RUC Encontrado',
+            detail: 'Razón social actualizada'
+          });
+        }
+        this.buscandoRuc.set(false);
+      },
+      error: (err) => {
+        this.buscandoRuc.set(false);
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Atención',
+          detail: 'No se pudo encontrar el RUC ingresado',
+        });
+      }
+    });
   }
 
   buscarComprobante(correlativo: string) {
@@ -151,7 +194,7 @@ export class NuevaRemision implements OnInit {
         this.items.push(this.fb.group({
           id_producto: [d.id_producto],
           cod_prod: [d.cod_prod],
-          cantidad: [Number(d.cantidad)],
+          cantidad: [Number(d.cantidad), [Validators.required, Validators.min(1)]],
           peso_unitario: [{ value: Number(d.peso_unitario), disabled: true }],
           peso_total: [Number(d.peso_total)]
         }));
@@ -176,8 +219,15 @@ export class NuevaRemision implements OnInit {
   enviar() {
     if (this.remissionForm.invalid) {
       this.remissionForm.markAllAsTouched();
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Formulario Inválido',
+        detail: 'Por favor, revise los campos marcados en rojo.',
+      });
       return;
     }
+    
+    this.isLoading.set(true);
     const formValue = this.remissionForm.getRawValue();
     const payload = {
       ...formValue,
@@ -193,9 +243,12 @@ export class NuevaRemision implements OnInit {
           summary: 'Éxito',
           detail: `Guía ${res.serie_numero} generada`,
         });
-        this.cerrar();
+        setTimeout(() => {
+          this.cerrar();
+        }, 1500);
       },
       error: (err) => {
+        this.isLoading.set(false);
         this.messageService.add({
           severity: 'error',
           summary: 'Error',
@@ -225,10 +278,6 @@ export class NuevaRemision implements OnInit {
   }
 
   cerrar() {
-    this.abierto.set(false);
-    this.onHide.emit();
-    this.remissionForm.reset();
-    this.saleFound.set(null);
+    this.router.navigate(['/logistica/remision']);
   }
-  
 }

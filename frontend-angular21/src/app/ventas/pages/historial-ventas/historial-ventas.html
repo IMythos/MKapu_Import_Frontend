@@ -248,7 +248,7 @@
               />
             </td>
             <td class="text-center">
-              <div class="acciones-tabla">
+              <div class="acciones-tabla flex justify-content-center gap-2">
                 <p-button
                   icon="pi pi-eye"
                   (onClick)="verDetalleVenta(comprobante)"
@@ -259,6 +259,7 @@
                   tooltipPosition="top"
                   styleClass="ventas-icon-btn ventas-icon-soft"
                 />
+
                 <p-button
                   icon="pi pi-print"
                   (onClick)="imprimirComprobante(comprobante)"
@@ -268,6 +269,17 @@
                   pTooltip="Imprimir"
                   tooltipPosition="top"
                   styleClass="ventas-icon-btn ventas-icon-warn"
+                />
+
+                <p-button
+                  icon="pi pi-truck"
+                  (onClick)="irCrearRemision(comprobante.serie_numero)"
+                  [rounded]="true"
+                  [text]="true"
+                  severity="success"
+                  pTooltip="Generar Guía de Remisión"
+                  tooltipPosition="top"
+                  styleClass="ventas-icon-btn"
                 />
               </div>
             </td>

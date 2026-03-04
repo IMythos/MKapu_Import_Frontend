@@ -104,7 +104,6 @@ export class HistorialVentas implements OnInit, OnDestroy {
   private readonly comprobantesService = inject(ComprobantesService);
   private readonly posService = inject(PosService);
   private readonly messageService = inject(MessageService);
-  private readonly confirmationService = inject(ConfirmationService);
 
   readonly tituloKicker = 'VENTAS - HISTORIAL DE VENTAS';
   readonly subtituloKicker = 'CONSULTA Y GESTIÓN DE VENTAS';
@@ -213,7 +212,7 @@ export class HistorialVentas implements OnInit, OnDestroy {
   getPageNumbers(): number[] {
     const totalPages = this.getTotalPages();
     const current = this.currentPage();
-    const delta = 2; // Mostrar 2 páginas a cada lado
+    const delta = 2;
     const range: number[] = [];
 
     for (
@@ -225,10 +224,10 @@ export class HistorialVentas implements OnInit, OnDestroy {
     }
 
     if (current - delta > 2) {
-      range.unshift(-1); // Representa "..."
+      range.unshift(-1);
     }
     if (current + delta < totalPages - 1) {
-      range.push(-1); // Representa "..."
+      range.push(-1);
     }
 
     range.unshift(1);
@@ -238,7 +237,12 @@ export class HistorialVentas implements OnInit, OnDestroy {
 
     return range.filter((v, i, a) => a.indexOf(v) === i && v !== -1);
   }
-
+  irCrearRemision(correlativo: string) {
+    if(!correlativo) return;
+    this.router.navigate(['/logistica/remision/nueva'], {
+      queryParams: { correlativo } 
+    });
+  }
   goToFirstPage(): void {
     if (!this.isFirstPage()) {
       this.firstRow.set(0);
