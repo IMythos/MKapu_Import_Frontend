@@ -16,6 +16,7 @@ import { TableModule } from 'primeng/table';
 import { AuthService } from '../../../auth/services/auth.service';
 import { InventarioService } from '../../services/inventario.service';
 import { ProductoService } from '../../../ventas/services/producto.service';
+import { CardModule } from 'primeng/card';
 
 @Component({
   selector: 'app-ajuste-inventario',
@@ -28,7 +29,8 @@ import { ProductoService } from '../../../ventas/services/producto.service';
     SelectButtonModule,
     InputNumberModule,
     AutoCompleteModule,
-    TableModule
+    TableModule,
+    CardModule
   ],
   providers: [MessageService],
   templateUrl: './ajuste-inventario.html',

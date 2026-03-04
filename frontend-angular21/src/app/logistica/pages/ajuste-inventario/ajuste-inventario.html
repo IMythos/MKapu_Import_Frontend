@@ -1,5 +1,20 @@
-<div class="p-4">
-  <h2>Ajuste de Stock Manual</h2>
+
+
+<div class="p-2">
+    <p-card class="productos-header-card mb-4 productos-header-bordered">
+      <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="flex align-items-center gap-3">
+          <span class="productos-title-icon">
+            <i class="pi pi-sliders-h"></i>
+          </span>
+          <div>
+            <p class="productos-kicker mb-0">ALMACÉN · STOCK</p>
+            <h2 class="productos-title mb-0">AJUSTE DE INVENTARIO</h2>
+          </div>
+        </div>
+      </div>
+    </p-card>
+
 
   <div class="card mb-4 p-4 shadow-2 border-round">
     <form [formGroup]="ajusteForm" (ngSubmit)="agregarATabla()">
