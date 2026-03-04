@@ -197,15 +197,21 @@ export class ReclamosListado implements OnInit, OnDestroy {
   }
 
   nuevoReclamo(): void {
-    this.router.navigate(['/ventas/reclamos/crear']);
+    const isAdmin = this.router.url.startsWith('/admin');
+    const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
+    this.router.navigate([`${base}/crear`]);
   }
 
   verDetalle(idReclamo: number): void {
-    this.router.navigate(['/ventas/reclamos/detalle', idReclamo]);
+    const isAdmin = this.router.url.startsWith('/admin');
+    const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
+    this.router.navigate([`${base}/detalle`, idReclamo]);
   }
 
   editarReclamo(idReclamo: number): void {
-    this.router.navigate(['/ventas/reclamos/editar', idReclamo]);
+    const isAdmin = this.router.url.startsWith('/admin');
+    const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
+    this.router.navigate([`${base}/editar`, idReclamo]);
   }
 
   getEstadoSeverity(estado: EstadoReclamo): 'warn' | 'info' | 'success' | 'danger' {

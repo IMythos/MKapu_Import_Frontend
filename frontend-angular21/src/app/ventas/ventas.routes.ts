@@ -39,38 +39,45 @@ export const VENTAS_ROUTES: Routes = [
     loadComponent: () =>
       import('./shared/detalles-venta/detalle-venta').then((m) => m.DetalleVenta),
   },
+  
+
   {
     path: 'reclamos-listado',
     canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/reclamos-garantia/reclamos-listado/reclamos-listado').then(
-        (m) => m.ReclamosListado,
-      ),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./pages/reclamos-garantia/reclamos-listado/reclamos-listado').then(
+            (m) => m.ReclamosListado,
+          ),
+      },
+      {
+        path: 'crear',
+        loadComponent: () =>
+          import('./pages/reclamos-garantia/reclamos-crear/reclamos-crear').then(
+            (m) => m.ReclamosCrear,
+          ),
+      },
+      {
+        path: 'editar/:id',
+        loadComponent: () =>
+          import('./pages/reclamos-garantia/reclamos-editar/reclamos-editar').then(
+            (m) => m.ReclamosEditar,
+          ),
+      },
+      {
+        path: 'detalle/:id',
+        loadComponent: () =>
+          import('./pages/reclamos-garantia/reclamos-detalles/reclamos-detalles').then(
+            (m) => m.ReclamosDetalles,
+          ),
+      },
+    ],
   },
-  {
-    path: 'reclamos/crear',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/reclamos-garantia/reclamos-crear/reclamos-crear').then(
-        (m) => m.ReclamosCrear,
-      ),
-  },
-  {
-    path: 'reclamos/editar/:id',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/reclamos-garantia/reclamos-editar/reclamos-editar').then(
-        (m) => m.ReclamosEditar,
-      ),
-  },
-  {
-    path: 'reclamos/detalle/:id',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/reclamos-garantia/reclamos-detalles/reclamos-detalles').then(
-        (m) => m.ReclamosDetalles,
-      ),
-  },
+
+
+
   {
     path: 'reporte-ventas',
     canActivate: [CashboxGuard],

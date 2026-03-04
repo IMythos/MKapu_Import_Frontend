@@ -55,7 +55,7 @@ export class Sidebar implements OnInit {
     { path: '/admin/ventas-por-cobrar',               allowedRoles: [UserRole.ADMIN],   label: 'Ventas por Cobrar', icon: 'pi pi-wallet' },
     { path: '/admin/clientes',                        allowedRoles: [UserRole.ADMIN],   label: 'Clientes', icon: 'pi pi-users' },
     { path: '/admin/cotizaciones',                    allowedRoles: [UserRole.ADMIN],   label: 'Cotizaciones', icon: 'pi pi-id-card' },
-    { path: '/admin/reclamos-listado',               allowedRoles: [UserRole.ADMIN],   label: 'Reclamos',icon: 'pi pi-exclamation-circle'},
+    { path: '/admin/reclamos-listado',                allowedRoles: [UserRole.ADMIN],   label: 'Reclamos',icon: 'pi pi-exclamation-circle'},
 
     { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'ALMACÉN', isSection: true },
     { path: '/admin/dashboard-almacen',               allowedRoles: [UserRole.ADMIN],   label: 'Dashboard Almacén', icon: 'pi pi-chart-bar' },

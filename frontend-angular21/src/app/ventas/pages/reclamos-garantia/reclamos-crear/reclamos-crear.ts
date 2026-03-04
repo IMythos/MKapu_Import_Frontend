@@ -606,10 +606,12 @@ export class ReclamosCrear implements OnInit, OnDestroy {
       this.subscriptions.add(sub);
     }, 1500);
   }
-
+  
   verDetalle(): void {
     if (this.reclamoGenerado) {
-      this.router.navigate(['/ventas/reclamos/detalle', this.reclamoGenerado.id_reclamo]);
+      const isAdmin = this.router.url.startsWith('/admin');
+      const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
+      this.router.navigate([`${base}/detalle`, this.reclamoGenerado.id_reclamo]);
     }
   }
 
@@ -618,8 +620,11 @@ export class ReclamosCrear implements OnInit, OnDestroy {
   }
 
   cancelar(): void {
-    this.router.navigate(['/ventas/reclamos-listado']);
+    const isAdmin = this.router.url.startsWith('/admin');
+    const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
+    this.router.navigate([base]);
   }
+
 
   limpiarFormulario(): void {
     this.busquedaComprobante = null;
