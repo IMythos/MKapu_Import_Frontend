@@ -1,0 +1,164 @@
+<div class="card p-4 md:p-6 shadow-sm border-round-xl fadein animation-duration-300 dark:bg-zinc-900">
+  <div class="flex align-items-center gap-4 mb-6 pb-4 border-b border-slate-200 dark:border-zinc-800">
+    <p-button 
+      icon="pi pi-arrow-left" 
+      [rounded]="true" 
+      [text]="true" 
+      severity="secondary" 
+      (onClick)="volver()"
+      pTooltip="Volver al historial">
+    </p-button>
+    <div>
+      <h2 class="text-2xl md:text-3xl font-extrabold text-slate-800 dark:text-white m-0 tracking-tight">
+        Detalle de Movimiento
+      </h2>
+      <p class="text-slate-500 dark:text-zinc-400 mt-1 text-sm m-0">
+        Información completa de la operación logística.
+      </p>
+    </div>
+  </div>
+
+  <ng-container *ngIf="movimiento() as detalleActivo; else loadingTpl">
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6">
+      
+      <div class="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-700 hover:shadow-sm transition-all">
+        <div class="flex items-center gap-2 mb-2 text-slate-500 dark:text-zinc-400">
+          <i class="pi pi-building text-lg"></i>
+          <span class="text-xs uppercase tracking-wider font-bold">Sede Principal</span>
+        </div>
+        <div class="text-xl font-bold text-slate-800 dark:text-slate-100 truncate">
+          {{ detalleActivo.sedeNombre }}
+        </div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-700 hover:shadow-sm transition-all">
+        <div class="flex items-center gap-2 mb-2 text-slate-500 dark:text-zinc-400">
+          <i class="pi pi-calendar text-lg"></i>
+          <span class="text-xs uppercase tracking-wider font-bold">Fecha de Registro</span>
+        </div>
+        <div class="text-xl font-bold text-slate-800 dark:text-slate-100">
+          {{ detalleActivo.fechaMovimiento | date: 'dd/MM/yyyy HH:mm' }}
+        </div>
+      </div>
+
+      <div class="p-4 rounded-xl bg-slate-50 dark:bg-zinc-800/50 border border-slate-100 dark:border-zinc-700 hover:shadow-sm transition-all">
+        <div class="flex items-center gap-2 mb-2 text-slate-500 dark:text-zinc-400">
+          <i class="pi pi-file text-lg"></i>
+          <span class="text-xs uppercase tracking-wider font-bold">Doc. Referencia</span>
+        </div>
+        <div class="text-lg font-mono font-semibold text-blue-600 dark:text-blue-400 dark:bg-blue-900/20 px-3 py-1 rounded-md inline-block">
+          {{ detalleActivo.documentoReferencia || 'Sin Documento' }}
+        </div>
+      </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row items-center justify-between p-5 rounded-xl bg-gradient-to-r from-slate-50 to-slate-100 dark:from-zinc-800 dark:to-zinc-800 border border-slate-200 dark:border-zinc-700 mb-6 gap-4">
+      
+      <div class="flex-1 w-full p-4 dark:bg-zinc-900 rounded-lg shadow-sm border-l-4 border-orange-500">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <i class="pi pi-sign-out mr-1"></i> Almacén Origen
+        </span>
+        <span class="font-bold text-lg text-slate-700 dark:text-slate-200">
+          {{ detalleActivo.almacenOrigenNombre || 'N/A' }}
+        </span>
+      </div>
+      
+      <div class="flex-shrink-0 text-slate-300 dark:text-zinc-600 flex justify-center">
+        <i class="pi pi-arrow-right text-3xl hidden md:block"></i>
+        <i class="pi pi-arrow-down text-3xl block md:hidden mt-2 mb-2"></i>
+      </div>
+      
+      <div class="flex-1 w-full p-4 dark:bg-zinc-900 rounded-lg shadow-sm border-l-4 border-green-500">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">
+          <i class="pi pi-sign-in mr-1"></i> Almacén Destino
+        </span>
+        <span class="font-bold text-lg text-slate-700 dark:text-slate-200">
+          {{ detalleActivo.almacenDestinoNombre || 'N/A' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 p-5 rounded-xl border border-slate-100 dark:border-zinc-700 dark:bg-zinc-800/20">
+      <div class="col-span-1">
+        <strong class="text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider block mb-2">Tipo de Operación:</strong>
+        <p-tag
+          [value]="detalleActivo.tipoMovimiento"
+          [severity]="getSeverity(detalleActivo.tipoMovimiento)"
+          styleClass="text-sm px-3 py-2 uppercase font-bold tracking-wide shadow-sm"
+        ></p-tag>
+      </div>
+      <div class="col-span-1 md:col-span-2">
+        <strong class="text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider block mb-2">Motivo / Observación:</strong> 
+        <div class="text-slate-700 dark:text-slate-300 font-medium bg-slate-50 dark:bg-zinc-900 p-3 rounded-lg border border-slate-100 dark:border-zinc-700">
+          {{ detalleActivo.motivo || 'Sin observación registrada.' }}
+        </div>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <h3 class="text-xl font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2 border-b border-slate-200 dark:border-zinc-800 pb-2">
+        <i class="pi pi-box text-blue-500"></i> Artículos Involucrados
+        <span class="text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs px-2 py-1 rounded-full ml-2">
+          {{ detalleActivo.detalles?.length || 0 }} ítems
+        </span>
+      </h3>
+      
+      <p-table
+        [value]="detalleActivo.detalles || []"
+        responsiveLayout="scroll"
+        styleClass="p-datatable-lg p-datatable-striped"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th class="w-3rem text-center">#</th>
+            <th>Producto</th>
+            <th class="text-center w-32">Unidad</th>
+            <th class="text-right w-40">Cantidad</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
+          <tr class="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+            <td class="text-center text-slate-400 font-medium">{{ rowIndex + 1 }}</td>
+            <td>
+              <div class="font-bold text-slate-800 dark:text-slate-200">{{ item.productoNombre || item.codigo }}</div>
+              <div class="text-sm text-slate-500 dark:text-zinc-400 font-mono mt-1">{{ item.codigo }}</div>
+            </td>
+            <td class="text-center">
+              <span class="px-3 py-1 bg-slate-100 dark:bg-zinc-700 text-slate-600 dark:text-zinc-300 rounded-md text-xs font-bold border border-slate-200 dark:border-zinc-600">
+                {{ item.unidadMedida }}
+              </span>
+            </td>
+            <td class="text-right font-black text-xl"
+                [ngClass]="{
+                  'text-green-600 dark:text-green-400': item.tipoOperacionItem === 'INGRESO',
+                  'text-red-600 dark:text-red-400': item.tipoOperacionItem === 'SALIDA',
+                  'text-slate-600 dark:text-slate-400': !item.tipoOperacionItem
+                }">
+              <div class="flex items-center justify-end gap-1">
+                <i *ngIf="item.tipoOperacionItem === 'INGRESO'" class="pi pi-arrow-up-right text-sm"></i>
+                <i *ngIf="item.tipoOperacionItem === 'SALIDA'" class="pi pi-arrow-down-right text-sm"></i>
+                {{ item.cantidad }}
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="4" class="text-center p-8">
+              <i class="pi pi-inbox text-4xl text-slate-300 dark:text-zinc-600 mb-3 block"></i>
+              <span class="text-slate-500 dark:text-zinc-400 font-medium">No hay detalles de artículos registrados en este movimiento.</span>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-container>
+
+  <ng-template #loadingTpl>
+    <div class="flex flex-col items-center justify-center p-12 space-y-4">
+      <i class="pi pi-spin pi-spinner text-5xl text-blue-500"></i>
+      <p class="text-slate-500 font-medium">Cargando detalles del movimiento...</p>
+    </div>
+  </ng-template>
+</div>

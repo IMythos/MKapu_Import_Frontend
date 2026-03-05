@@ -147,13 +147,17 @@ export interface RegistroVentaAdminRequest {
   igv: number;
   isc: number;
   total: number;
+  descuento: number;
+  promotionId?: number | null;
+  deliveryType?: 'recojo' | 'delivery';       // ✅ nuevo
+  deliveryAddress?: string | null;            // ✅ nuevo
   currencyCode: string;
   responsibleId: string;
   branchId: number;
   warehouseId: number;
   paymentMethodId: number;
   operationNumber: string | null;
-  esCreditoPendiente?: boolean;  
+  esCreditoPendiente?: boolean;
   items: {
     productId: string;
     quantity: number;
@@ -162,6 +166,7 @@ export interface RegistroVentaAdminRequest {
     total: number;
   }[];
 }
+
 
 export interface RegistroVentaAdminResponse {
   numero_completo: string;
@@ -349,3 +354,27 @@ export const TIPOS_COMPROBANTE_ADMIN = [
   { id: 2, description: 'Boleta', serie: 'B001' },
   { id: 1, description: 'Factura', serie: 'F001' },
 ] as const;
+
+
+
+export interface PromocionAdmin {
+  idPromocion: number;         // ← era "id"
+  concepto: string;
+  tipo: 'PORCENTAJE' | 'MONTO' | string;
+  valor: number;
+  activo: boolean | { type: 'Buffer'; data: number[] }; // Buffer de MySQL
+  descripcion?: string;
+  reglas?: {
+    idRegla: number;
+    tipoCondicion: string;
+    valorCondicion: string;
+  }[];
+  descuentosAplicados?: {
+    idDescuento: number;
+    monto: string;
+  }[];
+  productosIds?: number[];     // opcional, si lo necesitas
+}
+
+
+export type TipoEntrega = 'recojo' | 'delivery';

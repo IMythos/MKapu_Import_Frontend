@@ -51,7 +51,7 @@
             [rounded]="true"
             [text]="true"
             severity="info"
-            (onClick)="abrirDetalles(mov)"
+            (onClick)="verDetalles(mov)"
             pTooltip="Ver Detalles"
           ></p-button>
         </td>
@@ -63,112 +63,4 @@
       </tr>
     </ng-template>
   </p-table>
-
-  <p-dialog
-    header="Detalle del Movimiento"
-    [(visible)]="mostrarDetalles"
-    [modal]="true"
-    [style]="{ width: '60vw' }"
-    (onHide)="cerrarDetalles()"
-  >
-    <ng-container *ngIf="movimientoSeleccionado() as detalleActivo">
-      <div class="grid grid-cols-2 gap-4 mb-4 p-4 rounded-lg border-l-4 border-blue-500 bg-slate-50 dark:bg-zinc-800/50 shadow-sm">
-        <div>
-          <strong class="text-slate-500 dark:text-zinc-400 text-sm uppercase tracking-wider block">Sede:</strong> 
-          <div class="font-medium text-lg">{{ detalleActivo.sedeNombre }}</div>
-        </div>
-        <div>
-          <strong class="text-slate-500 dark:text-zinc-400 text-sm uppercase tracking-wider block">Fecha:</strong>
-          <div class="font-medium text-lg">{{ detalleActivo.fechaMovimiento | date: 'dd/MM/yyyy HH:mm' }}</div>
-        </div>
-
-        <div class="col-span-2 grid grid-cols-2 gap-4 mt-2">
-          <div class="p-3 rounded border dark:bg-zinc-900/50 dark:border-zinc-700">
-            <strong class="text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider block mb-1">Origen:</strong>
-            <span class="text-orange-600 dark:text-orange-400 font-semibold">
-              <i class="pi pi-sign-out mr-1 text-xs"></i> {{ detalleActivo.almacenOrigenNombre || 'N/A' }}
-            </span>
-          </div>
-          <div class="p-3 rounded border dark:bg-zinc-900/50 dark:border-zinc-700">
-            <strong class="text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider block mb-1">Destino:</strong>
-            <span class="text-green-600 dark:text-green-400 font-semibold">
-              <i class="pi pi-sign-in mr-1 text-xs"></i> {{ detalleActivo.almacenDestinoNombre || 'N/A' }}
-            </span>
-          </div>
-        </div>
-        
-        <div class="mt-2">
-          <strong class="text-slate-500 dark:text-zinc-400 text-sm uppercase tracking-wider block mb-1">Tipo de Operación:</strong>
-          <p-tag
-            [value]="detalleActivo.tipoMovimiento"
-            [severity]="getSeverity(detalleActivo.tipoMovimiento)"
-          ></p-tag>
-        </div>
-        <div class="mt-2">
-          <strong class="text-slate-500 dark:text-zinc-400 text-sm uppercase tracking-wider block mb-1">Doc. Referencia:</strong> 
-          <span class="font-mono bg-slate-200 dark:bg-zinc-700 px-2 py-1 rounded text-sm">
-            {{ detalleActivo.documentoReferencia || 'Sin Documento' }}
-          </span>
-        </div>
-        
-        <div class="col-span-2 pt-3 border-t dark:border-zinc-700/50">
-          <strong class="text-slate-500 dark:text-zinc-400 text-sm uppercase tracking-wider block">Motivo:</strong> 
-          <div class="mt-1">{{ detalleActivo.motivo }}</div>
-        </div>
-      </div>
-
-      <h3 class="text-lg font-semibold mt-6 mb-3 flex items-center gap-2">
-        <i class="pi pi-box text-blue-500"></i> Artículos Involucrados
-      </h3>
-      
-      <p-table
-        [value]="detalleActivo.detalles || []"
-        responsiveLayout="scroll"
-        styleClass="p-datatable-sm p-datatable-gridlines"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Producto</th>
-            <th class="text-center w-24">Unidad</th>
-            <th class="text-right w-32">Cantidad</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-item>
-          <tr>
-            <td class="font-medium">{{ item.codigo }}</td>
-            <td class="text-center">
-              <span class="px-2 py-1 bg-slate-100 dark:bg-zinc-700 text-slate-600 dark:text-zinc-200 rounded text-xs font-semibold">
-                {{ item.unidadMedida }}
-              </span>
-            </td>
-            <td class="text-right font-bold text-lg"
-                [ngClass]="{
-                  'text-green-600 dark:text-green-400': item.tipoOperacionItem === 'INGRESO',
-                  'text-red-600 dark:text-red-400': item.tipoOperacionItem === 'SALIDA',
-                  'text-blue-600 dark:text-blue-400': !item.tipoOperacionItem
-                }">
-              <span *ngIf="item.tipoOperacionItem === 'INGRESO'">+</span>
-              <span *ngIf="item.tipoOperacionItem === 'SALIDA'">-</span>
-              {{ item.cantidad }}
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="3" class="text-center p-4 text-slate-500 dark:text-zinc-400 italic">No hay detalles de artículos.</td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </ng-container>
-    
-    <ng-template pTemplate="footer">
-      <p-button
-        label="Cerrar"
-        icon="pi pi-times"
-        (onClick)="cerrarDetalles()"
-        severity="secondary"
-        [text]="true"
-      ></p-button>
-    </ng-template>
-  </p-dialog>
 </div>

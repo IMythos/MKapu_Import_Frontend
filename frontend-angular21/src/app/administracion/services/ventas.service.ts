@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../enviroments/enviroment';
 
@@ -24,6 +24,7 @@ import {
   ActualizarClienteAdminRequest,
   ClienteAdminResponse,
   TipoDocumentoAdmin,
+  PromocionAdmin,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -52,8 +53,10 @@ export class VentasAdminService {
 
     if (query.status) params = params.set('status', query.status);
     if (query.customerId) params = params.set('customerId', query.customerId);
-    if (query.receiptTypeId != null) params = params.set('receiptTypeId', String(query.receiptTypeId));
-    if (query.paymentMethodId != null) params = params.set('paymentMethodId', String(query.paymentMethodId));
+    if (query.receiptTypeId != null)
+      params = params.set('receiptTypeId', String(query.receiptTypeId));
+    if (query.paymentMethodId != null)
+      params = params.set('paymentMethodId', String(query.paymentMethodId));
     if (query.dateFrom) params = params.set('dateFrom', query.dateFrom);
     if (query.dateTo) params = params.set('dateTo', query.dateTo);
     if (query.search) params = params.set('search', query.search);
@@ -83,10 +86,10 @@ export class VentasAdminService {
   getKpiSemanal(sedeId?: number): Observable<SalesReceiptKpiDto> {
     let params = new HttpParams();
     if (sedeId != null) params = params.set('sedeId', String(sedeId));
-    return this.http.get<SalesReceiptKpiDto>(
-      `${this.salesUrl}/receipts/kpi/semanal`,
-      { headers: this.headers, params },
-    );
+    return this.http.get<SalesReceiptKpiDto>(`${this.salesUrl}/receipts/kpi/semanal`, {
+      headers: this.headers,
+      params,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -94,11 +97,9 @@ export class VentasAdminService {
   // ─────────────────────────────────────────────────────────────────────────
 
   registrarVenta(request: RegistroVentaAdminRequest): Observable<RegistroVentaAdminResponse> {
-    return this.http.post<RegistroVentaAdminResponse>(
-      `${this.salesUrl}/receipts`,
-      request,
-      { headers: this.headers },
-    );
+    return this.http.post<RegistroVentaAdminResponse>(`${this.salesUrl}/receipts`, request, {
+      headers: this.headers,
+    });
   }
 
   anularVenta(id: number, reason: string): Observable<AnularVentaAdminResponse> {
@@ -114,12 +115,9 @@ export class VentasAdminService {
   // ─────────────────────────────────────────────────────────────────────────
 
   obtenerSedes(): Observable<SedeAdmin[]> {
-    return this.http.get<any>(
-      `${this.adminUrl}/headquarters`,
-      { headers: this.headers },
-    ).pipe(
-      map((res) => res.data ?? res.headquarters ?? res ?? []),
-    );
+    return this.http
+      .get<any>(`${this.adminUrl}/headquarters`, { headers: this.headers })
+      .pipe(map((res) => res.data ?? res.headquarters ?? res ?? []));
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -132,16 +130,14 @@ export class VentasAdminService {
     page = 1,
     size = 10,
   ): Observable<ProductoStockAdminResponse> {
-    let params = new HttpParams()
-      .set('page', String(page))
-      .set('size', String(size));
+    let params = new HttpParams().set('page', String(page)).set('size', String(size));
     if (idSede != null) params = params.set('id_sede', String(idSede));
     if (idCategoria != null) params = params.set('id_categoria', String(idCategoria));
 
-    return this.http.get<ProductoStockAdminResponse>(
-      `${this.logisticsUrl}/products/ventas/stock`,
-      { headers: this.headers, params },
-    );
+    return this.http.get<ProductoStockAdminResponse>(`${this.logisticsUrl}/products/ventas/stock`, {
+      headers: this.headers,
+      params,
+    });
   }
 
   buscarProductosVentas(
@@ -172,10 +168,7 @@ export class VentasAdminService {
     receiptTypeId: number,
   ): Observable<ClienteBusquedaAdminResponse> {
     return this.http
-      .get<any>(
-        `${this.salesUrl}/customers/document/${documentValue}`,
-        { headers: this.headers },
-      )
+      .get<any>(`${this.salesUrl}/customers/document/${documentValue}`, { headers: this.headers })
       .pipe(
         map((cliente) => {
           if (!cliente) throw { error: { message: 'Cliente no encontrado' } };
@@ -198,38 +191,30 @@ export class VentasAdminService {
   }
 
   obtenerTiposDocumento(): Observable<TipoDocumentoAdmin[]> {
-    return this.http.get<TipoDocumentoAdmin[]>(
-      `${this.url}/sales/customers/document-types`,
-      { headers: this.headers },
-    );
+    return this.http.get<TipoDocumentoAdmin[]>(`${this.url}/sales/customers/document-types`, {
+      headers: this.headers,
+    });
   }
 
   crearCliente(request: CrearClienteAdminRequest): Observable<ClienteAdminResponse> {
-    return this.http.post<ClienteAdminResponse>(
-      `${this.salesUrl}/customers`,
-      request,
-      { headers: this.headers },
-    );
+    return this.http.post<ClienteAdminResponse>(`${this.salesUrl}/customers`, request, {
+      headers: this.headers,
+    });
   }
 
   obtenerKpiSemanal(sedeId?: number): Observable<SalesReceiptKpiDto> {
-  let params = new HttpParams();
-  if (sedeId) params = params.set('sedeId', String(sedeId));
-  return this.http.get<SalesReceiptKpiDto>(
-    `${this.salesUrl}/receipts/kpi/semanal`, { params }
-  );
-}
-
+    let params = new HttpParams();
+    if (sedeId) params = params.set('sedeId', String(sedeId));
+    return this.http.get<SalesReceiptKpiDto>(`${this.salesUrl}/receipts/kpi/semanal`, { params });
+  }
 
   actualizarCliente(
     id: string,
     payload: ActualizarClienteAdminRequest,
   ): Observable<ClienteAdminResponse> {
-    return this.http.put<ClienteAdminResponse>(
-      `${this.salesUrl}/customers/${id}`,
-      payload,
-      { headers: this.headers },
-    );
+    return this.http.put<ClienteAdminResponse>(`${this.salesUrl}/customers/${id}`, payload, {
+      headers: this.headers,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -266,5 +251,15 @@ export class VentasAdminService {
       sede: prod.sede,
       id_sede: prod.id_sede,
     };
+  }
+
+  // ventas.service.ts
+
+  obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
+    return this.http
+      .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
   }
 }

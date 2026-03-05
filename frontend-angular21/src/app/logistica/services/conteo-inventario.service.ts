@@ -79,10 +79,14 @@ export class ConteoInventarioService {
   }
   finalizarYajustar(idConteo: number, estado: 'AJUSTADO' | 'ANULADO') {
     const detalles = this.conteoOperacion()?.detalles || [];
+    
+    const session = JSON.parse(localStorage.getItem('user') || '{}');
+    const idSedeReal = session.idSede || session.id_sede || 1;
 
     const payloadData = detalles.map((det: any) => ({
       id_detalle: det.idDetalle,
       stock_conteo: det.stockConteo || 0,
+      warehouseId: Number(idSedeReal)
     }));
 
     return this.http.patch(`${this.apiUrl}/${idConteo}/finalizar`, {
