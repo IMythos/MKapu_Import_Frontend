@@ -63,7 +63,10 @@ export class AjusteInventario implements OnInit {
     const currentUser = this.authService.getCurrentUser();
     const sedePorDefecto = currentUser?.idSede ? currentUser.idSede : 1; 
     
-    this.ajusteForm.patchValue({ idSede: sedePorDefecto });
+    this.ajusteForm.patchValue({ 
+      idSede: sedePorDefecto,
+      warehouseId: sedePorDefecto
+    });
   }
 
   buscarProductoPorCodigo(event: AutoCompleteCompleteEvent) {
@@ -152,11 +155,14 @@ export class AjusteInventario implements OnInit {
         this.limpiarTodo();
       },
       error: (err) => {
+        this.guardando = false; 
+        
         this.messageService.add({ 
           severity: 'error', 
           summary: 'Error', 
           detail: err.error?.message || 'Error al procesar el ajuste masivo.' 
         });
+        console.error('Detalle del error:', err);
       },
       complete: () => {
         this.guardando = false;
@@ -188,11 +194,13 @@ export class AjusteInventario implements OnInit {
 
   onCancel() {
     const currentUser = this.authService.getCurrentUser();
+    const sedePorDefecto = currentUser?.idSede ? currentUser.idSede : 1;
+
     this.ajusteForm.reset({ 
       tipo: 'POS', 
       cantidad: 1, 
-      idSede: currentUser?.idSede ? currentUser.idSede : 1,
-      warehouseId: 1
+      idSede: sedePorDefecto,
+      warehouseId: sedePorDefecto
     });
     this.productosSugeridos = [];
     this.guardando = false;

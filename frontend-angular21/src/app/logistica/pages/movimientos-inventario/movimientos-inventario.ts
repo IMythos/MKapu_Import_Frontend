@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router'; // 👈 Importamos el Router
 import { ButtonModule } from 'primeng/button';
-import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 import { MovimientosInventarioService } from '../../services/movimientos-inventario.service';
@@ -12,11 +12,11 @@ import { SelectModule } from 'primeng/select';
 import { DatePickerModule } from 'primeng/datepicker';
 import { MovimientoInventario } from '../../interfaces/movimiento-inventario.interface';
 import { TransferUserContextService } from '../../../administracion/services/transfer-user-context.service';
+
 @Component({
   selector: 'app-movimientos-inventario',
   standalone: true,
   imports: [
-    CommonModule,
     CommonModule,
     FormsModule,
     TableModule,
@@ -26,13 +26,15 @@ import { TransferUserContextService } from '../../../administracion/services/tra
     DatePickerModule,
     TagModule,
     ButtonModule,
-    DialogModule,
+    // DialogModule fue eliminado porque ya no hay modal
   ],
   templateUrl: './movimientos-inventario.html',
   styleUrl: './movimientos-inventario.css',
 })
-export class MovimientosInventario {
+export class MovimientosInventario implements OnInit {
+  private router = inject(Router); // 👈 Inyectamos el router
   private movimientosService = inject(MovimientosInventarioService);
+  private transferContextService = inject(TransferUserContextService);
 
   movimientos = signal<MovimientoInventario[]>([]);
   cargando = signal<boolean>(false);
@@ -40,9 +42,10 @@ export class MovimientosInventario {
   filtroEstado = signal<number>(0);
   filtroTexto = signal<string>('');
   filtroFechas = signal<Date[] | undefined>(undefined);
-  private transferContextService = inject(TransferUserContextService);
+  
   sedeId = signal<string>('');
   private readonly currentSedeId: string | null = localStorage.getItem('current_sede_id');
+  
   opcionesEstado = [
     { label: 'Todos', value: 0 },
     { label: 'Ingresos', value: 1 },
@@ -50,16 +53,14 @@ export class MovimientosInventario {
     { label: 'Transferencias', value: 3 },
   ];
 
-  movimientoSeleccionado = signal<MovimientoInventario | null>(null);
-  mostrarDetalles = signal<boolean>(false);
   ngOnInit() {
     this.cargarMovimientos();
   }
 
   cargarMovimientos() {
-    sedeId: this.sedeId(),
     this.cargando.set(true);
     this.obtenerFiltroSede();
+    
     const fechas = this.filtroFechas();
     const filtros = {
       texto: this.filtroTexto(),
@@ -68,6 +69,7 @@ export class MovimientosInventario {
       fechaFin: fechas?.[1] ? new Date(fechas[1]).toISOString() : null,
       sedeId: this.sedeId(),
     };
+    
     this.movimientosService.getMovimientos(filtros).subscribe({
       next: (res) => {
         console.log('Data recibida:', res.data);
@@ -100,14 +102,8 @@ export class MovimientosInventario {
     this.cargarMovimientos();
   }
 
-  abrirDetalles(movimiento: any) {
-    this.movimientoSeleccionado.set(movimiento);
-    this.mostrarDetalles.set(true);
-  }
-
-  cerrarDetalles() {
-    this.mostrarDetalles.set(false);
-    this.movimientoSeleccionado.set(null);
+  verDetalles(movimiento: any) {
+    this.router.navigate(['/logistica/movimientos-inventario/detalle', movimiento.id]);
   }
 
   getSeverity(tipo: string): 'success' | 'danger' | 'info' | 'warn' {
