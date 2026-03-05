@@ -30,6 +30,7 @@ import {
 } from '../../../../interfaces/transferencia.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TransferUserContextService } from '../../../../services/transfer-user-context.service';
+import { SedeService } from '../../../../services/sede.service';
 
 interface TransferenciaRow {
   id: number;
@@ -74,6 +75,7 @@ export class Transferencia {
   private readonly messageService = inject(MessageService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly transferUserContext = inject(TransferUserContextService);
+  private readonly sedeService = inject(SedeService);
 
   private readonly searchTermSig = signal('');
   private readonly estadoFilterSig = signal<TransferStatus | null>(null);
@@ -84,6 +86,18 @@ export class Transferencia {
   readonly transferenciasSig = computed(() =>
     this.transferStore.transfers().map((transferencia) => this.mapTransferencia(transferencia)),
   );
+  private readonly headquarterNameMapSig = computed(() => {
+    const map = new Map<string, string>();
+    for (const sede of this.sedeService.sedes()) {
+      const id = this.normalizeId(sede.id_sede);
+      const nombre = String(sede.nombre ?? '').trim();
+      if (!id || !nombre) {
+        continue;
+      }
+      map.set(id, nombre);
+    }
+    return map;
+  });
 
   readonly filteredTransferenciasSig = computed(() => {
     const search = this.searchTermSig().toLowerCase();
@@ -156,6 +170,15 @@ export class Transferencia {
   }
 
   ngOnInit(): void {
+    this.sedeService
+      .loadSedes()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        error: () => {
+          // Si falla este catálogo, la tabla sigue operando con el fallback actual.
+        },
+      });
+
     this.transferStore.loadAll({
       page: this.paginationSig().page,
       pageSize: this.paginationSig().pageSize,
@@ -402,10 +425,22 @@ export class Transferencia {
       producto: this.getProductName(transferencia),
       origen:
         transferencia.origin?.nomSede ||
+        transferencia.origin?.nombre ||
+        this.resolveHeadquarterName(
+          transferencia.origin?.id_sede ??
+            transferencia.origin?.id ??
+            transferencia.originHeadquartersId,
+        ) ||
         this.normalizeId(transferencia.originHeadquartersId) ||
         '-',
       destino:
         transferencia.destination?.nomSede ||
+        transferencia.destination?.nombre ||
+        this.resolveHeadquarterName(
+          transferencia.destination?.id_sede ??
+            transferencia.destination?.id ??
+            transferencia.destinationHeadquartersId,
+        ) ||
         this.normalizeId(transferencia.destinationHeadquartersId) ||
         '-',
       cantidad: transferencia.totalQuantity ?? this.getTotalQuantityFromItems(transferencia),
@@ -550,6 +585,17 @@ export class Transferencia {
     }
 
     return null;
+  }
+
+  private resolveHeadquarterName(
+    headquarterId: string | number | null | undefined,
+  ): string | null {
+    const normalizedId = this.normalizeId(headquarterId);
+    if (!normalizedId) {
+      return null;
+    }
+
+    return this.headquarterNameMapSig().get(normalizedId) ?? null;
   }
 
   private isUserFromTransferOrigin(originHeadquartersId: string | number | null | undefined): boolean {

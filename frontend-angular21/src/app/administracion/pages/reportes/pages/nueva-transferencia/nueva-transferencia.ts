@@ -75,6 +75,9 @@ interface SelectOption<T = string> {
   providers: [MessageService, ConfirmationService],
 })
 export class NuevaTransferencia implements OnInit {
+  private static readonly MAX_PRODUCT_FETCH_SIZE = 1000;
+  private static readonly AUTOCOMPLETE_LIMIT = 20;
+
   private readonly destroyRef = inject(DestroyRef);
   private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -425,6 +428,8 @@ export class NuevaTransferencia implements OnInit {
 
   onSedeOrigenChange(): void {
     this.resetProductoSeleccionado();
+    this.productos = [];
+    this.productosAutocomplete = [];
     this.almacenOrigenId = null;
     this.almacenesOrigen = [];
     this.transferStore.setDraftOriginWarehouse(0);
@@ -464,6 +469,15 @@ export class NuevaTransferencia implements OnInit {
 
   onAlmacenOrigenChange(): void {
     this.transferStore.setDraftOriginWarehouse(this.almacenOrigenId ?? 0);
+    this.resetProductoSeleccionado();
+
+    if (this.sedeOrigen && this.almacenOrigenId) {
+      this.cargarProductos(this.sedeOrigen);
+      return;
+    }
+
+    this.productos = [];
+    this.productosAutocomplete = [];
   }
 
   onAlmacenDestinoChange(): void {
@@ -480,24 +494,63 @@ export class NuevaTransferencia implements OnInit {
       return;
     }
 
-    if (query.length < 3) {
-      this.productosAutocomplete = this.productos.slice(0, 20);
+    const localMatches = this.filtrarProductosLocales(query);
+    if (query.length < 3 || localMatches.length > 0) {
+      this.productosAutocomplete = localMatches.slice(
+        0,
+        NuevaTransferencia.AUTOCOMPLETE_LIMIT,
+      );
       return;
     }
 
+    this.buscarProductosRemotos(query, sedeOrigen, almacenOrigenId);
+  }
+
+  private buscarProductosRemotos(
+    query: string,
+    sedeOrigen: string,
+    almacenOrigenId: number,
+  ): void {
     this.transferenciaService
-      .getProductsAutocomplete({
-        search: query,
+      .getProductsStock({
         id_sede: Number(sedeOrigen),
         id_almacen: almacenOrigenId,
+        page: 1,
+        size: 50,
+        nombre: query,
+        activo: true,
       })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (response) => {
-          this.productosAutocomplete = this.mapAutocompleteProductos(
-            response.data ?? [],
-            sedeOrigen,
-          );
+        next: (stockResponse) => {
+          const stockMatches = this.mapProductos(stockResponse.data ?? [], sedeOrigen);
+          if (stockMatches.length > 0) {
+            this.productosAutocomplete = stockMatches.slice(
+              0,
+              NuevaTransferencia.AUTOCOMPLETE_LIMIT,
+            );
+            return;
+          }
+
+          this.transferenciaService
+            .getProductsAutocomplete({
+              search: query,
+              id_sede: Number(sedeOrigen),
+              id_almacen: almacenOrigenId,
+            })
+            .pipe(takeUntilDestroyed(this.destroyRef))
+            .subscribe({
+              next: (autocompleteResponse) => {
+                this.productosAutocomplete = this.mapAutocompleteProductos(
+                  autocompleteResponse.data ?? [],
+                  sedeOrigen,
+                );
+              },
+              error: () => {
+                this.productosAutocomplete = [];
+                this.showError('No se pudo cargar el autocomplete de productos.');
+              },
+            });
         },
         error: () => {
           this.productosAutocomplete = [];
@@ -940,14 +993,17 @@ export class NuevaTransferencia implements OnInit {
           id_sede: sedeNumber,
           id_almacen: originWarehouseId,
           page: 1,
-          size: 100,
+          size: NuevaTransferencia.MAX_PRODUCT_FETCH_SIZE,
           activo: true,
         })
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: (response) => {
             this.productos = this.mapProductos(response.data ?? [], normalizedSedeId);
-            this.productosAutocomplete = this.productos.slice(0, 20);
+            this.productosAutocomplete = this.productos.slice(
+              0,
+              NuevaTransferencia.AUTOCOMPLETE_LIMIT,
+            );
           },
           error: () => {
             this.productos = [];
@@ -964,7 +1020,10 @@ export class NuevaTransferencia implements OnInit {
       .subscribe({
         next: (response) => {
           this.productos = this.mapProductos(response.products ?? [], normalizedSedeId);
-          this.productosAutocomplete = this.productos.slice(0, 20);
+          this.productosAutocomplete = this.productos.slice(
+            0,
+            NuevaTransferencia.AUTOCOMPLETE_LIMIT,
+          );
         },
         error: () => {
           this.productos = [];
@@ -1053,7 +1112,25 @@ export class NuevaTransferencia implements OnInit {
       categoria: '',
       marca: 'N/A',
       stockPorSede: { [sedeId]: Number(producto.stock ?? 0) },
-    }));
+      }));
+  }
+
+  private filtrarProductosLocales(query: string): TransferProducto[] {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) {
+      return this.productos;
+    }
+
+    return this.productos.filter((producto) => {
+      const productName = producto.nombre.toLowerCase();
+      const productSku = producto.sku.toLowerCase();
+      const productCategory = producto.categoria.toLowerCase();
+      return (
+        productName.includes(normalizedQuery) ||
+        productSku.includes(normalizedQuery) ||
+        productCategory.includes(normalizedQuery)
+      );
+    });
   }
 
   private cargarStockProductoSeleccionadoEnSedes(): void {

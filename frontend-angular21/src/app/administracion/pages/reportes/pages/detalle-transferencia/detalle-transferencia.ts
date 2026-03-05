@@ -28,8 +28,10 @@ import {
   TransferenciaProductoResponse,
   TransferenciaUserResponse,
 } from '../../../../interfaces/transferencia.interface';
+import { AlmacenService } from '../../../../services/almacen.service';
 import { TransferStore } from '../../../../services/transfer.store';
 import { TransferUserContextService } from '../../../../services/transfer-user-context.service';
+import { SedeService } from '../../../../services/sede.service';
 
 interface TransferenciaDetalle {
   codigo: string;
@@ -84,6 +86,8 @@ export class DetalleTransferencia {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly destroyRef = inject(DestroyRef);
   private readonly transferUserContext = inject(TransferUserContextService);
+  private readonly sedeService = inject(SedeService);
+  private readonly almacenService = inject(AlmacenService);
 
   private readonly codigoSig = signal('');
   private readonly submittingDecisionSig = signal(false);
@@ -93,6 +97,44 @@ export class DetalleTransferencia {
   private readonly transferenciaActualSig = computed<TransferByIdResponseDto | null>(
     () => this.transferStore.selected(),
   );
+  private readonly headquarterNameMapSig = computed(() => {
+    const map = new Map<string, string>();
+
+    for (const sede of this.sedeService.sedes()) {
+      const sedeId = this.normalizeIdentifier(sede.id_sede);
+      const sedeName = String(sede.nombre ?? '').trim();
+      if (!sedeId || !sedeName) {
+        continue;
+      }
+
+      map.set(sedeId, sedeName);
+    }
+
+    return map;
+  });
+  private readonly warehouseNameMapSig = computed(() => {
+    const map = new Map<string, string>();
+
+    for (const warehouse of this.almacenService.sedes()) {
+      const warehouseId = this.normalizeIdentifier(
+        warehouse.id_almacen ?? warehouse.id ?? null,
+      );
+      if (!warehouseId) {
+        continue;
+      }
+
+      const warehouseName = String(warehouse.nombre ?? '').trim();
+      const warehouseCode = String(warehouse.codigo ?? '').trim();
+      const label = warehouseName || warehouseCode;
+      if (!label) {
+        continue;
+      }
+
+      map.set(warehouseId, label);
+    }
+
+    return map;
+  });
 
   private readonly transferenciaSig = computed<TransferenciaDetalle | null>(() => {
     const transfer = this.transferenciaActualSig();
@@ -145,6 +187,8 @@ export class DetalleTransferencia {
   }
 
   ngOnInit(): void {
+    this.loadReferenceCatalogs();
+
     const rawCodigo =
       this.route.snapshot.queryParamMap.get('codigo') ??
       this.route.snapshot.queryParamMap.get('id') ??
@@ -374,6 +418,26 @@ export class DetalleTransferencia {
   private mapTransferencia(transferencia: TransferByIdResponseDto): TransferenciaDetalle {
     const primerItem = transferencia.items?.[0];
     const primerProducto = this.getProductoFromItem(primerItem);
+    const originHeadquartersId =
+      transferencia.origin?.id_sede ??
+      transferencia.origin?.id ??
+      transferencia.originHeadquartersId ??
+      null;
+    const destinationHeadquartersId =
+      transferencia.destination?.id_sede ??
+      transferencia.destination?.id ??
+      transferencia.destinationHeadquartersId ??
+      null;
+    const originWarehouseId =
+      transferencia.originWarehouse?.id_almacen ??
+      transferencia.originWarehouse?.id ??
+      transferencia.originWarehouseId ??
+      null;
+    const destinationWarehouseId =
+      transferencia.destinationWarehouse?.id_almacen ??
+      transferencia.destinationWarehouse?.id ??
+      transferencia.destinationWarehouseId ??
+      null;
 
     return {
       codigo: String(transferencia.id),
@@ -385,23 +449,34 @@ export class DetalleTransferencia {
       productoCodigo: primerProducto?.codigo || '-',
       productoDescripcion: primerProducto?.descripcion || '-',
       productoCategoria: this.getCategoriaNombre(primerProducto?.categoria),
-      origen: transferencia.origin?.nomSede || String(transferencia.originHeadquartersId ?? '-'),
-      destino:
-        transferencia.destination?.nomSede ||
-        String(transferencia.destinationHeadquartersId ?? '-'),
-      almacenOrigen:
-        transferencia.originWarehouse?.nomAlm ||
-        String(transferencia.originWarehouseId ?? '-'),
-      almacenDestino:
-        transferencia.destinationWarehouse?.nomAlm ||
-        String(transferencia.destinationWarehouseId ?? '-'),
+      origen: this.resolveHeadquarterDisplayName(
+        transferencia.origin,
+        originHeadquartersId,
+      ),
+      destino: this.resolveHeadquarterDisplayName(
+        transferencia.destination,
+        destinationHeadquartersId,
+      ),
+      almacenOrigen: this.resolveWarehouseDisplayName(
+        transferencia.originWarehouse,
+        originWarehouseId,
+      ),
+      almacenDestino: this.resolveWarehouseDisplayName(
+        transferencia.destinationWarehouse,
+        destinationWarehouseId,
+      ),
       cantidad:
         transferencia.totalQuantity ??
         (transferencia.items ?? []).reduce((acc, item) => acc + (item.quantity ?? 0), 0),
-      responsable: this.getResponsableNombre(transferencia.creatorUser),
+      responsable: this.getResponsableNombre(
+        transferencia.creatorUser,
+        transferencia.creatorUserId,
+      ),
       estado: this.normalizeStatus(transferencia.status),
       fechaEnvio: this.formatearFecha(transferencia.requestDate),
-      fechaLlegada: '-',
+      fechaLlegada: this.formatearFecha(
+        transferencia.completionDate ?? transferencia.responseDate,
+      ),
       observacion: transferencia.observation?.trim() || '-',
     };
   }
@@ -414,7 +489,11 @@ export class DetalleTransferencia {
       const seriesList = item.series ?? [];
 
       return {
-        producto: producto?.nomProducto || producto?.descripcion || '-',
+        producto:
+          producto?.nomProducto ||
+          producto?.descripcion ||
+          producto?.codigo ||
+          '-',
         codigo: producto?.codigo || '-',
         categoria: this.getCategoriaNombre(producto?.categoria),
         cantidad: item.quantity ?? seriesList.length,
@@ -444,15 +523,122 @@ export class DetalleTransferencia {
 
   private getResponsableNombre(
     creator: TransferenciaUserResponse | TransferenciaUserResponse[] | undefined,
+    fallbackUserId?: number | null,
   ): string {
-    if (!creator) return '-';
+    if (!creator) {
+      return Number.isFinite(Number(fallbackUserId)) && Number(fallbackUserId) > 0
+        ? `Usuario #${Number(fallbackUserId)}`
+        : '-';
+    }
 
     const user = Array.isArray(creator) ? creator[0] : creator;
     const nombre = user.usuNom || user.nombres || '';
     const apellidos = user.apellidos || [user.apePat, user.apeMat].filter(Boolean).join(' ');
 
     const fullName = [nombre, apellidos].filter(Boolean).join(' ').trim();
-    return fullName || `Usuario #${user.idUsuario ?? user.userId ?? user.id ?? '-'}`;
+    const fallbackId = Number(fallbackUserId);
+    const userId =
+      user.idUsuario ??
+      user.userId ??
+      user.id ??
+      (Number.isFinite(fallbackId) && fallbackId > 0 ? fallbackId : null);
+
+    return fullName || `Usuario #${userId ?? '-'}`;
+  }
+
+  private resolveHeadquarterDisplayName(
+    headquarter: TransferByIdResponseDto['origin'] | undefined,
+    headquarterId: string | number | null,
+  ): string {
+    const responseName = String(
+      headquarter?.nomSede ?? headquarter?.nombre ?? '',
+    ).trim();
+    if (responseName) {
+      return responseName;
+    }
+
+    const catalogName = this.resolveHeadquarterName(headquarterId);
+    if (catalogName) {
+      return catalogName;
+    }
+
+    const normalizedId = this.normalizeIdentifier(headquarterId);
+    return normalizedId ? `Sede ${normalizedId}` : '-';
+  }
+
+  private resolveWarehouseDisplayName(
+    warehouse: TransferByIdResponseDto['originWarehouse'] | undefined,
+    warehouseId: string | number | null,
+  ): string {
+    const responseName = String(warehouse?.nomAlm ?? warehouse?.nombre ?? '').trim();
+    if (responseName) {
+      return responseName;
+    }
+
+    const catalogName = this.resolveWarehouseName(warehouseId);
+    if (catalogName) {
+      return catalogName;
+    }
+
+    const normalizedId = this.normalizeIdentifier(warehouseId);
+    return normalizedId ? `Almacen ${normalizedId}` : '-';
+  }
+
+  private resolveHeadquarterName(
+    headquarterId: string | number | null | undefined,
+  ): string | null {
+    const normalizedId = this.normalizeIdentifier(headquarterId);
+    if (!normalizedId) {
+      return null;
+    }
+
+    return this.headquarterNameMapSig().get(normalizedId) ?? null;
+  }
+
+  private resolveWarehouseName(
+    warehouseId: string | number | null | undefined,
+  ): string | null {
+    const normalizedId = this.normalizeIdentifier(warehouseId);
+    if (!normalizedId) {
+      return null;
+    }
+
+    return this.warehouseNameMapSig().get(normalizedId) ?? null;
+  }
+
+  private normalizeIdentifier(
+    value: string | number | null | undefined,
+  ): string | null {
+    if (value === null || value === undefined) {
+      return null;
+    }
+
+    const normalized = String(value).trim();
+    return normalized || null;
+  }
+
+  private loadReferenceCatalogs(): void {
+    if (this.sedeService.sedes().length === 0) {
+      this.sedeService
+        .loadSedes()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          error: () => {
+            // El detalle sigue funcionando con fallback por id.
+          },
+        });
+    }
+
+    if (this.almacenService.sedes().length === 0) {
+      this.almacenService
+        .loadAlmacen()
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          error: () => {
+            // El detalle sigue funcionando con fallback por id.
+          },
+        });
+    }
   }
 
   private normalizeStatus(value: string | TransferStatus | undefined): TransferStatus {
