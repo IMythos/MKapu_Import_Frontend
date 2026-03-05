@@ -3,6 +3,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
+import { AuthService } from '../../auth/services/auth.service'; 
 
 // ── Enums ─────────────────────────────────────────────────────────────
 export enum ClaimStatus {
