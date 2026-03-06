@@ -12,17 +12,25 @@
       </div>
       <div class="flex gap-2">
         <p-button
+          label="Nuevo"
+          icon="pi pi-plus"
+          styleClass="sedes-pill"
+          [routerLink]="['/admin/roles-permisos/agregar-roles-permisos']">
+        </p-button>
+        <p-button
           label="Gestionar Roles"
           icon="pi pi-id-card"
+          severity="secondary"
           styleClass="sedes-pill"
-          [routerLink]="['/admin/roles']">
+          [routerLink]="['/admin/roles-permisos/roles']">
         </p-button>
         <p-button
           label="Gestionar Permisos"
           icon="pi pi-lock"
           severity="secondary"
+          [outlined]="true"
           styleClass="sedes-pill"
-          [routerLink]="['/admin/permisos']">
+          [routerLink]="['/admin/roles-permisos/permisos']">
         </p-button>
       </div>
     </div>
@@ -57,7 +65,6 @@
           </ng-template>
         </p-autoComplete>
       </div>
-
       <div class="flex align-items-center gap-2 sedes-filter-actions">
         <p-select
           [options]="viewOptions"
@@ -100,27 +107,26 @@
         <p-tag
           class="sedes-count-tag"
           [value]="'[' + filteredRoles().length + '] Roles'"
-          [severity]="viewMode() === 'activos' ? 'success' : viewMode() === 'inactivos' ? 'danger' : 'info'">
+          [severity]="viewMode() === 'activos' ? 'success' :
+                      viewMode() === 'inactivos' ? 'danger' : 'info'">
         </p-tag>
       </div>
     </div>
 
-    <!-- Empty state -->
-    <div *ngIf="filteredRoles().length === 0" class="sedes-empty-state">
+    <div *ngIf="!loading() && filteredRoles().length === 0" class="sedes-empty-state">
       <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
       <div class="sedes-empty-title">No hay roles con ese filtro</div>
       <div class="sedes-empty-subtitle">
         Prueba con otro término o limpia los filtros para ver todos los roles.
       </div>
-      <p-button
-        label="Limpiar filtros" icon="pi pi-filter-slash"
+      <p-button label="Limpiar filtros" icon="pi pi-filter-slash"
         severity="danger" styleClass="sedes-pill sedes-pill-danger"
         (click)="clearSearch()">
       </p-button>
     </div>
 
     <p-table
-      *ngIf="filteredRoles().length > 0"
+      *ngIf="!loading() && filteredRoles().length > 0"
       [value]="filteredRoles()"
       styleClass="sedes-table"
       [paginator]="true"
@@ -130,11 +136,11 @@
 
       <ng-template pTemplate="header">
         <tr>
-          <th style="width: 30%">ROL</th>
-          <th style="width: 25%">DESCRIPCIÓN</th>
-          <th style="width: 20%">PERMISOS</th>
-          <th style="width: 10%">ESTADO</th>
-          <th style="width: 15%" class="text-center">ACCIONES</th>
+          <th style="width:30%">ROL</th>
+          <th style="width:25%">DESCRIPCIÓN</th>
+          <th style="width:15%">PERMISOS</th>
+          <th style="width:10%">ESTADO</th>
+          <th style="width:20%" class="text-center">ACCIONES</th>
         </tr>
       </ng-template>
 
@@ -143,7 +149,6 @@
           <td class="font-medium">{{ rol.nombre }}</td>
           <td class="text-600">{{ rol.descripcion || '—' }}</td>
           <td>
-            <!-- Solo muestra el conteo, no los nombres -->
             <p-tag
               [value]="getPermisosLabel(rol.permisos.length)"
               [severity]="getPermisosTagSeverity(rol.permisos.length)">
@@ -156,57 +161,58 @@
             </p-tag>
           </td>
           <td>
-            <div class="flex align-items-center justify-content-center gap-2">
-              <p-button
-                icon="pi pi-eye"
-                text severity="secondary"
-                styleClass="sedes-icon-btn"
-                (click)="verDetalle(rol)"
-                title="Ver permisos">
+            <div class="flex align-items-center justify-content-center gap-1">
+
+              <!-- Ver detalle -->
+              <p-button icon="pi pi-eye" text severity="secondary"
+                styleClass="sedes-icon-btn" title="Ver permisos"
+                (click)="verDetalle(rol)">
               </p-button>
-              <p-button
-                icon="pi pi-key"
-                text severity="info"
-                styleClass="sedes-icon-btn"
-                [routerLink]="['/admin/role-permissions/asignar', rol.id_rol]"
-                title="Asignar permisos">
+
+              <!-- Asignar permisos (dialog) -->
+              <p-button icon="pi pi-key" text severity="info"
+                styleClass="sedes-icon-btn" title="Asignar permisos"
+                (click)="abrirAsignar(rol)">
               </p-button>
+
+              <!-- Editar rol -->
+              <p-button icon="pi pi-pencil" text severity="secondary"
+                styleClass="sedes-icon-btn" title="Editar rol"
+                [routerLink]="['/admin/roles-permisos/editar-roles-permisos/', rol.id_rol]">
+              </p-button>
+
             </div>
           </td>
         </tr>
       </ng-template>
-
     </p-table>
     <p-confirmdialog />
   </p-card>
 
-  <!-- DIALOG DETALLE -->
+  <!-- ═══════ DIALOG DETALLE ═══════ -->
   <p-dialog
-    [(visible)]="dialogVisible"
-    [modal]="true"
-    [draggable]="false"
+    [(visible)]="dialogDetalleVisible"
+    [modal]="true" [draggable]="false"
     [style]="{ width: '480px', 'border-radius': '16px', overflow: 'hidden' }"
     [contentStyle]="{ padding: '0' }"
-    (onHide)="dialogVisible = false">
+    (onHide)="dialogDetalleVisible = false">
 
     <ng-template pTemplate="header"><span></span></ng-template>
 
     <ng-container *ngIf="rolSeleccionado() as r">
       <div class="almacen-detail-modal">
 
-        <!-- Banner -->
         <div class="adm-banner">
           <div class="adm-banner-icon"><i class="pi pi-shield"></i></div>
           <div class="adm-banner-info">
             <span class="adm-kicker">ROL</span>
             <h3 class="adm-nombre">{{ r.nombre }}</h3>
           </div>
-          <button class="adm-close-btn" (click)="dialogVisible = false">
+          <button class="adm-close-btn" (click)="dialogDetalleVisible = false">
             <i class="pi pi-times"></i>
           </button>
         </div>
 
-        <!-- ID + Estado -->
         <div class="adm-code-row">
           <span class="adm-code-badge">
             <i class="pi pi-hashtag"></i> ID: {{ r.id_rol }}
@@ -219,7 +225,6 @@
           </span>
         </div>
 
-        <!-- Info básica -->
         <div class="adm-info-grid">
           <div class="adm-info-item adm-info-item--full">
             <span class="adm-info-icon"><i class="pi pi-id-card"></i></span>
@@ -237,12 +242,12 @@
           </div>
         </div>
 
-        <!-- Permisos asignados -->
+        <!-- Lista permisos -->
         <div class="px-4 pb-3">
           <div class="flex align-items-center gap-2 mb-3">
             <i class="pi pi-lock text-primary"></i>
             <span class="font-bold text-700 text-sm"
-                  style="letter-spacing:0.05em; text-transform:uppercase">
+                  style="letter-spacing:.05em; text-transform:uppercase">
               Permisos asignados
             </span>
             <p-tag
@@ -251,7 +256,6 @@
             </p-tag>
           </div>
 
-          <!-- Sin permisos -->
           @if (r.permisos.length === 0) {
             <div class="surface-100 border-round p-3 text-center text-500 text-sm">
               <i class="pi pi-ban mr-2"></i>
@@ -259,7 +263,6 @@
             </div>
           }
 
-          <!-- Lista de permisos -->
           @if (r.permisos.length > 0) {
             <div class="flex flex-column gap-2">
               @for (perm of r.permisos; track perm.id_permiso) {
@@ -281,27 +284,104 @@
           }
         </div>
 
-        <!-- Footer -->
         <div class="adm-footer">
-          <p-button
-            label="Cerrar"
-            icon="pi pi-times"
-            severity="secondary"
-            [outlined]="true"
+          <p-button label="Cerrar" icon="pi pi-times"
+            severity="secondary" [outlined]="true"
             styleClass="adm-btn-close"
-            (onClick)="dialogVisible = false">
+            (onClick)="dialogDetalleVisible = false">
           </p-button>
-          <p-button
-            label="Asignar Permisos"
-            icon="pi pi-key"
+          <p-button label="Asignar Permisos" icon="pi pi-key"
             styleClass="adm-btn-edit"
-            [routerLink]="['/admin/role-permissions/asignar', r.id_rol]"
-            (onClick)="dialogVisible = false">
+            (onClick)="abrirAsignar(r)">
           </p-button>
         </div>
 
       </div>
     </ng-container>
+  </p-dialog>
+
+  <!-- ═══════ DIALOG ASIGNAR PERMISOS ═══════ -->
+  <p-dialog
+    [(visible)]="dialogAsignarVisible"
+    [modal]="true" [draggable]="false"
+    [style]="{ width: '560px' }"
+    (onHide)="dialogAsignarVisible = false">
+
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-key text-primary"></i>
+        <span class="font-bold">
+          Asignar permisos — {{ rolAsignando()?.nombre ?? '' }}
+        </span>
+      </div>
+    </ng-template>
+
+    <div class="pt-2">
+      <p class="text-500 text-sm mb-3">
+        Marca los permisos que tendrá este rol. Los cambios reemplazan la asignación actual.
+      </p>
+
+      @if (loading()) {
+        <div class="text-center py-4 text-500">
+          <i class="pi pi-spin pi-spinner mr-2"></i> Cargando permisos...
+        </div>
+      }
+
+      <div class="grid">
+        @for (perm of todosLosPermisos(); track perm.id_permiso) {
+          <div class="col-12 md:col-6 mb-2">
+            <div class="flex align-items-start gap-2 surface-100 border-round p-3 cursor-pointer"
+                 [style.opacity]="perm.activo ? '1' : '0.5'"
+                 [style.border]="selectedPermIds().includes(perm.id_permiso)
+                   ? '1px solid var(--p-primary-color)'
+                   : '1px solid transparent'"
+                 (click)="togglePerm(perm.id_permiso)">
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="selectedPermIds().includes(perm.id_permiso)"
+                (onChange)="togglePerm(perm.id_permiso)"
+                [inputId]="'perm_' + perm.id_permiso">
+              </p-checkbox>
+              <label [for]="'perm_' + perm.id_permiso" class="cursor-pointer flex-1"
+                     (click)="$event.stopPropagation()">
+                <span class="font-medium text-sm text-900 block">{{ perm.nombre }}</span>
+                <span class="text-400 text-xs">{{ perm.descripcion || '—' }}</span>
+              </label>
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (!loading() && todosLosPermisos().length === 0) {
+        <div class="text-center text-500 py-4">
+          <i class="pi pi-info-circle mr-2"></i>
+          No hay permisos disponibles.
+          <a class="text-primary cursor-pointer ml-1"
+             [routerLink]="['/admin/roles-permisos/agregar-permiso']">
+            Crear permiso
+          </a>
+        </div>
+      }
+    </div>
+
+    <ng-template pTemplate="footer">
+      <div class="flex align-items-center justify-content-between w-full">
+        <small class="text-400">
+          {{ selectedPermIds().length }} permiso(s) seleccionado(s)
+        </small>
+        <div class="flex gap-2">
+          <p-button label="Cancelar" severity="secondary" [outlined]="true"
+            (onClick)="dialogAsignarVisible = false">
+          </p-button>
+          <p-button
+            label="Guardar permisos"
+            icon="pi pi-check"
+            [loading]="submittingAssign()"
+            (onClick)="guardarPermisos()">
+          </p-button>
+        </div>
+      </div>
+    </ng-template>
   </p-dialog>
 
 </div>

@@ -260,35 +260,88 @@ export const ADMIN_ROUTES: Routes = [
   /* =======================
         roles y permisos
     ======================= */
-  {
-    path: 'roles-permisos',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./pages/roles-permisos/pages/roles-permisos/role-permission-listado.component').then((m) => m.RolePermissionListadoComponent),
-      },
 
-      /*
-      {
-        path: 'agregar-roles-permisos',
-        loadComponent: () =>
-          import('./pages/roles-permisos/pages/roles-permisos/role-permission-form.component').then(
-            (m) => m.RolePermissionFormComponent  ,
-          ),
-        canDeactivate: [pendingChangesGuard],
-      },
-      {
-        path: 'editar-categoria/:id',
-        loadComponent: () =>
-          import('./pages/categoria/pages/editar-categoria/editar-categoria').then(
-            (m) => m.EditarCategoria,
-          ),
-        canDeactivate: [pendingChangesGuard],
-      },
-      */
-    ],
-  },
+{
+  path: 'roles-permisos',
+  children: [
+    // ── Rol-Permisos (listado principal) ──
+    {
+      path: '',
+      loadComponent: () =>
+        import('./pages/roles-permisos/pages/roles-permisos-listado/role-permission-listado.component').then(
+          (m) => m.RolePermissionListadoComponent,
+        ),
+    },
+
+    // ── Roles ──
+    {
+      path: 'roles',
+      loadComponent: () =>
+        import('./pages/roles-permisos/roles/pages/roles-listado/roles-listado.component').then(
+          (m) => m.RolesListadoComponent,
+        ),
+    },
+    {
+      path: 'agregar-rol',
+      loadComponent: () =>
+        import('./pages/roles-permisos/roles/pages/agregar-rol/agregar-rol.component').then(
+          (m) => m.AgregarRolComponent,
+        ),
+      canDeactivate: [pendingChangesGuard],
+    },
+    {
+      path: 'editar-rol/:id',
+      loadComponent: () =>
+        import('./pages/roles-permisos/roles/pages/editar-role/editar-rol.component').then(
+          (m) => m.EditarRolComponent,
+        ),
+      canDeactivate: [pendingChangesGuard],
+    },
+
+    // ── Permisos ──
+    {
+      path: 'permisos',
+      loadComponent: () =>
+        import('./pages/roles-permisos/permisos/pages/permisos-listado/permisos-listado.component').then(
+          (m) => m.PermisosListadoComponent,
+        ),
+    },
+    {
+      path: 'agregar-permiso',
+      loadComponent: () =>
+        import('./pages/roles-permisos/permisos/pages/agregar-permiso/agregar-permiso.component').then(
+          (m) => m.AgregarPermisoComponent,
+        ),
+      canDeactivate: [pendingChangesGuard],
+    },
+    {
+      path: 'editar-permiso/:id',
+      loadComponent: () =>
+        import('./pages/roles-permisos/permisos/pages/editar-permiso/editar-permiso.component').then(
+          (m) => m.EditarPermisoComponent,
+        ),
+      canDeactivate: [pendingChangesGuard],
+    },
+
+    // ── Rol-Permisos (agregar y editar asignación) ──
+    {
+      path: 'agregar-roles-permisos',
+      loadComponent: () =>
+        import('./pages/roles-permisos/pages/agregar-roles-permisos/agregar-roles-permisos.component').then(
+          (m) => m.AgregarRolesPermisosComponent,
+        ),
+      canDeactivate: [pendingChangesGuard],
+    },
+    {
+      path: 'editar-roles-permisos/:id',
+      loadComponent: () =>
+        import('./pages/roles-permisos/pages/editar-roles-permisos/editar-rol.component').then(
+          (m) => m.EditarRolComponent,
+        ),
+      canDeactivate: [pendingChangesGuard],
+    },
+  ],
+},
 
 
 
