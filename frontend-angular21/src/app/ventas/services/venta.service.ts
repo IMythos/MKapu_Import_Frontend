@@ -11,15 +11,13 @@ import {
   SalesReceiptWithHistoryDto,
   SalesReceiptKpiDto,
 } from '../interfaces';
+import { ComprobanteVenta } from '../../core/services/ventas.service';
 
 @Injectable({ providedIn: 'root' })
 export class VentaService {
   private readonly http = inject(HttpClient);
   private readonly apiUrl = `${environment.apiUrl}/sales`;
 
-  /**
-   * Obtiene el ID de sede desde el localStorage del usuario logueado.
-   */
   private get sedeId(): number | null {
     const raw = localStorage.getItem('user');
     if (!raw) return null;
@@ -30,25 +28,21 @@ export class VentaService {
       return null;
     }
   }
-
-  /**
-   * Agrega el sedeId a los parámetros de la consulta si no se ha especificado uno.
-   */
+  getComprobantes(): Observable<ComprobanteVenta[]> {
+    return this.http.get<ComprobanteVenta[]>(this.apiUrl + "/receipts");
+  }
+  getComprobanteById(id: number): Observable<ComprobanteVenta> {
+    return this.http.get<ComprobanteVenta>(`${this.apiUrl}/receipts/${id}`);
+}
   private withSede(params: HttpParams): HttpParams {
     const sede = this.sedeId;
     return sede ? params.set('sedeId', String(sede)) : params;
   }
 
-  /**
-   * Registra una nueva venta en el sistema.
-   */
   registrarVenta(request: RegistroVentaRequest): Observable<RegistroVentaResponse> {
     return this.http.post<RegistroVentaResponse>(`${this.apiUrl}/receipts`, request);
   }
 
-  /**
-   * Lista ventas generales (utilizado en el flujo de creación o listas simples).
-   */
   listarVentas(query: SalesReceiptsQuery = {}): Observable<SalesReceiptSummaryListResponse> {
     let params = new HttpParams()
       .set('page', String(query.page ?? 1))
@@ -66,7 +60,11 @@ export class VentaService {
 
     return this.http.get<SalesReceiptSummaryListResponse>(`${this.apiUrl}/receipts`, { params });
   }
-
+  getComprobantesPorCliente(customerId: string): Observable<any> {
+    return this.http.get<any>(this.apiUrl + "/receipts", { 
+      params: { customerId: customerId } 
+    });
+  }
   listarHistorialVentas(
     query: SalesReceiptsQuery = {},
   ): Observable<SalesReceiptSummaryListResponse> {

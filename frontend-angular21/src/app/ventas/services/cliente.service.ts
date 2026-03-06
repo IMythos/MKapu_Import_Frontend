@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 
 import {
@@ -13,6 +13,7 @@ import {
   ListarClientesResponse,
   TipoDocumento,
 } from '../interfaces';
+import { Cliente } from '../../core/services/clientes.service';
 
 @Injectable({ providedIn: 'root' })
 export class ClienteService {
@@ -71,6 +72,32 @@ export class ClienteService {
     return this.http.get<ListarClientesResponse>(
       `${this.apiUrl}/customers`,
       { params: httpParams },
+    );
+  }
+  getClientes(): Observable<Cliente[]> {
+    return this.http.get<Cliente[]>(this.apiUrl);
+  }
+
+  buscarPorDocumento(documento: string): Observable<Cliente | null> {
+    return this.http.get<any>(`${this.apiUrl}/customers/document/${documento}`).pipe(
+      map((data) => {
+        if (!data) return null;
+
+        const clienteMapeado: Cliente = {
+          id_cliente: data.customerId || '', 
+          tipo_doc: data.documentTypeSunatCode === '06' ? 'RUC' : 'DNI', 
+          num_doc: data.documentValue || documento, 
+          razon_social: data.displayName || null,
+          nombres: data.name || null,
+          apellidos: data.apellido || null,
+          direccion: data.address || null,
+          email: data.email || null,
+          telefono: data.phone || null,
+          estado: data.status !== undefined ? data.status : true,
+        };
+
+        return clienteMapeado;
+      })
     );
   }
 }

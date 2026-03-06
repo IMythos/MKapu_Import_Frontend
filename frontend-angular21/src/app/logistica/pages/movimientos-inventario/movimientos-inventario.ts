@@ -13,6 +13,7 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { MovimientoInventario } from '../../interfaces/movimiento-inventario.interface';
 import { TransferUserContextService } from '../../../administracion/services/transfer-user-context.service';
 import { CardModule } from 'primeng/card';
+import { DialogModule } from 'primeng/dialog';
 @Component({
   selector: 'app-movimientos-inventario',
   standalone: true,

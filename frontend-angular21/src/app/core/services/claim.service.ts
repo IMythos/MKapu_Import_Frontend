@@ -1,75 +1,60 @@
-// core/services/claim.service.ts
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { firstValueFrom, Observable } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 
-// ── Enums ─────────────────────────────────────────────────────────────
 export enum ClaimStatus {
-  REGISTRADO  = 'REGISTRADO',
-  EN_PROCESO  = 'EN_PROCESO',
-  RESUELTO    = 'RESUELTO',
-  RECHAZADO   = 'RECHAZADO',
+  REGISTRADO = 'REGISTRADO',
+  EN_PROCESO = 'EN_PROCESO',
+  RESUELTO   = 'RESUELTO',
+  RECHAZADO  = 'RECHAZADO',
 }
 
-// ── Interfaces (alineadas con el backend) ─────────────────────────────
 export interface ClaimResponseDto {
-  claimId:      number;
-  receiptId:    number;
-  sellerId:     string;
-  reason:       string;
-  description:  string;
-  status:       ClaimStatus;
-  registeredAt: string;
-  resolvedAt?:  string | null;
+  id: string;
+  saleReceiptId: string;
+  customerId: string;
+  reason: string;
+  description: string;
+  status: ClaimStatus;
+  createdAt: string;
+  updatedAt?: string;
+  customerName: string;
+  productDescription:string;
+  registerDate: Date
 }
 
 export interface ClaimListResponse {
-  data:  ClaimResponseDto[];
+  data: ClaimResponseDto[];
   total: number;
-  page:  number;
-  limit: number;
 }
 
 export interface RegisterClaimPayload {
-  id_comprobante:  number;
+  id_comprobante: number;
   id_vendedor_ref: string;
-  motivo:          string;
-  descripcion:     string;
+  motivo: string;
+  descripcion: string; 
+  detalles?: ClaimDetailDto[];
+}
+export interface ClaimDetailDto {
+  tipo: string;
+  descripcion: string;
+}
+export interface ChangeClaimStatusDto {
+  status: ClaimStatus;
 }
 
-export interface AttendClaimPayload {
-  respuesta: string;
-}
-
-export interface ResolveClaimPayload {
-  respuesta: string;
-}
-
-// ── Estadísticas (calculadas en frontend) ────────────────────────────
-export interface ClaimStats {
-  total:       number;
-  registrados: number;
-  en_proceso:  number;
-  resueltos:   number;
-  rechazados:  number;
-}
-
-// ── Service ───────────────────────────────────────────────────────────
 @Injectable({ providedIn: 'root' })
 export class ClaimService {
-
-  private readonly http    = inject(HttpClient);
-  private readonly baseUrl = `${environment.apiUrl}/claims`;
-
-  // ── State signals ────────────────────────────────────────────────
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiUrl}/sales/claims`;
+  private readonly DIAS_GARANTIA = 60;
   readonly claims   = signal<ClaimResponseDto[]>([]);
   readonly selected = signal<ClaimResponseDto | null>(null);
   readonly loading  = signal<boolean>(false);
   readonly error    = signal<string | null>(null);
 
-  // ── Computed ─────────────────────────────────────────────────────
-  readonly stats = computed<ClaimStats>(() => {
+  readonly stats = computed(() => {
     const list = this.claims();
     return {
       total:       list.length,
@@ -80,26 +65,51 @@ export class ClaimService {
     };
   });
 
-  // ── GET /claims/receipt/:receiptId ───────────────────────────────
-  async getByReceipt(receiptId: number): Promise<void> {
+  calcularDiasRestantes(fechaEmision: Date | string): number {
+    const diasTranscurridos = this.calcularDiasTranscurridos(fechaEmision);
+    const restantes = this.DIAS_GARANTIA - diasTranscurridos;
+    return restantes > 0 ? restantes : 0;
+  }
+
+  validarGarantia(fechaEmision: Date | string): boolean {
+    const diasTranscurridos = this.calcularDiasTranscurridos(fechaEmision);
+    return diasTranscurridos <= this.DIAS_GARANTIA;
+  }
+
+  private calcularDiasTranscurridos(fecha: Date | string): number {
+    const inicio = new Date(fecha).getTime();
+    const hoy = new Date().getTime();
+    const diff = hoy - inicio;
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  }
+
+  async loadClaims(sedeId: string, filters: any = {}): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
+    
     try {
+      let params = new HttpParams();
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== null && filters[key] !== undefined && filters[key] !== '') {
+          params = params.set(key, filters[key]);
+        }
+      });
+      const url = `${this.baseUrl}/sede/${sedeId}`;
       const res = await firstValueFrom(
-        this.http.get<ClaimListResponse>(`${this.baseUrl}/receipt/${receiptId}`)
+        this.http.get<ClaimListResponse | ClaimResponseDto[]>(url, { params })
       );
-      this.claims.set(res.data);
+      const claimsData = (res as ClaimListResponse).data || (res as ClaimResponseDto[]);
+      this.claims.set(claimsData);
     } catch (err: any) {
-      this.error.set(err?.error?.message ?? 'Error al cargar reclamos');
+      console.error('Error fetching claims:', err);
+      this.error.set(err?.error?.message ?? 'Error al cargar los reclamos de la sede');
     } finally {
       this.loading.set(false);
     }
   }
 
-  // ── GET /claims/:id ──────────────────────────────────────────────
-  async getById(id: number): Promise<ClaimResponseDto | null> {
+  async getById(id: string): Promise<ClaimResponseDto | null> {
     this.loading.set(true);
-    this.error.set(null);
     try {
       const res = await firstValueFrom(
         this.http.get<ClaimResponseDto>(`${this.baseUrl}/${id}`)
@@ -107,17 +117,15 @@ export class ClaimService {
       this.selected.set(res);
       return res;
     } catch (err: any) {
-      this.error.set(err?.error?.message ?? `Error al cargar reclamo #${id}`);
+      this.error.set(err?.error?.message ?? 'No se encontró el reclamo');
       return null;
     } finally {
       this.loading.set(false);
     }
   }
 
-  // ── POST /claims ─────────────────────────────────────────────────
   async register(payload: RegisterClaimPayload): Promise<ClaimResponseDto | null> {
     this.loading.set(true);
-    this.error.set(null);
     try {
       const res = await firstValueFrom(
         this.http.post<ClaimResponseDto>(this.baseUrl, payload)
@@ -125,89 +133,74 @@ export class ClaimService {
       this.claims.update(list => [res, ...list]);
       return res;
     } catch (err: any) {
-      this.error.set(err?.error?.message ?? 'Error al registrar reclamo');
+      this.error.set(err?.error?.message ?? 'Error al registrar el reclamo');
       return null;
     } finally {
       this.loading.set(false);
     }
   }
 
-  // ── PATCH /claims/:id/attend ─────────────────────────────────────
-  async attend(id: number, respuesta: string): Promise<ClaimResponseDto | null> {
+  async changeStatus(id: string, status: ClaimStatus): Promise<ClaimResponseDto | null> {
     this.loading.set(true);
-    this.error.set(null);
     try {
       const res = await firstValueFrom(
-        this.http.patch<ClaimResponseDto>(`${this.baseUrl}/${id}/attend`, { respuesta })
+        this.http.patch<ClaimResponseDto>(`${this.baseUrl}/${id}/status`, { status })
       );
       this._updateInList(res);
       return res;
     } catch (err: any) {
-      this.error.set(err?.error?.message ?? 'Error al atender reclamo');
+      this.error.set(err?.error?.message ?? 'Error al actualizar el estado');
       return null;
     } finally {
       this.loading.set(false);
     }
   }
 
-  // ── PATCH /claims/:id/resolve ────────────────────────────────────
-  async resolve(id: number, respuesta: string): Promise<ClaimResponseDto | null> {
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      const res = await firstValueFrom(
-        this.http.patch<ClaimResponseDto>(`${this.baseUrl}/${id}/resolve`, { respuesta })
-      );
-      this._updateInList(res);
-      return res;
-    } catch (err: any) {
-      this.error.set(err?.error?.message ?? 'Error al resolver reclamo');
-      return null;
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  // ── Helpers visuales (equivalentes al ReclamosService mock) ──────
   getStatusLabel(status: ClaimStatus): string {
-    switch (status) {
-      case ClaimStatus.REGISTRADO: return 'Registrado';
-      case ClaimStatus.EN_PROCESO: return 'En Proceso';
-      case ClaimStatus.RESUELTO:   return 'Resuelto';
-      case ClaimStatus.RECHAZADO:  return 'Rechazado';
-      default: return status;
-    }
+    const labels: Record<ClaimStatus, string> = {
+      [ClaimStatus.REGISTRADO]: 'Registrado',
+      [ClaimStatus.EN_PROCESO]: 'En Proceso',
+      [ClaimStatus.RESUELTO]:   'Resuelto',
+      [ClaimStatus.RECHAZADO]:  'Rechazado',
+    };
+    return labels[status] || status;
   }
 
   getStatusSeverity(status: ClaimStatus): 'info' | 'warn' | 'success' | 'danger' {
-    switch (status) {
-      case ClaimStatus.REGISTRADO: return 'info';
-      case ClaimStatus.EN_PROCESO: return 'warn';
-      case ClaimStatus.RESUELTO:   return 'success';
-      case ClaimStatus.RECHAZADO:  return 'danger';
-      default: return 'info';
-    }
+    const severities: Record<ClaimStatus, 'info' | 'warn' | 'success' | 'danger'> = {
+      [ClaimStatus.REGISTRADO]: 'info',
+      [ClaimStatus.EN_PROCESO]: 'warn',
+      [ClaimStatus.RESUELTO]:   'success',
+      [ClaimStatus.RECHAZADO]:  'danger',
+    };
+    return severities[status] || 'info';
   }
 
   formatDate(iso: string): string {
+    if (!iso) return '-';
     return new Date(iso).toLocaleDateString('es-PE', {
-      year: 'numeric', month: '2-digit', day: '2-digit',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit'
     });
   }
 
   calcularDiasDesdeRegistro(iso: string): number {
-    return Math.ceil(
-      (Date.now() - new Date(iso).getTime()) / (1000 * 60 * 60 * 24)
-    );
+    const diff = Date.now() - new Date(iso).getTime();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
   }
 
-  // ── Privado ───────────────────────────────────────────────────────
   private _updateInList(updated: ClaimResponseDto): void {
-    this.claims.update(list =>
-      list.map(c => c.claimId === updated.claimId ? updated : c)
-    );
-    if (this.selected()?.claimId === updated.claimId) {
-      this.selected.set(updated);
-    }
+    this.claims.update(list => list.map(c => c.id === updated.id ? updated : c));
+    if (this.selected()?.id === updated.id) this.selected.set(updated);
+  }
+  getReclamoById(id: number): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/${id}`);
+  }
+
+  atenderReclamo(id: number, respuesta: string): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${id}/attend`, { respuesta });
+  }
+
+  resolverReclamo(id: number, respuesta: string): Observable<any> {
+    return this.http.patch<any>(`${this.baseUrl}/${id}/resolve`, { respuesta });
   }
 }

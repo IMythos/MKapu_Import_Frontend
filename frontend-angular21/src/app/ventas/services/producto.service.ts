@@ -4,7 +4,6 @@ import { Observable } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 
 import {
-  // OUT — responses del backend
   ProductoStockVentasResponse,
   ProductoStockVentas,
   ProductoAutocompleteVentasResponse,
@@ -59,9 +58,7 @@ export class ProductoService {
     idCategoria?: number,
   ): Observable<ProductoAutocompleteResponse> {
     let params = new HttpParams().set('search', query).set('id_sede', String(idSede));
-
     if (idCategoria) params = params.set('id_categoria', String(idCategoria));
-
     return this.http.get<ProductoAutocompleteResponse>(`${this.apiUrl}/products/autocomplete`, {
       params,
     });
@@ -111,6 +108,7 @@ export class ProductoService {
       sede: sedeNombre,
     };
   }
+
   buscarPorCodigo(codigo: string): Observable<any[]> {
     const params = new HttpParams().set('codigo', codigo);
     return this.http.get<any[]>(`${this.apiUrl}/inventory-movements/autocomplete`, { params });

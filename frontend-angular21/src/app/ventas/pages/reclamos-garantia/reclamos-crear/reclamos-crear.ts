@@ -1,8 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { firstValueFrom, Subscription } from 'rxjs';
 
 import { Card } from 'primeng/card';
 import { Button } from 'primeng/button';
@@ -15,8 +15,6 @@ import { Tag } from 'primeng/tag';
 import { Divider } from 'primeng/divider';
 import { Tooltip } from 'primeng/tooltip';
 import { InputNumber } from 'primeng/inputnumber';
-
-import { ReclamosService, Reclamo, EstadoReclamo } from '../../../../core/services/reclamo.service';
 import {
   VentasService,
   ComprobanteVenta,
@@ -26,6 +24,13 @@ import { EmpleadosService, Empleado } from '../../../../core/services/empleados.
 import { ProductosService } from '../../../../core/services/productos.service';
 import { ClientesService, Cliente } from '../../../../core/services/clientes.service';
 import { MessageService } from 'primeng/api';
+import {
+  ClaimService,
+  ClaimResponseDto,
+  RegisterClaimPayload,
+} from '../../../../core/services/claim.service';
+import { VentaService } from '../../../services/venta.service';
+import { ClienteService } from '../../../services/cliente.service';
 
 interface ComprobanteConProductos extends ComprobanteVenta {
   productosSeleccionados?: DetalleComprobante[];
@@ -52,80 +57,75 @@ interface ComprobanteConProductos extends ComprobanteVenta {
   templateUrl: './reclamos-crear.html',
   styleUrl: './reclamos-crear.css',
 })
-export class ReclamosCrear implements OnInit, OnDestroy {
-  tituloKicker = 'VENTAS - RECLAMOS Y GARANTÍAS';
-  subtituloKicker = 'REGISTRAR NUEVO RECLAMO';
-  iconoCabecera = 'pi pi-file-plus';
+export class ReclamosCrear implements OnInit {
+  private readonly router = inject(Router);
+  private readonly claimService = inject(ClaimService);
+  private readonly ventasService = inject(VentaService);
+  private readonly empleadosService = inject(EmpleadosService);
+  private readonly productosService = inject(ProductosService);
+  private readonly clientesService = inject(ClienteService);
+  private readonly messageService = inject(MessageService);
 
-  private subscriptions = new Subscription();
-  empleadoActual: Empleado | null = null;
+  readonly tituloKicker = signal('VENTAS - RECLAMOS Y GARANTÍAS');
+  readonly subtituloKicker = signal('REGISTRAR NUEVO RECLAMO');
+  readonly iconoCabecera = signal('pi pi-file-plus');
 
-  activeStep = 0;
-  steps = [
+  readonly activeStep = signal(0);
+  readonly steps = signal([
     'Buscar Cliente',
     'Seleccionar Comprobante',
     'Seleccionar Producto',
     'Datos del Reclamo',
     'Confirmación',
-  ];
+  ]);
 
-  tipoDocumentoOptions = [
+  readonly empleadoActual = signal<Empleado | null>(null);
+
+  readonly tipoDocumento = signal<'DNI' | 'RUC'>('DNI');
+  readonly tipoDocumentoOptions = signal([
     { label: 'DNI', value: 'DNI', icon: 'pi pi-id-card' },
     { label: 'RUC', value: 'RUC', icon: 'pi pi-briefcase' },
-  ];
-  tipoDocumento: 'DNI' | 'RUC' = 'DNI';
+  ]);
 
-  busquedaComprobante: any = null;
-  sugerenciasComprobantesObj: Cliente[] = [];
-  clienteEncontrado: Cliente | null = null;
+  readonly busquedaComprobante = signal<any>(null);
+  readonly sugerenciasComprobantesObj = signal<Cliente[]>([]);
+  readonly clienteEncontrado = signal<Cliente | null>(null);
 
-  comprobantesCliente: ComprobanteVenta[] = [];
-  comprobanteSeleccionado: ComprobanteConProductos | null = null;
-  garantiaVigente: boolean = false;
-  diasRestantes: number = 0;
+  readonly comprobantesCliente = signal<ComprobanteVenta[]>([]);
+  readonly comprobanteSeleccionado = signal<ComprobanteConProductos | null>(null);
+  readonly garantiaVigente = signal(false);
+  readonly diasRestantes = signal(0);
 
-  productoSeleccionado: DetalleComprobante | null = null;
-  unidadesAfectadas: number = 1;
-  identificacionUnidad: string = '';
+  readonly productoSeleccionado = signal<DetalleComprobante | null>(null);
+  readonly unidadesAfectadas = signal(1);
+  readonly identificacionUnidad = signal('');
 
-  motivosOptions = [
+  readonly motivosOptions = signal([
     { label: 'Producto defectuoso', value: 'Producto defectuoso' },
     { label: 'No funciona correctamente', value: 'No funciona correctamente' },
     { label: 'Producto dañado', value: 'Producto dañado' },
     { label: 'No cumple especificaciones', value: 'No cumple especificaciones' },
     { label: 'Piezas faltantes', value: 'Piezas faltantes' },
     { label: 'Otro motivo', value: 'Otro motivo' },
-  ];
-  motivoSeleccionado: string = '';
-  descripcionProblema: string = '';
+  ]);
+  readonly motivoSeleccionado = signal('');
+  readonly descripcionProblema = signal('');
 
-  guardando: boolean = false;
-  reclamoGenerado: Reclamo | null = null;
+  readonly guardando = signal(false);
+  readonly reclamoGenerado = signal<ClaimResponseDto | null>(null);
 
-  Math = Math;
+  readonly Math = Math;
 
-  constructor(
-    private router: Router,
-    private reclamosService: ReclamosService,
-    private ventasService: VentasService,
-    private empleadosService: EmpleadosService,
-    private productosService: ProductosService,
-    private clientesService: ClientesService,
-    private messageService: MessageService,
-  ) {}
-
+  constructor() {}
   ngOnInit(): void {
     this.cargarEmpleadoActual();
   }
 
-  ngOnDestroy(): void {
-    this.subscriptions.unsubscribe();
-  }
-
   cargarEmpleadoActual(): void {
-    this.empleadoActual = this.empleadosService.getEmpleadoActual();
+    const empleado = this.empleadosService.getEmpleadoActual();
+    this.empleadoActual.set(empleado);
 
-    if (!this.empleadoActual) {
+    if (!empleado) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Sin autenticación',
@@ -136,23 +136,24 @@ export class ReclamosCrear implements OnInit, OnDestroy {
   }
 
   onTipoDocumentoChange(): void {
-    this.busquedaComprobante = null;
-    this.clienteEncontrado = null;
-    this.comprobantesCliente = [];
-    this.comprobanteSeleccionado = null;
-    this.productoSeleccionado = null;
-    this.sugerenciasComprobantesObj = [];
+    this.busquedaComprobante.set(null);
+    this.clienteEncontrado.set(null);
+    this.comprobantesCliente.set([]);
+    this.comprobanteSeleccionado.set(null);
+    this.productoSeleccionado.set(null);
+    this.sugerenciasComprobantesObj.set([]);
+
     this.resetearUnidades();
 
     this.messageService.add({
       severity: 'info',
       summary: 'Tipo de documento cambiado',
-      detail: `Busque por ${this.tipoDocumento}`,
+      detail: `Busque por ${this.tipoDocumento()}`,
       life: 2000,
     });
   }
 
-  buscarSugerenciasComprobantes(event: any): void {
+  async buscarSugerenciasComprobantes(event: any): Promise<void> {
     let query = event.query.toLowerCase().trim();
 
     if (/^\d+$/.test(query)) {
@@ -160,47 +161,50 @@ export class ReclamosCrear implements OnInit, OnDestroy {
     }
 
     if (!query || query.length < 3) {
-      this.sugerenciasComprobantesObj = [];
+      this.sugerenciasComprobantesObj.set([]);
       return;
     }
 
-    const todosClientes = this.clientesService.getClientes();
-    const longitudRequerida = this.tipoDocumento === 'DNI' ? 8 : 11;
+    try {
+      const todosClientes = await firstValueFrom(this.clientesService.getClientes());
+      const docType = this.tipoDocumento();
 
-    this.sugerenciasComprobantesObj = todosClientes
-      .filter((cliente: Cliente) => {
-        const longitudDoc = cliente.num_doc?.length || 0;
-        const esTipoDocCorrecto =
-          (this.tipoDocumento === 'DNI' && longitudDoc === 8) ||
-          (this.tipoDocumento === 'RUC' && longitudDoc === 11);
+      const filtrados = todosClientes
+        .filter((cliente: Cliente) => {
+          const longitudDoc = cliente.num_doc?.length || 0;
+          const esTipoDocCorrecto =
+            (docType === 'DNI' && longitudDoc === 8) || (docType === 'RUC' && longitudDoc === 11);
 
-        if (!esTipoDocCorrecto) {
-          return false;
-        }
+          if (!esTipoDocCorrecto) return false;
 
-        const matchDoc = cliente.num_doc?.toLowerCase().includes(query);
-        const matchNombre =
-          this.tipoDocumento === 'DNI'
-            ? `${cliente.nombres} ${cliente.apellidos}`.toLowerCase().includes(query)
-            : cliente.razon_social?.toLowerCase().includes(query);
+          const matchDoc = cliente.num_doc?.toLowerCase().includes(query);
+          const matchNombre =
+            docType === 'DNI'
+              ? `${cliente.nombres} ${cliente.apellidos}`.toLowerCase().includes(query)
+              : cliente.razon_social?.toLowerCase().includes(query);
 
-        return matchDoc || matchNombre;
-      })
-      .slice(0, 10);
+          return matchDoc || matchNombre;
+        })
+        .slice(0, 10); // Limitamos a 10 sugerencias
+
+      this.sugerenciasComprobantesObj.set(filtrados);
+    } catch (error) {
+      console.error('Error al obtener sugerencias de clientes:', error);
+      this.sugerenciasComprobantesObj.set([]);
+    }
   }
 
   seleccionarComprobante(event: AutoCompleteSelectEvent): void {
     const cliente = event.value as Cliente;
 
-    if (!cliente) {
-      return;
-    }
+    if (!cliente) return;
 
     setTimeout(() => {
-      this.busquedaComprobante = null;
+      this.busquedaComprobante.set(null);
     }, 0);
 
-    this.clienteEncontrado = cliente;
+    this.clienteEncontrado.set(cliente);
+
     this.cargarComprobantesCliente();
 
     this.messageService.add({
@@ -211,27 +215,72 @@ export class ReclamosCrear implements OnInit, OnDestroy {
     });
   }
 
-  cargarComprobantesCliente(): void {
-    if (!this.clienteEncontrado) return;
+  async cargarComprobantesCliente(): Promise<void> {
+    const cliente = this.clienteEncontrado() as any;
+    const empleado = this.empleadoActual();
 
-    const todosComprobantes = this.ventasService.getComprobantes();
+    const idClienteReal = cliente?.customerId || cliente?.id_cliente || cliente?.id;
+    if (!cliente || !idClienteReal || !empleado) return;
 
-    this.comprobantesCliente = todosComprobantes
-      .filter(
-        (c: ComprobanteVenta) =>
-          c.cliente_doc === this.clienteEncontrado!.num_doc &&
-          c.estado &&
-          c.id_sede === this.empleadoActual!.id_sede,
-      )
-      .sort((a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime());
+    try {
+      const res = await firstValueFrom(
+        this.ventasService.getComprobantesPorCliente(idClienteReal)
+      );
+      
+      const crudos: any[] = res.data || res.items || res.receipts || (Array.isArray(res) ? res : []);
 
-    if (this.comprobantesCliente.length === 0) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Sin compras',
-        detail: 'Este cliente no tiene compras registradas',
-        life: 3000,
+      const comprobantesMapeados: ComprobanteVenta[] = crudos.map((c: any) => {
+        const numeroCompleto = c.numeroCompleto || '';
+        const partes = numeroCompleto.split('-');
+        const serieReal = partes[0] || c.serie || 'S/N';
+        const numeroReal = partes[1] ? parseInt(partes[1], 10) : (c.numero || 0);
+
+        const tipoComprobanteReal = (c.invoiceType === 'FACTURA' || c.tipo_comprobante === '01') ? '01' : '03';
+
+        // 🚀 NUEVO: Mapeamos los productos uno por uno al idioma del frontend
+        const productosCrudos = c.items || c.detalles || c.productos || [];
+        const detallesMapeados = productosCrudos.map((p: any) => ({
+          ...p, // Conservamos la data original
+          
+          // Traducimos al idioma de tu interfaz DetalleComprobante y HTML
+          id_producto: String(p.productId || p.id_producto || p.id || '0'),
+          cod_prod: p.productCode || p.codigo || p.cod_prod || 'S/N',
+          descripcion: p.productName || p.name || p.nombre || p.descripcion || 'Producto sin nombre',
+          cantidad: p.quantity || p.cantidad || 1,
+          pre_uni: p.unitPrice || p.precio || p.pre_uni || 0
+        }));
+
+        return {
+          ...c,
+          id: c.idComprobante || c.id,
+          id_comprobante: String(c.idComprobante || c.id_comprobante),
+          id_cliente: c.idCliente || c.id_cliente,
+          serie: serieReal,
+          numero: numeroReal,
+          tipo_comprobante: tipoComprobanteReal,
+          total: c.totalAmount || c.total || 0,
+          fec_emision: c.fechaEmision || c.fecha_emision || c.createdAt || c.fec_emision || new Date(),
+          estado: c.status === 'EMITIDO' || c.estado === true || c.status === true,
+          id_sede: String(c.sedeId || c.id_sede),
+          
+          // 👉 Asignamos los productos ya traducidos
+          detalles: detallesMapeados
+        } as ComprobanteVenta;
       });
+
+      const filtrados = comprobantesMapeados
+        .filter(c => {
+           return true; 
+        })
+        .sort((a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime());
+        
+      this.comprobantesCliente.set(filtrados);
+      this.comprobanteSeleccionado.set(null);
+      this.garantiaVigente.set(false);
+
+    } catch (error) {
+      console.error('Error al cargar comprobantes:', error);
+      this.comprobantesCliente.set([]);
     }
   }
 
@@ -240,90 +289,90 @@ export class ReclamosCrear implements OnInit, OnDestroy {
     const valor = input.value;
 
     const valorLimpio = valor.replace(/\D/g, '');
-    const longitudMaxima = this.tipoDocumento === 'DNI' ? 8 : 11;
+    const longitudMaxima = this.tipoDocumento() === 'DNI' ? 8 : 11;
     const valorFinal = valorLimpio.slice(0, longitudMaxima);
 
-    if (typeof this.busquedaComprobante === 'string') {
-      this.busquedaComprobante = valorFinal;
-    }
+    this.busquedaComprobante.set(valorFinal);
+
     input.value = valorFinal;
   }
 
-  manejarBuscarComprobante(): void {
+  async manejarBuscarComprobante(): Promise<void> {
+    const busqueda = this.busquedaComprobante();
+    const tipoDoc = this.tipoDocumento();
+
     const documentoIngresado =
-      typeof this.busquedaComprobante === 'string'
-        ? this.busquedaComprobante.trim()
-        : this.busquedaComprobante?.num_doc || '';
+      typeof busqueda === 'string' ? busqueda.trim() : busqueda?.num_doc || '';
 
-    if (!documentoIngresado) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Campo vacío',
-        detail: `Ingrese un ${this.tipoDocumento} para buscar`,
-        life: 3000,
-      });
-      return;
-    }
+    if (!documentoIngresado || documentoIngresado.length < 8) return;
 
-    const longitudRequerida = this.tipoDocumento === 'DNI' ? 8 : 11;
+    this.guardando.set(true);
 
-    if (documentoIngresado.length !== longitudRequerida) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Documento inválido',
-        detail: `El ${this.tipoDocumento} debe tener ${longitudRequerida} dígitos`,
-        life: 3000,
-      });
-      return;
-    }
+    try {
+      const cliente = await firstValueFrom(
+        this.clientesService.buscarPorDocumento(documentoIngresado),
+      );
 
-    const cliente = this.clientesService.buscarPorDocumento(documentoIngresado);
+      if (cliente) {
+        this.clienteEncontrado.set(cliente);
+        await this.cargarComprobantesCliente();
 
-    if (cliente) {
-      this.clienteEncontrado = cliente;
-      this.cargarComprobantesCliente();
-
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Cliente encontrado',
-        detail: this.getNombreCliente(cliente),
-        life: 3000,
-      });
-    } else {
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Cliente encontrado',
+          detail: this.getNombreCliente(cliente),
+          life: 3000,
+        });
+      } else {
+        this.messageService.add({
+          severity: 'error',
+          summary: 'No encontrado',
+          detail: 'No existe un cliente con ese documento en la base de datos',
+          life: 3000,
+        });
+      }
+    } catch (error) {
       this.messageService.add({
         severity: 'error',
-        summary: 'No encontrado',
-        detail: `No se encontró ningún cliente con ese ${this.tipoDocumento}`,
+        summary: 'Error de búsqueda',
+        detail: 'Hubo un problema al conectar con el servicio de clientes',
         life: 3000,
       });
+    } finally {
+      this.guardando.set(false);
     }
   }
 
-  getNombreCliente(cliente: Cliente): string {
-    return this.tipoDocumento === 'DNI'
-      ? `${cliente.nombres} ${cliente.apellidos}`
-      : cliente.razon_social || 'Sin nombre';
+  getNombreCliente(cliente: any): string {
+    const nombre = cliente.nombres || cliente.name || '';
+    const apellido = cliente.apellidos || cliente.apellido || '';
+    const razonSocial = cliente.razon_social || cliente.displayName || 'Sin nombre';
+
+    return this.tipoDocumento() === 'DNI'
+      ? `${nombre} ${apellido}`.trim()
+      : razonSocial;
   }
 
   get textoBotonBuscar(): string {
     return 'Buscar';
   }
 
-  get botonBuscarHabilitado(): boolean {
-    const documentoActual =
-      typeof this.busquedaComprobante === 'string' ? this.busquedaComprobante.trim() : '';
+  readonly botonBuscarHabilitado = computed(() => {
+    const doc = this.busquedaComprobante();
+    const documentoActual = typeof doc === 'string' ? doc.trim() : '';
+    const longitudRequerida = this.tipoDocumento() === 'DNI' ? 8 : 11;
 
-    const longitudRequerida = this.tipoDocumento === 'DNI' ? 8 : 11;
     return documentoActual.length === longitudRequerida;
-  }
+  });
 
   limpiarBusqueda(): void {
-    this.busquedaComprobante = null;
-    this.clienteEncontrado = null;
-    this.comprobantesCliente = [];
-    this.comprobanteSeleccionado = null;
-    this.productoSeleccionado = null;
-    this.sugerenciasComprobantesObj = [];
+    this.busquedaComprobante.set(null);
+    this.clienteEncontrado.set(null);
+    this.comprobantesCliente.set([]);
+    this.comprobanteSeleccionado.set(null);
+    this.productoSeleccionado.set(null);
+    this.sugerenciasComprobantesObj.set([]);
+
     this.resetearUnidades();
 
     this.messageService.add({
@@ -335,11 +384,13 @@ export class ReclamosCrear implements OnInit, OnDestroy {
   }
 
   seleccionarComprobanteDeCliente(comprobante: ComprobanteVenta): void {
-    if (this.comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante) {
-      this.comprobanteSeleccionado = null;
-      this.garantiaVigente = false;
-      this.diasRestantes = 0;
-      this.productoSeleccionado = null;
+    const actual = this.comprobanteSeleccionado();
+
+    if (actual?.id_comprobante === comprobante.id_comprobante) {
+      this.comprobanteSeleccionado.set(null);
+      this.garantiaVigente.set(false);
+      this.diasRestantes.set(0);
+      this.productoSeleccionado.set(null);
       this.resetearUnidades();
 
       this.messageService.add({
@@ -351,12 +402,14 @@ export class ReclamosCrear implements OnInit, OnDestroy {
       return;
     }
 
-    this.comprobanteSeleccionado = {
+    this.comprobanteSeleccionado.set({
       ...comprobante,
       productosSeleccionados: comprobante.detalles || [],
-    };
+    });
 
-    this.validarGarantiaComprobante(comprobante.fec_emision);
+    const fechaReal = comprobante.fec_emision || comprobante.fec_emision || new Date();
+    
+    this.validarGarantiaComprobante(fechaReal);
 
     this.messageService.add({
       severity: 'success',
@@ -367,10 +420,12 @@ export class ReclamosCrear implements OnInit, OnDestroy {
   }
 
   validarGarantiaComprobante(fechaEmision: Date): void {
-    this.garantiaVigente = this.reclamosService.validarGarantia(fechaEmision);
-    this.diasRestantes = this.reclamosService.calcularDiasRestantes(fechaEmision);
+    const vigente = this.claimService.validarGarantia(fechaEmision);
+    const dias = this.claimService.calcularDiasRestantes(fechaEmision);
+    this.garantiaVigente.set(vigente);
+    this.diasRestantes.set(dias);
 
-    if (!this.garantiaVigente) {
+    if (!vigente) {
       this.messageService.add({
         severity: 'warn',
         summary: 'Garantía vencida',
@@ -381,16 +436,21 @@ export class ReclamosCrear implements OnInit, OnDestroy {
   }
 
   calcularDiasRestantesComprobante(fechaEmision: Date): number {
-    return this.reclamosService.calcularDiasRestantes(fechaEmision);
+    return this.claimService.calcularDiasRestantes(fechaEmision);
   }
 
   validarGarantia(fechaEmision: Date): boolean {
-    return this.reclamosService.validarGarantia(fechaEmision);
+    return this.claimService.validarGarantia(fechaEmision);
   }
 
   seleccionarProducto(producto: any): void {
-    if (this.productoSeleccionado?.id_producto === producto.id_producto) {
-      this.productoSeleccionado = null;
+    const actual = this.productoSeleccionado();
+
+    const idActual = actual?.id_producto || actual?.cod_prod;
+    const idNuevo = producto.id_producto || producto.productId || producto.cod_prod || producto.id;
+
+    if (idActual && idActual === idNuevo) {
+      this.productoSeleccionado.set(null);
       this.resetearUnidades();
 
       this.messageService.add({
@@ -401,20 +461,27 @@ export class ReclamosCrear implements OnInit, OnDestroy {
       return;
     }
 
-    this.productoSeleccionado = producto;
+    const nombreProducto = producto.descripcion || producto.name || producto.nombre || 'Producto seleccionado';
+
+    this.productoSeleccionado.set({
+      ...producto,
+      id_producto: idNuevo,
+      descripcion: nombreProducto
+    });
+    
     this.resetearUnidades();
 
     this.messageService.add({
       severity: 'success',
       summary: 'Producto seleccionado',
-      detail: producto.descripcion,
+      detail: nombreProducto,
       life: 2000,
     });
   }
 
   resetearUnidades(): void {
-    this.unidadesAfectadas = 1;
-    this.identificacionUnidad = '';
+    this.unidadesAfectadas.set(1);
+    this.identificacionUnidad.set('');
   }
 
   getPrecioProducto(detalle: DetalleComprobante): number {
@@ -429,20 +496,29 @@ export class ReclamosCrear implements OnInit, OnDestroy {
 
   nextStep(): void {
     if (this.validarStepActual()) {
-      this.activeStep++;
+      this.activeStep.update((step) => step + 1);
     }
   }
 
   prevStep(): void {
-    if (this.activeStep > 0) {
-      this.activeStep--;
+    if (this.activeStep() > 0) {
+      this.activeStep.update((step) => step - 1);
     }
   }
 
   validarStepActual(): boolean {
-    switch (this.activeStep) {
+    const currentStep = this.activeStep();
+    const cliente = this.clienteEncontrado();
+    const comprobantes = this.comprobantesCliente();
+    const comprobante = this.comprobanteSeleccionado();
+    const producto = this.productoSeleccionado();
+    const unidades = this.unidadesAfectadas();
+    const motivo = this.motivoSeleccionado();
+    const descripcion = this.descripcionProblema();
+
+    switch (currentStep) {
       case 0:
-        if (!this.clienteEncontrado) {
+        if (!cliente) {
           this.messageService.add({
             severity: 'warn',
             summary: 'Cliente requerido',
@@ -451,7 +527,7 @@ export class ReclamosCrear implements OnInit, OnDestroy {
           });
           return false;
         }
-        if (this.comprobantesCliente.length === 0) {
+        if (comprobantes.length === 0) {
           this.messageService.add({
             severity: 'warn',
             summary: 'Sin compras',
@@ -462,8 +538,8 @@ export class ReclamosCrear implements OnInit, OnDestroy {
         }
         return true;
 
-      case 1:
-        if (!this.comprobanteSeleccionado) {
+      case 1: // Paso: Seleccionar Comprobante
+        if (!comprobante) {
           this.messageService.add({
             severity: 'warn',
             summary: 'Comprobante requerido',
@@ -474,8 +550,8 @@ export class ReclamosCrear implements OnInit, OnDestroy {
         }
         return true;
 
-      case 2:
-        if (!this.productoSeleccionado) {
+      case 2: // Paso: Seleccionar Producto
+        if (!producto) {
           this.messageService.add({
             severity: 'warn',
             summary: 'Producto requerido',
@@ -485,8 +561,9 @@ export class ReclamosCrear implements OnInit, OnDestroy {
           return false;
         }
 
-        if (this.productoSeleccionado.cantidad > 1) {
-          if (!this.unidadesAfectadas || this.unidadesAfectadas < 1) {
+        // Validación de unidades si el producto tiene cantidad > 1
+        if (producto.cantidad > 1) {
+          if (!unidades || unidades < 1) {
             this.messageService.add({
               severity: 'warn',
               summary: 'Unidades requeridas',
@@ -496,21 +573,20 @@ export class ReclamosCrear implements OnInit, OnDestroy {
             return false;
           }
 
-          if (this.unidadesAfectadas > this.productoSeleccionado.cantidad) {
+          if (unidades > producto.cantidad) {
             this.messageService.add({
               severity: 'warn',
               summary: 'Unidades inválidas',
-              detail: `No puede reclamar más de ${this.productoSeleccionado.cantidad} unidades`,
+              detail: `No puede reclamar más de ${producto.cantidad} unidades`,
               life: 3000,
             });
             return false;
           }
         }
-
         return true;
 
       case 3:
-        if (!this.motivoSeleccionado || !this.motivoSeleccionado.trim()) {
+        if (!motivo || !motivo.trim()) {
           this.messageService.add({
             severity: 'error',
             summary: 'Motivo requerido',
@@ -520,7 +596,7 @@ export class ReclamosCrear implements OnInit, OnDestroy {
           return false;
         }
 
-        if (!this.descripcionProblema || !this.descripcionProblema.trim()) {
+        if (!descripcion || !descripcion.trim()) {
           this.messageService.add({
             severity: 'error',
             summary: 'Descripción requerida',
@@ -530,7 +606,7 @@ export class ReclamosCrear implements OnInit, OnDestroy {
           return false;
         }
 
-        if (this.descripcionProblema.trim().length < 20) {
+        if (descripcion.trim().length < 20) {
           this.messageService.add({
             severity: 'error',
             summary: 'Descripción muy corta',
@@ -546,101 +622,115 @@ export class ReclamosCrear implements OnInit, OnDestroy {
     }
   }
 
-  guardarReclamo(): void {
-    this.guardando = true;
+  async guardarReclamo(): Promise<void> {
+    if (!this.validarStepActual()) return;
 
-    let descripcionCompleta = this.descripcionProblema;
+    const producto = this.productoSeleccionado();
+    const comprobante = this.comprobanteSeleccionado();
 
-    if (this.productoSeleccionado && this.productoSeleccionado.cantidad > 1) {
-      descripcionCompleta += `\n\n[UNIDADES AFECTADAS: ${this.unidadesAfectadas} de ${this.productoSeleccionado.cantidad}]`;
+    if (!producto || !comprobante) return;
 
-      if (this.identificacionUnidad.trim()) {
-        descripcionCompleta += `\n[IDENTIFICACIÓN: ${this.identificacionUnidad.trim()}]`;
-      }
+    this.guardando.set(true);
+
+    console.log('Objeto comprobante completo:', comprobante);
+
+    const idComprobanteReal = comprobante.id_comprobante || comprobante.id;
+
+    if (!idComprobanteReal) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error interno',
+        detail: 'El comprobante seleccionado no tiene un ID válido asignado.',
+        life: 4000,
+      });
+      this.guardando.set(false);
+      return;
     }
 
-    const nuevoReclamo: Omit<Reclamo, 'id_reclamo'> = {
-      id_sede: this.comprobanteSeleccionado!.id_sede,
-      serie_comprobante: this.comprobanteSeleccionado!.serie,
-      numero_comprobante: this.comprobanteSeleccionado!.numero,
-      fecha_compra: this.comprobanteSeleccionado!.fec_emision,
-      fecha_registro: new Date(),
-      cliente_dni: this.clienteEncontrado!.num_doc,
-      cliente_nombre: this.getNombreCliente(this.clienteEncontrado!),
-      cliente_telefono: this.clienteEncontrado!.telefono || '',
-      cliente_email: this.clienteEncontrado!.email || '',
-      cod_producto: this.productoSeleccionado!.id_producto,
-      descripcion_producto: this.productoSeleccionado!.descripcion,
-      motivo: this.motivoSeleccionado,
-      descripcion_problema: descripcionCompleta,
-      estado: EstadoReclamo.PENDIENTE,
-      observaciones: `Registrado por: ${this.empleadoActual?.nombres || 'Sistema'}`,
+    // 1. Preparamos el detalle técnico
+    let detalleInfo = `Unidades: ${this.unidadesAfectadas()}`;
+    if (this.identificacionUnidad().trim()) {
+      detalleInfo += ` | ID/Serie: ${this.identificacionUnidad().trim()}`;
+    }
+    const payload: RegisterClaimPayload = {
+      id_comprobante: Number(idComprobanteReal),
+      id_vendedor_ref: String(this.empleadoActual()?.id_empleado || 'SISTEMA'),
+      motivo: String(this.motivoSeleccionado()),
+      descripcion: String(this.descripcionProblema()),
+      detalles: [
+        {
+          tipo: String(producto.id_producto || producto.cod_prod),
+          descripcion: detalleInfo,
+        },
+      ],
     };
 
-    setTimeout(() => {
-      const sub = this.reclamosService.crearReclamo(nuevoReclamo).subscribe({
-        next: (reclamoCreado: Reclamo) => {
-          this.guardando = false;
-          this.reclamoGenerado = reclamoCreado;
+    console.log('Payload a enviar:', payload);
 
-          this.messageService.add({
-            severity: 'success',
-            summary: 'Reclamo registrado',
-            detail: `Reclamo #${reclamoCreado.id_reclamo} creado exitosamente`,
-            life: 3000,
-          });
-        },
-        error: (error: any) => {
-          console.error('Error al crear reclamo:', error);
-          this.guardando = false;
+    try {
+      const reclamoCreado = await this.claimService.register(payload);
 
-          this.messageService.add({
-            severity: 'error',
-            summary: 'Error',
-            detail: 'No se pudo registrar el reclamo',
-            life: 3000,
-          });
-        },
+      if (reclamoCreado) {
+        this.reclamoGenerado.set(reclamoCreado);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Reclamo registrado',
+          detail: `Reclamo creado exitosamente`,
+          life: 3000,
+        });
+      }
+    } catch (error: any) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error al registrar',
+        detail: error?.message || 'Revisa la consola para más detalles',
+        life: 4000,
       });
-
-      this.subscriptions.add(sub);
-    }, 1500);
-  }
-  
-  verDetalle(): void {
-    if (this.reclamoGenerado) {
-      const isAdmin = this.router.url.startsWith('/admin');
-      const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
-      this.router.navigate([`${base}/detalle`, this.reclamoGenerado.id_reclamo]);
+    } finally {
+      this.guardando.set(false);
     }
   }
 
+  // 2. verDetalle: Navega al detalle del reclamo recién creado
+  verDetalle(): void {
+    const reclamo = this.reclamoGenerado();
+    if (reclamo) {
+      const base = this.router.url.includes('/admin')
+        ? '/admin/reclamos-garantia'
+        : '/ventas/reclamos-garantia';
+      this.router.navigate([`${base}/detalles`, reclamo.id]);
+    }
+  }
+
+  // 3. nuevoReclamo: Reinicia el flujo
   nuevoReclamo(): void {
     this.limpiarFormulario();
   }
 
+  // 4. cancelar: Regresa al listado
   cancelar(): void {
-    const isAdmin = this.router.url.startsWith('/admin');
-    const base = isAdmin ? '/admin/reclamos-listado' : '/ventas/reclamos-listado';
-    this.router.navigate([base]);
+    const base = this.router.url.includes('/admin')
+      ? '/admin/reclamos-garantia'
+      : '/ventas/reclamos-garantia';
+    this.router.navigate([`${base}/listado`]);
   }
 
-
+  // 5. limpiarFormulario: Resetea todos los Signals a su estado inicial
   limpiarFormulario(): void {
-    this.busquedaComprobante = null;
-    this.clienteEncontrado = null;
-    this.comprobantesCliente = [];
-    this.comprobanteSeleccionado = null;
-    this.productoSeleccionado = null;
-    this.garantiaVigente = false;
-    this.diasRestantes = 0;
-    this.motivoSeleccionado = '';
-    this.descripcionProblema = '';
-    this.activeStep = 0;
-    this.reclamoGenerado = null;
-    this.sugerenciasComprobantesObj = [];
-    this.tipoDocumento = 'DNI';
-    this.resetearUnidades();
+    this.busquedaComprobante.set(null);
+    this.clienteEncontrado.set(null);
+    this.comprobantesCliente.set([]);
+    this.comprobanteSeleccionado.set(null);
+    this.productoSeleccionado.set(null);
+    this.garantiaVigente.set(false);
+    this.diasRestantes.set(0);
+    this.motivoSeleccionado.set('');
+    this.descripcionProblema.set('');
+    this.activeStep.set(0);
+    this.reclamoGenerado.set(null);
+    this.sugerenciasComprobantesObj.set([]);
+    this.tipoDocumento.set('DNI');
+    this.resetearUnidades(); // Este método ya usa signals internamente
 
     this.messageService.add({
       severity: 'info',
@@ -651,10 +741,16 @@ export class ReclamosCrear implements OnInit, OnDestroy {
   }
 
   formatearComprobante(serie: string, numero: number): string {
-    return `${serie}-${numero.toString().padStart(8, '0')}`;
+    return `${serie}-${String(numero).padStart(8, '0')}`;
   }
 
-  getTipoComprobanteLabel(tipo: string): string {
-    return tipo === '01' ? 'Factura' : tipo === '03' ? 'Boleta' : tipo;
+  getTipoComprobanteLabel(tipo: string | number): string {
+    const tipoStr = String(tipo).padStart(2, '0');
+    return tipoStr === '01' ? 'Factura' : tipoStr === '03' ? 'Boleta' : String(tipo);
+  }
+
+  getTipoComprobanteSeverity(tipo: string | number): 'success' | 'info' {
+    const tipoStr = String(tipo).padStart(2, '0');
+    return tipoStr === '01' ? 'success' : 'info';
   }
 }

@@ -3,11 +3,11 @@
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="ventas-title-icon">
-          <i [class]="iconoCabecera"></i>
+          <i [class]="iconoCabecera()"></i>
         </span>
         <div>
-          <p class="ventas-kicker mb-0">{{ tituloKicker }}</p>
-          <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
+          <p class="ventas-kicker mb-0">{{ tituloKicker() }}</p>
+          <h2 class="ventas-title mb-0">{{ subtituloKicker() }}</h2>
         </div>
       </div>
       <div class="flex gap-2">
@@ -24,7 +24,7 @@
           icon="pi pi-refresh"
           styleClass="ventas-pill"
           (onClick)="limpiarFormulario()"
-          [disabled]="reclamoGenerado !== null"
+          [disabled]="reclamoGenerado() !== null"
         />
       </div>
     </div>
@@ -33,17 +33,16 @@
 
 <div class="p-2">
   <p-card class="wizard-card">
-
     <div class="wizard-steps">
       <div
-        *ngFor="let step of steps; let i = index"
+        *ngFor="let step of steps(); let i = index"
         class="wizard-step"
-        [class.active]="activeStep === i"
-        [class.completed]="activeStep > i"
+        [class.active]="activeStep() === i"
+        [class.completed]="activeStep() > i"
       >
         <div class="step-number">
-          <i *ngIf="activeStep > i" class="pi pi-check"></i>
-          <span *ngIf="activeStep <= i">{{ i + 1 }}</span>
+          <i *ngIf="activeStep() > i" class="pi pi-check"></i>
+          <span *ngIf="activeStep() <= i">{{ i + 1 }}</span>
         </div>
         <div class="step-title">{{ step }}</div>
       </div>
@@ -52,15 +51,13 @@
     <p-divider styleClass="wizard-divider" />
 
     <div class="wizard-content">
-
-      <div *ngIf="activeStep === 0" class="step-content">
+      <div *ngIf="activeStep() === 0" class="step-content">
         <div class="step-header">
           <i class="pi pi-search step-icon"></i>
           <h3>Buscar Cliente</h3>
         </div>
 
         <div class="content-centrado">
-
           <div class="comprobante-section">
             <label class="section-label">
               <i class="pi pi-id-card"></i>
@@ -69,11 +66,11 @@
             <div class="flex justify-content-center">
               <p-selectButton
                 [(ngModel)]="tipoDocumento"
-                [options]="tipoDocumentoOptions"
+                [options]="tipoDocumentoOptions()"
                 optionLabel="label"
                 optionValue="value"
                 styleClass="select-comprobante-inline"
-                (onChange)="onTipoDocumentoChange()"
+                (onChange)="tipoDocumento.set($event.value); onTipoDocumentoChange()"
               >
                 <ng-template let-item>
                   <div class="option-inline">
@@ -94,26 +91,27 @@
             </label>
 
             <div class="buscar-cliente-section">
-              <label class="input-label">{{ tipoDocumento }}</label>
+              <label class="input-label">{{ tipoDocumento() }}</label>
 
               <div class="flex gap-2 align-items-center input-buscar-row">
                 <div class="input-buscar-wrapper">
                   <input
                     pInputText
-                    [(ngModel)]="busquedaComprobante"
+                    [ngModel]="busquedaComprobante()"
+                    (ngModelChange)="busquedaComprobante.set($event)"
                     (input)="validarSoloNumeros($event)"
                     [placeholder]="
                       'Ingrese ' +
-                      tipoDocumento +
+                      tipoDocumento() +
                       ' (' +
-                      (tipoDocumento === 'DNI' ? '8' : '11') +
+                      (tipoDocumento() === 'DNI' ? '8' : '11') +
                       ' dígitos)'
                     "
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    [maxlength]="tipoDocumento === 'DNI' ? 8 : 11"
+                    [maxlength]="tipoDocumento() === 'DNI' ? 8 : 11"
                     class="w-full input-buscar-documento"
-                    [disabled]="clienteEncontrado !== null"
+                    [disabled]="clienteEncontrado() !== null"
                   />
                 </div>
 
@@ -123,13 +121,13 @@
                     icon="pi pi-search"
                     severity="primary"
                     (onClick)="manejarBuscarComprobante()"
-                    [disabled]="!botonBuscarHabilitado || clienteEncontrado !== null"
+                    [disabled]="!botonBuscarHabilitado() || clienteEncontrado() !== null"
                     styleClass="w-full btn-buscar-cliente"
                     [pTooltip]="
-                      clienteEncontrado
+                      clienteEncontrado()
                         ? 'Cliente ya seleccionado'
-                        : !botonBuscarHabilitado
-                          ? 'Ingrese ' + (tipoDocumento === 'DNI' ? '8' : '11') + ' dígitos'
+                        : !botonBuscarHabilitado()
+                          ? 'Ingrese ' + (tipoDocumento() === 'DNI' ? '8' : '11') + ' dígitos'
                           : 'Buscar cliente'
                     "
                     tooltipPosition="bottom"
@@ -138,22 +136,22 @@
               </div>
 
               <div
-                *ngIf="busquedaComprobante && !clienteEncontrado"
+                *ngIf="busquedaComprobante() && !clienteEncontrado()"
                 class="mt-2 flex align-items-center gap-2"
               >
                 <i class="pi pi-info-circle text-500"></i>
                 <small class="text-600">
-                  {{ busquedaComprobante.length }} / {{ tipoDocumento === 'DNI' ? '8' : '11' }}
+                  {{ busquedaComprobante().length }} / {{ tipoDocumento() === 'DNI' ? '8' : '11' }}
                   dígitos
                   <span
-                    *ngIf="busquedaComprobante.length < (tipoDocumento === 'DNI' ? 8 : 11)"
+                    *ngIf="busquedaComprobante().length < (tipoDocumento() === 'DNI' ? 8 : 11)"
                     class="text-orange-500"
                   >
-                    ({{ (tipoDocumento === 'DNI' ? 8 : 11) - busquedaComprobante.length }}
+                    ({{ (tipoDocumento() === 'DNI' ? 8 : 11) - busquedaComprobante().length }}
                     restantes)
                   </span>
                   <span
-                    *ngIf="busquedaComprobante.length === (tipoDocumento === 'DNI' ? 8 : 11)"
+                    *ngIf="busquedaComprobante().length === (tipoDocumento() === 'DNI' ? 8 : 11)"
                     class="text-green-500"
                   >
                     ✓ Completo
@@ -162,13 +160,13 @@
               </div>
             </div>
 
-            <div *ngIf="clienteEncontrado" class="cliente-encontrado-card mt-3">
+            <div *ngIf="clienteEncontrado() as cliente" class="cliente-encontrado-card mt-3">
               <p-card class="cliente-card-success">
                 <div class="cliente-content">
                   <div class="cliente-cabecera-row">
                     <div class="cliente-row">
                       <h4 class="cliente-nombre">
-                        {{ getNombreCliente(clienteEncontrado) }}
+                        {{ getNombreCliente(cliente) }}
                       </h4>
                       <span class="badge-verified">
                         <i class="pi pi-check-circle"></i>
@@ -190,34 +188,35 @@
                   <div class="cliente-row mt-3">
                     <span class="info-badge dni">
                       <i class="pi pi-id-card"></i>
-                      {{ tipoDocumento }}: {{ clienteEncontrado.num_doc }}
+                      {{ tipoDocumento() }}: {{ cliente.num_doc }}
                     </span>
-                    <span class="info-badge telefono" *ngIf="clienteEncontrado.telefono">
+
+                    <span class="info-badge telefono" *ngIf="cliente.telefono">
                       <i class="pi pi-phone"></i>
-                      {{ clienteEncontrado.telefono }}
+                      {{ cliente.telefono }}
                     </span>
                   </div>
 
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado.email">
+                  <div class="cliente-row mt-3" *ngIf="cliente.email">
                     <span class="info-badge email">
                       <i class="pi pi-envelope"></i>
-                      {{ clienteEncontrado.email }}
+                      {{ cliente.email }}
                     </span>
                   </div>
 
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado.direccion">
+                  <div class="cliente-row mt-3" *ngIf="cliente.direccion">
                     <span class="info-badge direccion">
                       <i class="pi pi-map-marker"></i>
-                      {{ clienteEncontrado.direccion }}
+                      {{ cliente.direccion }}
                     </span>
                   </div>
-
                   <p-divider styleClass="mt-3 mb-3" />
+
                   <div class="compras-registradas-box">
                     <div class="flex align-items-center gap-2">
                       <i class="pi pi-shopping-cart compras-icon"></i>
                       <span class="compras-text">
-                        Compras registradas: {{ comprobantesCliente.length }}
+                        Compras registradas: {{ comprobantesCliente().length }}
                       </span>
                     </div>
                   </div>
@@ -227,15 +226,14 @@
           </div>
         </div>
       </div>
-
-      <div *ngIf="activeStep === 1" class="step-content">
+      <div *ngIf="activeStep() === 1" class="step-content">
         <div class="step-header">
           <i class="pi pi-file-check step-icon"></i>
           <h3>Seleccionar Comprobante</h3>
         </div>
 
         <div class="content-centrado">
-          <div *ngIf="comprobantesCliente.length > 0" class="mt-3">
+          <div *ngIf="comprobantesCliente().length > 0" class="mt-3">
             <p class="text-600 mb-3">
               <i class="pi pi-info-circle mr-2"></i>
               Seleccione el comprobante que desea reclamar (clic nuevamente para deseleccionar):
@@ -243,17 +241,17 @@
 
             <div class="grid gap-3">
               <div
-                *ngFor="let comprobante of comprobantesCliente"
+                *ngFor="let comprobante of comprobantesCliente()"
                 class="col-12"
                 (click)="seleccionarComprobanteDeCliente(comprobante)"
               >
                 <div
                   class="comprobante-item-card"
                   [class.comprobante-seleccionado]="
-                    comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante
+                    comprobanteSeleccionado()?.id_comprobante === comprobante.id_comprobante
                   "
                   [class.comprobante-no-seleccionado]="
-                    comprobanteSeleccionado?.id_comprobante !== comprobante.id_comprobante
+                    comprobanteSeleccionado()?.id_comprobante !== comprobante.id_comprobante
                   "
                 >
                   <div class="comprobante-header-row">
@@ -266,11 +264,11 @@
                     <div class="flex align-items-center gap-2">
                       <p-tag
                         [value]="getTipoComprobanteLabel(comprobante.tipo_comprobante)"
-                        [severity]="comprobante.tipo_comprobante === '01' ? 'success' : 'info'"
+                        [severity]="getTipoComprobanteSeverity(comprobante.tipo_comprobante)"
                       />
                       <span
                         *ngIf="
-                          comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante
+                          comprobanteSeleccionado()?.id_comprobante === comprobante.id_comprobante
                         "
                         class="badge-seleccionado"
                       >
@@ -331,14 +329,13 @@
             </div>
           </div>
 
-          <div *ngIf="comprobantesCliente.length === 0" class="text-center p-5">
+          <div *ngIf="comprobantesCliente().length === 0" class="text-center p-5">
             <i class="pi pi-inbox text-6xl text-400 mb-3"></i>
             <p class="text-600 text-lg">No hay comprobantes disponibles para este cliente</p>
           </div>
         </div>
       </div>
-
-      <div *ngIf="activeStep === 2" class="step-content">
+      <div *ngIf="activeStep() === 2" class="step-content">
         <div class="step-header">
           <i class="pi pi-box step-icon"></i>
           <h3>Seleccionar Producto</h3>
@@ -346,15 +343,15 @@
 
         <div class="productos-list">
           <div
-            *ngFor="let producto of comprobanteSeleccionado?.productosSeleccionados"
+            *ngFor="let producto of comprobanteSeleccionado()?.productosSeleccionados"
             class="producto-card"
-            [class.selected]="productoSeleccionado?.id_producto === producto.id_producto"
+            [class.selected]="productoSeleccionado()?.id_producto === producto.id_producto"
             (click)="seleccionarProducto(producto)"
           >
             <div class="producto-header">
               <span class="producto-codigo">{{ producto.id_producto }}</span>
               <i
-                *ngIf="productoSeleccionado?.id_producto === producto.id_producto"
+                *ngIf="productoSeleccionado()?.id_producto === producto.id_producto"
                 class="pi pi-check-circle check-icon"
               ></i>
             </div>
@@ -368,57 +365,61 @@
           </div>
         </div>
 
-        <div *ngIf="productoSeleccionado && productoSeleccionado.cantidad > 1" class="mt-4">
-          <p-card class="unidad-selector-card">
-            <div class="unidad-selector-content">
-              <div class="flex align-items-center gap-2 mb-4">
-                <i class="pi pi-info-circle unidad-info-icon"></i>
-                <span class="font-semibold unidad-info-text">
-                  Este producto tiene {{ productoSeleccionado.cantidad }} unidades. ¿Cuántas tienen
-                  el problema?
-                </span>
-              </div>
+        <div *ngIf="productoSeleccionado() as producto">
+          <div *ngIf="producto.cantidad > 1" class="mt-4">
+            <p-card class="unidad-selector-card">
+              <div class="unidad-selector-content">
+                <div class="flex align-items-center gap-2 mb-4">
+                  <i class="pi pi-info-circle unidad-info-icon"></i>
+                  <span class="font-semibold unidad-info-text">
+                    Este producto tiene {{ producto.cantidad }} unidades. ¿Cuántas tienen el
+                    problema?
+                  </span>
+                </div>
 
-              <div class="flex align-items-center gap-4 mb-4">
-                <label class="input-label mb-0">Unidades con defecto:</label>
-                <p-inputNumber
-                  [(ngModel)]="unidadesAfectadas"
-                  [min]="1"
-                  [max]="productoSeleccionado.cantidad"
-                  [showButtons]="true"
-                  buttonLayout="horizontal"
-                  inputId="horizontal"
-                  spinnerMode="horizontal"
-                  decrementButtonClass="p-button-secondary"
-                  incrementButtonClass="p-button-secondary"
-                  incrementButtonIcon="pi pi-plus"
-                  decrementButtonIcon="pi pi-minus"
-                  styleClass="unidad-input"
-                >
-                </p-inputNumber>
-                <span class="text-500">de {{ productoSeleccionado.cantidad }}</span>
-              </div>
+                <div class="flex align-items-center gap-4 mb-4">
+                  <label class="input-label mb-0">Unidades con defecto:</label>
 
-              <div class="mt-3">
-                <label class="input-label">Identificación adicional (opcional):</label>
-                <textarea
-                  pTextarea
-                  [(ngModel)]="identificacionUnidad"
-                  placeholder="Ej: 'La segunda unidad que recibí', 'El de número de serie XYZ123', etc."
-                  rows="2"
-                  class="w-full"
-                ></textarea>
-                <small class="text-500 mt-2 block">
-                  Ayuda a identificar cuál(es) de las {{ productoSeleccionado.cantidad }} unidades
-                  tiene(n) el problema
-                </small>
+                  <p-inputNumber
+                    [ngModel]="unidadesAfectadas()"
+                    (ngModelChange)="unidadesAfectadas.set($event)"
+                    [min]="1"
+                    [max]="producto.cantidad"
+                    [showButtons]="true"
+                    buttonLayout="horizontal"
+                    inputId="horizontal"
+                    spinnerMode="horizontal"
+                    decrementButtonClass="p-button-secondary"
+                    incrementButtonClass="p-button-secondary"
+                    incrementButtonIcon="pi pi-plus"
+                    decrementButtonIcon="pi pi-minus"
+                    styleClass="unidad-input"
+                  >
+                  </p-inputNumber>
+                  <span class="text-500">de {{ producto.cantidad }}</span>
+                </div>
+
+                <div class="mt-3">
+                  <label class="input-label">Identificación adicional (opcional):</label>
+                  <textarea
+                    pTextarea
+                    [ngModel]="identificacionUnidad()"
+                    (ngModelChange)="identificacionUnidad.set($event)"
+                    placeholder="Ej: 'La segunda unidad que recibí', 'El de número de serie XYZ123', etc."
+                    rows="2"
+                    class="w-full"
+                  ></textarea>
+                  <small class="text-500 mt-2 block">
+                    Ayuda a identificar cuál(es) de las {{ producto.cantidad }} unidades tiene(n) el
+                    problema
+                  </small>
+                </div>
               </div>
-            </div>
-          </p-card>
+            </p-card>
+          </div>
         </div>
       </div>
-
-      <div *ngIf="activeStep === 3" class="step-content">
+      <div *ngIf="activeStep() === 3" class="step-content">
         <div class="step-header">
           <i class="pi pi-file-edit step-icon"></i>
           <h3>Datos del Reclamo</h3>
@@ -428,8 +429,9 @@
           <div class="form-field mb-4">
             <label class="input-label">Motivo del Reclamo *</label>
             <p-select
-              [(ngModel)]="motivoSeleccionado"
-              [options]="motivosOptions"
+              [ngModel]="motivoSeleccionado()"
+              (ngModelChange)="motivoSeleccionado.set($event)"
+              [options]="motivosOptions()"
               placeholder="Seleccione un motivo"
               styleClass="w-full"
             />
@@ -439,20 +441,20 @@
             <label class="input-label">Descripción del Problema *</label>
             <textarea
               pTextarea
-              [(ngModel)]="descripcionProblema"
+              [ngModel]="descripcionProblema()"
+              (ngModelChange)="descripcionProblema.set($event)"
               placeholder="Describa detalladamente el problema (mínimo 20 caracteres)"
               rows="6"
               class="w-full"
             ></textarea>
             <small class="text-500 mt-1 block">
-              {{ descripcionProblema.length || 0 }} / 20 caracteres mínimos
+              {{ descripcionProblema().length || 0 }} / 20 caracteres mínimos
             </small>
           </div>
         </div>
       </div>
-
-      <div *ngIf="activeStep === 4" class="step-content">
-        <div *ngIf="!reclamoGenerado">
+      <div *ngIf="activeStep() === 4" class="step-content">
+        <div *ngIf="!reclamoGenerado()">
           <div class="step-header">
             <i class="pi pi-check-circle step-icon"></i>
             <h3>Confirmar Reclamo</h3>
@@ -471,7 +473,7 @@
                     <i class="pi pi-user"></i>
                     Cliente:
                   </span>
-                  <strong>{{ comprobanteSeleccionado?.cliente_nombre }}</strong>
+                  <strong>{{ getNombreCliente(clienteEncontrado()) }}</strong>
                 </div>
 
                 <div class="resumen-item">
@@ -482,8 +484,8 @@
                   <strong>
                     {{
                       formatearComprobante(
-                        comprobanteSeleccionado!.serie,
-                        comprobanteSeleccionado!.numero
+                        comprobanteSeleccionado()!.serie,
+                        comprobanteSeleccionado()!.numero
                       )
                     }}
                   </strong>
@@ -494,7 +496,7 @@
                     <i class="pi pi-box"></i>
                     Producto:
                   </span>
-                  <strong>{{ productoSeleccionado?.descripcion }}</strong>
+                  <strong>{{ productoSeleccionado()?.descripcion }}</strong>
                 </div>
 
                 <div class="resumen-item">
@@ -502,7 +504,7 @@
                     <i class="pi pi-exclamation-triangle"></i>
                     Motivo:
                   </span>
-                  <p-tag [value]="motivoSeleccionado" severity="warn" />
+                  <p-tag [value]="motivoSeleccionado()" severity="warn" />
                 </div>
 
                 <div class="resumen-item full-width">
@@ -510,7 +512,7 @@
                     <i class="pi pi-comment"></i>
                     Descripción:
                   </span>
-                  <p class="descripcion-texto">{{ descripcionProblema }}</p>
+                  <p class="descripcion-texto">{{ descripcionProblema() }}</p>
                 </div>
               </div>
 
@@ -518,7 +520,7 @@
                 <p-button
                   label="Registrar Reclamo"
                   icon="pi pi-check"
-                  [loading]="guardando"
+                  [loading]="guardando()"
                   (onClick)="guardarReclamo()"
                   styleClass="w-full btn-generar-venta"
                 />
@@ -527,7 +529,7 @@
           </div>
         </div>
 
-        <div *ngIf="reclamoGenerado" class="venta-exitosa">
+        <div *ngIf="reclamoGenerado()" class="venta-exitosa">
           <div class="success-animation">
             <i class="pi pi-check-circle"></i>
           </div>
@@ -538,7 +540,7 @@
               <div class="comprobante-header">
                 <div class="comprobante-numero">
                   <span class="numero-label">RECLAMO N°:</span>
-                  <h3 class="numero-valor">{{ reclamoGenerado.id_reclamo }}</h3>
+                  <h3 class="numero-valor">{{ reclamoGenerado()?.id }}</h3>
                 </div>
                 <p-tag value="PENDIENTE" severity="warn" />
               </div>
@@ -551,28 +553,28 @@
                     <i class="pi pi-user"></i>
                     Cliente:
                   </span>
-                  <strong>{{ reclamoGenerado.cliente_nombre }}</strong>
+                  <strong>{{ reclamoGenerado()?.customerName }}</strong>
                 </div>
                 <div class="info-item">
                   <span class="label">
                     <i class="pi pi-box"></i>
                     Producto:
                   </span>
-                  <strong>{{ reclamoGenerado.descripcion_producto }}</strong>
+                  <strong>{{ reclamoGenerado()?.productDescription }}</strong>
                 </div>
                 <div class="info-item">
                   <span class="label">
                     <i class="pi pi-calendar"></i>
                     Fecha de Registro:
                   </span>
-                  <strong>{{ reclamoGenerado.fecha_registro | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  <strong>{{ reclamoGenerado()?.registerDate | date: 'dd/MM/yyyy HH:mm' }}</strong>
                 </div>
                 <div class="info-item">
                   <span class="label">
                     <i class="pi pi-exclamation-triangle"></i>
                     Motivo:
                   </span>
-                  <strong>{{ reclamoGenerado.motivo }}</strong>
+                  <strong>{{ reclamoGenerado()?.reason }}</strong>
                 </div>
               </div>
             </p-card>
@@ -603,22 +605,21 @@
         </div>
       </div>
     </div>
-
     <p-divider styleClass="wizard-divider" />
 
-    <div *ngIf="activeStep < 4 || !reclamoGenerado" class="step-actions">
+    <div *ngIf="activeStep() < 4 || !reclamoGenerado()" class="step-actions">
       <p-button
-        *ngIf="activeStep > 0"
+        *ngIf="activeStep() > 0"
         label="Anterior"
         icon="pi pi-arrow-left"
         [outlined]="true"
         severity="secondary"
         (onClick)="prevStep()"
       />
-      <span *ngIf="activeStep === 0"></span>
+      <span *ngIf="activeStep() === 0"></span>
 
       <p-button
-        *ngIf="activeStep < 4"
+        *ngIf="activeStep() < 4"
         label="Siguiente"
         icon="pi pi-arrow-right"
         iconPos="right"

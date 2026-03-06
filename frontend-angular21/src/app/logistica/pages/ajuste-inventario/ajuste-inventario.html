@@ -1,47 +1,47 @@
-
-
 <div class="p-2">
-    <p-card class="productos-header-card mb-4 productos-header-bordered">
-      <div class="flex align-items-center justify-content-between flex-wrap gap-2">
-        <div class="flex align-items-center gap-3">
-          <span class="productos-title-icon">
-            <i class="pi pi-sliders-h"></i>
-          </span>
-          <div>
-            <p class="productos-kicker mb-0">ALMACÉN · STOCK</p>
-            <h2 class="productos-title mb-0">AJUSTE DE INVENTARIO</h2>
-          </div>
+  <p-card class="productos-header-card mb-4 productos-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="productos-title-icon">
+          <i class="pi pi-sliders-h"></i>
+        </span>
+        <div>
+          <p class="productos-kicker mb-0">ALMACÉN · STOCK</p>
+          <h2 class="productos-title mb-0">AJUSTE DE INVENTARIO</h2>
         </div>
       </div>
-    </p-card>
-
+    </div>
+  </p-card>
 
   <div class="card mb-4 p-4 shadow-2 border-round">
     <form [formGroup]="ajusteForm" (ngSubmit)="agregarATabla()">
       <div class="grid formgrid p-fluid">
+        
         <div class="col-12 md:col-5 field">
-          <label>Buscar Producto (Código)</label>
+          <label class="font-medium">Buscar Producto (Código o Nombre)</label>
           <p-autoComplete
             formControlName="productoInput"
-            [suggestions]="productosSugeridos"
+            [suggestions]="productosSugeridos()"
             (completeMethod)="buscarProductoPorCodigo($event)"
-            optionLabel="codigo"
-            dataKey="id_producto"
-            [dropdown]="true"
-            placeholder="Ej: PROD-..."
+            optionLabel="displayName"
+            [dropdown]="false" 
+            placeholder="Ej: Escriba PROD- o el nombre..."
+            emptyMessage="No se encontraron productos"
             styleClass="w-full"
             [inputStyle]="{ width: '100%' }"
+            [delay]="300"
           >
             <ng-template let-producto pTemplate="item">
-              <div>
-                <strong>{{ producto.codigo }}</strong> - {{ producto.descripcion }}
+              <div class="flex flex-column py-1">
+                <span class="font-bold text-primary">{{ producto.codigo }}</span>
+                <span class="text-sm text-500">{{ producto.descripcion || producto.nombre || 'Sin descripción' }}</span>
               </div>
             </ng-template>
           </p-autoComplete>
         </div>
 
         <div class="col-12 md:col-3 field flex flex-column">
-          <label>Tipo</label>
+          <label class="font-medium">Tipo</label>
           <p-selectButton
             [options]="tiposAjuste"
             formControlName="tipo"
@@ -51,7 +51,7 @@
         </div>
 
         <div class="col-12 md:col-2 field">
-          <label>Cantidad</label>
+          <label class="font-medium">Cantidad</label>
           <p-inputNumber
             formControlName="cantidad"
             [min]="1"
@@ -61,7 +61,7 @@
         </div>
 
         <div class="col-12 md:col-12 field mt-2">
-          <label>Motivo del Ajuste</label>
+          <label class="font-medium">Motivo del Ajuste</label>
           <input
             pInputText
             formControlName="reason"
@@ -83,10 +83,10 @@
     </form>
   </div>
 
-  <div class="card p-4 shadow-2 border-round" *ngIf="productosTabla.length > 0">
-    <h3 class="mt-0">Resumen de Ajustes a Aplicar</h3>
+  <div class="card p-4 shadow-2 border-round" *ngIf="productosTabla().length > 0">
+    <h3 class="mt-0 text-xl font-bold border-bottom-1 surface-border pb-2">Resumen de Ajustes a Aplicar</h3>
 
-    <p-table [value]="productosTabla" responsiveLayout="scroll" styleClass="p-datatable-sm">
+    <p-table [value]="productosTabla()" responsiveLayout="scroll" styleClass="p-datatable-sm p-datatable-striped">
       <ng-template pTemplate="header">
         <tr>
           <th>Código</th>
@@ -100,12 +100,12 @@
       <ng-template pTemplate="body" let-item let-i="rowIndex">
         <tr>
           <td>
-            <strong>{{ item.codigo }}</strong>
+            <strong class="text-primary">{{ item.codigo }}</strong>
           </td>
-          <td>{{ item.nombre }}</td>
+          <td class="font-medium">{{ item.nombre }}</td>
           <td>
             <span
-              class="px-2 py-1 border-round text-sm"
+              class="px-2 py-1 border-round font-bold text-xs uppercase"
               [ngClass]="
                 item.tipo === 'POS' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
               "
@@ -113,7 +113,10 @@
               {{ item.tipo === 'POS' ? 'Ingreso (+)' : 'Salida (-)' }}
             </span>
           </td>
-          <td class="text-right">{{ item.cantidad }}</td>
+          <td class="text-right font-bold text-lg" 
+              [ngClass]="item.tipo === 'POS' ? 'text-green-600' : 'text-red-600'">
+            {{ item.cantidad }}
+          </td>
           <td>{{ item.reason }}</td>
           <td class="text-center">
             <p-button
@@ -128,7 +131,7 @@
       </ng-template>
     </p-table>
 
-    <div class="flex justify-content-end mt-4 gap-2">
+    <div class="flex justify-content-end mt-4 gap-3">
       <p-button
         label="Limpiar Tabla"
         icon="pi pi-times"
@@ -141,8 +144,17 @@
         icon="pi pi-save"
         severity="success"
         (onClick)="guardarAjustes()"
-        [loading]="guardando"
+        [loading]="guardando()"
       ></p-button>
     </div>
   </div>
+
+  <p-confirmDialog [style]="{ width: '450px' }">
+    <ng-template pTemplate="message" let-message>
+      <div class="flex flex-column align-items-center w-full gap-3 border-bottom-1 surface-border pb-3">
+        <i [class]="message.icon" class="text-5xl text-blue-500 mb-2"></i>
+        <p class="text-center text-lg text-slate-700 m-0 line-height-3" [innerHTML]="message.message"></p>
+      </div>
+    </ng-template>
+  </p-confirmDialog>
 </div>
