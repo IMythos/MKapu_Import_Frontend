@@ -53,6 +53,7 @@
 
     <div class="wizard-content">
 
+      <!-- ══ PASO 0: BUSCAR CLIENTE ══════════════════════════════════ -->
       <div *ngIf="activeStep === 0" class="step-content">
         <div class="step-header">
           <i class="pi pi-search step-icon"></i>
@@ -100,36 +101,33 @@
                 <div class="input-buscar-wrapper">
                   <input
                     pInputText
-                    [(ngModel)]="busquedaComprobante"
-                    (input)="validarSoloNumeros($event)"
-                    [placeholder]="
-                      'Ingrese ' +
-                      tipoDocumento +
-                      ' (' +
-                      (tipoDocumento === 'DNI' ? '8' : '11') +
-                      ' dígitos)'
-                    "
+                    [ngModel]="clienteAutoComplete()"
+                    (ngModelChange)="clienteAutoComplete.set($event)"
+                    (input)="validarSoloNumeros($event); onInputCambioDocumento()"
+                    (keyup.enter)="manejarBuscarComprobante()"
+                    [placeholder]="'Ingrese ' + tipoDocumento + ' (' + longitudDocumento() + ' dígitos)'"
                     inputmode="numeric"
                     pattern="[0-9]*"
-                    [maxlength]="tipoDocumento === 'DNI' ? 8 : 11"
+                    [maxlength]="longitudDocumento()"
                     class="w-full input-buscar-documento"
-                    [disabled]="clienteEncontrado !== null"
+                    [disabled]="clienteEncontrado() !== null"
                   />
                 </div>
 
                 <div class="boton-buscar-wrapper">
                   <p-button
-                    [label]="textoBotonBuscar"
-                    icon="pi pi-search"
+                    [label]="textoBotonBuscar()"
+                    [icon]="iconoBotonBuscar()"
                     severity="primary"
                     (onClick)="manejarBuscarComprobante()"
-                    [disabled]="!botonBuscarHabilitado || clienteEncontrado !== null"
+                    [disabled]="!botonClienteHabilitado() || clienteEncontrado() !== null"
+                    [loading]="loading()"
                     styleClass="w-full btn-buscar-cliente"
                     [pTooltip]="
-                      clienteEncontrado
+                      clienteEncontrado()
                         ? 'Cliente ya seleccionado'
-                        : !botonBuscarHabilitado
-                          ? 'Ingrese ' + (tipoDocumento === 'DNI' ? '8' : '11') + ' dígitos'
+                        : !botonClienteHabilitado()
+                          ? 'Ingrese ' + longitudDocumento() + ' dígitos'
                           : 'Buscar cliente'
                     "
                     tooltipPosition="bottom"
@@ -137,23 +135,22 @@
                 </div>
               </div>
 
+              <!-- Contador de dígitos -->
               <div
-                *ngIf="busquedaComprobante && !clienteEncontrado"
+                *ngIf="clienteAutoComplete() && !clienteEncontrado()"
                 class="mt-2 flex align-items-center gap-2"
               >
                 <i class="pi pi-info-circle text-500"></i>
                 <small class="text-600">
-                  {{ busquedaComprobante.length }} / {{ tipoDocumento === 'DNI' ? '8' : '11' }}
-                  dígitos
+                  {{ clienteAutoComplete().length }} / {{ longitudDocumento() }} dígitos
                   <span
-                    *ngIf="busquedaComprobante.length < (tipoDocumento === 'DNI' ? 8 : 11)"
+                    *ngIf="clienteAutoComplete().length < longitudDocumento()"
                     class="text-orange-500"
                   >
-                    ({{ (tipoDocumento === 'DNI' ? 8 : 11) - busquedaComprobante.length }}
-                    restantes)
+                    ({{ longitudDocumento() - clienteAutoComplete().length }} restantes)
                   </span>
                   <span
-                    *ngIf="busquedaComprobante.length === (tipoDocumento === 'DNI' ? 8 : 11)"
+                    *ngIf="clienteAutoComplete().length === longitudDocumento()"
                     class="text-green-500"
                   >
                     ✓ Completo
@@ -162,13 +159,14 @@
               </div>
             </div>
 
-            <div *ngIf="clienteEncontrado" class="cliente-encontrado-card mt-3">
+            <!-- Cliente encontrado -->
+            <div *ngIf="clienteEncontrado()" class="cliente-encontrado-card mt-3">
               <p-card class="cliente-card-success">
                 <div class="cliente-content">
                   <div class="cliente-cabecera-row">
                     <div class="cliente-row">
                       <h4 class="cliente-nombre">
-                        {{ getNombreCliente(clienteEncontrado) }}
+                        {{ getNombreCliente(clienteEncontrado()!) }}
                       </h4>
                       <span class="badge-verified">
                         <i class="pi pi-check-circle"></i>
@@ -179,7 +177,7 @@
                         [text]="true"
                         severity="secondary"
                         size="small"
-                        (onClick)="limpiarBusqueda()"
+                        (onClick)="limpiarCliente()"
                         pTooltip="Cambiar cliente"
                         tooltipPosition="left"
                         styleClass="btn-close-cliente"
@@ -190,25 +188,25 @@
                   <div class="cliente-row mt-3">
                     <span class="info-badge dni">
                       <i class="pi pi-id-card"></i>
-                      {{ tipoDocumento }}: {{ clienteEncontrado.num_doc }}
+                      {{ tipoDocumento }}: {{ clienteEncontrado()!.documentValue }}
                     </span>
-                    <span class="info-badge telefono" *ngIf="clienteEncontrado.telefono">
+                    <span class="info-badge telefono" *ngIf="clienteEncontrado()!.phone">
                       <i class="pi pi-phone"></i>
-                      {{ clienteEncontrado.telefono }}
+                      {{ clienteEncontrado()!.phone }}
                     </span>
                   </div>
 
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado.email">
+                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.email">
                     <span class="info-badge email">
                       <i class="pi pi-envelope"></i>
-                      {{ clienteEncontrado.email }}
+                      {{ clienteEncontrado()!.email }}
                     </span>
                   </div>
 
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado.direccion">
+                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.address">
                     <span class="info-badge direccion">
                       <i class="pi pi-map-marker"></i>
-                      {{ clienteEncontrado.direccion }}
+                      {{ clienteEncontrado()!.address }}
                     </span>
                   </div>
 
@@ -224,10 +222,23 @@
                 </div>
               </p-card>
             </div>
+
+            <!-- Cliente no encontrado -->
+            <div
+              *ngIf="busquedaRealizada() && !clienteEncontrado() && !loading()"
+              class="mt-3 text-center p-4"
+            >
+              <i class="pi pi-exclamation-circle text-4xl text-orange-400 mb-3"></i>
+              <p class="text-600">
+                No se encontró ningún cliente con ese {{ tipoDocumento }}.
+              </p>
+            </div>
+
           </div>
         </div>
       </div>
 
+      <!-- ══ PASO 1: SELECCIONAR COMPROBANTE ══════════════════════════ -->
       <div *ngIf="activeStep === 1" class="step-content">
         <div class="step-header">
           <i class="pi pi-file-check step-icon"></i>
@@ -249,12 +260,8 @@
               >
                 <div
                   class="comprobante-item-card"
-                  [class.comprobante-seleccionado]="
-                    comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante
-                  "
-                  [class.comprobante-no-seleccionado]="
-                    comprobanteSeleccionado?.id_comprobante !== comprobante.id_comprobante
-                  "
+                  [class.comprobante-seleccionado]="comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante"
+                  [class.comprobante-no-seleccionado]="comprobanteSeleccionado?.id_comprobante !== comprobante.id_comprobante"
                 >
                   <div class="comprobante-header-row">
                     <div class="flex align-items-center gap-3">
@@ -262,16 +269,13 @@
                         {{ formatearComprobante(comprobante.serie, comprobante.numero) }}
                       </span>
                     </div>
-
                     <div class="flex align-items-center gap-2">
                       <p-tag
                         [value]="getTipoComprobanteLabel(comprobante.tipo_comprobante)"
                         [severity]="comprobante.tipo_comprobante === '01' ? 'success' : 'info'"
                       />
                       <span
-                        *ngIf="
-                          comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante
-                        "
+                        *ngIf="comprobanteSeleccionado?.id_comprobante === comprobante.id_comprobante"
                         class="badge-seleccionado"
                       >
                         <i class="pi pi-check-circle"></i>
@@ -301,27 +305,14 @@
                       [class.vigente]="validarGarantia(comprobante.fec_emision)"
                       [class.vencida]="!validarGarantia(comprobante.fec_emision)"
                     >
-                      <i
-                        [class]="
-                          validarGarantia(comprobante.fec_emision)
-                            ? 'pi pi-check-circle'
-                            : 'pi pi-times-circle'
-                        "
-                      ></i>
+                      <i [class]="validarGarantia(comprobante.fec_emision) ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
                       <div class="garantia-info">
-                        <strong>{{
-                          validarGarantia(comprobante.fec_emision)
-                            ? 'Garantía Vigente'
-                            : 'Garantía Vencida'
-                        }}</strong>
+                        <strong>{{ validarGarantia(comprobante.fec_emision) ? 'Garantía Vigente' : 'Garantía Vencida' }}</strong>
                         <small *ngIf="validarGarantia(comprobante.fec_emision)">
-                          {{ calcularDiasRestantesComprobante(comprobante.fec_emision) }} días
-                          restantes
+                          {{ calcularDiasRestantesComprobante(comprobante.fec_emision) }} días restantes
                         </small>
                         <small *ngIf="!validarGarantia(comprobante.fec_emision)">
-                          Venció hace
-                          {{ Math.abs(calcularDiasRestantesComprobante(comprobante.fec_emision)) }}
-                          días
+                          Venció hace {{ Math.abs(calcularDiasRestantesComprobante(comprobante.fec_emision)) }} días
                         </small>
                       </div>
                     </div>
@@ -338,6 +329,7 @@
         </div>
       </div>
 
+      <!-- ══ PASO 2: SELECCIONAR PRODUCTO ════════════════════════════ -->
       <div *ngIf="activeStep === 2" class="step-content">
         <div class="step-header">
           <i class="pi pi-box step-icon"></i>
@@ -353,14 +345,9 @@
           >
             <div class="producto-header">
               <span class="producto-codigo">{{ producto.id_producto }}</span>
-              <i
-                *ngIf="productoSeleccionado?.id_producto === producto.id_producto"
-                class="pi pi-check-circle check-icon"
-              ></i>
+              <i *ngIf="productoSeleccionado?.id_producto === producto.id_producto" class="pi pi-check-circle check-icon"></i>
             </div>
-
             <h4 class="producto-nombre">{{ producto.descripcion }}</h4>
-
             <div class="producto-footer">
               <span class="cantidad">Cant: {{ producto.cantidad }}</span>
               <span class="precio">S/. {{ getPrecioProducto(producto) | number: '1.2-2' }}</span>
@@ -374,11 +361,9 @@
               <div class="flex align-items-center gap-2 mb-4">
                 <i class="pi pi-info-circle unidad-info-icon"></i>
                 <span class="font-semibold unidad-info-text">
-                  Este producto tiene {{ productoSeleccionado.cantidad }} unidades. ¿Cuántas tienen
-                  el problema?
+                  Este producto tiene {{ productoSeleccionado.cantidad }} unidades. ¿Cuántas tienen el problema?
                 </span>
               </div>
-
               <div class="flex align-items-center gap-4 mb-4">
                 <label class="input-label mb-0">Unidades con defecto:</label>
                 <p-inputNumber
@@ -387,18 +372,15 @@
                   [max]="productoSeleccionado.cantidad"
                   [showButtons]="true"
                   buttonLayout="horizontal"
-                  inputId="horizontal"
                   spinnerMode="horizontal"
                   decrementButtonClass="p-button-secondary"
                   incrementButtonClass="p-button-secondary"
                   incrementButtonIcon="pi pi-plus"
                   decrementButtonIcon="pi pi-minus"
                   styleClass="unidad-input"
-                >
-                </p-inputNumber>
+                />
                 <span class="text-500">de {{ productoSeleccionado.cantidad }}</span>
               </div>
-
               <div class="mt-3">
                 <label class="input-label">Identificación adicional (opcional):</label>
                 <textarea
@@ -409,8 +391,7 @@
                   class="w-full"
                 ></textarea>
                 <small class="text-500 mt-2 block">
-                  Ayuda a identificar cuál(es) de las {{ productoSeleccionado.cantidad }} unidades
-                  tiene(n) el problema
+                  Ayuda a identificar cuál(es) de las {{ productoSeleccionado.cantidad }} unidades tiene(n) el problema
                 </small>
               </div>
             </div>
@@ -418,12 +399,12 @@
         </div>
       </div>
 
+      <!-- ══ PASO 3: DATOS DEL RECLAMO ════════════════════════════════ -->
       <div *ngIf="activeStep === 3" class="step-content">
         <div class="step-header">
           <i class="pi pi-file-edit step-icon"></i>
           <h3>Datos del Reclamo</h3>
         </div>
-
         <div class="content-centrado">
           <div class="form-field mb-4">
             <label class="input-label">Motivo del Reclamo *</label>
@@ -434,7 +415,6 @@
               styleClass="w-full"
             />
           </div>
-
           <div class="form-field">
             <label class="input-label">Descripción del Problema *</label>
             <textarea
@@ -451,69 +431,43 @@
         </div>
       </div>
 
+      <!-- ══ PASO 4: CONFIRMACIÓN ══════════════════════════════════════ -->
       <div *ngIf="activeStep === 4" class="step-content">
+
+        <!-- Formulario de confirmación -->
         <div *ngIf="!reclamoGenerado">
           <div class="step-header">
             <i class="pi pi-check-circle step-icon"></i>
             <h3>Confirmar Reclamo</h3>
           </div>
-
           <div class="content-centrado">
             <p-card class="resumen-reclamo">
               <h4 class="resumen-titulo mb-4">
                 <i class="pi pi-file-check"></i>
                 Resumen del Reclamo
               </h4>
-
               <div class="resumen-grid">
                 <div class="resumen-item">
-                  <span class="label">
-                    <i class="pi pi-user"></i>
-                    Cliente:
-                  </span>
-                  <strong>{{ comprobanteSeleccionado?.cliente_nombre }}</strong>
+                  <span class="label"><i class="pi pi-user"></i> Cliente:</span>
+                  <strong>{{ getNombreCliente(clienteEncontrado()!) }}</strong>
                 </div>
-
                 <div class="resumen-item">
-                  <span class="label">
-                    <i class="pi pi-file"></i>
-                    Comprobante:
-                  </span>
-                  <strong>
-                    {{
-                      formatearComprobante(
-                        comprobanteSeleccionado!.serie,
-                        comprobanteSeleccionado!.numero
-                      )
-                    }}
-                  </strong>
+                  <span class="label"><i class="pi pi-file"></i> Comprobante:</span>
+                  <strong>{{ formatearComprobante(comprobanteSeleccionado!.serie, comprobanteSeleccionado!.numero) }}</strong>
                 </div>
-
                 <div class="resumen-item">
-                  <span class="label">
-                    <i class="pi pi-box"></i>
-                    Producto:
-                  </span>
+                  <span class="label"><i class="pi pi-box"></i> Producto:</span>
                   <strong>{{ productoSeleccionado?.descripcion }}</strong>
                 </div>
-
                 <div class="resumen-item">
-                  <span class="label">
-                    <i class="pi pi-exclamation-triangle"></i>
-                    Motivo:
-                  </span>
+                  <span class="label"><i class="pi pi-exclamation-triangle"></i> Motivo:</span>
                   <p-tag [value]="motivoSeleccionado" severity="warn" />
                 </div>
-
                 <div class="resumen-item full-width">
-                  <span class="label">
-                    <i class="pi pi-comment"></i>
-                    Descripción:
-                  </span>
+                  <span class="label"><i class="pi pi-comment"></i> Descripción:</span>
                   <p class="descripcion-texto">{{ descripcionProblema }}</p>
                 </div>
               </div>
-
               <div class="mt-4">
                 <p-button
                   label="Registrar Reclamo"
@@ -527,6 +481,7 @@
           </div>
         </div>
 
+        <!-- Reclamo creado exitosamente -->
         <div *ngIf="reclamoGenerado" class="venta-exitosa">
           <div class="success-animation">
             <i class="pi pi-check-circle"></i>
@@ -540,38 +495,24 @@
                   <span class="numero-label">RECLAMO N°:</span>
                   <h3 class="numero-valor">{{ reclamoGenerado.id_reclamo }}</h3>
                 </div>
-                <p-tag value="PENDIENTE" severity="warn" />
+                <p-tag value="REGISTRADO" severity="info" />
               </div>
-
               <p-divider styleClass="comprobante-divider" />
-
               <div class="info-grid">
                 <div class="info-item">
-                  <span class="label">
-                    <i class="pi pi-user"></i>
-                    Cliente:
-                  </span>
+                  <span class="label"><i class="pi pi-user"></i> Cliente:</span>
                   <strong>{{ reclamoGenerado.cliente_nombre }}</strong>
                 </div>
                 <div class="info-item">
-                  <span class="label">
-                    <i class="pi pi-box"></i>
-                    Producto:
-                  </span>
+                  <span class="label"><i class="pi pi-box"></i> Producto:</span>
                   <strong>{{ reclamoGenerado.descripcion_producto }}</strong>
                 </div>
                 <div class="info-item">
-                  <span class="label">
-                    <i class="pi pi-calendar"></i>
-                    Fecha de Registro:
-                  </span>
+                  <span class="label"><i class="pi pi-calendar"></i> Fecha de Registro:</span>
                   <strong>{{ reclamoGenerado.fecha_registro | date: 'dd/MM/yyyy HH:mm' }}</strong>
                 </div>
                 <div class="info-item">
-                  <span class="label">
-                    <i class="pi pi-exclamation-triangle"></i>
-                    Motivo:
-                  </span>
+                  <span class="label"><i class="pi pi-exclamation-triangle"></i> Motivo:</span>
                   <strong>{{ reclamoGenerado.motivo }}</strong>
                 </div>
               </div>
@@ -579,29 +520,13 @@
           </div>
 
           <div class="action-buttons-final mt-4">
-            <p-button
-              label="Ver Detalle"
-              icon="pi pi-eye"
-              (onClick)="verDetalle()"
-              styleClass="w-full btn-accion-final"
-            />
-            <p-button
-              label="Nuevo Reclamo"
-              icon="pi pi-plus"
-              severity="success"
-              (onClick)="nuevoReclamo()"
-              styleClass="w-full btn-accion-final"
-            />
-            <p-button
-              label="Ver Listado"
-              icon="pi pi-list"
-              [outlined]="true"
-              (onClick)="cancelar()"
-              styleClass="w-full btn-accion-final"
-            />
+            <p-button label="Ver Detalle"   icon="pi pi-eye"  (onClick)="verDetalle()"  styleClass="w-full btn-accion-final" />
+            <p-button label="Nuevo Reclamo" icon="pi pi-plus" severity="success" (onClick)="nuevoReclamo()" styleClass="w-full btn-accion-final" />
+            <p-button label="Ver Listado"   icon="pi pi-list" [outlined]="true" (onClick)="cancelar()" styleClass="w-full btn-accion-final" />
           </div>
         </div>
       </div>
+
     </div>
 
     <p-divider styleClass="wizard-divider" />
@@ -616,7 +541,6 @@
         (onClick)="prevStep()"
       />
       <span *ngIf="activeStep === 0"></span>
-
       <p-button
         *ngIf="activeStep < 4"
         label="Siguiente"
@@ -625,6 +549,7 @@
         (onClick)="nextStep()"
       />
     </div>
+
   </p-card>
 </div>
 

@@ -438,28 +438,35 @@ export const ADMIN_ROUTES: Routes = [
 
 
 
- {
-    path: 'ventas-por-cobrar',
-    loadComponent: () =>
-      import('./pages/ventas-por-cobrar/ventas-por-cobrar-listado/ventas-por-cobrar-listado').then(
-        (m) => m.VentasPorCobrarListadoComponent,
-      ),
-  },
-  {
-    path: 'agregar-ventas-por-cobrar',
-    loadComponent: () =>
-      import('./pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
-        (m) => m.VentasPorCobrarFormulario,
-      ),
-  },
-  {
-    path: 'editar-ventas-por-cobrar/:id',
-    loadComponent: () =>
-      import('./pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
-        (m) => m.VentasPorCobrarFormulario,
-      ),
-  },
-
+{
+  path: 'ventas-por-cobrar',
+  loadComponent: () =>
+    import('./pages/ventas-por-cobrar/ventas-por-cobrar-listado/ventas-por-cobrar-listado').then(
+      (m) => m.VentasPorCobrarListadoComponent,
+    ),
+},
+{
+  path: 'agregar-ventas-por-cobrar',
+  loadComponent: () =>
+    import('./pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
+      (m) => m.VentasPorCobrarFormulario,
+    ),
+},
+{
+  path: 'editar-ventas-por-cobrar/:id',
+  loadComponent: () =>
+    import('./pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
+      (m) => m.VentasPorCobrarFormulario,
+    ),
+},
+// ── NUEVA RUTA ──────────────────────────────────────────────────────
+{
+  path: 'pagar-ventas-por-cobrar/:id',
+  loadComponent: () =>
+    import('./pages/ventas-por-cobrar/ventas-por-cobrar-pago/ventas-por-cobrar-pago.component').then(
+      (m) => m.VentasPorCobrarPagoComponent,
+    ),
+},
 
   /* =======================
     DESPACHO PRODUCTOS

@@ -10,12 +10,7 @@
         </div>
       </div>
       <div>
-        <p-button
-          label="Crear Venta por Cobrar"
-          icon="pi pi-plus"
-          styleClass="cotizaciones-pill cotizaciones-pill-warning"
-          (onClick)="irAgregarVentaPorCobrar(null)">
-        </p-button>
+
       </div>
     </div>
   </p-card>
@@ -61,42 +56,56 @@
 
   <!-- FILTROS -->
   <div class="flex flex-wrap gap-3 align-items-center mb-4">
-    <div class="flex-1 min-w-18rem">
-      <p-autocomplete
-        [ngModel]="buscarValue()"
-        (ngModelChange)="buscarValue.set($event)"
-        [suggestions]="sugerencias()"
-        (completeMethod)="searchCuenta($event)"
-        (onSelect)="seleccionarSugerencia($event)"
-        (onClear)="limpiarBusqueda()"
-        placeholder="Usuario, código de comprobante..."
-        field="userRef"
-        [showClear]="true"
-        styleClass="autocomplete-cotizaciones w-full"
-        inputStyleClass="w-full">
-        <ng-template let-item pTemplate="item">
-          <div class="autocomplete-item-custom">
-            <span class="font-bold">{{ item.userRef }}</span>
-            <small>Comprobante #{{ item.salesReceiptId }} · {{ item.status }}</small>
-          </div>
-        </ng-template>
-      </p-autocomplete>
-    </div>
 
-    <div class="w-12rem">
-      <p-select
-        [options]="estadosOptions"
-        [ngModel]="estadoSeleccionado()"
-        (ngModelChange)="onEstadoChange($event)"
-        optionLabel="label"
-        optionValue="value"
-        placeholder="Estado"
-        class="w-full"
-        [showClear]="true">
-      </p-select>
-    </div>
+  <div class="flex-1 min-w-18rem">
+    <p-autocomplete
+      [ngModel]="buscarValue()"
+      (ngModelChange)="buscarValue.set($event)"
+      [suggestions]="sugerencias()"
+      (completeMethod)="searchCuenta($event)"
+      (onSelect)="seleccionarSugerencia($event)"
+      (onClear)="limpiarBusqueda()"
+      placeholder="Usuario, código de comprobante..."
+      field="userRef"
+      [showClear]="true"
+      styleClass="autocomplete-cotizaciones w-full"
+      inputStyleClass="w-full">
+      <ng-template let-item pTemplate="item">
+        <div class="autocomplete-item-custom">
+          <span class="font-bold">{{ item.userRef }}</span>
+          <small>Comprobante #{{ item.salesReceiptId }} · {{ item.status }}</small>
+        </div>
+      </ng-template>
+    </p-autocomplete>
   </div>
 
+  <div class="w-16rem">
+    <p-select
+      [options]="sedesOptions()"
+      [ngModel]="sedeSeleccionada()"
+      (ngModelChange)="onSedeChange($event)"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Filtrar por Sede"
+      class="w-full"
+      [showClear]="true">
+    </p-select>
+  </div>
+
+  <div class="w-12rem">
+    <p-select
+      [options]="estadosOptions"
+      [ngModel]="estadoSeleccionado()"
+      (ngModelChange)="onEstadoChange($event)"
+      optionLabel="label"
+      optionValue="value"
+      placeholder="Estado"
+      class="w-full"
+      [showClear]="true">
+    </p-select>
+  </div>
+
+</div>
   <!-- LOADING / ERROR -->
   @if (arService.loading()) {
     <div class="text-center py-4">
@@ -182,13 +191,13 @@
                 (onClick)="verDetalle(a.id)">
               </p-button>
               <span class="accion-separador"></span>
-              <p-button
-                icon="pi pi-shopping-cart"
-                styleClass="accion-btn accion-btn--venta p-button-text p-button-rounded"
-                pTooltip="Registrar Pago"
-                tooltipPosition="top"
-                (onClick)="irAgregarVentaPorCobrar(a.id)">
-              </p-button>
+            <p-button
+              icon="pi pi-shopping-cart"
+              styleClass="accion-btn accion-btn--venta p-button-text p-button-rounded"
+              pTooltip="Registrar Pago"
+              tooltipPosition="top"
+              (onClick)="irAgregarVentaPorCobrar(a.id)">   
+            </p-button>
               <p-button
                 icon="pi pi-times"
                 styleClass="accion-btn accion-btn--eliminar p-button-text p-button-rounded"

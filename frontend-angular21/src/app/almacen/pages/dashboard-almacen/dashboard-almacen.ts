@@ -1,35 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
-import { CardModule } from 'primeng/card';
-import { ChartModule } from 'primeng/chart';
-import { TableModule } from 'primeng/table';
-import { TagModule } from 'primeng/tag';
+import { Component, OnInit, OnDestroy, inject, signal } from '@angular/core';
+import { CardModule }   from 'primeng/card';
+import { ChartModule }  from 'primeng/chart';
+import { TagModule }    from 'primeng/tag';
 import { SelectModule } from 'primeng/select';
-import { FormsModule } from '@angular/forms';
+import { FormsModule }  from '@angular/forms';
+import { forkJoin, Subscription } from 'rxjs';
+
+
+import { SedeService } from '../../../administracion/services/sede.service'; 
+import { AlmacenDashboardService, MovimientoRecienteDto, ProductoCriticoDto } from '../../../administracion/services/almacen dashboard.service';
 
 interface KpiCard {
-  label: string;
-  value: string;
-  icon: string;
-  color: string;
+  label:  string;
+  value:  string;
+  icon:   string;
+  color:  string;
   trend?: string;
-}
-
-interface MovimientoReciente {
-  fecha: string;
-  tipo: 'INGRESO' | 'SALIDA' | 'AJUSTE';
-  referencia: string;
-  producto: string;
-  cantidad: number;
-  usuario: string;
-}
-
-interface ProductoStock {
-  codigo: string;
-  descripcion: string;
-  stock: number;
-  stockMinimo: number;
-  rotacion: number;
 }
 
 type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast' | null;
@@ -37,249 +24,243 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 @Component({
   selector: 'app-dashboard-almacen',
   standalone: true,
-  imports: [
-    CommonModule,
-    CardModule,
-    ChartModule,
-    TableModule,
-    TagModule,
-    SelectModule,
-    FormsModule,
-  ],
+  imports: [CommonModule, CardModule, ChartModule, TagModule, SelectModule, FormsModule],
   templateUrl: './dashboard-almacen.html',
   styleUrl: './dashboard-almacen.css',
 })
-export class DashboardAlmacen implements OnInit {
-  username: string = '';
+export class DashboardAlmacen implements OnInit, OnDestroy {
 
+  private readonly dashboardService = inject(AlmacenDashboardService);
+  private readonly sedeService      = inject(SedeService);
+  private subs = new Subscription();
+
+  // ── Estado de carga global ────────────────────────────────────────
+  isLoading = signal(true);
+
+  // ── Usuario y sede ────────────────────────────────────────────────
+  username                  = '';
+  idSede       = signal<string>('');
+  sedesOptions = signal<any[]>([]);
+
+  // ── KPIs ─────────────────────────────────────────────────────────
   kpis: KpiCard[] = [];
 
-  rendimientoChart: any;
+  // ── Gráfico rendimiento ──────────────────────────────────────────
+  rendimientoChart     = signal<any>(null);
   rendimientoChartOptions: any;
-
-  saludStockChart: any;
-  saludStockChartOptions: any;
-
-  movimientosRecientes: MovimientoReciente[] = [];
-  productosCriticos: ProductoStock[] = [];
-
-  periodoRendimiento: string = 'mes';
+  periodoRendimiento   = 'mes';
   periodosOptions = [
     { label: 'Semana', value: 'semana' },
-    { label: 'Mes', value: 'mes' },
-    { label: 'Año', value: 'anio' },
+    { label: 'Mes',    value: 'mes'    },
+    { label: 'Año',    value: 'anio'   },
   ];
 
-  anioSeleccionado: string = new Date().getFullYear().toString();
-  aniosOptions: any[] = [];
+  // ── Gráfico salud stock ───────────────────────────────────────────
+  saludStockChart     = signal<any>(null);
+  saludStockChartOptions: any;
+  anioSeleccionado    = new Date().getFullYear().toString();
+  aniosOptions: { label: string; value: string }[] = [];
 
+  // ── Movimientos recientes ─────────────────────────────────────────
+  movimientosRecientes: MovimientoRecienteDto[] = [];
+
+  // ── Productos críticos ───────────────────────────  ────────────────
+  productosCriticos: ProductoCriticoDto[] = [];
+
+  // ── Lifecycle ────────────────────────────────────────────────────
   ngOnInit(): void {
     this.username = this.getUserName();
+    this.idSede.set(this.getUserSede());
     this.generarAniosOptions();
-    this.cargarKpis();
-    this.cargarRendimientoChart();
-    this.cargarSaludStockChart();
-    this.cargarMovimientosRecientes();
-    this.cargarProductosCriticos();
     this.configurarOpcionesCharts();
+    this.cargarSedes();
+    this.cargarTodo();
   }
 
-  getUserName(): string {
-    const userString = localStorage.getItem('user');
-    if (!userString) return '';
+  ngOnDestroy(): void {
+    this.subs.unsubscribe();
+  }
+
+  // ── Sedes (igual que DashboardAdmin) ─────────────────────────────
+  private cargarSedes(): void {
+    const sub = this.sedeService.getSedes().subscribe({
+      next: (res) => this.sedesOptions.set(res.headquarters || []),
+      error: (err) => console.error('Error cargando sedes', err),
+    });
+    this.subs.add(sub);
+  }
+
+  onSedeGlobalChange(sedeId: number | null): void {
+    this.idSede.set(sedeId != null ? String(sedeId) : '');
+    this.cargarTodo();
+  }
+
+  // ── Carga con forkJoin ────────────────────────────────────────────
+  private cargarTodo(): void {
+    this.isLoading.set(true);
+    const sede = this.idSede() || null;
+
+    const sub = forkJoin({
+      kpis:        this.dashboardService.getKpis(this.periodoRendimiento, sede),
+      rendimiento: this.dashboardService.getRendimientoChart(this.periodoRendimiento, sede),
+      salud:       this.dashboardService.getSaludStock(this.anioSeleccionado, sede),
+      movimientos: this.dashboardService.getMovimientosRecientes(sede),
+      criticos:    this.dashboardService.getProductosCriticos(sede),
+    }).subscribe({
+      next: ({ kpis, rendimiento, salud, movimientos, criticos }) => {
+
+        this.kpis = [
+          {
+            label: 'Valor Inventario',
+            value: `S/ ${kpis.valorInventario.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`,
+            icon:  'pi pi-box',        color: '#42A5F5',
+            trend: kpis.tendencias.valorInventario,
+          },
+          {
+            label: 'Ítems Bajo Stock Mínimo',
+            value: kpis.itemsBajoStock.toString(),
+            icon:  'pi pi-exclamation-triangle', color: '#FFA726',
+            trend: kpis.tendencias.itemsBajoStock,
+          },
+          {
+            label: 'Exactitud de Inventario',
+            value: `${kpis.exactitudInventario.toFixed(1)}%`,
+            icon:  'pi pi-check-circle', color: '#66BB6A',
+            trend: kpis.tendencias.exactitudInventario,
+          },
+          {
+            label: 'Rotación Promedio',
+            value: kpis.rotacionPromedio.toFixed(1),
+            icon:  'pi pi-refresh',    color: '#AB47BC',
+            trend: kpis.tendencias.rotacionPromedio,
+          },
+        ];
+
+        this.movimientosRecientes = movimientos;
+        this.productosCriticos    = criticos;
+
+        setTimeout(() => {
+          this.rendimientoChart.set({
+            labels: rendimiento.labels,
+            datasets: [{
+              label:           'Movimientos procesados',
+              data:            rendimiento.datos,
+              borderColor:     '#42A5F5',
+              backgroundColor: 'rgba(66,165,245,0.15)',
+              fill:            true,
+              tension:         0.35,
+              pointRadius:     3,
+            }],
+          });
+
+          this.saludStockChart.set({
+            labels: ['Stock Óptimo', 'Bajo Stock', 'Sobre-stock'],
+            datasets: [{
+              data:                 [salud.optimo, salud.bajoStock, salud.sobreStock],
+              backgroundColor:      ['#66BB6A', '#FFA726', '#EF5350'],
+              hoverBackgroundColor: ['#81C784', '#FFB74D', '#E57373'],
+            }],
+          });
+
+          this.isLoading.set(false);
+        }, 150);
+      },
+      error: () => this.isLoading.set(false),
+    });
+
+    this.subs.add(sub);
+  }
+
+  // ── Cambio de periodo ─────────────────────────────────────────────
+  onPeriodoRendimientoChange(): void {
+    const sede = this.idSede() || null;
+
+    const sub = forkJoin({
+      kpis:        this.dashboardService.getKpis(this.periodoRendimiento, sede),
+      rendimiento: this.dashboardService.getRendimientoChart(this.periodoRendimiento, sede),
+    }).subscribe({
+      next: ({ kpis, rendimiento }) => {
+        this.kpis = [
+          { label: 'Valor Inventario',       value: `S/ ${kpis.valorInventario.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`, icon: 'pi pi-box',                   color: '#42A5F5', trend: kpis.tendencias.valorInventario     },
+          { label: 'Ítems Bajo Stock Mínimo', value: kpis.itemsBajoStock.toString(),                                                      icon: 'pi pi-exclamation-triangle',  color: '#FFA726', trend: kpis.tendencias.itemsBajoStock      },
+          { label: 'Exactitud de Inventario', value: `${kpis.exactitudInventario.toFixed(1)}%`,                                           icon: 'pi pi-check-circle',          color: '#66BB6A', trend: kpis.tendencias.exactitudInventario },
+          { label: 'Rotación Promedio',       value: kpis.rotacionPromedio.toFixed(1),                                                    icon: 'pi pi-refresh',               color: '#AB47BC', trend: kpis.tendencias.rotacionPromedio    },
+        ];
+
+        setTimeout(() => {
+          this.rendimientoChart.set({
+            labels: rendimiento.labels,
+            datasets: [{
+              label: 'Movimientos procesados', data: rendimiento.datos,
+              borderColor: '#42A5F5', backgroundColor: 'rgba(66,165,245,0.15)',
+              fill: true, tension: 0.35, pointRadius: 3,
+            }],
+          });
+        }, 50);
+      },
+    });
+    this.subs.add(sub);
+  }
+
+  // ── Cambio de año ─────────────────────────────────────────────────
+  onAnioChange(): void {
+    const sub = this.dashboardService.getSaludStock(this.anioSeleccionado, this.idSede() || null).subscribe({
+      next: (salud) => {
+        setTimeout(() => {
+          this.saludStockChart.set({
+            labels: ['Stock Óptimo', 'Bajo Stock', 'Sobre-stock'],
+            datasets: [{
+              data: [salud.optimo, salud.bajoStock, salud.sobreStock],
+              backgroundColor:      ['#66BB6A', '#FFA726', '#EF5350'],
+              hoverBackgroundColor: ['#81C784', '#FFB74D', '#E57373'],
+            }],
+          });
+        }, 50);
+      },
+    });
+    this.subs.add(sub);
+  }
+
+  // ── Helpers localStorage ──────────────────────────────────────────
+  private getUserName(): string {
     try {
-      const user = JSON.parse(userString);
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
       return user.nombres || user.username || '';
-    } catch {
-      return '';
-    }
+    } catch { return ''; }
+  }
+
+  private getUserSede(): string {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      const sede = user.id_sede ?? user.idSede ?? user.sede_id ?? user.sedeId ?? null;
+      return sede ? String(sede) : '';
+    } catch { return ''; }
   }
 
   generarAniosOptions(): void {
     const actual = new Date().getFullYear();
-    this.aniosOptions = [];
-    for (let i = 0; i < 4; i++) {
+    this.aniosOptions = Array.from({ length: 4 }, (_, i) => {
       const anio = actual - i;
-      this.aniosOptions.push({ label: anio.toString(), value: anio.toString() });
-    }
-  }
-
-  cargarKpis(): void {
-    const valorInventario = 185000;
-    const itemsBajoStock = 12;
-    const exactitud = 97.5;
-    const rotacion = 4.3;
-
-    this.kpis = [
-      {
-        label: 'Valor Inventario',
-        value: `S/ ${valorInventario.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`,
-        icon: 'pi pi-box',
-        color: '#42A5F5',
-        trend: '+2.1% vs mes anterior',
-      },
-      {
-        label: 'Ítems Bajo Stock Mínimo',
-        value: itemsBajoStock.toString(),
-        icon: 'pi pi-exclamation-triangle',
-        color: '#FFA726',
-        trend: 'Revisar reposición',
-      },
-      {
-        label: 'Exactitud de Inventario',
-        value: `${exactitud.toFixed(1)}%`,
-        icon: 'pi pi-check-circle',
-        color: '#66BB6A',
-        trend: '+0.8 puntos',
-      },
-      {
-        label: 'Rotación Promedio',
-        value: rotacion.toFixed(1),
-        icon: 'pi pi-refresh',
-        color: '#AB47BC',
-        trend: 'Veces por año',
-      },
-    ];
-  }
-
-  onPeriodoRendimientoChange(): void {
-    this.cargarRendimientoChart();
-  }
-
-  onAnioChange(): void {
-    this.cargarSaludStockChart();
-  }
-
-  cargarRendimientoChart(): void {
-    let labels: string[] = [];
-    let datos: number[] = [];
-
-    if (this.periodoRendimiento === 'semana') {
-      labels = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-      datos = [18, 22, 19, 24, 26, 15, 10];
-    } else if (this.periodoRendimiento === 'mes') {
-      labels = ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'];
-      datos = [95, 110, 102, 120];
-    } else {
-      labels = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-      datos = [320, 290, 310, 340, 360, 380, 400, 395, 370, 390, 410, 430];
-    }
-
-    this.rendimientoChart = {
-      labels,
-      datasets: [
-        {
-          label: 'Movimientos procesados',
-          data: datos,
-          borderColor: '#42A5F5',
-          backgroundColor: 'rgba(66,165,245,0.15)',
-          fill: true,
-          tension: 0.35,
-          pointRadius: 3,
-        },
-      ],
-    };
-  }
-
-  cargarSaludStockChart(): void {
-    const labels = ['Stock Óptimo', 'Bajo Stock', 'Sobre-stock'];
-    const datos = [68, 12, 20];
-
-    this.saludStockChart = {
-      labels,
-      datasets: [
-        {
-          data: datos,
-          backgroundColor: ['#66BB6A', '#FFA726', '#EF5350'],
-          hoverBackgroundColor: ['#81C784', '#FFB74D', '#E57373'],
-        },
-      ],
-    };
-  }
-
-  cargarMovimientosRecientes(): void {
-    this.movimientosRecientes = [
-      {
-        fecha: '14 Feb 2026 09:32',
-        tipo: 'INGRESO',
-        referencia: 'OC-000123',
-        producto: 'Cable HDMI 2m',
-        cantidad: 50,
-        usuario: 'Almacenero Sistema',
-      },
-      {
-        fecha: '14 Feb 2026 08:47',
-        tipo: 'SALIDA',
-        referencia: 'VEN-000987',
-        producto: 'Mouse Inalámbrico',
-        cantidad: 12,
-        usuario: 'Vendedor Sistema',
-      },
-      {
-        fecha: '13 Feb 2026 18:05',
-        tipo: 'AJUSTE',
-        referencia: 'AJ-000045',
-        producto: 'Teclado Mecánico',
-        cantidad: -2,
-        usuario: 'Almacenero Sistema',
-      },
-      {
-        fecha: '13 Feb 2026 16:22',
-        tipo: 'INGRESO',
-        referencia: 'OC-000122',
-        producto: 'Monitor 24"',
-        cantidad: 10,
-        usuario: 'Almacenero Sistema',
-      },
-    ];
-  }
-
-  cargarProductosCriticos(): void {
-    this.productosCriticos = [
-      { codigo: 'SKU-001', descripcion: 'Cable HDMI 2m', stock: 8, stockMinimo: 20, rotacion: 7.5 },
-      {
-        codigo: 'SKU-015',
-        descripcion: 'Mouse Inalámbrico',
-        stock: 5,
-        stockMinimo: 15,
-        rotacion: 5.8,
-      },
-      {
-        codigo: 'SKU-034',
-        descripcion: 'Teclado Mecánico',
-        stock: 3,
-        stockMinimo: 10,
-        rotacion: 4.2,
-      },
-      { codigo: 'SKU-077', descripcion: 'SSD 512GB', stock: 6, stockMinimo: 12, rotacion: 6.1 },
-    ];
+      return { label: anio.toString(), value: anio.toString() };
+    });
   }
 
   configurarOpcionesCharts(): void {
-    const documentStyle = getComputedStyle(document.documentElement);
-    const textColor = documentStyle.getPropertyValue('--text-color') || '#e5e7eb';
-    const textColorSecondary =
-      documentStyle.getPropertyValue('--text-color-secondary') || '#9ca3af';
-    const surfaceBorder = documentStyle.getPropertyValue('--surface-border') || '#374151';
+    const doc     = getComputedStyle(document.documentElement);
+    const text    = doc.getPropertyValue('--text-color')           || '#e5e7eb';
+    const textSec = doc.getPropertyValue('--text-color-secondary') || '#9ca3af';
+    const border  = doc.getPropertyValue('--surface-border')       || '#374151';
+    const overlay = doc.getPropertyValue('--surface-overlay')      || '#111827';
 
     this.rendimientoChartOptions = {
       maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: {
-          backgroundColor: documentStyle.getPropertyValue('--surface-overlay') || '#111827',
-          titleColor: textColor,
-          bodyColor: textColor,
-          borderColor: surfaceBorder,
-          borderWidth: 1,
-        },
+        tooltip: { backgroundColor: overlay, titleColor: text, bodyColor: text, borderColor: border, borderWidth: 1 },
       },
       scales: {
-        x: { ticks: { color: textColorSecondary }, grid: { color: 'transparent' } },
-        y: {
-          ticks: { color: textColorSecondary },
-          grid: { color: surfaceBorder, drawBorder: false },
-        },
+        x: { ticks: { color: textSec }, grid: { color: 'transparent' } },
+        y: { ticks: { color: textSec }, grid: { color: border, drawBorder: false } },
       },
     };
 
@@ -287,45 +268,38 @@ export class DashboardAlmacen implements OnInit {
       cutout: '60%',
       maintainAspectRatio: false,
       plugins: {
-        legend: {
-          position: 'bottom',
-          labels: { color: textColor, usePointStyle: true },
-        },
-        tooltip: {
-          backgroundColor: documentStyle.getPropertyValue('--surface-overlay') || '#111827',
-          titleColor: textColor,
-          bodyColor: textColor,
-          borderColor: surfaceBorder,
-          borderWidth: 1,
-        },
+        legend: { position: 'bottom', labels: { color: text, usePointStyle: true } },
+        tooltip: { backgroundColor: overlay, titleColor: text, bodyColor: text, borderColor: border, borderWidth: 1 },
       },
     };
   }
 
-  getSeveridadStock(prod: ProductoStock): TagSeverity {
+  // ── Helpers de stock ─────────────────────────────────────────────
+  getSeveridadStock(prod: ProductoCriticoDto): TagSeverity {
     if (prod.stock <= prod.stockMinimo / 2) return 'danger';
-    if (prod.stock <= prod.stockMinimo) return 'warn';
+    if (prod.stock <= prod.stockMinimo)     return 'warn';
     return 'success';
   }
 
-  getEstadoStockTexto(prod: ProductoStock): string {
+  getEstadoStockTexto(prod: ProductoCriticoDto): string {
     if (prod.stock <= prod.stockMinimo / 2) return 'Crítico';
-    if (prod.stock <= prod.stockMinimo) return 'Bajo';
+    if (prod.stock <= prod.stockMinimo)     return 'Bajo';
     return 'OK';
   }
 
-  getStockPct(prod: ProductoStock): number {
+  getStockPct(prod: ProductoCriticoDto): number {
     if (!prod.stockMinimo) return 0;
     return Math.max(0, Math.min(100, (prod.stock / prod.stockMinimo) * 100));
   }
 
-  getBarColor(prod: ProductoStock): string {
+  getBarColor(prod: ProductoCriticoDto): string {
     const sev = this.getSeveridadStock(prod);
     if (sev === 'danger') return '#EF5350';
-    if (sev === 'warn') return '#FFA726';
+    if (sev === 'warn')   return '#FFA726';
     return '#66BB6A';
   }
-  getStockLabel(prod: ProductoStock): string {
+
+  getStockLabel(prod: ProductoCriticoDto): string {
     return `${prod.stock}`;
   }
 }

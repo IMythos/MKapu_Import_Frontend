@@ -105,33 +105,50 @@ export class AccountReceivableService {
 
   readonly isFirstPage = computed(() => this.currentPage() === 1);
   readonly isLastPage  = computed(() => this.currentPage() === this.totalPages());
+  
 
   // ── GET /account-receivables?page=&limit= ────────────────────────
 
-  async getAll(page = 1, limit = 10): Promise<void> {
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      const params = new HttpParams()
-        .set('page',  page)
-        .set('limit', limit);
+// ── State adicional ──────────────────────────────────────────────
+readonly sedeActual = signal<number | null>(null);
 
-      const res = await firstValueFrom(
-        this.http.get<AccountReceivablePaginatedResponse>(this.baseUrl, { params }),
-      );
+async getAll(page = 1, limit = 10, sedeId?: number): Promise<void> {
+  this.loading.set(true);
+  this.error.set(null);
 
-      this.accounts.set(res.data);
-      this.currentPage.set(res.page);
-      this.totalPages.set(res.totalPages);
-      this.totalRecords.set(res.total);
-      this.pageSize.set(res.limit);
-    } catch (err: any) {
-      this.error.set(err?.error?.message ?? 'Error al cargar cuentas por cobrar');
-    } finally {
-      this.loading.set(false);
+  // Persistir sede para paginación
+  if (sedeId !== undefined) this.sedeActual.set(sedeId);
+
+  try {
+    let params = new HttpParams()
+      .set('page',  page)
+      .set('limit', limit);
+
+    if (this.sedeActual() != null) {
+      params = params.set('sedeId', String(this.sedeActual()));
     }
-  }
 
+    const res = await firstValueFrom(
+      this.http.get<AccountReceivablePaginatedResponse>(this.baseUrl, { params }),
+    );
+
+    this.accounts.set(res.data);
+    this.currentPage.set(res.page);
+    this.totalPages.set(res.totalPages);
+    this.totalRecords.set(res.total);
+    this.pageSize.set(res.limit);
+  } catch (err: any) {
+    this.error.set(err?.error?.message ?? 'Error al cargar cuentas por cobrar');
+  } finally {
+    this.loading.set(false);
+  }
+}
+
+async goToPage(page: number): Promise<void> {
+  if (page >= 1 && page <= this.totalPages()) {
+    await this.getAll(page, this.pageSize()); // usa sedeActual internamente
+  }
+}
   // ── GET /account-receivables/:id ─────────────────────────────────
 
   async getById(id: number): Promise<void> {
@@ -238,12 +255,6 @@ export class AccountReceivableService {
   async prevPage(): Promise<void> {
     if (!this.isFirstPage()) {
       await this.getAll(this.currentPage() - 1, this.pageSize());
-    }
-  }
-
-  async goToPage(page: number): Promise<void> {
-    if (page >= 1 && page <= this.totalPages()) {
-      await this.getAll(page, this.pageSize());
     }
   }
 
