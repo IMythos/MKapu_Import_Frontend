@@ -7,8 +7,7 @@ import { SelectModule } from 'primeng/select';
 import { FormsModule }  from '@angular/forms';
 import { forkJoin, Subscription } from 'rxjs';
 
-
-import { SedeService } from '../../../administracion/services/sede.service'; 
+import { SedeService } from '../../../administracion/services/sede.service';
 import { AlmacenDashboardService, MovimientoRecienteDto, ProductoCriticoDto } from '../../../administracion/services/almacen dashboard.service';
 
 interface KpiCard {
@@ -38,17 +37,17 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
   isLoading = signal(true);
 
   // ── Usuario y sede ────────────────────────────────────────────────
-  username                  = '';
+  username     = '';
   idSede       = signal<string>('');
   sedesOptions = signal<any[]>([]);
 
   // ── KPIs ─────────────────────────────────────────────────────────
   kpis: KpiCard[] = [];
 
-  // ── Gráfico rendimiento ──────────────────────────────────────────
-  rendimientoChart     = signal<any>(null);
+  // ── Gráfico rendimiento ───────────────────────────────────────────
+  rendimientoChart        = signal<any>(null);
   rendimientoChartOptions: any;
-  periodoRendimiento   = 'mes';
+  periodoRendimiento      = 'mes';
   periodosOptions = [
     { label: 'Semana', value: 'semana' },
     { label: 'Mes',    value: 'mes'    },
@@ -56,15 +55,15 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
   ];
 
   // ── Gráfico salud stock ───────────────────────────────────────────
-  saludStockChart     = signal<any>(null);
+  saludStockChart        = signal<any>(null);
   saludStockChartOptions: any;
-  anioSeleccionado    = new Date().getFullYear().toString();
+  anioSeleccionado       = new Date().getFullYear().toString();
   aniosOptions: { label: string; value: string }[] = [];
 
   // ── Movimientos recientes ─────────────────────────────────────────
   movimientosRecientes: MovimientoRecienteDto[] = [];
 
-  // ── Productos críticos ───────────────────────────  ────────────────
+  // ── Productos críticos ────────────────────────────────────────────
   productosCriticos: ProductoCriticoDto[] = [];
 
   // ── Lifecycle ────────────────────────────────────────────────────
@@ -81,24 +80,31 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
     this.subs.unsubscribe();
   }
 
-  // ── Sedes (igual que DashboardAdmin) ─────────────────────────────
+  // ── Sedes ─────────────────────────────────────────────────────────
   private cargarSedes(): void {
     const sub = this.sedeService.getSedes().subscribe({
-      next: (res) => this.sedesOptions.set(res.headquarters || []),
+      next:  (res) => this.sedesOptions.set(res.headquarters || []),
       error: (err) => console.error('Error cargando sedes', err),
     });
     this.subs.add(sub);
   }
 
-  onSedeGlobalChange(sedeId: number | null): void {
+  // ✅ Convierte siempre a string para mantener consistencia con id_sede VARCHAR
+  onSedeGlobalChange(sedeId: number | string | null): void {
     this.idSede.set(sedeId != null ? String(sedeId) : '');
     this.cargarTodo();
+  }
+
+  // ── Helpers de sede ───────────────────────────────────────────────
+  // ✅ Usa !== '' en vez de || null para no confundir '0' con vacío
+  private getSedeParam(): string | null {
+    return this.idSede() !== '' ? this.idSede() : null;
   }
 
   // ── Carga con forkJoin ────────────────────────────────────────────
   private cargarTodo(): void {
     this.isLoading.set(true);
-    const sede = this.idSede() || null;
+    const sede = this.getSedeParam();
 
     const sub = forkJoin({
       kpis:        this.dashboardService.getKpis(this.periodoRendimiento, sede),
@@ -173,7 +179,7 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
 
   // ── Cambio de periodo ─────────────────────────────────────────────
   onPeriodoRendimientoChange(): void {
-    const sede = this.idSede() || null;
+    const sede = this.getSedeParam();
 
     const sub = forkJoin({
       kpis:        this.dashboardService.getKpis(this.periodoRendimiento, sede),
@@ -181,10 +187,10 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
     }).subscribe({
       next: ({ kpis, rendimiento }) => {
         this.kpis = [
-          { label: 'Valor Inventario',       value: `S/ ${kpis.valorInventario.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`, icon: 'pi pi-box',                   color: '#42A5F5', trend: kpis.tendencias.valorInventario     },
-          { label: 'Ítems Bajo Stock Mínimo', value: kpis.itemsBajoStock.toString(),                                                      icon: 'pi pi-exclamation-triangle',  color: '#FFA726', trend: kpis.tendencias.itemsBajoStock      },
-          { label: 'Exactitud de Inventario', value: `${kpis.exactitudInventario.toFixed(1)}%`,                                           icon: 'pi pi-check-circle',          color: '#66BB6A', trend: kpis.tendencias.exactitudInventario },
-          { label: 'Rotación Promedio',       value: kpis.rotacionPromedio.toFixed(1),                                                    icon: 'pi pi-refresh',               color: '#AB47BC', trend: kpis.tendencias.rotacionPromedio    },
+          { label: 'Valor Inventario',        value: `S/ ${kpis.valorInventario.toLocaleString('es-PE', { minimumFractionDigits: 0 })}`, icon: 'pi pi-box',                  color: '#42A5F5', trend: kpis.tendencias.valorInventario      },
+          { label: 'Ítems Bajo Stock Mínimo', value: kpis.itemsBajoStock.toString(),                                                      icon: 'pi pi-exclamation-triangle', color: '#FFA726', trend: kpis.tendencias.itemsBajoStock       },
+          { label: 'Exactitud de Inventario', value: `${kpis.exactitudInventario.toFixed(1)}%`,                                           icon: 'pi pi-check-circle',         color: '#66BB6A', trend: kpis.tendencias.exactitudInventario  },
+          { label: 'Rotación Promedio',       value: kpis.rotacionPromedio.toFixed(1),                                                    icon: 'pi pi-refresh',              color: '#AB47BC', trend: kpis.tendencias.rotacionPromedio     },
         ];
 
         setTimeout(() => {
@@ -204,7 +210,7 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
 
   // ── Cambio de año ─────────────────────────────────────────────────
   onAnioChange(): void {
-    const sub = this.dashboardService.getSaludStock(this.anioSeleccionado, this.idSede() || null).subscribe({
+    const sub = this.dashboardService.getSaludStock(this.anioSeleccionado, this.getSedeParam()).subscribe({
       next: (salud) => {
         setTimeout(() => {
           this.saludStockChart.set({
@@ -255,7 +261,7 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
     this.rendimientoChartOptions = {
       maintainAspectRatio: false,
       plugins: {
-        legend: { display: false },
+        legend:  { display: false },
         tooltip: { backgroundColor: overlay, titleColor: text, bodyColor: text, borderColor: border, borderWidth: 1 },
       },
       scales: {
@@ -268,13 +274,13 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
       cutout: '60%',
       maintainAspectRatio: false,
       plugins: {
-        legend: { position: 'bottom', labels: { color: text, usePointStyle: true } },
+        legend:  { position: 'bottom', labels: { color: text, usePointStyle: true } },
         tooltip: { backgroundColor: overlay, titleColor: text, bodyColor: text, borderColor: border, borderWidth: 1 },
       },
     };
   }
 
-  // ── Helpers de stock ─────────────────────────────────────────────
+  // ── Helpers de stock ──────────────────────────────────────────────
   getSeveridadStock(prod: ProductoCriticoDto): TagSeverity {
     if (prod.stock <= prod.stockMinimo / 2) return 'danger';
     if (prod.stock <= prod.stockMinimo)     return 'warn';

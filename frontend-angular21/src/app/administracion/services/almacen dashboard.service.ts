@@ -59,7 +59,7 @@ export class AlmacenDashboardService {
 
   private buildParams(periodo: string, sedeId?: string | null): HttpParams {
     let params = new HttpParams().set('periodo', periodo);
-    if (sedeId) params = params.set('sedeId', sedeId);
+    if (sedeId != null && sedeId !== '') params = params.set('sedeId', sedeId);
     return params;
   }
 
@@ -77,19 +77,19 @@ export class AlmacenDashboardService {
 
   getSaludStock(anio: string, sedeId?: string | null): Observable<SaludStockDto> {
     let params = new HttpParams().set('anio', anio);
-    if (sedeId) params = params.set('sedeId', sedeId);
+    if (sedeId != null && sedeId !== '') params = params.set('sedeId', sedeId);
     return this.http.get<SaludStockDto>(`${this.baseUrl}/salud-stock`, { params });
   }
 
   getMovimientosRecientes(sedeId?: string | null): Observable<MovimientoRecienteDto[]> {
     let params = new HttpParams();
-    if (sedeId) params = params.set('sedeId', sedeId);
+    if (sedeId != null && sedeId !== '') params = params.set('sedeId', sedeId);
     return this.http.get<MovimientoRecienteDto[]>(`${this.baseUrl}/movimientos-recientes`, { params });
   }
 
   getProductosCriticos(sedeId?: string | null): Observable<ProductoCriticoDto[]> {
     let params = new HttpParams();
-    if (sedeId) params = params.set('sedeId', sedeId);
+    if (sedeId != null && sedeId !== '') params = params.set('sedeId', sedeId);
     return this.http.get<ProductoCriticoDto[]>(`${this.baseUrl}/productos-criticos`, { params });
   }
 }

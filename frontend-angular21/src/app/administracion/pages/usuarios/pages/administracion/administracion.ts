@@ -23,7 +23,8 @@ import { UsuarioService } from '../../../../services/usuario.service';
 import { SedeService } from '../../../../services/sede.service';
 import { Headquarter } from '../../../../interfaces/sedes.interface';
 import { UsuarioInterfaceResponse, UsuarioRequest } from '../../../../interfaces/usuario.interface';
-import { ROLE_NAMES, UserRole } from '../../../../../core/constants/roles.constants';
+import { ROLE_NAMES } from '../../../../../core/constants/roles.constants';
+import { RoleService } from '../../../../services/role.service';
 
 @Component({
   selector: 'app-administracion',
@@ -62,28 +63,9 @@ export class Administracion implements AfterViewInit {
 
   activeStepUsuario = 0;
 
-  roles = [
-    {
-      label: 'Administrador',
-      value: 'ADMIN',
-      icon: 'pi pi-shield',
-      description: 'Acceso total al sistema y configuración.',
-    },
-    {
-      label: 'Ventas',
-      value: 'VENTAS',
-      icon: 'pi pi-money-bill',
-      description: 'Ventas, caja y facturación.',
-    },
-    {
-      label: 'Almacén',
-      value: 'ALMACEN',
-      icon: 'pi pi-warehouse',
-      description: 'Inventario y control de stock.',
-    },
-  ];
-
-  rolCuentaSeleccionado: string | null = null;
+  // ✅ Roles cargados dinámicamente desde la BD
+  roles: { label: string; value: number; icon: string; description: string }[] = [];
+  rolCuentaSeleccionado: number | null = null;
 
   sedes: { label: string; value: number }[] = [];
   sedesRaw: Headquarter[] = [];
@@ -120,14 +102,17 @@ export class Administracion implements AfterViewInit {
 
   enviando = false;
 
-  private usuarioService = inject(UsuarioService);
-  private sedeService    = inject(SedeService);
-  private messageService = inject(MessageService);
-  private router         = inject(Router);
+  private usuarioService  = inject(UsuarioService);
+  private sedeService     = inject(SedeService);
+  private messageService  = inject(MessageService);
+  private router          = inject(Router);
+  private roleService     = inject(RoleService);
+
 
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.cargarSedes();
+      this.cargarRoles(); // ✅ Carga roles desde BD
     }, 0);
   }
 
@@ -154,6 +139,34 @@ export class Administracion implements AfterViewInit {
         this.sedes = [];
       },
     });
+  }
+
+  private cargarRoles(): void {
+    this.roleService.loadRoles().subscribe({
+      next: () => {
+        this.roles = this.roleService.roles().map(rol => ({
+          label:       rol.nombre,
+          value:       rol.id_rol,
+          icon:        this.getIconForRole(rol.nombre),
+          description: rol.descripcion ?? '',
+        }));
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error',
+          summary:  'Error',
+          detail:   'No se pudieron cargar los roles.',
+        });
+      },
+    });
+  }
+
+  private getIconForRole(nombre: string): string {
+    const n = nombre.toLowerCase();
+    if (n.includes('admin'))                          return 'pi pi-shield';
+    if (n.includes('venta'))                          return 'pi pi-money-bill';
+    if (n.includes('almacen') || n.includes('almacén')) return 'pi pi-warehouse';
+    return 'pi pi-user';
   }
 
   prevStep(): void {
@@ -208,19 +221,13 @@ export class Administracion implements AfterViewInit {
     this.usuarioService.postUsuarios(payload).subscribe({
       next: (usuarioCreado: any) => {
 
-        // ✅ Resuelve el roleId según el rol seleccionado
-        const roleId =
-          this.rolCuentaSeleccionado === 'ADMIN'  ? UserRole.ADMIN  :
-          this.rolCuentaSeleccionado === 'VENTAS' ? UserRole.VENTAS :
-          UserRole.ALMACEN;
-
-        // ✅ Usa sedeIdCapturada (no id_sede: 1 hardcodeado)
+        // ✅ roleId viene directo de la BD, sin mapeo hardcodeado
         const cuentaPayload = {
           userId:   usuarioCreado.id_usuario,
           username: this.cuentaForm.username,
           password: this.cuentaForm.password,
           id_sede:  sedeIdCapturada,
-          roleId,
+          roleId:   this.rolCuentaSeleccionado!,
         };
 
         // Paso 2: crear cuenta

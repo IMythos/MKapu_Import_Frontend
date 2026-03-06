@@ -152,6 +152,16 @@ export class EditarRolComponent implements OnInit {
   guardarPermisos() {
     const rolId = this.rolId();
     if (!rolId) return;
+
+    if (this.selectedPermIds().length === 0) {
+        this.msg.add({
+        severity: 'warn',
+        summary: 'Atención',
+        detail: 'Debes seleccionar al menos un permiso.',
+        });
+        return;
+    }
+
     this.submitting.set(true);
 
     this.rolePermSvc.syncPermissions({

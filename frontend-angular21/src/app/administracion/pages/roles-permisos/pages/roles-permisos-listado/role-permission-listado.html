@@ -169,12 +169,6 @@
                 (click)="verDetalle(rol)">
               </p-button>
 
-              <!-- Asignar permisos (dialog) -->
-              <p-button icon="pi pi-key" text severity="info"
-                styleClass="sedes-icon-btn" title="Asignar permisos"
-                (click)="abrirAsignar(rol)">
-              </p-button>
-
               <!-- Editar rol -->
               <p-button icon="pi pi-pencil" text severity="secondary"
                 styleClass="sedes-icon-btn" title="Editar rol"
@@ -298,90 +292,6 @@
 
       </div>
     </ng-container>
-  </p-dialog>
-
-  <!-- ═══════ DIALOG ASIGNAR PERMISOS ═══════ -->
-  <p-dialog
-    [(visible)]="dialogAsignarVisible"
-    [modal]="true" [draggable]="false"
-    [style]="{ width: '560px' }"
-    (onHide)="dialogAsignarVisible = false">
-
-    <ng-template pTemplate="header">
-      <div class="flex align-items-center gap-2">
-        <i class="pi pi-key text-primary"></i>
-        <span class="font-bold">
-          Asignar permisos — {{ rolAsignando()?.nombre ?? '' }}
-        </span>
-      </div>
-    </ng-template>
-
-    <div class="pt-2">
-      <p class="text-500 text-sm mb-3">
-        Marca los permisos que tendrá este rol. Los cambios reemplazan la asignación actual.
-      </p>
-
-      @if (loading()) {
-        <div class="text-center py-4 text-500">
-          <i class="pi pi-spin pi-spinner mr-2"></i> Cargando permisos...
-        </div>
-      }
-
-      <div class="grid">
-        @for (perm of todosLosPermisos(); track perm.id_permiso) {
-          <div class="col-12 md:col-6 mb-2">
-            <div class="flex align-items-start gap-2 surface-100 border-round p-3 cursor-pointer"
-                 [style.opacity]="perm.activo ? '1' : '0.5'"
-                 [style.border]="selectedPermIds().includes(perm.id_permiso)
-                   ? '1px solid var(--p-primary-color)'
-                   : '1px solid transparent'"
-                 (click)="togglePerm(perm.id_permiso)">
-              <p-checkbox
-                [binary]="true"
-                [ngModel]="selectedPermIds().includes(perm.id_permiso)"
-                (onChange)="togglePerm(perm.id_permiso)"
-                [inputId]="'perm_' + perm.id_permiso">
-              </p-checkbox>
-              <label [for]="'perm_' + perm.id_permiso" class="cursor-pointer flex-1"
-                     (click)="$event.stopPropagation()">
-                <span class="font-medium text-sm text-900 block">{{ perm.nombre }}</span>
-                <span class="text-400 text-xs">{{ perm.descripcion || '—' }}</span>
-              </label>
-            </div>
-          </div>
-        }
-      </div>
-
-      @if (!loading() && todosLosPermisos().length === 0) {
-        <div class="text-center text-500 py-4">
-          <i class="pi pi-info-circle mr-2"></i>
-          No hay permisos disponibles.
-          <a class="text-primary cursor-pointer ml-1"
-             [routerLink]="['/admin/roles-permisos/agregar-permiso']">
-            Crear permiso
-          </a>
-        </div>
-      }
-    </div>
-
-    <ng-template pTemplate="footer">
-      <div class="flex align-items-center justify-content-between w-full">
-        <small class="text-400">
-          {{ selectedPermIds().length }} permiso(s) seleccionado(s)
-        </small>
-        <div class="flex gap-2">
-          <p-button label="Cancelar" severity="secondary" [outlined]="true"
-            (onClick)="dialogAsignarVisible = false">
-          </p-button>
-          <p-button
-            label="Guardar permisos"
-            icon="pi pi-check"
-            [loading]="submittingAssign()"
-            (onClick)="guardarPermisos()">
-          </p-button>
-        </div>
-      </div>
-    </ng-template>
   </p-dialog>
 
 </div>

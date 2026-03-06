@@ -153,6 +153,8 @@
       <div class="grid">
         @for (perm of todosLosPermisos(); track perm.id_permiso) {
           <div class="col-12 md:col-6 lg:col-4 mb-2">
+
+            <!-- ✅ Solo el div maneja el click, checkbox es solo visual -->
             <div class="flex align-items-start gap-2 surface-100 border-round p-3 cursor-pointer"
                  [style.opacity]="perm.activo ? '1' : '0.5'"
                  [style.border]="selectedPermIds().includes(perm.id_permiso)
@@ -162,7 +164,6 @@
               <p-checkbox
                 [binary]="true"
                 [ngModel]="selectedPermIds().includes(perm.id_permiso)"
-                (onChange)="togglePerm(perm.id_permiso)"
                 [inputId]="'perm_' + perm.id_permiso">
               </p-checkbox>
               <label [for]="'perm_' + perm.id_permiso"
@@ -172,6 +173,7 @@
                 <span class="text-400 text-xs">{{ perm.descripcion || '—' }}</span>
               </label>
             </div>
+
           </div>
         }
       </div>
@@ -184,14 +186,9 @@
       }
 
       <div class="flex gap-2 justify-content-end pt-4 border-top-1 surface-border mt-3">
-        <p-button label="Finalizar sin cambios" icon="pi pi-forward"
-          severity="secondary" [outlined]="true" styleClass="sedes-pill"
-          [disabled]="submitting()"
-          (onClick)="guardarPermisos()">
-        </p-button>
         <p-button label="Guardar permisos" icon="pi pi-check"
           [loading]="submitting()"
-          [disabled]="submitting()"
+          [disabled]="submitting() || selectedPermIds().length === 0"
           styleClass="sedes-pill"
           (onClick)="guardarPermisos()">
         </p-button>

@@ -46,7 +46,7 @@ export class AgregarRolComponent {
     return !!(c?.invalid && c?.touched);
   }
 
-  cancelar() { this.router.navigate(['/admin/roles']); }
+  cancelar() { this.router.navigate(['/admin/roles-permisos/roles']); }
 
   guardar() {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
@@ -60,7 +60,7 @@ export class AgregarRolComponent {
     }).pipe(take(1)).subscribe({
       next: () => {
         this.msg.add({ severity: 'success', summary: 'Rol creado', detail: `"${val.nombre}" fue creado.` });
-        setTimeout(() => this.router.navigate(['/admin/roles']), 1200);
+        setTimeout(() => this.router.navigate(['/admin/roles-permisos/roles']), 1200);
       },
       error: err => {
         this.msg.add({ severity: 'error', summary: 'Error', detail: err?.error?.message ?? 'No se pudo crear.' });
