@@ -64,9 +64,9 @@ export class AlmacenDashboardService {
   }
 
   getKpis(periodo = 'mes', sedeId?: string | null): Observable<AlmacenKpisDto> {
-    return this.http.get<AlmacenKpisDto>(`${this.baseUrl}/kpis`, {
-      params: this.buildParams(periodo, sedeId),
-    });
+    const params = this.buildParams(periodo, sedeId);
+    console.log('🚀 Llamando kpis con params:', params.toString()); // ← agregar
+    return this.http.get<AlmacenKpisDto>(`${this.baseUrl}/kpis`, { params });
   }
 
   getRendimientoChart(periodo = 'mes', sedeId?: string | null): Observable<RendimientoChartDto> {

@@ -1,13 +1,7 @@
-/* ============================================
-   src/app/services/account-receivable.service.ts
-   ============================================ */
-
-import { Injectable, signal, inject, computed  } from '@angular/core';
-import { HttpClient, HttpParams }      from '@angular/common/http';
-import { firstValueFrom }              from 'rxjs';
-import { environment }                 from '../../../enviroments/enviroment';
-
-// ── Tipos ─────────────────────────────────────────────────────────────────────
+import { Injectable, signal, inject, computed } from '@angular/core';
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { firstValueFrom, Observable } from 'rxjs';
+import { environment } from '../../../enviroments/enviroment';
 
 export type AccountReceivableStatus =
   | 'PENDIENTE' | 'PARCIAL' | 'PAGADO' | 'VENCIDO' | 'CANCELADO';
@@ -36,8 +30,6 @@ export interface AccountReceivablePaginatedResponse {
   totalPages: number;
 }
 
-// ── Payloads ──────────────────────────────────────────────────────────────────
-
 export interface CreateAccountReceivablePayload {
   salesReceiptId: number;
   userRef:        string;
@@ -65,15 +57,12 @@ export interface UpdateDueDatePayload {
   newDueDate:          string;
 }
 
-// ── Service ───────────────────────────────────────────────────────────────────
-
 @Injectable({ providedIn: 'root' })
 export class AccountReceivableService {
 
-  private readonly http     = inject(HttpClient);
-  private readonly baseUrl  = `${environment.apiUrl}/sales/account-receivables`;
+  private readonly http    = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiUrl}/sales/account-receivables`;
 
-  // ── Signals ────────────────────────────────────────────────────────
   readonly list       = signal<AccountReceivableResponse[]>([]);
   readonly selected   = signal<AccountReceivableResponse | null>(null);
   readonly total      = signal<number>(0);
@@ -82,12 +71,10 @@ export class AccountReceivableService {
   readonly loading    = signal<boolean>(false);
   readonly error      = signal<string | null>(null);
   readonly accounts   = this.list.asReadonly();
-
   readonly totalRecords = this.total.asReadonly();
 
-  // ── Filtros activos (para re-usar en goToPage) ─────────────────────
   private _lastSedeId?: number;
-  private _lastStatus?: AccountReceivableStatus;   // nunca null — undefined = sin filtro
+  private _lastStatus?: AccountReceivableStatus;
   private _lastLimit = 10;
 
   readonly pendientes = computed(() =>
@@ -98,14 +85,12 @@ export class AccountReceivableService {
     this.list().filter(a => a.status === 'VENCIDO')
   );
 
-  // ── GET principal con filtros opcionales ───────────────────────────
   async getAll(
     page    = 1,
     limit   = 10,
     sedeId? : number,
     status? : AccountReceivableStatus | null,
   ): Promise<void> {
-    // Guardar para reusar en goToPage — null → undefined (sin filtro)
     this._lastSedeId = sedeId;
     this._lastStatus = status ?? undefined;
     this._lastLimit  = limit;
@@ -117,8 +102,8 @@ export class AccountReceivableService {
         .set('page',  String(page))
         .set('limit', String(limit));
 
-      if (sedeId != null)            httpParams = httpParams.set('sedeId', String(sedeId));
-      if (this._lastStatus != null)  httpParams = httpParams.set('status', this._lastStatus);
+      if (sedeId != null)           httpParams = httpParams.set('sedeId', String(sedeId));
+      if (this._lastStatus != null) httpParams = httpParams.set('status', this._lastStatus);
 
       const res = await firstValueFrom(
         this.http.get<AccountReceivablePaginatedResponse>(this.baseUrl, { params: httpParams }),
@@ -138,12 +123,10 @@ export class AccountReceivableService {
     this.getAll(page, this._lastLimit, this._lastSedeId, this._lastStatus);
   }
 
-  // ── GET paginado (alias legacy) ────────────────────────────────────
   async loadAll(params: { page?: number; limit?: number } = {}): Promise<void> {
     await this.getAll(params.page ?? 1, params.limit ?? 10);
   }
 
-  // ── GET por id ─────────────────────────────────────────────────────
   async getById(id: number): Promise<void> {
     this.loading.set(true);
     this.error.set(null);
@@ -160,7 +143,6 @@ export class AccountReceivableService {
     }
   }
 
-  // ── POST crear ─────────────────────────────────────────────────────
   async create(payload: CreateAccountReceivablePayload): Promise<AccountReceivableResponse | null> {
     this.loading.set(true);
     this.error.set(null);
@@ -176,7 +158,6 @@ export class AccountReceivableService {
     }
   }
 
-  // ── PATCH registrar abono ──────────────────────────────────────────
   async applyPayment(payload: ApplyPaymentPayload): Promise<AccountReceivableResponse | null> {
     this.loading.set(true);
     this.error.set(null);
@@ -192,7 +173,6 @@ export class AccountReceivableService {
     }
   }
 
-  // ── PATCH cancelar ─────────────────────────────────────────────────
   async cancel(payload: CancelAccountReceivablePayload): Promise<AccountReceivableResponse | null> {
     this.loading.set(true);
     this.error.set(null);
@@ -208,7 +188,6 @@ export class AccountReceivableService {
     }
   }
 
-  // ── PATCH actualizar vencimiento ───────────────────────────────────
   async updateDueDate(payload: UpdateDueDatePayload): Promise<AccountReceivableResponse | null> {
     this.loading.set(true);
     this.error.set(null);
@@ -222,5 +201,17 @@ export class AccountReceivableService {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  // ── Exportar PDF (abre en nueva pestaña) ──────────────────────────
+  exportPdf(id: number): void {
+    window.open(`${this.baseUrl}/${id}/export/pdf`, '_blank');
+  }
+
+  // ── Enviar por email al cliente ───────────────────────────────────
+  sendByEmail(id: number): Observable<{ message: string; sentTo: string }> {
+    return this.http.post<{ message: string; sentTo: string }>(
+      `${this.baseUrl}/${id}/send-email`, {}
+    );
   }
 }

@@ -115,6 +115,32 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     } catch { return null; }
   }
 
+
+  imprimirCuenta(id: number): void {
+    this.arService.exportPdf(id);
+  }
+
+  enviarCuenta(id: number): void {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Enviando...',
+      detail: 'Generando y enviando cuenta por cobrar por email.',
+    });
+
+    this.arService.sendByEmail(id).subscribe({
+      next: (res) => this.messageService.add({
+        severity: 'success',
+        summary: 'Email enviado',
+        detail: `Cuenta enviada a ${res.sentTo}`,
+      }),
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
+      }),
+    });
+  }
+
   async onEstadoChange(v: AccountReceivableStatus | null) {
     this.estadoSeleccionado.set(v);
     // null = "Todos" → sin filtro de estado (backend muestra PENDIENTE+PARCIAL+VENCIDO por defecto)

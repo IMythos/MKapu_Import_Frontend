@@ -101,7 +101,7 @@ export class Clientes implements OnInit {
   showDetails    = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.clienteService.loadCustomers(undefined, 'Administrador').subscribe();
+    this.clienteService.loadCustomers({ limit: 1000 }, 'Administrador').subscribe();
   }
 
   private readonly docTypeMap: Record<string, string> = {

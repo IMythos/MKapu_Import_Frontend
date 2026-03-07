@@ -252,7 +252,8 @@
                     <!-- Enviar correo -->
                     <p-button icon="pi pi-send"
                       [rounded]="true" [text]="true" severity="secondary"
-                      pTooltip="Enviar a Correo" tooltipPosition="top">
+                      pTooltip="Enviar a Correo" tooltipPosition="top"
+                      (onClick)="enviarCotizacion(c)">
                     </p-button>
 
                     <!-- Botones exclusivos PENDIENTE -->

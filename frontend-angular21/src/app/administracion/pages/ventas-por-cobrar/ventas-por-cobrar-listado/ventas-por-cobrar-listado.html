@@ -266,15 +266,17 @@
                     (onClick)="verDetalle(a.id)">
                   </p-button>
 
-                  <p-button icon="pi pi-print"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Imprimir" tooltipPosition="top">
-                  </p-button>
+                <p-button icon="pi pi-print"
+                  [rounded]="true" [text]="true" severity="secondary"
+                  pTooltip="Imprimir" tooltipPosition="top"
+                  (onClick)="imprimirCuenta(a.id)">
+                </p-button>
 
-                  <p-button icon="pi pi-send"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Enviar a Correo" tooltipPosition="top">
-                  </p-button>
+                <p-button icon="pi pi-send"
+                  [rounded]="true" [text]="true" severity="secondary"
+                  pTooltip="Enviar a Correo" tooltipPosition="top"
+                  (onClick)="enviarCuenta(a.id)">
+                </p-button>
                   <span class="accion-separador"></span>
                   <p-button
                     icon="pi pi-shopping-cart"
@@ -283,7 +285,7 @@
                     tooltipPosition="top"
                     (onClick)="irAgregarVentaPorCobrar(a.id)">
                   </p-button>
-                  
+
                   <p-button
                     icon="pi pi-times"
                     styleClass="accion-btn accion-btn--eliminar p-button-text p-button-rounded"

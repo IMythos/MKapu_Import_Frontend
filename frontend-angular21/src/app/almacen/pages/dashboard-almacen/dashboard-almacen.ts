@@ -247,8 +247,12 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
 
   private getUserSede(): string {
     try {
-      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      const raw = localStorage.getItem('user');
+      console.log('🔍 localStorage user RAW:', raw); 
+      const user = JSON.parse(raw ?? '{}');
+      console.log('🔍 user parseado:', user);         
       const sede = user.id_sede ?? user.idSede ?? user.sede_id ?? user.sedeId ?? null;
+      console.log('🔍 sede detectada:', sede);        
       return sede ? String(sede) : '';
     } catch { return ''; }
   }

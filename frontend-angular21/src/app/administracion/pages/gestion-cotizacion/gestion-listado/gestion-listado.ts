@@ -71,16 +71,16 @@ export class GestionCotizacionesComponent implements OnInit {
 
   private getHoyPeru(): Date {
     const ahora = new Date();
-    // Perú es UTC-5, sin horario de verano
-    const offsetPeru = -5 * 60; // minutos
-    const offsetLocal = ahora.getTimezoneOffset(); // minutos (negativo si UTC+)
-    const diferencia = (offsetLocal - offsetPeru) * 60 * 1000;
+    const offsetPeru  = -5 * 60;
+    const offsetLocal = ahora.getTimezoneOffset();
+    const diferencia  = (offsetLocal - offsetPeru) * 60 * 1000;
     const horaPeruana = new Date(ahora.getTime() + diferencia);
     horaPeruana.setHours(0, 0, 0, 0);
     return horaPeruana;
   }
 
-  cotizaciones          = computed(() => this.quoteService.quotes());
+  cotizaciones = computed(() => this.quoteService.quotes());
+
   cotizacionesFiltradas = computed(() => {
     const inicio = this.fechaInicio();
     const fin    = this.fechaFin();
@@ -95,6 +95,7 @@ export class GestionCotizacionesComponent implements OnInit {
       return true;
     });
   });
+
   totalRecords    = computed(() => this.quoteService.total());
   totalPages      = computed(() => this.quoteService.totalPages());
   loading         = computed(() => this.quoteService.loading());
@@ -102,6 +103,8 @@ export class GestionCotizacionesComponent implements OnInit {
   totalPendientes = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
+  constructor(private router: Router) {}
+
   ngOnInit() {
     const sedeDefaultId = this.getSedeUsuarioActual();
     if (sedeDefaultId) this.sedeSeleccionada.set(sedeDefaultId);
@@ -146,9 +149,7 @@ export class GestionCotizacionesComponent implements OnInit {
     this.cargarCotizacion();
   }
 
-  onFechaChange() {
-    // Filtro local sobre la página actual
-  }
+  onFechaChange() { /* filtro local */ }
 
   limpiarFiltros() {
     this.buscarValue.set('');
@@ -199,7 +200,7 @@ export class GestionCotizacionesComponent implements OnInit {
     }
   }
 
-  // ── Rechazar cotización ───────────────────────────────────────────────────
+  // ── Rechazar ──────────────────────────────────────────────────────────────
   rechazarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Estás seguro de rechazar esta cotización? El estado cambiará a <strong>RECHAZADA</strong>.',
@@ -210,13 +211,13 @@ export class GestionCotizacionesComponent implements OnInit {
       accept: () => {
         this.quoteService.updateQuoteStatus(id, 'RECHAZADA').subscribe({
           next:  () => { this.messageService.add({ severity: 'success', summary: 'Cotización rechazada', detail: 'El estado fue actualizado a RECHAZADA.' }); this.cargarCotizacion(); },
-          error: () => { this.messageService.add({ severity: 'error',   summary: 'Error', detail: 'No se pudo actualizar el estado.' }); },
+          error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado.' }); },
         });
       },
     });
   }
 
-  // ── Reactivar cotización ──────────────────────────────────────────────────
+  // ── Reactivar ─────────────────────────────────────────────────────────────
   reactivarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Deseas reactivar esta cotización? El estado volverá a <strong>PENDIENTE</strong>.',
@@ -227,13 +228,13 @@ export class GestionCotizacionesComponent implements OnInit {
       accept: () => {
         this.quoteService.updateQuoteStatus(id, 'PENDIENTE').subscribe({
           next:  () => { this.messageService.add({ severity: 'success', summary: 'Cotización reactivada', detail: 'El estado volvió a PENDIENTE.' }); this.cargarCotizacion(); },
-          error: () => { this.messageService.add({ severity: 'error',   summary: 'Error', detail: 'No se pudo reactivar la cotización.' }); },
+          error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo reactivar la cotización.' }); },
         });
       },
     });
   }
 
-  // ── Eliminar permanentemente ──────────────────────────────────────────────
+  // ── Eliminar ──────────────────────────────────────────────────────────────
   eliminarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Estás seguro de <strong>eliminar permanentemente</strong> esta cotización? Esta acción no se puede deshacer.',
@@ -244,7 +245,7 @@ export class GestionCotizacionesComponent implements OnInit {
       accept: () => {
         this.quoteService.deleteQuote(id).subscribe({
           next:  () => { this.messageService.add({ severity: 'success', summary: 'Eliminada', detail: 'La cotización fue eliminada permanentemente.' }); this.cargarCotizacion(); },
-          error: () => { this.messageService.add({ severity: 'error',   summary: 'Error', detail: 'No se pudo eliminar la cotización.' }); },
+          error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar la cotización.' }); },
         });
       },
     });
@@ -252,8 +253,28 @@ export class GestionCotizacionesComponent implements OnInit {
 
   // ── Imprimir ──────────────────────────────────────────────────────────────
   imprimirCotizacion(c: QuoteListItem) {
-    // TODO: implementar lógica de impresión
-    this.messageService.add({ severity: 'info', summary: 'Imprimir', detail: `Cotización ${c.codigo}` });
+    this.quoteService.exportPdf(c.id_cotizacion);
+  }
+
+  // ── Enviar por email ──────────────────────────────────────────────────────
+  enviarCotizacion(c: QuoteListItem) {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Enviando...',
+      detail: `Enviando cotización ${c.codigo} por email.`,
+    });
+    this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
+      next: (res) => this.messageService.add({
+        severity: 'success',
+        summary: 'Email enviado',
+        detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`,
+      }),
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
+      }),
+    });
   }
 
   // ── Helpers de fechas ─────────────────────────────────────────────────────
@@ -290,8 +311,6 @@ export class GestionCotizacionesComponent implements OnInit {
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────
-  constructor(private router: Router) {}
-
   irCrear()             { this.router.navigate(['/admin/agregar-cotizaciones']); }
   irEditar(id: number)  { this.router.navigate(['/admin/editar-cotizacion', id]); }
   irDetalle(id: number) { this.router.navigate(['/admin/ver-detalle-cotizacion', id]); }
