@@ -4,10 +4,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, Subscription } from 'rxjs';
 
-import { Card }         from 'primeng/card';
-import { Button }       from 'primeng/button';
-import { Textarea }     from 'primeng/textarea';
-import { Select }       from 'primeng/select';
+import { Card } from 'primeng/card';
+import { Button } from 'primeng/button';
+import { Textarea } from 'primeng/textarea';
+import { Select } from 'primeng/select';
 import { SelectButton } from 'primeng/selectbutton';
 import { AutoComplete, AutoCompleteSelectEvent } from 'primeng/autocomplete';
 import { Toast } from 'primeng/toast';
@@ -32,59 +32,8 @@ import {
 import { VentaService } from '../../../services/venta.service';
 import { ClienteService } from '../../../services/cliente.service';
 
-import { EmpleadosService, Empleado }   from '../../../../core/services/empleados.service';
-import { ProductosService }             from '../../../../core/services/productos.service';
-import { VentaService }                 from '../../../../ventas/services/venta.service';
-import { ClienteService }               from '../../../../ventas/services/cliente.service';
-import { ClaimService, RegisterClaimPayload, ClaimResponseDto } from '../../../../core/services/claim.service';
-import { AuthService }                  from '../../../../auth/services/auth.service';
-import { ClienteBusquedaResponse }      from '../../../../ventas/interfaces';
-
-// ── Interfaces locales ────────────────────────────────────────────────
-export interface DetalleComprobante {
-  id_det_com:     number;
-  id_comprobante: string;
-  id_producto:    string;
-  cod_prod:       string;
-  descripcion:    string;
-  cantidad:       number;
-  valor_unit:     number;
-  pre_uni:        number;
-  igv:            number;
-  tipo_afe_igv:   string;
-}
-
-export interface ComprobanteVenta {
-  id:               number;
-  id_comprobante:   string;
-  id_cliente:       string;
-  tipo_comprobante: '01' | '03';
-  serie:            string;
-  numero:           number;
-  fec_emision:      Date;
-  fec_venc:         Date | null;
-  moneda:           string;
-  tipo_pago:        string;
-  subtotal:         number;
-  igv:              number;
-  total:            number;
-  estado:           boolean;
-  id_sede:          string;
-  detalles:         DetalleComprobante[];
-  cliente_nombre?:  string;
-  cliente_doc?:     string;
-}
-
 interface ComprobanteConProductos extends ComprobanteVenta {
   productosSeleccionados?: DetalleComprobante[];
-}
-
-interface ReclamoGenerado {
-  id_reclamo:           number;
-  cliente_nombre:       string;
-  descripcion_producto: string;
-  fecha_registro:       Date;
-  motivo:               string;
 }
 
 @Component({
@@ -103,7 +52,6 @@ interface ReclamoGenerado {
     Divider,
     Tooltip,
     InputNumber,
-    InputText,
   ],
   providers: [MessageService],
   templateUrl: './reclamos-crear.html',
@@ -194,9 +142,9 @@ export class ReclamosCrear implements OnInit {
     if (!empleado) {
       this.messageService.add({
         severity: 'warn',
-        summary:  'Sin autenticación',
-        detail:   'No hay empleado logueado',
-        life:     3000,
+        summary: 'Sin autenticación',
+        detail: 'No hay empleado logueado',
+        life: 3000,
       });
     }
   }
@@ -274,10 +222,10 @@ export class ReclamosCrear implements OnInit {
     this.cargarComprobantesCliente();
 
     this.messageService.add({
-      severity: 'info',
-      summary:  'Tipo de documento cambiado',
-      detail:   `Busque por ${this.tipoDocumento}`,
-      life:     2000,
+      severity: 'success',
+      summary: 'Cliente encontrado',
+      detail: this.getNombreCliente(cliente),
+      life: 3000,
     });
   }
 
@@ -408,14 +356,8 @@ export class ReclamosCrear implements OnInit {
            'Sin nombre';
   }
 
-  limpiarCliente(): void {
-    this.clienteAutoComplete.set('');
-    this.clienteEncontrado.set(null);
-    this.busquedaRealizada.set(false);
-    this.comprobantesCliente     = [];
-    this.comprobanteSeleccionado = null;
-    this.productoSeleccionado    = null;
-    this.resetearUnidades();
+  get textoBotonBuscar(): string {
+    return 'Buscar';
   }
 
   readonly botonBuscarHabilitado = computed(() => {
@@ -436,36 +378,14 @@ export class ReclamosCrear implements OnInit {
 
     this.resetearUnidades();
 
-        this.comprobantesCliente = lista
-          .filter((c: any) => c.estado !== false)
-          .sort(
-            (a: any, b: any) =>
-              new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime(),
-          ) as ComprobanteVenta[];
-
-        if (this.comprobantesCliente.length === 0) {
-          this.messageService.add({
-            severity: 'warn',
-            summary:  'Sin compras',
-            detail:   'Este cliente no tiene compras registradas',
-            life:     3000,
-          });
-        }
-      },
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary:  'Error',
-          detail:   'No se pudieron cargar los comprobantes',
-          life:     3000,
-        });
-      },
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Búsqueda limpiada',
+      detail: 'Puede buscar otro cliente',
+      life: 2000,
     });
-
-    this.subscriptions.add(sub);
   }
 
-  // ── Paso 1: seleccionar comprobante ──────────────────────────────
   seleccionarComprobanteDeCliente(comprobante: ComprobanteVenta): void {
     const actual = this.comprobanteSeleccionado();
 
@@ -475,11 +395,12 @@ export class ReclamosCrear implements OnInit {
       this.diasRestantes.set(0);
       this.productoSeleccionado.set(null);
       this.resetearUnidades();
+
       this.messageService.add({
         severity: 'info',
-        summary:  'Comprobante deseleccionado',
-        detail:   'Puede seleccionar otro comprobante',
-        life:     2000,
+        summary: 'Comprobante deseleccionado',
+        detail: 'Puede seleccionar otro comprobante',
+        life: 2000,
       });
       return;
     }
@@ -495,9 +416,9 @@ export class ReclamosCrear implements OnInit {
 
     this.messageService.add({
       severity: 'success',
-      summary:  'Comprobante seleccionado',
-      detail:   this.formatearComprobante(comprobante.serie, comprobante.numero),
-      life:     2000,
+      summary: 'Comprobante seleccionado',
+      detail: this.formatearComprobante(comprobante.serie, comprobante.numero),
+      life: 2000,
     });
   }
 
@@ -534,9 +455,15 @@ export class ReclamosCrear implements OnInit {
     if (idActual && idActual === idNuevo) {
       this.productoSeleccionado.set(null);
       this.resetearUnidades();
-      this.messageService.add({ severity: 'info', summary: 'Producto deseleccionado', life: 2000 });
+
+      this.messageService.add({
+        severity: 'info',
+        summary: 'Producto deseleccionado',
+        life: 2000,
+      });
       return;
     }
+
     const nombreProducto = producto.descripcion || producto.name || producto.nombre || 'Producto seleccionado';
 
     this.productoSeleccionado.set({
@@ -546,6 +473,7 @@ export class ReclamosCrear implements OnInit {
     });
     
     this.resetearUnidades();
+
     this.messageService.add({
       severity: 'success',
       summary: 'Producto seleccionado',
@@ -802,9 +730,9 @@ export class ReclamosCrear implements OnInit {
 
     this.messageService.add({
       severity: 'info',
-      summary:  'Formulario limpiado',
-      detail:   'Se han restablecido todos los campos',
-      life:     2000,
+      summary: 'Formulario limpiado',
+      detail: 'Se han restablecido todos los campos',
+      life: 2000,
     });
   }
 

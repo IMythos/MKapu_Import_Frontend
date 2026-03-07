@@ -117,8 +117,8 @@
 
                 <div class="boton-buscar-wrapper">
                   <p-button
-                    [label]="textoBotonBuscar()"
-                    [icon]="iconoBotonBuscar()"
+                    [label]="textoBotonBuscar"
+                    icon="pi pi-search"
                     severity="primary"
                     (onClick)="manejarBuscarComprobante()"
                     [disabled]="!botonBuscarHabilitado() || clienteEncontrado() !== null"
@@ -135,7 +135,6 @@
                 </div>
               </div>
 
-              <!-- Contador de dígitos -->
               <div
                 *ngIf="busquedaComprobante() && !clienteEncontrado()"
                 class="mt-2 flex align-items-center gap-2"
@@ -178,7 +177,7 @@
                         [text]="true"
                         severity="secondary"
                         size="small"
-                        (onClick)="limpiarCliente()"
+                        (onClick)="limpiarBusqueda()"
                         pTooltip="Cambiar cliente"
                         tooltipPosition="left"
                         styleClass="btn-close-cliente"
@@ -224,18 +223,6 @@
                 </div>
               </p-card>
             </div>
-
-            <!-- Cliente no encontrado -->
-            <div
-              *ngIf="busquedaRealizada() && !clienteEncontrado() && !loading()"
-              class="mt-3 text-center p-4"
-            >
-              <i class="pi pi-exclamation-circle text-4xl text-orange-400 mb-3"></i>
-              <p class="text-600">
-                No se encontró ningún cliente con ese {{ tipoDocumento }}.
-              </p>
-            </div>
-
           </div>
         </div>
       </div>
@@ -273,6 +260,7 @@
                         {{ formatearComprobante(comprobante.serie, comprobante.numero) }}
                       </span>
                     </div>
+
                     <div class="flex align-items-center gap-2">
                       <p-tag
                         [value]="getTipoComprobanteLabel(comprobante.tipo_comprobante)"
@@ -311,14 +299,27 @@
                       [class.vigente]="validarGarantia(comprobante.fec_emision)"
                       [class.vencida]="!validarGarantia(comprobante.fec_emision)"
                     >
-                      <i [class]="validarGarantia(comprobante.fec_emision) ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
+                      <i
+                        [class]="
+                          validarGarantia(comprobante.fec_emision)
+                            ? 'pi pi-check-circle'
+                            : 'pi pi-times-circle'
+                        "
+                      ></i>
                       <div class="garantia-info">
-                        <strong>{{ validarGarantia(comprobante.fec_emision) ? 'Garantía Vigente' : 'Garantía Vencida' }}</strong>
+                        <strong>{{
+                          validarGarantia(comprobante.fec_emision)
+                            ? 'Garantía Vigente'
+                            : 'Garantía Vencida'
+                        }}</strong>
                         <small *ngIf="validarGarantia(comprobante.fec_emision)">
-                          {{ calcularDiasRestantesComprobante(comprobante.fec_emision) }} días restantes
+                          {{ calcularDiasRestantesComprobante(comprobante.fec_emision) }} días
+                          restantes
                         </small>
                         <small *ngIf="!validarGarantia(comprobante.fec_emision)">
-                          Venció hace {{ Math.abs(calcularDiasRestantesComprobante(comprobante.fec_emision)) }} días
+                          Venció hace
+                          {{ Math.abs(calcularDiasRestantesComprobante(comprobante.fec_emision)) }}
+                          días
                         </small>
                       </div>
                     </div>
@@ -327,7 +328,6 @@
               </div>
             </div>
           </div>
-
           <div *ngIf="comprobantesCliente().length === 0" class="text-center p-5">
             <i class="pi pi-inbox text-6xl text-400 mb-3"></i>
             <p class="text-600 text-lg">No hay comprobantes disponibles para este cliente</p>
@@ -354,7 +354,9 @@
                 class="pi pi-check-circle check-icon"
               ></i>
             </div>
+
             <h4 class="producto-nombre">{{ producto.descripcion }}</h4>
+
             <div class="producto-footer">
               <span class="cantidad">Cant: {{ producto.cantidad }}</span>
               <span class="precio">S/. {{ getPrecioProducto(producto) | number: '1.2-2' }}</span>
@@ -421,6 +423,7 @@
           <i class="pi pi-file-edit step-icon"></i>
           <h3>Datos del Reclamo</h3>
         </div>
+
         <div class="content-centrado">
           <div class="form-field mb-4">
             <label class="input-label">Motivo del Reclamo *</label>
@@ -432,6 +435,7 @@
               styleClass="w-full"
             />
           </div>
+
           <div class="form-field">
             <label class="input-label">Descripción del Problema *</label>
             <textarea
@@ -454,12 +458,14 @@
             <i class="pi pi-check-circle step-icon"></i>
             <h3>Confirmar Reclamo</h3>
           </div>
+
           <div class="content-centrado">
             <p-card class="resumen-reclamo">
               <h4 class="resumen-titulo mb-4">
                 <i class="pi pi-file-check"></i>
                 Resumen del Reclamo
               </h4>
+
               <div class="resumen-grid">
                 <div class="resumen-item">
                   <span class="label">
@@ -468,6 +474,7 @@
                   </span>
                   <strong>{{ getNombreCliente(clienteEncontrado()) }}</strong>
                 </div>
+
                 <div class="resumen-item">
                   <span class="label">
                     <i class="pi pi-file"></i>
@@ -482,6 +489,7 @@
                     }}
                   </strong>
                 </div>
+
                 <div class="resumen-item">
                   <span class="label">
                     <i class="pi pi-box"></i>
@@ -489,6 +497,7 @@
                   </span>
                   <strong>{{ productoSeleccionado()?.descripcion }}</strong>
                 </div>
+
                 <div class="resumen-item">
                   <span class="label">
                     <i class="pi pi-exclamation-triangle"></i>
@@ -496,6 +505,7 @@
                   </span>
                   <p-tag [value]="motivoSeleccionado()" severity="warn" />
                 </div>
+
                 <div class="resumen-item full-width">
                   <span class="label">
                     <i class="pi pi-comment"></i>
@@ -504,6 +514,7 @@
                   <p class="descripcion-texto">{{ descripcionProblema() }}</p>
                 </div>
               </div>
+
               <div class="mt-4">
                 <p-button
                   label="Registrar Reclamo"
@@ -532,7 +543,9 @@
                 </div>
                 <p-tag [value]="$any(reclamoGenerado()).status || 'REGISTRADO'" severity="warn" />
               </div>
+
               <p-divider styleClass="comprobante-divider" />
+
               <div class="info-grid">
                 <div class="info-item">
                   <span class="label">
@@ -570,13 +583,29 @@
           </div>
 
           <div class="action-buttons-final mt-4">
-            <p-button label="Ver Detalle"   icon="pi pi-eye"  (onClick)="verDetalle()"  styleClass="w-full btn-accion-final" />
-            <p-button label="Nuevo Reclamo" icon="pi pi-plus" severity="success" (onClick)="nuevoReclamo()" styleClass="w-full btn-accion-final" />
-            <p-button label="Ver Listado"   icon="pi pi-list" [outlined]="true" (onClick)="cancelar()" styleClass="w-full btn-accion-final" />
+            <p-button
+              label="Ver Detalle"
+              icon="pi pi-eye"
+              (onClick)="verDetalle()"
+              styleClass="w-full btn-accion-final"
+            />
+            <p-button
+              label="Nuevo Reclamo"
+              icon="pi pi-plus"
+              severity="success"
+              (onClick)="nuevoReclamo()"
+              styleClass="w-full btn-accion-final"
+            />
+            <p-button
+              label="Ver Listado"
+              icon="pi pi-list"
+              [outlined]="true"
+              (onClick)="cancelar()"
+              styleClass="w-full btn-accion-final"
+            />
           </div>
         </div>
       </div>
-
     </div>
     <p-divider styleClass="wizard-divider" />
 
@@ -599,7 +628,6 @@
         (onClick)="nextStep()"
       />
     </div>
-
   </p-card>
 </div>
 

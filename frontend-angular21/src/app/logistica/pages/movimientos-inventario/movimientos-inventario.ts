@@ -14,6 +14,7 @@ import { MovimientoInventario } from '../../interfaces/movimiento-inventario.int
 import { TransferUserContextService } from '../../../administracion/services/transfer-user-context.service';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 @Component({
   selector: 'app-movimientos-inventario',
   standalone: true,
