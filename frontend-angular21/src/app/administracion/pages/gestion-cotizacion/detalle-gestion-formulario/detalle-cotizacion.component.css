@@ -1,0 +1,178 @@
+/* ══════════════════════════════════════════════════════════════
+   DETALLE COTIZACIÓN — estilos específicos
+   (hereda variables globales del proyecto)
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Badge código en cabecera ─────────────────────────────── */
+.cotizacion-codigo-badge {
+  display: inline-block;
+  margin-left: 0.6rem;
+  padding: 0.15rem 0.7rem;
+  border-radius: 999px;
+  background: var(--gold, #f59e0b);
+  color: #1a1a1a;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  vertical-align: middle;
+  font-family: monospace;
+}
+
+/* ── Grids principales ────────────────────────────────────── */
+.detalle-grid-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1rem;
+}
+
+.detalle-grid-bottom {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .detalle-grid-top    { grid-template-columns: 1fr 1fr; }
+  .detalle-grid-bottom { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 640px) {
+  .detalle-grid-top    { grid-template-columns: 1fr; }
+  .detalle-grid-bottom { grid-template-columns: 1fr; }
+}
+
+/* ── Etiqueta de sección ──────────────────────────────────── */
+.detalle-section-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold, #f59e0b);
+  display: flex;
+  align-items: center;
+}
+
+/* ── Filas info (label : valor) ───────────────────────────── */
+.detalle-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.detalle-info-label {
+  font-size: 0.78rem;
+  color: var(--text-muted, #9ca3af);
+  white-space: nowrap;
+}
+
+.detalle-info-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-main, #f1f5f9);
+  text-align: right;
+}
+
+/* ── Total destacado ──────────────────────────────────────── */
+.detalle-total-valor {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--gold, #f59e0b);
+  text-align: right;
+}
+
+/* ── Bloque fecha ─────────────────────────────────────────── */
+.detalle-fecha-bloque {
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.detalle-fecha-valor {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main, #f1f5f9);
+}
+
+/* ── Campos de detalle (cliente / sede) ───────────────────── */
+.detalle-field-label {
+  font-size: 0.72rem;
+  color: var(--text-muted, #9ca3af);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.detalle-field-value {
+  font-size: 0.88rem;
+  color: var(--text-main, #f1f5f9);
+  font-weight: 500;
+  padding: 0.4rem 0.6rem;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Totales en footer de tabla ───────────────────────────── */
+.totales-footer-row td {
+  padding: 0.4rem 0.75rem !important;
+  font-size: 0.85rem;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.totales-footer-total td {
+  padding: 0.6rem 0.75rem !important;
+  border-top: 2px solid rgba(255,255,255,0.12) !important;
+  font-size: 1rem;
+}
+
+/* ── dias-badge (reutilizados del listado) ────────────────── */
+.dias-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.dias-badge--ok       { background: rgba(34,197,94,.15);  color: #4ade80; }
+.dias-badge--proximo  { background: rgba(250,204,21,.15); color: #fde047; }
+.dias-badge--urgente  { background: rgba(251,146,60,.15); color: #fb923c; }
+.dias-badge--hoy      { background: rgba(251,146,60,.2);  color: #fb923c; font-weight:800; }
+.dias-badge--vencido  { background: rgba(248,113,113,.15);color: #f87171; }
+
+/* ── Empty states ─────────────────────────────────────────── */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 3rem 1rem;
+  color: var(--text-muted, #9ca3af);
+}
+
+.empty-state i { font-size: 2.5rem; }
+.empty-state span { font-size: 0.9rem; }
+
+.empty-state-small {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-muted, #9ca3af);
+  padding: 1rem;
+  font-size: 0.85rem;
+}
+
+/* ── Botones de acción heredados del listado ──────────────── */
+.accion-btn--venta  { color: #4ade80 !important; }
+.accion-btn--cobrar { color: #60a5fa !important; }

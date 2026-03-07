@@ -181,7 +181,6 @@
                   Selecciona el método de pago.
                 </small>
               }
-              <!-- ↓ nuevo: aviso cuando ya está fijado -->
               @if (cuenta()?.paymentTypeId && (cuenta()!.status === 'PARCIAL' || cuenta()!.status === 'PAGADO')) {
                 <small class="text-400 text-xs mt-1 block">
                   <i class="pi pi-lock mr-1"></i>
@@ -290,30 +289,11 @@
   }
 </div>
 
-<!-- OVERLAY PROCESANDO -->
-@if (isSubmitting()) {
-  <div class="fixed top-0 left-0 w-full h-full flex align-items-center justify-content-center"
-       style="background:rgba(0,0,0,0.6); z-index:9999; backdrop-filter:blur(4px);">
-    <div class="surface-card border-round-2xl p-5 shadow-8 text-center"
-         style="min-width:320px; border:1px solid var(--p-primary-color)">
-      <div class="mb-4 flex justify-content-center">
-        <div class="border-circle flex align-items-center justify-content-center"
-             style="width:64px; height:64px; background:var(--p-primary-color); animation:pulseGlow 1.2s ease-in-out infinite;">
-          <i class="pi pi-spin pi-spinner text-3xl text-0"></i>
-        </div>
-      </div>
-      <p class="font-bold text-900 text-lg mb-2">Procesando pago</p>
-      <p class="text-500 text-sm mb-0">{{ pasoActual() ?? 'Iniciando...' }}</p>
-      <div class="mt-4 border-round overflow-hidden w-full" style="height:4px; background:var(--surface-200)">
-        <div class="border-round h-full"
-             style="background:var(--p-primary-color);
-                    animation:progressBar 1.5s ease-in-out infinite;
-                    width:40%">
-        </div>
-      </div>
-    </div>
-  </div>
-}
+<app-loading-overlay
+  [visible]="isSubmitting()"
+  mensaje="Procesando pago"
+  [paso]="pasoActual() ?? 'Iniciando...'"
+/>
 
 <p-toast></p-toast>
 <p-confirmdialog></p-confirmdialog>

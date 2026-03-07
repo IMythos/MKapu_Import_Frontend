@@ -28,6 +28,7 @@ import { Quote } from '../../interfaces/quote.interface';
 
 import { DispatchService } from '../../services/dispatch.service';
 import { CreateDispatchRequest } from '../../interfaces/dispatch.interfaces';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 import {
   ClienteBusquedaAdminResponse,
@@ -70,6 +71,7 @@ export type TipoEntrega = 'recojo' | 'delivery';
     InputNumberModule,
     TableModule,
     TooltipModule,
+    LoadingOverlayComponent
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './generar-ventas-administracion.html',
@@ -126,7 +128,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   sedeSeleccionada = signal<number | null>(null);
 
   activeStep = signal(0);
-
+  isLoading = signal(false);
   tipoComprobante = signal(2);
 
   clienteDocumento = signal('');
@@ -205,7 +207,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   snapshotMetodoPago = signal<string>('');
   snapshotTipoComprobante = signal<number>(2);
 
-  tipoVentaSeleccionado = signal<number>(1); // 1 = VENTA NORMAL por defecto
+  tipoVentaSeleccionado = signal<number>(1); 
 
   readonly nombreTipoVentaSeleccionado = computed(
     () => this.tiposVenta().find((t) => t.id === this.tipoVentaSeleccionado())?.descripcion ?? '—',

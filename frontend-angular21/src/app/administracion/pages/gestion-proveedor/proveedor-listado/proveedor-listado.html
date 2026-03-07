@@ -17,28 +17,23 @@
           label="Agregar Proveedor"
           icon="pi pi-plus"
           styleClass="proveedores-pill proveedores-pill-warning"
-          (onClick)="irCrear()"
-        >
+          (onClick)="irCrear()">
         </p-button>
-
         <p-button
+          *ngIf="!esVistaEliminados()"
           icon="pi pi-trash"
           severity="danger"
           styleClass="proveedores-pill"
           pTooltip="Ver proveedores eliminados"
-          (onClick)="irEliminados()"
-          *ngIf="!esVistaEliminados()"
-        >
+          (onClick)="irEliminados()">
         </p-button>
-
         <p-button
           *ngIf="esVistaEliminados()"
           icon="pi pi-list"
           severity="secondary"
           styleClass="proveedores-pill"
           pTooltip="Ver proveedores activos"
-          (onClick)="irActivos()"
-        >
+          (onClick)="irActivos()">
         </p-button>
       </div>
     </div>
@@ -47,6 +42,8 @@
 
 <div class="p-2">
   <div *ngIf="!isRutaHija()">
+
+    <!-- CONTADORES -->
     <div class="contadores-proveedores mb-4">
       <div class="contador-card">
         <i class="pi pi-building"></i>
@@ -56,7 +53,6 @@
           <span class="contador-detalle"><i class="pi pi-check-circle"></i> Activos</span>
         </div>
       </div>
-
       <div class="contador-card">
         <i class="pi pi-id-card"></i>
         <div>
@@ -65,7 +61,6 @@
           <span class="contador-detalle"><i class="pi pi-verified"></i> Verificados</span>
         </div>
       </div>
-
       <div class="contador-card">
         <i class="pi pi-phone"></i>
         <div>
@@ -74,7 +69,6 @@
           <span class="contador-detalle"><i class="pi pi-user"></i> Disponibles</span>
         </div>
       </div>
-
       <div class="contador-card">
         <i class="pi pi-at"></i>
         <div>
@@ -85,12 +79,12 @@
       </div>
     </div>
 
+    <!-- FILTROS -->
     <div class="surface-card border-round-xl shadow-1 mb-4">
       <div class="p-3">
         <div class="flex flex-wrap gap-6 align-items-end h-full">
           <div class="flex-1 p-fluid h-full">
             <label class="font-medium mb-2 block">Buscar Proveedor</label>
-
             <p-autocomplete
               [ngModel]="buscarValue()"
               (ngModelChange)="buscarValue.set($event)"
@@ -100,8 +94,7 @@
               (onSelect)="filtrarPorBusqueda($event)"
               placeholder="Razón social, RUC o contacto..."
               fluid
-              styleClass="autocomplete-proveedores"
-            >
+              styleClass="autocomplete-proveedores">
               <ng-template let-item pTemplate="item">
                 <div class="autocomplete-item-custom">
                   <div class="flex flex-column">
@@ -129,16 +122,14 @@
               [onLabel]="'Lista'"
               [offLabel]="'Tarjetas'"
               [onIcon]="'pi pi-table'"
-              [offIcon]="'pi pi-list'"
-            ></p-toggleButton>
-
+              [offIcon]="'pi pi-list'">
+            </p-toggleButton>
             <p-button
               icon="pi pi-filter-slash"
               label="Limpiar"
               severity="danger"
               size="small"
-              (onClick)="limpiarFiltros()"
-            >
+              (onClick)="limpiarFiltros()">
             </p-button>
           </div>
         </div>
@@ -148,110 +139,111 @@
     <div *ngIf="!esVistaEliminados()">
       <ng-container *ngTemplateOutlet="listaProveedores"></ng-container>
     </div>
-
     <div *ngIf="esVistaEliminados()">
       <ng-container *ngTemplateOutlet="listaProveedores"></ng-container>
     </div>
+
   </div>
 
   <div
     class="router-child-outlet surface-section"
-    [style.min-height]="isRutaHija() ? '400px' : '0'"
-  >
+    [style.min-height]="isRutaHija() ? '400px' : '0'">
     <router-outlet></router-outlet>
   </div>
 </div>
 
+<!-- ══ TEMPLATE LISTA PROVEEDORES ══════════════════════════════════════ -->
 <ng-template #listaProveedores>
+
+  <!-- Vista tabla -->
   <div *ngIf="vistaLista()" class="mb-6">
-    <div
-      *ngIf="proveedoresPaginados().length > 0"
-      class="surface-card border-round-xl shadow-1 overflow-hidden"
-    >
-      <p-table
-        [value]="proveedoresPaginados()"
-        dataKey="id_proveedor"
-        [rows]="rows()"
-        [first]="first()"
-        [totalRecords]="totalRecords()"
-        [loading]="loading()"
-        [paginator]="false"
-        styleClass="proveedores-table-nativa proveedores-table-hover"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width: 15%">RUC</th>
-            <th style="width: 30%">Razón Social</th>
-            <th style="width: 15%">Contacto</th>
-            <th style="width: 20%">Email</th>
-            <th style="width: 10%">Estado</th>
-            <th style="width: 10%">Acciones</th>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-p>
-          <tr>
-            <td class="font-semibold">{{ p.ruc }}</td>
-            <td>{{ p.razon_social }}</td>
-            <td>{{ p.contacto || '-' }}</td>
-            <td>{{ p.email || '-' }}</td>
-            <td>
-              <p-tag
-                [value]="p.estado ? 'Activo' : 'Inactivo'"
-                [severity]="p.estado ? 'success' : 'danger'"
-                styleClass="font-bold"
-              ></p-tag>
-            </td>
-            <td>
-              <div class="flex align-items-center gap-2">
-                <p-button
-                  icon="pi pi-eye"
-                  text
-                  severity="secondary"
-                  styleClass="proveedores-icon-btn proveedores-icon-soft"
-                  pTooltip="Ver Detalles"
-                  (onClick)="irDetalle(p.id_proveedor)"
-                >
-                </p-button>
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative;">
 
-                <p-button
-                  icon="pi pi-pencil"
-                  text
-                  severity="secondary"
-                  styleClass="proveedores-icon-btn proveedores-icon-warn"
-                  pTooltip="Editar Proveedor"
-                  (onClick)="irEditar(p.id_proveedor)"
-                >
-                </p-button>
+      <app-loading-overlay
+        [visible]="loading()"
+        mensaje="Cargando proveedores..."
+        modo="inline">
+      </app-loading-overlay>
 
-                <p-button
-                  icon="pi pi-trash"
-                  text
-                  [severity]="p.estado ? 'danger' : 'success'"
-                  styleClass="proveedores-icon-btn proveedores-icon-danger"
-                  [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
-                  (onClick)="toggleStatus(p)"
-                >
-                </p-button>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="6" class="text-center py-6">
-              <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
-              <p class="text-900 font-medium mb-0">No se encontraron proveedores</p>
-              <p class="text-600 mt-2">Ajusta los filtros arriba</p>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
+
+        <p-table
+          *ngIf="proveedoresPaginados().length > 0"
+          [value]="proveedoresPaginados()"
+          dataKey="id_proveedor"
+          [rows]="rows()"
+          [first]="first()"
+          [totalRecords]="totalRecords()"
+          [loading]="false"
+          [paginator]="false"
+          styleClass="proveedores-table-nativa proveedores-table-hover">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 15%">RUC</th>
+              <th style="width: 30%">Razón Social</th>
+              <th style="width: 15%">Contacto</th>
+              <th style="width: 20%">Email</th>
+              <th style="width: 10%">Estado</th>
+              <th style="width: 10%">Acciones</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-p>
+            <tr>
+              <td class="font-semibold">{{ p.ruc }}</td>
+              <td>{{ p.razon_social }}</td>
+              <td>{{ p.contacto || '-' }}</td>
+              <td>{{ p.email || '-' }}</td>
+              <td>
+                <p-tag
+                  [value]="p.estado ? 'Activo' : 'Inactivo'"
+                  [severity]="p.estado ? 'success' : 'danger'"
+                  styleClass="font-bold">
+                </p-tag>
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <p-button icon="pi pi-eye" text severity="secondary"
+                    styleClass="proveedores-icon-btn proveedores-icon-soft"
+                    pTooltip="Ver Detalles"
+                    (onClick)="irDetalle(p.id_proveedor)">
+                  </p-button>
+                  <p-button icon="pi pi-pencil" text severity="secondary"
+                    styleClass="proveedores-icon-btn proveedores-icon-warn"
+                    pTooltip="Editar Proveedor"
+                    (onClick)="irEditar(p.id_proveedor)">
+                  </p-button>
+                  <p-button icon="pi pi-trash" text
+                    [severity]="p.estado ? 'danger' : 'success'"
+                    styleClass="proveedores-icon-btn proveedores-icon-danger"
+                    [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
+                    (onClick)="toggleStatus(p)">
+                  </p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="6" class="text-center py-6">
+                <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
+                <p class="text-900 font-medium mb-0">No se encontraron proveedores</p>
+                <p class="text-600 mt-2">Ajusta los filtros arriba</p>
+              </td>
+            </tr>
+          </ng-template>
+
+        </p-table>
+
+      </div>
     </div>
 
+    <!-- Paginador vista tabla -->
     <div
       *ngIf="proveedoresPaginados().length > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl"
-    >
+      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl">
       <div class="text-600 font-medium">
         Mostrando {{ first() + 1 }}-{{ getLast() }} de {{ totalRecords() }} proveedores
       </div>
@@ -260,8 +252,8 @@
         [first]="first()"
         [totalRecords]="totalRecords()"
         (onPageChange)="onPageChange($event)"
-        styleClass="flex-1 justify-content-center"
-      ></p-paginator>
+        styleClass="flex-1 justify-content-center">
+      </p-paginator>
       <div class="flex align-items-center gap-2">
         <span class="text-600 mr-2">Filas:</span>
         <p-select
@@ -269,91 +261,80 @@
           (ngModelChange)="cambiarFilas($event)"
           name="rowsSelectProveedores"
           [options]="pageSizeOptions"
-          class="w-6rem"
-        ></p-select>
+          class="w-6rem">
+        </p-select>
       </div>
     </div>
   </div>
 
+  <!-- Vista tarjetas -->
   <div *ngIf="!vistaLista()" class="mb-6">
-    <div *ngIf="proveedoresPaginados().length > 0" class="grid">
-      <div
-        class="col-12 md:col-6 lg:col-4 xl:col-3"
-        *ngFor="let p of proveedoresPaginados(); trackBy: trackByFn"
-      >
-        <div
-          class="surface-card border-round-xl shadow-2 h-full hover:shadow-5 transition-duration-300 p-4 flex flex-column"
-        >
-          <div class="mb-3">
-            <span class="text-lg font-bold text-900 line-height-2 block mb-2">
-              {{ p.razon_social }}
-            </span>
-            <small class="text-700 font-medium">RUC: {{ p.ruc }}</small>
-          </div>
 
-          <div class="flex flex-column gap-2 mb-3">
-            <div class="flex align-items-center gap-2 text-sm text-600" *ngIf="p.contacto">
-              <i class="pi pi-user"></i>
-              <span>{{ p.contacto }}</span>
+    <!-- Overlay también en tarjetas -->
+    <div style="position: relative;">
+      <app-loading-overlay
+        [visible]="loading()"
+        mensaje="Cargando proveedores..."
+        modo="inline">
+      </app-loading-overlay>
+
+      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
+        <div *ngIf="proveedoresPaginados().length > 0" class="grid">
+          <div
+            class="col-12 md:col-6 lg:col-4 xl:col-3"
+            *ngFor="let p of proveedoresPaginados(); trackBy: trackByFn">
+            <div class="surface-card border-round-xl shadow-2 h-full hover:shadow-5 transition-duration-300 p-4 flex flex-column">
+              <div class="mb-3">
+                <span class="text-lg font-bold text-900 line-height-2 block mb-2">{{ p.razon_social }}</span>
+                <small class="text-700 font-medium">RUC: {{ p.ruc }}</small>
+              </div>
+              <div class="flex flex-column gap-2 mb-3">
+                <div class="flex align-items-center gap-2 text-sm text-600" *ngIf="p.contacto">
+                  <i class="pi pi-user"></i><span>{{ p.contacto }}</span>
+                </div>
+                <div class="flex align-items-center gap-2 text-sm text-600" *ngIf="p.email">
+                  <i class="pi pi-envelope"></i><span>{{ p.email }}</span>
+                </div>
+                <div class="flex align-items-center gap-2 text-sm text-600" *ngIf="p.telefono">
+                  <i class="pi pi-phone"></i><span>{{ p.telefono }}</span>
+                </div>
+              </div>
+              <div class="mb-3 flex justify-content-end">
+                <div class="flex align-items-center text-sm font-medium p-2 border-round"
+                  [ngClass]="p.estado ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'">
+                  <i [class]="p.estado ? 'pi pi-check-circle mr-2' : 'pi pi-times-circle mr-2'"></i>
+                  <span>{{ p.estado ? 'Activo' : 'Inactivo' }}</span>
+                </div>
+              </div>
+              <div class="flex-1"></div>
+              <div class="flex align-items-center justify-content-center gap-2 pt-2">
+                <p-button icon="pi pi-eye" text severity="secondary"
+                  styleClass="proveedores-icon-btn proveedores-icon-soft"
+                  pTooltip="Ver Detalles"
+                  (onClick)="irDetalle(p.id_proveedor)">
+                </p-button>
+                <p-button icon="pi pi-pencil" text severity="secondary"
+                  styleClass="proveedores-icon-btn proveedores-icon-warn"
+                  pTooltip="Editar Proveedor"
+                  (onClick)="irEditar(p.id_proveedor)">
+                </p-button>
+                <p-button icon="pi pi-trash" text
+                  [severity]="p.estado ? 'danger' : 'success'"
+                  styleClass="proveedores-icon-btn proveedores-icon-danger"
+                  [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
+                  (onClick)="toggleStatus(p)">
+                </p-button>
+              </div>
             </div>
-            <div class="flex align-items-center gap-2 text-sm text-600" *ngIf="p.email">
-              <i class="pi pi-envelope"></i>
-              <span>{{ p.email }}</span>
-            </div>
-            <div class="flex align-items-center gap-2 text-sm text-600" *ngIf="p.telefono">
-              <i class="pi pi-phone"></i>
-              <span>{{ p.telefono }}</span>
-            </div>
-          </div>
-
-          <div class="mb-3 flex justify-content-end">
-            <div
-              class="flex align-items-center text-sm font-medium p-2 border-round"
-              [ngClass]="p.estado ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50'"
-            >
-              <i [class]="p.estado ? 'pi pi-check-circle mr-2' : 'pi pi-times-circle mr-2'"></i>
-              <span>{{ p.estado ? 'Activo' : 'Inactivo' }}</span>
-            </div>
-          </div>
-
-          <div class="flex-1"></div>
-
-          <div class="flex align-items-center justify-content-center gap-2 pt-2">
-            <p-button
-              icon="pi pi-eye"
-              text
-              severity="secondary"
-              styleClass="proveedores-icon-btn proveedores-icon-soft"
-              pTooltip="Ver Detalles"
-              (onClick)="irDetalle(p.id_proveedor)"
-            ></p-button>
-
-            <p-button
-              icon="pi pi-pencil"
-              text
-              severity="secondary"
-              styleClass="proveedores-icon-btn proveedores-icon-warn"
-              pTooltip="Editar Proveedor"
-              (onClick)="irEditar(p.id_proveedor)"
-            ></p-button>
-
-            <p-button
-              icon="pi pi-trash"
-              text
-              [severity]="p.estado ? 'danger' : 'success'"
-              styleClass="proveedores-icon-btn proveedores-icon-danger"
-              [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
-              (onClick)="toggleStatus(p)"
-            ></p-button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- Paginador vista tarjetas -->
     <div
       *ngIf="proveedoresPaginados().length > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl"
-    >
+      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl">
       <div class="text-600 font-medium">
         Mostrando {{ first() + 1 }}-{{ getLast() }} de {{ totalRecords() }} proveedores
       </div>
@@ -362,8 +343,8 @@
         [first]="first()"
         [totalRecords]="totalRecords()"
         (onPageChange)="onPageChange($event)"
-        styleClass="flex-1 justify-content-center"
-      ></p-paginator>
+        styleClass="flex-1 justify-content-center">
+      </p-paginator>
       <div class="flex align-items-center gap-2">
         <span class="text-600 mr-2">Filas:</span>
         <p-select
@@ -371,16 +352,16 @@
           (ngModelChange)="cambiarFilas($event)"
           name="rowsSelectProveedores2"
           [options]="pageSizeOptions"
-          class="w-6rem"
-        ></p-select>
+          class="w-6rem">
+        </p-select>
       </div>
     </div>
   </div>
 
+  <!-- Estado vacío -->
   <div
     *ngIf="proveedoresPaginados().length === 0 && !loading()"
-    class="surface-card p-8 text-center py-12 border-round-xl"
-  >
+    class="surface-card p-8 text-center py-12 border-round-xl">
     <div class="flex flex-column align-items-center gap-4">
       <i class="pi pi-inbox text-7xl text-400 mb-4"></i>
       <h2 class="text-3xl font-bold text-900 mb-3">Sin Proveedores</h2>
@@ -394,18 +375,19 @@
           severity="danger"
           styleClass="proveedores-pill"
           size="large"
-          (onClick)="limpiarFiltros()"
-        ></p-button>
+          (onClick)="limpiarFiltros()">
+        </p-button>
         <p-button
           label="Agregar Primer Proveedor"
           icon="pi pi-plus"
           severity="success"
           size="large"
-          (click)="irCrear()"
-        ></p-button>
+          (click)="irCrear()">
+        </p-button>
       </div>
     </div>
   </div>
+
 </ng-template>
 
 <p-toast></p-toast>

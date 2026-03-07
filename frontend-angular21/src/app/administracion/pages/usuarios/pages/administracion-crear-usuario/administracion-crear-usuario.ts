@@ -1,4 +1,4 @@
-import { Component, AfterViewInit, ChangeDetectorRef, signal , OnInit} from '@angular/core';
+import { Component, AfterViewInit, ChangeDetectorRef, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -13,12 +13,13 @@ import { UsuarioService } from '../../../../services/usuario.service';
 import { UsuarioInterfaceResponse } from '../../../../interfaces/usuario.interface';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { SedeService } from '../../../../services/sede.service';
-import {RoleService} from "../../../../services/role.service";
+import { RoleService } from '../../../../services/role.service';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 
 interface SelectOption {
   label: string;
@@ -38,10 +39,11 @@ interface SelectOption {
     InputTextModule,
     SelectModule,
     RouterModule,
-    ToastModule,         
-    MessageModule,        
-    ConfirmDialogModule, 
-    DialogModule          
+    ToastModule,
+    MessageModule,
+    ConfirmDialogModule,
+    DialogModule,
+    LoadingOverlayComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './administracion-crear-usuario.html',
@@ -49,95 +51,75 @@ interface SelectOption {
 })
 export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
 
-
   ngOnInit(): void {
-  this.cargandoUsuarios = true;
-  const currentUser = this.authService.getCurrentUser();
-  if (currentUser?.idSede) {
-    this.filtroSede = currentUser.idSede;
-  } else {
-    this.filtroSede = null;
-  }
-  this.cdr.detectChanges();
+    this.cargandoUsuarios = true;
+    const currentUser = this.authService.getCurrentUser();
+    if (currentUser?.idSede) {
+      this.filtroSede = currentUser.idSede;
+    } else {
+      this.filtroSede = null;
+    }
+    this.cdr.detectChanges();
 
-  forkJoin({
-    sedes    : this.sedeService.getSedes(),
-    usuarios : this.usuarioService.getUsuariosPorEstado(true),
-    roles    : this.roleService.loadRoles(), // ← agregar
-  }).subscribe({
-    next: ({ sedes, usuarios, roles }) => {
-      this.Sede = [
-        { label: 'Todas', value: null },
-        ...sedes.headquarters.map(s => ({
-          label: s.nombre,
-          value: s.id_sede,
-        })),
-      ];
-
-      // Roles desde BD — solo activos, opción "Todos" al inicio
-      this.Rol = [
-        { label: 'Todos', value: null },
-        ...roles
-          .filter(r => r.activo)
-          .map(r => ({
+    forkJoin({
+      sedes    : this.sedeService.getSedes(),
+      usuarios : this.usuarioService.getUsuariosPorEstado(true),
+      roles    : this.roleService.loadRoles(),
+    }).subscribe({
+      next: ({ sedes, usuarios, roles }) => {
+        this.Sede = [
+          { label: 'Todas', value: null },
+          ...sedes.headquarters.map(s => ({ label: s.nombre, value: s.id_sede })),
+        ];
+        this.Rol = [
+          { label: 'Todos', value: null },
+          ...roles.filter(r => r.activo).map(r => ({
             label: r.nombre.toUpperCase(),
             value: r.nombre.toUpperCase(),
           })),
-      ];
-
-      this.allUsers = usuarios.users;
-      this.cargandoUsuarios = false;
-      this.cdr.detectChanges();
-    },
-    error: () => {
-      this.cargandoUsuarios = false;
-      this.errorUsuarios = 'Error al cargar datos';
-    },
-  });
-}
+        ];
+        this.allUsers = usuarios.users;
+        this.cargandoUsuarios = false;
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cargandoUsuarios = false;
+        this.errorUsuarios = 'Error al cargar datos';
+      },
+    });
+  }
 
   private allUsers: UsuarioInterfaceResponse[] = [];
   cargandoUsuarios = false;
-  errorUsuarios = '';
-  filtroDni      = '';
-  filtroEstado   : boolean | null = true;  
-  filtroSede     : number | null  = null;   // Sede seleccionada por defecto
-  filtroRol      : string | null  = null;  
+  errorUsuarios    = '';
+  filtroDni        = '';
+  filtroEstado     : boolean | null = true;
+  filtroSede       : number | null  = null;
+  filtroRol        : string | null  = null;
+
   estados: SelectOption[] = [
     { label: 'Todos',    value: null  },
     { label: 'Activo',   value: true  },
-    { label: 'Inactivo', value: false }
+    { label: 'Inactivo', value: false },
   ];
 
   Sede: SelectOption[] = [];
-
-  Rol: SelectOption[] = [
-    { label: 'Todos',         value: null           },
+  Rol: SelectOption[]  = [
+    { label: 'Todos',         value: null            },
     { label: 'ADMINISTRADOR', value: 'ADMINISTRADOR' },
     { label: 'ALMACEN',       value: 'ALMACEN'       },
-    { label: 'VENTAS',        value: 'VENTAS'        }
+    { label: 'VENTAS',        value: 'VENTAS'        },
   ];
 
-  dialogVisible = false;
+  dialogVisible       = false;
   usuarioSeleccionado = signal<UsuarioInterfaceResponse | null>(null);
 
-  // ── getter: filtra el array maestro ────────────────────────────────────────
   get usuariosFiltrados(): UsuarioInterfaceResponse[] {
     let result = [...this.allUsers];
-
-    // Filtro DNI
-    if (this.filtroDni.trim()) {
-      result = result.filter(u =>
-        (u.dni || '').includes(this.filtroDni.trim())
-      );
-    }
-
-    // Filtro Sede — usa id_sede (campo real de la interfaz)
-    if (this.filtroSede !== null) {
+    if (this.filtroDni.trim())
+      result = result.filter(u => (u.dni || '').includes(this.filtroDni.trim()));
+    if (this.filtroSede !== null)
       result = result.filter(u => u.id_sede === this.filtroSede);
-    }
-
-    // Filtro Rol — compara contra rolNombre (campo real de la interfaz)
     if (this.filtroRol !== null) {
       result = result.filter(u => {
         const rol = (u.rolNombre || u.rol_nombre || u.rol || u.role || '').toUpperCase();
@@ -147,9 +129,7 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
     return result;
   }
 
-  get totalusers(): number {
-    return this.usuariosFiltrados.length;
-  }
+  get totalusers(): number { return this.usuariosFiltrados.length; }
 
   constructor(
     private router: Router,
@@ -159,7 +139,7 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
     private cdr: ChangeDetectorRef,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
-    private roleService: RoleService
+    private roleService: RoleService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -170,36 +150,26 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
     this.cargandoUsuarios = true;
     setTimeout(() => {
       const currentUser = this.authService.getCurrentUser();
-      if (currentUser?.idSede) {
-        this.filtroSede = currentUser.idSede;
-      } else {
-        this.filtroSede = null;
-      }
+      if (currentUser?.idSede) this.filtroSede = currentUser.idSede;
+      else this.filtroSede = null;
 
       forkJoin({
         sedes    : this.sedeService.getSedes(),
         usuarios : this.usuarioService.getUsuariosPorEstado(true),
-        roles    : this.roleService.loadRoles(), // ← agregar
+        roles    : this.roleService.loadRoles(),
       }).subscribe({
         next: ({ sedes, usuarios, roles }) => {
           this.Sede = [
             { label: 'Todas', value: null },
-            ...sedes.headquarters.map(s => ({
-              label: s.nombre,
-              value: s.id_sede,
-            })),
+            ...sedes.headquarters.map(s => ({ label: s.nombre, value: s.id_sede })),
           ];
-
           this.Rol = [
             { label: 'Todos', value: null },
-            ...roles
-              .filter(r => r.activo)
-              .map(r => ({
-                label: r.nombre.toUpperCase(),
-                value: r.nombre.toUpperCase(),
-              })),
+            ...roles.filter(r => r.activo).map(r => ({
+              label: r.nombre.toUpperCase(),
+              value: r.nombre.toUpperCase(),
+            })),
           ];
-
           this.allUsers = usuarios.users;
           this.cargandoUsuarios = false;
           this.cdr.detectChanges();
@@ -212,13 +182,11 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
     }, 2000);
   }
 
-  // Recarga backend según filtro estado
   onEstadoChange(): void {
     this.cargandoUsuarios = true;
-    const request$ =
-      this.filtroEstado === null
-        ? this.usuarioService.getUsuarios()
-        : this.usuarioService.getUsuariosPorEstado(this.filtroEstado);
+    const request$ = this.filtroEstado === null
+      ? this.usuarioService.getUsuarios()
+      : this.usuarioService.getUsuariosPorEstado(this.filtroEstado);
 
     request$.subscribe({
       next: (resp) => {
@@ -226,20 +194,18 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
         this.cargandoUsuarios = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
+      error: () => {
         this.cargandoUsuarios = false;
         this.errorUsuarios = 'Error al filtrar usuarios';
-      }
+      },
     });
   }
 
-  // Sede y Rol → el getter reacciona solo al cambio de variable
   onSedeChange(): void {}
   onRolChange(): void {}
   aplicarFiltros(): void {}
 
   limpiarFiltro(): void {
-    // Pone la sede por defecto del usuario
     const currentUser = this.authService.getCurrentUser();
     this.filtroDni    = '';
     this.filtroEstado = true;
@@ -248,11 +214,8 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
     this.onEstadoChange();
   }
 
-  nuevoUsuario(): void {
-    this.router.navigate(['/admin/usuarios/crear-usuario']);
-  }
+  nuevoUsuario(): void { this.router.navigate(['/admin/usuarios/crear-usuario']); }
 
-  // Modal y acciones como en sedes
   verDetalle(usuario: UsuarioInterfaceResponse): void {
     this.usuarioSeleccionado.set(usuario);
     this.dialogVisible = true;
@@ -261,15 +224,13 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
   confirmToggleStatus(usuario: UsuarioInterfaceResponse): void {
     const nextStatus = !usuario.activo;
     const verb = nextStatus ? 'activar' : 'desactivar';
-    const acceptLabel = nextStatus ? 'Activar' : 'Desactivar';
-    const acceptSeverity = nextStatus ? 'success' : 'danger';
     this.confirmationService.confirm({
       header: 'Confirmación',
       message: `¿Deseas ${verb} el usuario ${usuario.usu_nom} (${usuario.dni})?`,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel,
+      acceptLabel: nextStatus ? 'Activar' : 'Desactivar',
       rejectLabel: 'Cancelar',
-      acceptButtonProps: { severity: acceptSeverity as any },
+      acceptButtonProps: { severity: (nextStatus ? 'success' : 'danger') as any },
       rejectButtonProps: { severity: 'secondary', outlined: true },
       accept: () => {
         this.usuarioService.updateUsuarioStatus(usuario.id_usuario, { activo: nextStatus }).subscribe({

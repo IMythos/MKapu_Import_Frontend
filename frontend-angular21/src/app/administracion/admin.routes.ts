@@ -516,15 +516,15 @@ export const ADMIN_ROUTES: Routes = [
         (m) => m.CotizacionFormulario,
       ),
   },
+
+
   {
-    path: 'editar-cotizacion/:id',
+    path: 'ver-detalle-cotizacion/:id',
     loadComponent: () =>
-      import('./pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then(
-        (m) => m.CotizacionFormulario,
+      import('./pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then(
+        (m) => m.DetalleCotizacionComponent,
       ),
   },
-
-
 
 
 
@@ -544,10 +544,10 @@ export const ADMIN_ROUTES: Routes = [
     ),
 },
 {
-  path: 'editar-ventas-por-cobrar/:id',
+  path: 'detalles-ventas-por-cobrar/:id',
   loadComponent: () =>
-    import('./pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
-      (m) => m.VentasPorCobrarFormulario,
+    import('./pages/ventas-por-cobrar/detalle-ventas-por-cobrar-formulario/detalle-ventas-por-cobrar-formulario').then(
+      (m) => m.DetalleVentaPorCobrar,
     ),
 },
 // ── NUEVA RUTA ──────────────────────────────────────────────────────
@@ -576,7 +576,7 @@ export const ADMIN_ROUTES: Routes = [
         (m) => m.DetallesDespacho,
       ),
   },
-  {
+{
     path: 'despacho-productos/agregar-despacho',
     loadComponent: () =>
       import('./pages/despacho-productos/pages/agregar-despacho/agregar-despacho').then(

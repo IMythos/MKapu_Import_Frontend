@@ -23,6 +23,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DispatchService } from '../../../../services/dispatch.service';
 import { Dispatch, DispatchStatus } from '../../../../interfaces/dispatch.interfaces';
 import { EmpleadosService, Empleado } from '../../../../../core/services/empleados.service';
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-listado-despacho',
@@ -40,6 +41,7 @@ import { EmpleadosService, Empleado } from '../../../../../core/services/emplead
     ToastModule,
     ConfirmDialog,
     TooltipModule,
+    LoadingOverlayComponent, // ← agregado
   ],
   templateUrl: './listado-despacho.html',
   styleUrl: './listado-despacho.css',
@@ -69,25 +71,24 @@ export class ListadoDespacho {
   estadoFiltro = signal<string>('TODOS');
   empleados    = signal<Empleado[]>([]);
 
-  // ✅ Opciones alineadas a DispatchStatus del backend
   estadoOptions = [
-    { label: 'Todos',          value: 'TODOS'         },
-    { label: 'Generado',       value: 'GENERADO'      },
-    { label: 'En preparación', value: 'EN_PREPARACION'},
-    { label: 'En tránsito',    value: 'EN_TRANSITO'   },
-    { label: 'Entregado',      value: 'ENTREGADO'     },
-    { label: 'Cancelado',      value: 'CANCELADO'     },
+    { label: 'Todos',          value: 'TODOS'          },
+    { label: 'Generado',       value: 'GENERADO'       },
+    { label: 'En preparación', value: 'EN_PREPARACION' },
+    { label: 'En tránsito',    value: 'EN_TRANSITO'    },
+    { label: 'Entregado',      value: 'ENTREGADO'      },
+    { label: 'Cancelado',      value: 'CANCELADO'      },
   ];
 
   // ================================
-  // 🔗 SIGNALS DEL SERVICIO (fuente de verdad)
+  // 🔗 SIGNALS DEL SERVICIO
   // ================================
   dispatches = this.dispatchService.dispatches;
   loading    = this.dispatchService.loading;
   error      = this.dispatchService.error;
 
   // ================================
-  // 🏗️ CONSTRUCTOR — carga inicial
+  // 🏗️ CONSTRUCTOR
   // ================================
   constructor() {
     this.dispatchService.loadDispatches().subscribe({
@@ -98,7 +99,7 @@ export class ListadoDespacho {
           detail: 'No se pudieron cargar los despachos. Intenta de nuevo.',
           life: 4000,
         });
-      }
+      },
     });
 
     this.empleadosService.getEmpleados().subscribe({
@@ -110,66 +111,36 @@ export class ListadoDespacho {
           detail: 'No se pudieron cargar los empleados.',
           life: 3000,
         });
-      }
+      },
     });
   }
 
   // ================================
-  // 🔥 COMPUTED: RESPONSABLES
+  // 🔥 COMPUTED
   // ================================
   despachador = computed(() => this.obtenerNombreEmpleado('ALMACENERO'));
   asesor      = computed(() => this.obtenerNombreEmpleado('VENTAS'));
 
-  // ================================
-  // 🔥 COMPUTED: CONTADORES
-  // ✅ Estados corregidos para coincidir con DispatchStatus del backend
-  // ================================
-  totalGenerados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'GENERADO').length
-  );
+  totalGenerados     = computed(() => this.dispatches().filter(d => d.estado === 'GENERADO').length);
+  totalEnPreparacion = computed(() => this.dispatches().filter(d => d.estado === 'EN_PREPARACION').length);
+  totalEnTransito    = computed(() => this.dispatches().filter(d => d.estado === 'EN_TRANSITO').length);
+  totalEntregados    = computed(() => this.dispatches().filter(d => d.estado === 'ENTREGADO').length);
+  totalCancelados    = computed(() => this.dispatches().filter(d => d.estado === 'CANCELADO').length);
+  totalPendientes    = computed(() => this.totalGenerados() + this.totalEnPreparacion());
+  totalEnviados      = computed(() => this.totalEnTransito());
 
-  totalEnPreparacion = computed(() =>
-    this.dispatches().filter(d => d.estado === 'EN_PREPARACION').length
-  );
-
-  totalEnTransito = computed(() =>
-    this.dispatches().filter(d => d.estado === 'EN_TRANSITO').length
-  );
-
-  totalEntregados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'ENTREGADO').length
-  );
-
-  totalCancelados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'CANCELADO').length
-  );
-
-  // Pendientes = GENERADO + EN_PREPARACION (útil para el card "PENDIENTES")
-  totalPendientes = computed(() =>
-    this.totalGenerados() + this.totalEnPreparacion()
-  );
-
-  // Enviados = EN_TRANSITO (útil para el card "ENVIADOS")
-  totalEnviados = computed(() => this.totalEnTransito());
-
-  // ================================
-  // 🔥 COMPUTED: FILTRADO REACTIVO
-  // ================================
   filasFiltradas = computed(() => {
     let data = this.dispatches();
 
-    // 1. Filtro por estado
     if (this.estadoFiltro() !== 'TODOS') {
       data = data.filter(d => d.estado === this.estadoFiltro());
     }
 
-    // 2. Búsqueda: id_despacho, id_venta_ref o direccion_entrega
-    // ✅ tipo_envio reemplazado por direccion_entrega (campo real del backend)
     const term = this.searchTerm()?.trim().toLowerCase();
     if (term) {
       data = data.filter(d =>
-        d.id_despacho?.toString().includes(term)           ||
-        d.id_venta_ref?.toString().includes(term)          ||
+        d.id_despacho?.toString().includes(term)   ||
+        d.id_venta_ref?.toString().includes(term)  ||
         d.direccion_entrega?.toLowerCase().includes(term)
       );
     }
@@ -180,11 +151,6 @@ export class ListadoDespacho {
   // ================================
   // 🔥 ACCIONES
   // ================================
-
-  /**
-   * ✅ cancelar() reemplaza a eliminar()
-   * El backend no tiene DELETE — usa PATCH /despachos/:id/cancelar
-   */
   cancelar(despacho: Dispatch): void {
     this.confirmationService.confirm({
       header: 'Confirmar cancelación',
@@ -210,21 +176,17 @@ export class ListadoDespacho {
               detail: 'No se pudo cancelar el despacho.',
               life: 4000,
             });
-          }
+          },
         });
-      }
+      },
     });
   }
 
-  /** Resetea los filtros activos */
   limpiarFiltros(): void {
     this.searchTerm.set(null);
     this.estadoFiltro.set('TODOS');
   }
 
-  /**
-   * ✅ Severity de p-tag alineada a DispatchStatus real del backend
-   */
   getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' | 'info' {
     switch (estado) {
       case 'GENERADO':       return 'secondary';
@@ -236,9 +198,6 @@ export class ListadoDespacho {
     }
   }
 
-  /**
-   * Etiqueta legible para mostrar en la tabla
-   */
   getEstadoLabel(estado: DispatchStatus): string {
     const labels: Record<DispatchStatus, string> = {
       GENERADO:       'Generado',

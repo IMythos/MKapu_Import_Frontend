@@ -12,14 +12,19 @@ import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoComplete } from 'primeng/autocomplete';
+import { DatePickerModule } from 'primeng/datepicker';
 import { VentasAdminService } from '../../../services/ventas.service';
 import { TooltipModule } from 'primeng/tooltip';
 import { SedeService } from '../../../services/sede.service';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { ExcelUtils } from '../../../utils/excel.utils';
 import {
   AccountReceivableService,
   AccountReceivableResponse,
   AccountReceivableStatus,
 } from '../../../services/account-receivable.service';
+import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
+
 
 @Component({
   selector: 'app-ventas-por-cobrar-listado',
@@ -27,7 +32,7 @@ import {
   imports: [
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
-    RouterModule, AutoComplete, TooltipModule,
+    RouterModule, AutoComplete, TooltipModule, LoadingOverlayComponent, DatePickerModule,
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
   styleUrl: './ventas-por-cobrar-listado.css',
@@ -45,43 +50,47 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   public tituloKicker    = 'ADMINISTRACIÓN';
   public subtituloKicker = 'VENTAS POR COBRAR';
 
-  // ── Signals ──────────────────────────────────────────────────────
   buscarValue        = signal<string>('');
   sugerencias        = signal<AccountReceivableResponse[]>([]);
-  estadoSeleccionado = signal<AccountReceivableStatus | null>(null);
+  estadoSeleccionado = signal<AccountReceivableStatus | null>('PENDIENTE');
   sedeSeleccionada   = signal<number | null>(null);
   rows               = signal<number>(10);
+  fechaInicio        = signal<Date | null>(getHoyPeru());
+  fechaFin           = signal<Date | null>(null);
 
-  // ── Computed: sedes ───────────────────────────────────────────────
   sedesOptions = computed(() =>
     this.sedeService.sedes().map(s => ({ label: s.nombre, value: s.id_sede }))
   );
 
-  // ── Computed: lista filtrada (frontend: búsqueda y estado) ────────
+  // El filtro de estado se hace en el backend (query param).
+  // Texto y fechas se filtran en el cliente sobre la página actual.
   ventasFiltradas = computed(() => {
-    const q   = this.buscarValue().toLowerCase();
-    const est = this.estadoSeleccionado();
+    const q      = this.buscarValue().toLowerCase();
+    const inicio = this.fechaInicio();
+    const fin    = this.fechaFin();
 
     return this.arService.accounts().filter(a => {
-      const matchQ   = !q   || a.userRef.toLowerCase().includes(q) ||
-                               String(a.salesReceiptId).includes(q);
-      const matchEst = !est || a.status === est;
-      return matchQ && matchEst;
+      // filtro texto
+      if (q && !a.userRef.toLowerCase().includes(q) && !String(a.salesReceiptId).includes(q))
+        return false;
+
+      // filtro fecha emisión
+      const fec = new Date(a.issueDate);
+      if (inicio) { const d = new Date(inicio); d.setHours(0,0,0,0); if (fec < d) return false; }
+      if (fin)    { const d = new Date(fin);    d.setHours(23,59,59,999); if (fec > d) return false; }
+
+      return true;
     });
   });
 
-  // ── Computed: contadores ──────────────────────────────────────────
   totalPorCobrar     = computed(() => this.arService.totalRecords());
   totalPendientes    = computed(() => this.arService.pendientes().length);
   totalVencidos      = computed(() => this.arService.vencidos().length);
   totalProcesadasHoy = computed(() => {
     const hoy = new Date().toDateString();
-    return this.arService.accounts().filter(a =>
-      new Date(a.issueDate).toDateString() === hoy
-    ).length;
+    return this.arService.accounts().filter(a => new Date(a.issueDate).toDateString() === hoy).length;
   });
 
-  // ── Opciones ──────────────────────────────────────────────────────
   estadosOptions = [
     { label: 'Todos',     value: null        },
     { label: 'Pendiente', value: 'PENDIENTE' },
@@ -91,14 +100,12 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     { label: 'Cancelado', value: 'CANCELADO' },
   ];
 
-  // ── Init ──────────────────────────────────────────────────────────
   async ngOnInit() {
     this.sedeService.loadSedes().subscribe();
-
     const sedeDefault = this.getSedeUsuarioActual();
     if (sedeDefault) this.sedeSeleccionada.set(sedeDefault);
-
-    await this.arService.getAll(1, this.rows(), sedeDefault ?? undefined);
+    // Inicia mostrando solo PENDIENTES
+    await this.arService.getAll(1, this.rows(), sedeDefault ?? undefined, 'PENDIENTE');
   }
 
   private getSedeUsuarioActual(): number | null {
@@ -108,14 +115,15 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     } catch { return null; }
   }
 
-  // ── Handlers filtros ──────────────────────────────────────────────
-  onEstadoChange(v: AccountReceivableStatus | null) {
+  async onEstadoChange(v: AccountReceivableStatus | null) {
     this.estadoSeleccionado.set(v);
+    // null = "Todos" → sin filtro de estado (backend muestra PENDIENTE+PARCIAL+VENCIDO por defecto)
+    await this.arService.getAll(1, this.rows(), this.sedeSeleccionada() ?? undefined, v ?? undefined);
   }
 
   async onSedeChange(sedeId: number | null) {
     this.sedeSeleccionada.set(sedeId);
-    await this.arService.getAll(1, this.rows(), sedeId ?? undefined);
+    await this.arService.getAll(1, this.rows(), sedeId ?? undefined, this.estadoSeleccionado());
   }
 
   onPageChange(e: any) {
@@ -123,14 +131,12 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     this.arService.goToPage(e.page + 1);
   }
 
-  // ── Autocomplete ──────────────────────────────────────────────────
   searchCuenta(event: any) {
     const q = event.query?.toLowerCase() ?? '';
     if (!q || q.length < 2) { this.sugerencias.set([]); return; }
     this.sugerencias.set(
       this.arService.accounts().filter(a =>
-        a.userRef.toLowerCase().includes(q) ||
-        String(a.salesReceiptId).includes(q)
+        a.userRef.toLowerCase().includes(q) || String(a.salesReceiptId).includes(q)
       )
     );
   }
@@ -140,9 +146,52 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     if (a) this.buscarValue.set(a.userRef);
   }
 
+  onFechaChange() {
+    // Filtro de fechas es local — filtra sobre la página actual
+    // Para filtro server-side de fechas, extender getAll() en el futuro
+  }
+
+  limpiarFiltros() {
+    this.buscarValue.set('');
+    this.sugerencias.set([]);
+    this.fechaInicio.set(getHoyPeru());
+    this.fechaFin.set(null);
+    this.sedeSeleccionada.set(null);
+    this.estadoSeleccionado.set('PENDIENTE');
+    this.arService.getAll(1, this.rows(), undefined, 'PENDIENTE');
+  }
+
   limpiarBusqueda() {
     this.buscarValue.set('');
     this.sugerencias.set([]);
+  }
+
+  // ── Excel ─────────────────────────────────────────────────────────
+  exportarExcel(): void {
+    const datos = this.ventasFiltradas();
+
+    if (datos.length === 0) {
+      this.messageService.add({ severity: 'warn', summary: 'Sin datos', detail: 'No hay registros para exportar', life: 3000 });
+      return;
+    }
+
+    const datosExcel = datos.map(a => ({
+      'N° Comprobante':  `#${a.salesReceiptId}`,
+      'Cliente':         a.userRef,
+      'Observación':     a.observation ?? '',
+      'Fecha Emisión':   this.formatDate(a.issueDate),
+      'Fecha Vencim.':   this.formatDate(a.dueDate),
+      'Días':            this.getDiasBadgeLabel(a.dueDate),
+      'Moneda':          a.currencyCode,
+      'Monto Total':     a.totalAmount,
+      'Saldo Pendiente': a.pendingBalance,
+      'Estado':          a.status,
+    }));
+
+    const nombreArchivo = ExcelUtils.generarNombreConFecha('ventas-por-cobrar');
+    ExcelUtils.exportarAExcel(datosExcel, nombreArchivo, 'Cuentas por Cobrar');
+
+    this.messageService.add({ severity: 'success', summary: 'Exportación exitosa', detail: `Archivo ${nombreArchivo}.xlsx descargado`, life: 3000 });
   }
 
   // ── Helpers visuales ──────────────────────────────────────────────
@@ -183,68 +232,30 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     return new Date(iso).toLocaleDateString('es-PE');
   }
 
-  // ── Acciones ──────────────────────────────────────────────────────
-  irAgregarVentaPorCobrar(id: number) {
-    this.router.navigate(['/admin/pagar-ventas-por-cobrar', id]);
-  }
-
-  verDetalle(id: number) {
-    this.router.navigate(['/admin/editar-ventas-por-cobrar', id]);
-  }
+  irAgregarVentaPorCobrar(id: number) { this.router.navigate(['/admin/pagar-ventas-por-cobrar', id]); }
+  verDetalle(id: number)              { this.router.navigate(['/admin/detalles-ventas-por-cobrar', id]); }
 
   rechazarCotizacion(id: number) {
     const cuenta = this.arService.accounts().find(a => a.id === id);
-
     this.confirmationService.confirm({
-      message: `¿Cancelar esta venta por cobrar? <br>
-                <small class="text-400">
-                  También se anulará el comprobante de venta #${cuenta?.salesReceiptId ?? ''}.
-                </small>`,
-      header:      'Confirmar Cancelación',
-      icon:        'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, cancelar todo',
-      rejectLabel: 'No',
+      message: `¿Cancelar esta venta por cobrar? <br><small class="text-400">También se anulará el comprobante de venta #${cuenta?.salesReceiptId ?? ''}.</small>`,
+      header: 'Confirmar Cancelación', icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, cancelar todo', rejectLabel: 'No',
       accept: async () => {
-        // 1️⃣ Cancelar la cuenta por cobrar
-        const res = await this.arService.cancel({
-          accountReceivableId: id,
-          reason: 'Cancelado desde listado',
-        });
-
+        const res = await this.arService.cancel({ accountReceivableId: id, reason: 'Cancelado desde listado' });
         if (!res) {
-          this.messageService.add({
-            severity: 'error',
-            summary:  'Error',
-            detail:   this.arService.error() ?? 'No se pudo cancelar la cuenta.',
-          });
+          this.messageService.add({ severity: 'error', summary: 'Error', detail: this.arService.error() ?? 'No se pudo cancelar la cuenta.' });
           return;
         }
-
-        // 2️⃣ Anular el comprobante de venta asociado
         if (cuenta?.salesReceiptId) {
           try {
-            await firstValueFrom(
-              this.ventasService.anularVenta(
-                cuenta.salesReceiptId,
-                'Cancelado desde ventas por cobrar',
-              )
-            );
+            await firstValueFrom(this.ventasService.anularVenta(cuenta.salesReceiptId, 'Cancelado desde ventas por cobrar'));
           } catch {
-            // La cuenta ya quedó cancelada — solo avisamos del comprobante
-            this.messageService.add({
-              severity: 'warn',
-              summary:  'Cuenta cancelada',
-              detail:   `La cuenta fue cancelada pero no se pudo anular el comprobante #${cuenta.salesReceiptId}.`,
-            });
+            this.messageService.add({ severity: 'warn', summary: 'Cuenta cancelada', detail: `La cuenta fue cancelada pero no se pudo anular el comprobante #${cuenta.salesReceiptId}.` });
             return;
           }
         }
-
-        this.messageService.add({
-          severity: 'info',
-          summary:  'Cancelada',
-          detail:   `Cuenta cancelada y comprobante #${cuenta?.salesReceiptId ?? ''} marcado como ANULADO.`,
-        });
+        this.messageService.add({ severity: 'info', summary: 'Cancelada', detail: `Cuenta cancelada y comprobante #${cuenta?.salesReceiptId ?? ''} marcado como ANULADO.` });
       },
     });
   }

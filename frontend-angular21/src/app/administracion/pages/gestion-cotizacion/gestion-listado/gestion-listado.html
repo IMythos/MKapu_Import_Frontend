@@ -19,6 +19,8 @@
 </div>
 
 <div class="p-2">
+
+  <!-- CONTADORES -->
   <div class="contadores-cotizaciones mb-4">
     <div class="contador-card">
       <i class="pi pi-check-circle"></i>
@@ -54,11 +56,15 @@
     </div>
   </div>
 
-  <div class="surface-card border-round-xl shadow-1 mb-4">
-    <div class="p-3">
-      <div class="flex flex-wrap gap-6 align-items-end h-full">
-        <div class="flex-1 p-fluid h-full min-w-20rem">
-          <label class="font-medium mb-2 block">Buscar Cotización</label>
+  <!-- FILTROS -->
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <div class="filtros-linea-1">
+
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Cotización</label>
           <p-autocomplete
             [ngModel]="buscarValue()"
             (ngModelChange)="buscarValue.set($event)"
@@ -69,8 +75,7 @@
             placeholder="Cliente, código o fecha..."
             field="codigo"
             [showClear]="true"
-            [fluid]="true"
-            styleClass="autocomplete-cotizaciones">
+            styleClass="w-full">
             <ng-template let-item pTemplate="item">
               <div class="autocomplete-item-custom p-2">
                 <div class="flex flex-column gap-1">
@@ -86,23 +91,55 @@
           </p-autocomplete>
         </div>
 
-        <div class="flex flex-column w-16rem h-full">
-          <label class="font-medium mb-2 block">Filtrar por Sede</label>
+        <div class="filtro-item filtro-grupo-fechas">
+          <label>Rango de Fechas (Emisión)</label>
+          <div class="fechas-con-guion">
+            <p-datepicker
+              [ngModel]="fechaInicio()"
+              (ngModelChange)="fechaInicio.set($event)"
+              dateFormat="dd/mm/yy"
+              placeholder="Fecha Inicio"
+              (onSelect)="onFechaChange()"
+              (onClear)="onFechaChange()"
+              [showClear]="true"
+              [showIcon]="true"
+              styleClass="w-full">
+            </p-datepicker>
+            <span class="fecha-separador">—</span>
+            <p-datepicker
+              [ngModel]="fechaFin()"
+              (ngModelChange)="fechaFin.set($event)"
+              dateFormat="dd/mm/yy"
+              placeholder="Fecha Fin"
+              (onSelect)="onFechaChange()"
+              (onClear)="onFechaChange()"
+              [showClear]="true"
+              [showIcon]="true"
+              styleClass="w-full">
+            </p-datepicker>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="filtros-linea-2">
+
+        <div class="filtro-item filtro-compacto">
+          <label>Sede</label>
           <p-select
-            name="sedeSelect"
             [options]="sedesOptions()"
             [ngModel]="sedeSeleccionada()"
             (ngModelChange)="onSedeChange($event)"
             optionLabel="label"
             optionValue="value"
-            placeholder="Todas las sedes"
-            class="w-full"
-            [showClear]="true">
+            placeholder="Todas"
+            [showClear]="true"
+            styleClass="w-full">
           </p-select>
         </div>
 
-        <div class="flex flex-column w-16rem h-full">
-          <label class="font-medium mb-2 block">Estado</label>
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
           <p-select
             [options]="estadosOptions"
             [ngModel]="estadoSeleccionado()"
@@ -111,131 +148,172 @@
             optionValue="value"
             placeholder="Todos"
             [showClear]="true"
-            class="w-full">
+            styleClass="w-full">
           </p-select>
         </div>
+
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros"
+            icon="pi pi-filter-slash"
+            (onClick)="limpiarFiltros()"
+            severity="danger"
+            styleClass="btn-limpiar-filtros">
+          </p-button>
+        </div>
+
       </div>
     </div>
   </div>
 
+  <!-- TABLA -->
   <div class="mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-      <p-table
-        [value]="cotizacionesFiltradas()"
-        [paginator]="true"
-        [rows]="rows()"
-        [totalRecords]="totalRecords()"
-        [loading]="loading()"
-        [rowsPerPageOptions]="[5,10,25,50]"
-        [lazy]="true"
-        (onPage)="onPageChange($event)"
-        styleClass="cotizaciones-table-hover">
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width:10%">Código</th>
-            <th style="width:17%">Cliente</th>
-            <th style="width:15%">Fechas</th>
-            <th style="width:10%">Sede</th>
-            <th style="width:9%">Estado</th>
-            <th style="width:9%">Total</th>
-            <th style="width:30%">Acciones</th>
-          </tr>
-        </ng-template>
+    <div style="position: relative;">
+      <p-card class="tarjeta-principal">
 
-        <ng-template pTemplate="body" let-c>
-          <tr>
-            <td class="font-semibold">{{ c.codigo }}</td>
-            <td>{{ c.cliente_nombre }}</td>
+        <app-loading-overlay
+          [visible]="loading()"
+          mensaje="Cargando cotizaciones..."
+          modo="inline">
+        </app-loading-overlay>
 
-            <!-- ══ FECHAS ══ -->
-            <td>
-              <div class="flex flex-column gap-1">
-                <div class="flex align-items-center gap-1">
-                  <i class="pi pi-calendar-plus" style="font-size:0.7rem; color:var(--text-muted)"></i>
-                  <span style="font-size:0.78rem; color:var(--text-muted)">{{ c.fec_emision | date:'dd/MM/yy' }}</span>
-                </div>
-                <div class="flex align-items-center gap-1">
-                  <i class="pi pi-calendar-times" style="font-size:0.7rem;" [style.color]="getDiasColor(c.fec_venc)"></i>
-                  <span style="font-size:0.78rem; font-weight:600;" [style.color]="getDiasColor(c.fec_venc)">
-                    {{ c.fec_venc | date:'dd/MM/yy' }}
-                  </span>
-                  <span class="dias-badge" [ngClass]="getDiasBadgeClass(c.fec_venc)"
-                    [pTooltip]="'Vence: ' + (c.fec_venc | date:'dd/MM/yyyy')" tooltipPosition="top">
-                    {{ getDiasLabel(c.fec_venc) }}
-                  </span>
-                </div>
-              </div>
-            </td>
+        <div class="seccion-tabla" [style.opacity]="loading() ? '0.3' : '1'"
+             style="transition: opacity 0.2s ease;">
 
-            <td>{{ c.sede_nombre }}</td>
-            <td><p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)"></p-tag></td>
-            <td>{{ c.total | currency:'PEN':'symbol' }}</td>
+          <p-table
+            [value]="cotizacionesFiltradas()"
+            [paginator]="true"
+            [rows]="rows()"
+            [totalRecords]="totalRecords()"
+            [loading]="false"
+            [rowsPerPageOptions]="[5,10,25,50]"
+            [lazy]="true"
+            (onPage)="onPageChange($event)"
+            styleClass="cotizaciones-table-hover">
 
-            <!-- ══ ACCIONES ══ -->
-            <td style="vertical-align:middle;">
-              <div class="acciones-grupo">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width:10%">Código</th>
+                <th style="width:17%">Cliente</th>
+                <th style="width:15%">Fechas</th>
+                <th style="width:10%">Sede</th>
+                <th style="width:9%">Estado</th>
+                <th style="width:9%">Total</th>
+                <th style="width:30%">Acciones</th>
+              </tr>
+            </ng-template>
 
-                <!-- Siempre visibles -->
-                <p-button icon="pi pi-eye" text pTooltip="Ver Detalles" tooltipPosition="top"
-                  styleClass="accion-btn accion-btn--ver"
-                  (onClick)="irDetalle(c.id_cotizacion)">
-                </p-button>
+            <ng-template pTemplate="body" let-c>
+              <tr>
+                <td class="font-semibold">{{ c.codigo }}</td>
+                <td>{{ c.cliente_nombre }}</td>
 
-                <!-- Rechazar: solo en PENDIENTE -->
-                <p-button *ngIf="c.estado === 'PENDIENTE'"
-                  icon="pi pi-times" text severity="danger"
-                  pTooltip="Rechazar cotización" tooltipPosition="top"
-                  styleClass="accion-btn accion-btn--eliminar"
-                  (onClick)="rechazarCotizacion(c.id_cotizacion)">
-                </p-button>
+                <td>
+                  <div class="flex flex-column gap-1">
+                    <div class="flex align-items-center gap-1">
+                      <i class="pi pi-calendar-plus" style="font-size:0.7rem; color:var(--text-muted)"></i>
+                      <span style="font-size:0.78rem; color:var(--text-muted)">{{ c.fec_emision | date:'dd/MM/yy' }}</span>
+                    </div>
+                    <div class="flex align-items-center gap-1">
+                      <i class="pi pi-calendar-times" style="font-size:0.7rem;" [style.color]="getDiasColor(c.fec_venc)"></i>
+                      <span style="font-size:0.78rem; font-weight:600;" [style.color]="getDiasColor(c.fec_venc)">
+                        {{ c.fec_venc | date:'dd/MM/yy' }}
+                      </span>
+                      <span class="dias-badge" [ngClass]="getDiasBadgeClass(c.fec_venc)"
+                        [pTooltip]="'Vence: ' + (c.fec_venc | date:'dd/MM/yyyy')" tooltipPosition="top">
+                        {{ getDiasLabel(c.fec_venc) }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
 
-                <!-- ── Botones exclusivos PENDIENTE ── -->
-                <ng-container *ngIf="c.estado === 'PENDIENTE'">
-                  <span class="accion-separador"></span>
-                  <p-button icon="pi pi-shopping-cart" text
-                    pTooltip="Agregar Venta" tooltipPosition="top"
-                    styleClass="accion-btn accion-btn--venta"
-                    (onClick)="irAgregarVenta(c.id_cotizacion)">
-                  </p-button>
-                  <p-button icon="pi pi-credit-card" text
-                    pTooltip="Venta por Cobrar" tooltipPosition="top"
-                    styleClass="accion-btn accion-btn--cobrar"
-                    (onClick)="irAgregarVentaPorCobrar(c.id_cotizacion)">
-                  </p-button>
-                </ng-container>
+                <td>{{ c.sede_nombre }}</td>
+                <td><p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)"></p-tag></td>
+                <td>{{ c.total | currency:'PEN':'symbol' }}</td>
 
-                <!-- ── Botones exclusivos RECHAZADA ── -->
-                <ng-container *ngIf="c.estado === 'RECHAZADA'">
-                  <span class="accion-separador"></span>
-                  <p-button icon="pi pi-refresh" text
-                    pTooltip="Reactivar a Pendiente" tooltipPosition="top"
-                    styleClass="accion-btn accion-btn--reactivar"
-                    (onClick)="reactivarCotizacion(c.id_cotizacion)">
-                  </p-button>
-                  <p-button icon="pi pi-trash" text severity="danger"
-                    pTooltip="Eliminar permanentemente" tooltipPosition="top"
-                    styleClass="accion-btn accion-btn--eliminar"
-                    (onClick)="eliminarCotizacion(c.id_cotizacion)">
-                  </p-button>
-                </ng-container>
+                <td style="vertical-align:middle;">
+                  <div class="acciones-grupo">
 
-              </div>
-            </td>
-          </tr>
-        </ng-template>
+                    <!-- Ver detalle -->
+                    <p-button icon="pi pi-eye"
+                      [rounded]="true" [text]="true" severity="secondary"
+                      pTooltip="Ver Detalles" tooltipPosition="top"
+                      (onClick)="irDetalle(c.id_cotizacion)">
+                    </p-button>
 
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="7" class="text-center py-6">
-              <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
-              <p class="text-900 font-medium mb-0">No se encontraron cotizaciones</p>
-              <p class="text-600 mt-2">¡Crea tu primera cotización arriba!</p>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+                    <!-- Imprimir -->
+                    <p-button icon="pi pi-print"
+                      [rounded]="true" [text]="true" severity="secondary"
+                      pTooltip="Imprimir" tooltipPosition="top"
+                      (onClick)="imprimirCotizacion(c)">
+                    </p-button>
+
+                    <!-- Enviar correo -->
+                    <p-button icon="pi pi-send"
+                      [rounded]="true" [text]="true" severity="secondary"
+                      pTooltip="Enviar a Correo" tooltipPosition="top">
+                    </p-button>
+
+                    <!-- Botones exclusivos PENDIENTE -->
+                    <ng-container *ngIf="c.estado === 'PENDIENTE'">
+                      <span class="accion-separador"></span>
+
+                      <p-button icon="pi pi-shopping-cart" text
+                        pTooltip="Agregar Venta" tooltipPosition="top"
+                        styleClass="accion-btn accion-btn--venta"
+                        (onClick)="irAgregarVenta(c.id_cotizacion)">
+                      </p-button>
+
+                      <p-button icon="pi pi-credit-card" text
+                        pTooltip="Venta por Cobrar" tooltipPosition="top"
+                        styleClass="accion-btn accion-btn--cobrar"
+                        (onClick)="irAgregarVentaPorCobrar(c.id_cotizacion)">
+                      </p-button>
+
+                      <p-button icon="pi pi-times" text severity="danger"
+                        pTooltip="Rechazar cotización" tooltipPosition="top"
+                        styleClass="accion-btn accion-btn--eliminar"
+                        (onClick)="rechazarCotizacion(c.id_cotizacion)">
+                      </p-button>
+                    </ng-container>
+
+                    <!-- Botones exclusivos RECHAZADA -->
+                    <ng-container *ngIf="c.estado === 'RECHAZADA'">
+                      <span class="accion-separador"></span>
+                      <p-button icon="pi pi-refresh" text
+                        pTooltip="Reactivar a Pendiente" tooltipPosition="top"
+                        styleClass="accion-btn accion-btn--reactivar"
+                        (onClick)="reactivarCotizacion(c.id_cotizacion)">
+                      </p-button>
+                      <p-button icon="pi pi-trash" text severity="danger"
+                        pTooltip="Eliminar permanentemente" tooltipPosition="top"
+                        styleClass="accion-btn accion-btn--eliminar"
+                        (onClick)="eliminarCotizacion(c.id_cotizacion)">
+                      </p-button>
+                    </ng-container>
+
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="7" class="text-center py-6">
+                  <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
+                  <p class="text-900 font-medium mb-0">No se encontraron cotizaciones</p>
+                  <p class="text-600 mt-2">¡Crea tu primera cotización arriba!</p>
+                </td>
+              </tr>
+            </ng-template>
+
+          </p-table>
+        </div>
+      </p-card>
     </div>
   </div>
+
 </div>
 
 <p-toast></p-toast>

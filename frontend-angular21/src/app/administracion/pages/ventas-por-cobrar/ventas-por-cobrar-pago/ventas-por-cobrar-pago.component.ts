@@ -22,6 +22,7 @@ import {
   AccountReceivableStatus,
 } from '../../../services/account-receivable.service';
 import { VentasAdminService } from '../../../services/ventas.service';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-ventas-por-cobrar-pago',
@@ -32,6 +33,7 @@ import { VentasAdminService } from '../../../services/ventas.service';
     ToastModule, ButtonModule, CardModule,
     InputTextModule, InputNumberModule, SelectModule,
     TagModule, ConfirmDialogModule,
+    LoadingOverlayComponent, 
   ],
   templateUrl: './ventas-por-cobrar-pago.component.html',
   styleUrl:    './ventas-por-cobrar-pago.component.css',
@@ -50,7 +52,6 @@ export class VentasPorCobrarPagoComponent implements OnInit {
   pasoActual    = signal<string | null>(null);
   cuenta        = computed(() => this.arService.selected());
 
-  // ── Opciones de tipo de pago cargadas desde el servicio ──────────
   metodosPago: { label: string; value: number }[] = [];
 
   porcentajePagado = computed(() => {
@@ -66,64 +67,55 @@ export class VentasPorCobrarPagoComponent implements OnInit {
   });
 
   form: FormGroup = this.fb.group({
-    amount:        [null,  [Validators.required, Validators.min(0.01)]],
-    paymentTypeId: [null,  [Validators.required]],
+    amount:        [null, [Validators.required, Validators.min(0.01)]],
+    paymentTypeId: [null, [Validators.required]],
   });
 
-async ngOnInit() {
-  const id = Number(this.route.snapshot.paramMap.get('id'));
-  if (!id) { this.router.navigate(['/admin/ventas-por-cobrar']); return; }
+  async ngOnInit() {
+    const id = Number(this.route.snapshot.paramMap.get('id'));
+    if (!id) { this.router.navigate(['/admin/ventas-por-cobrar']); return; }
 
-  await Promise.all([
-    this.arService.getById(id),
-    this._cargarMetodosPago(),
-  ]);
+    await Promise.all([
+      this.arService.getById(id),
+      this._cargarMetodosPago(),
+    ]);
 
-  if (!this.cuenta()) {
-    this.messageService.add({
-      severity: 'error', summary: 'No encontrada',
-      detail: `No se encontró la cuenta #${id}.`,
-    });
-    setTimeout(() => this.router.navigate(['/admin/ventas-por-cobrar']), 1500);
-    return;
+    if (!this.cuenta()) {
+      this.messageService.add({
+        severity: 'error', summary: 'No encontrada',
+        detail: `No se encontró la cuenta #${id}.`,
+      });
+      setTimeout(() => this.router.navigate(['/admin/ventas-por-cobrar']), 1500);
+      return;
+    }
+
+    this._setMaxValidator();
+    this._aplicarTipoPagoFijado();
   }
 
-  this._setMaxValidator();
-  this._aplicarTipoPagoFijado(); // ← nuevo
-}
+  private _aplicarTipoPagoFijado() {
+    const cuenta     = this.cuenta();
+    const tipoPagoId = cuenta?.paymentTypeId;
+    const estado     = cuenta?.status;
+    const yaAbonado  = estado === 'PARCIAL' || estado === 'PAGADO';
 
-// ── Preselecciona y bloquea el tipo de pago si ya fue definido ────
-// DESPUÉS:
-private _aplicarTipoPagoFijado() {
-  const cuenta     = this.cuenta();
-  const tipoPagoId = cuenta?.paymentTypeId;
-  const estado     = cuenta?.status;
-
-  // Solo bloquear si ya hubo al menos un abono (PARCIAL) o está pagado
-  const yaAbonado = estado === 'PARCIAL' || estado === 'PAGADO';
-
-  if (tipoPagoId && yaAbonado) {
-    this.form.patchValue({ paymentTypeId: tipoPagoId });
-    this.form.get('paymentTypeId')?.disable();
-  } else {
-    // PENDIENTE o sin tipo — habilitar y limpiar
-    this.form.get('paymentTypeId')?.enable();
-    this.form.patchValue({ paymentTypeId: null });
+    if (tipoPagoId && yaAbonado) {
+      this.form.patchValue({ paymentTypeId: tipoPagoId });
+      this.form.get('paymentTypeId')?.disable();
+    } else {
+      this.form.get('paymentTypeId')?.enable();
+      this.form.patchValue({ paymentTypeId: null });
+    }
   }
-}
 
-// ── Después del abono exitoso, re-aplicar el bloqueo ─────────────
-// (reemplaza la llamada existente a arService.getById en _ejecutarPago)
-private async _refrescarCuenta(id: number) {
-  await this.arService.getById(id);
-  this._aplicarTipoPagoFijado();
-}
-
+  private async _refrescarCuenta(id: number) {
+    await this.arService.getById(id);
+    this._aplicarTipoPagoFijado();
+  }
 
   private async _cargarMetodosPago() {
     try {
       const lista = await firstValueFrom(this.ventasService.obtenerMetodosPago());
-      // Excluir "POR DEFINIR" del dropdown — solo tipos reales
       this.metodosPago = lista
         .filter(m => m.id !== 0)
         .map(m => ({ label: m.descripcion, value: m.id }));
@@ -142,8 +134,7 @@ private async _refrescarCuenta(id: number) {
 
     if (this.nuevoSaldo() <= 0) {
       this.confirmationService.confirm({
-        message:
-          'El comprobante pasará a <strong>EMITIDO</strong> y se descontará el stock. ¿Confirmas?',
+        message:     'El comprobante pasará a <strong>EMITIDO</strong> y se descontará el stock. ¿Confirmas?',
         header:      'Confirmar Pago Final',
         icon:        'pi pi-check-circle',
         acceptLabel: 'Sí, confirmar',
@@ -169,7 +160,7 @@ private async _refrescarCuenta(id: number) {
         accountReceivableId: cuenta.id,
         amount,
         currencyCode:  cuenta.currencyCode,
-        paymentTypeId,   // ← tipo de pago real elegido por el usuario
+        paymentTypeId,
       });
       if (!res) throw new Error(this.arService.error() ?? 'Error al aplicar pago');
 
@@ -218,8 +209,6 @@ private async _refrescarCuenta(id: number) {
     ]);
     this.form.get('amount')?.updateValueAndValidity();
   }
-
-  // ── Helpers visuales ─────────────────────────────────────────────
 
   getTagClass(status: AccountReceivableStatus): string {
     switch (status) {

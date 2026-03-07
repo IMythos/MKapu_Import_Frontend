@@ -9,6 +9,7 @@ import { forkJoin, Subscription } from 'rxjs';
 
 import { SedeService } from '../../../administracion/services/sede.service';
 import { AlmacenDashboardService, MovimientoRecienteDto, ProductoCriticoDto } from '../../../administracion/services/almacen dashboard.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 interface KpiCard {
   label:  string;
@@ -23,9 +24,18 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 @Component({
   selector: 'app-dashboard-almacen',
   standalone: true,
-  imports: [CommonModule, CardModule, ChartModule, TagModule, SelectModule, FormsModule],
+  imports: [
+    CommonModule,
+    CardModule,
+    ChartModule,
+    TagModule,
+    SelectModule,
+    FormsModule,
+    LoadingOverlayComponent,
+  ],
   templateUrl: './dashboard-almacen.html',
   styleUrl: './dashboard-almacen.css',
+  
 })
 export class DashboardAlmacen implements OnInit, OnDestroy {
 

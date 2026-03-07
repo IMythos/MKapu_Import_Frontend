@@ -15,6 +15,7 @@ import { SelectModule } from 'primeng/select';
 
 import { ConteoInventarioService } from '../../../logistica/services/conteo-inventario.service';
 import { CategoriaService } from '../../../administracion/services/categoria.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-conteo-inventario',
@@ -32,6 +33,7 @@ import { CategoriaService } from '../../../administracion/services/categoria.ser
     PaginatorModule,
     SelectModule,
     RouterModule,
+    LoadingOverlayComponent, // ← agregado
   ],
   templateUrl: './conteoinventario.html',
   styleUrls: ['./conteoinventario.css'],
@@ -105,7 +107,7 @@ export class ConteoInventarios implements OnInit {
       if (fechaFiltro && !isNaN((fechaFiltro as Date).getTime())) {
         const fechaConteo = new Date(c.fechaIni);
         if (!isNaN(fechaConteo.getTime())) {
-          coincideFecha = 
+          coincideFecha =
             fechaConteo.getFullYear() === (fechaFiltro as Date).getFullYear() &&
             fechaConteo.getMonth() === (fechaFiltro as Date).getMonth() &&
             fechaConteo.getDate() === (fechaFiltro as Date).getDate();
@@ -115,6 +117,7 @@ export class ConteoInventarios implements OnInit {
       return coincideBusqueda && coincideEstado && coincideFamilia && coincideFecha;
     });
   });
+
   conteosPaginados = computed(() => {
     const filtrados = this.conteosFiltrados();
     const inicio = this.first();
@@ -123,7 +126,7 @@ export class ConteoInventarios implements OnInit {
   });
 
   ngOnInit() {
-    this.recuperarSedeDeLocalStorage();    
+    this.recuperarSedeDeLocalStorage();
     this.cargarFamiliasDinamicamente();
     this.cargarHistorialBackend(1, this.rows());
   }
@@ -147,17 +150,16 @@ export class ConteoInventarios implements OnInit {
   }
 
   alCambiarFiltro() {
-    this.first.set(0); 
+    this.first.set(0);
     this.cargarHistorialBackend(1, this.rows());
   }
+
   recuperarSedeDeLocalStorage() {
     try {
-      const session = localStorage.getItem('user'); 
+      const session = localStorage.getItem('user');
       if (session) {
         const userData = JSON.parse(session);
-        
         const sedeId = userData.idSede || userData.id_sede || userData.sedeId;
-        
         if (sedeId) {
           console.log('Sede recuperada del storage:', sedeId);
           this.idSedeSeleccionada.set(Number(sedeId));
@@ -171,25 +173,19 @@ export class ConteoInventarios implements OnInit {
   cargarHistorialBackend(page: number = 1, limit: number = 10) {
     const payload: any = {
       id_sede: this.idSedeSeleccionada(),
-      page: page,
-      limit: limit
+      page,
+      limit,
     };
 
     let fecha = this.fechaSeleccionada();
-    
     if (fecha) {
-      if (typeof fecha === 'string') {
-        fecha = new Date(fecha);
-      }
-      
+      if (typeof fecha === 'string') fecha = new Date(fecha);
       if (!isNaN(fecha.getTime())) {
-        const year = fecha.getFullYear();
+        const year  = fecha.getFullYear();
         const month = String(fecha.getMonth() + 1).padStart(2, '0');
-        const day = String(fecha.getDate()).padStart(2, '0');
-        const fechaStr = `${year}-${month}-${day}`;
-
-        payload.fecha_inicio = fechaStr;
-        payload.fecha_fin = fechaStr; 
+        const day   = String(fecha.getDate()).padStart(2, '0');
+        payload.fecha_inicio = `${year}-${month}-${day}`;
+        payload.fecha_fin    = `${year}-${month}-${day}`;
       }
     }
 
@@ -208,9 +204,9 @@ export class ConteoInventarios implements OnInit {
         let arrayBruto = [];
         if (res && Array.isArray(res)) {
           arrayBruto = res;
-        } else if (res && res.data && Array.isArray(res.data)) {
+        } else if (res?.data && Array.isArray(res.data)) {
           arrayBruto = res.data;
-        } else if (res && res.categories && Array.isArray(res.categories)) {
+        } else if (res?.categories && Array.isArray(res.categories)) {
           arrayBruto = res.categories;
         }
 

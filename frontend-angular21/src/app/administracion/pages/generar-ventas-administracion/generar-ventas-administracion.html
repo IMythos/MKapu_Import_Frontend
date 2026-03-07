@@ -1,3 +1,5 @@
+<app-loading-overlay [visible]="isLoading()" mensaje="Cargando..." modo="inline" />
+
 <div class="p-2">
   <p-card class="ventas-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
@@ -425,7 +427,6 @@
         </div>
 
         <div class="content-centrado">
-          <!-- ← CAMBIO 1: tiposComprobante() dinámico desde API -->
           <div class="comprobante-section">
             <label class="section-label"><i class="pi pi-file-edit"></i> Tipo de Comprobante</label>
             <div *ngIf="tiposComprobante().length === 0" class="flex justify-content-center p-3">
@@ -451,7 +452,6 @@
 
           <p-divider styleClass="section-divider" />
 
-          <!-- ← CAMBIO 2: tiposVenta() dinámico desde API -->
           <div class="comprobante-section">
             <label class="section-label"><i class="pi pi-tag"></i> Tipo de Venta</label>
             <div *ngIf="tiposVenta().length === 0" class="flex justify-content-center p-3">
@@ -1144,7 +1144,6 @@
                     tipoComprobante() === 1 ? 'Factura' : 'Boleta'
                   }}</strong>
                 </div>
-                <!-- ← CAMBIO 3: mostrar tipo de venta en resumen -->
                 <div class="resumen-item">
                   <span class="label"><i class="pi pi-tag"></i> Tipo de Venta:</span
                   ><strong class="resumen-value">{{ nombreTipoVentaSeleccionado() }}</strong>

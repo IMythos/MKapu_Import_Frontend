@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
@@ -39,6 +39,7 @@ interface DetalleForm {
     TableModule,
     TooltipModule,
     TextareaModule,
+    RouterModule
   ],
   templateUrl: './agregar-despacho.html',
   styleUrl: './agregar-despacho.css',

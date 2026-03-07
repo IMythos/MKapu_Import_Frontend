@@ -1,10 +1,8 @@
-<div class="p-3">
-  @if(isLoading()) {
-    <div class="flex justify-content-center align-items-center" style="min-height: 50vh;">
-      <i class="pi pi-spin pi-spinner text-primary" style="font-size: 3rem"></i>
-    </div>
-  } @else {
+<div class="p-3" style="position: relative; min-height: 400px;">
 
+  <app-loading-overlay [visible]="isLoading()" mensaje="Cargando dashboard..." modo="page" />
+
+  @if (!isLoading()) {
     <!-- Header -->
     <div class="flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
       <div>
@@ -415,6 +413,6 @@
         </p-card>
       </div>
     </div>
-
   }
+
 </div>

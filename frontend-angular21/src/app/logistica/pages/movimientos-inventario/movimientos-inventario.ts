@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router'; 
+import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
@@ -14,6 +14,8 @@ import { MovimientoInventario } from '../../interfaces/movimiento-inventario.int
 import { TransferUserContextService } from '../../../administracion/services/transfer-user-context.service';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+
 @Component({
   selector: 'app-movimientos-inventario',
   standalone: true,
@@ -28,13 +30,14 @@ import { DialogModule } from 'primeng/dialog';
     TagModule,
     ButtonModule,
     DialogModule,
-    CardModule
+    CardModule,
+    LoadingOverlayComponent, // ← agregado
   ],
   templateUrl: './movimientos-inventario.html',
   styleUrl: './movimientos-inventario.css',
 })
 export class MovimientosInventario implements OnInit {
-  private router = inject(Router); // 👈 Inyectamos el router
+  private router = inject(Router);
   private movimientosService = inject(MovimientosInventarioService);
   private transferContextService = inject(TransferUserContextService);
 
@@ -44,14 +47,14 @@ export class MovimientosInventario implements OnInit {
   filtroEstado = signal<number>(0);
   filtroTexto = signal<string>('');
   filtroFechas = signal<Date[] | undefined>(undefined);
-  
+
   sedeId = signal<string>('');
   private readonly currentSedeId: string | null = localStorage.getItem('current_sede_id');
-  
+
   opcionesEstado = [
-    { label: 'Todos', value: 0 },
-    { label: 'Ingresos', value: 1 },
-    { label: 'Salidas', value: 2 },
+    { label: 'Todos',          value: 0 },
+    { label: 'Ingresos',       value: 1 },
+    { label: 'Salidas',        value: 2 },
     { label: 'Transferencias', value: 3 },
   ];
 
@@ -62,19 +65,18 @@ export class MovimientosInventario implements OnInit {
   cargarMovimientos() {
     this.cargando.set(true);
     this.obtenerFiltroSede();
-    
+
     const fechas = this.filtroFechas();
     const filtros = {
-      texto: this.filtroTexto(),
-      estado: this.filtroEstado(),
+      texto:       this.filtroTexto(),
+      estado:      this.filtroEstado(),
       fechaInicio: fechas?.[0] ? new Date(fechas[0]).toISOString() : null,
-      fechaFin: fechas?.[1] ? new Date(fechas[1]).toISOString() : null,
-      sedeId: this.sedeId(),
+      fechaFin:    fechas?.[1] ? new Date(fechas[1]).toISOString() : null,
+      sedeId:      this.sedeId(),
     };
-    
+
     this.movimientosService.getMovimientos(filtros).subscribe({
       next: (res) => {
-        console.log('Data recibida:', res.data);
         this.movimientos.set(res.data || res);
         this.cargando.set(false);
       },
@@ -87,15 +89,10 @@ export class MovimientosInventario implements OnInit {
 
   obtenerFiltroSede(): void {
     const id = this.transferContextService.getCurrentHeadquarterId();
-    console.log('ID sede obtenido:', id);
-    if (id) {
-      this.sedeId.set(id);
-    }
+    if (id) this.sedeId.set(id);
   }
 
-  aplicarFiltros() {
-    this.cargarMovimientos();
-  }
+  aplicarFiltros() { this.cargarMovimientos(); }
 
   limpiarFiltros() {
     this.filtroEstado.set(0);
@@ -110,14 +107,10 @@ export class MovimientosInventario implements OnInit {
 
   getSeverity(tipo: string): 'success' | 'danger' | 'info' | 'warn' {
     switch (tipo?.toUpperCase()) {
-      case 'INGRESO':
-        return 'success';
-      case 'SALIDA':
-        return 'danger';
-      case 'TRANSFERENCIA':
-        return 'info';
-      default:
-        return 'warn';
+      case 'INGRESO':       return 'success';
+      case 'SALIDA':        return 'danger';
+      case 'TRANSFERENCIA': return 'info';
+      default:              return 'warn';
     }
   }
 }
