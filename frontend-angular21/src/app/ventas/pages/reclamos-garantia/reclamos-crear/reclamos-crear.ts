@@ -62,10 +62,24 @@ export class ReclamosCrear implements OnInit {
   private readonly claimService = inject(ClaimService);
   private readonly ventasService = inject(VentaService);
   private readonly empleadosService = inject(EmpleadosService);
-  private readonly productosService = inject(ProductosService);
   private readonly clientesService = inject(ClienteService);
   private readonly messageService = inject(MessageService);
+  readonly resumenClienteNombre = computed(() => this.getNombreCliente(this.clienteEncontrado()));
+  
+  readonly resumenClienteDoc = computed(() => {
+    const c = this.clienteEncontrado() as any;
+    return c?.documentValue || c?.num_doc || 'S/N';
+  });
 
+  readonly resumenProductoNombre = computed(() => {
+    const p = this.productoSeleccionado() as any;
+    return p?.descripcion || p?.productName || p?.nombre || 'Ningún producto seleccionado';
+  });
+
+  readonly resumenProductoPrecio = computed(() => {
+    const p = this.productoSeleccionado() as any;
+    return p?.precio || p?.pre_uni || p?.unitPrice || p?.precio_unit || 0;
+  });
   readonly tituloKicker = signal('VENTAS - RECLAMOS Y GARANTÍAS');
   readonly subtituloKicker = signal('REGISTRAR NUEVO RECLAMO');
   readonly iconoCabecera = signal('pi pi-file-plus');
@@ -185,7 +199,7 @@ export class ReclamosCrear implements OnInit {
 
           return matchDoc || matchNombre;
         })
-        .slice(0, 10); // Limitamos a 10 sugerencias
+        .slice(0, 10);
 
       this.sugerenciasComprobantesObj.set(filtrados);
     } catch (error) {
@@ -237,17 +251,17 @@ export class ReclamosCrear implements OnInit {
 
         const tipoComprobanteReal = (c.invoiceType === 'FACTURA' || c.tipo_comprobante === '01') ? '01' : '03';
 
-        // 🚀 NUEVO: Mapeamos los productos uno por uno al idioma del frontend
-        const productosCrudos = c.items || c.detalles || c.productos || [];
+        // 🚀 MAPEO ULTRA SEGURO DE PRODUCTOS Y PRECIOS
+        const productosCrudos = c.items || c.detalles || c.productos || c.productosSeleccionados || [];
         const detallesMapeados = productosCrudos.map((p: any) => ({
-          ...p, // Conservamos la data original
-          
-          // Traducimos al idioma de tu interfaz DetalleComprobante y HTML
-          id_producto: String(p.productId || p.id_producto || p.id || '0'),
-          cod_prod: p.productCode || p.codigo || p.cod_prod || 'S/N',
-          descripcion: p.productName || p.name || p.nombre || p.descripcion || 'Producto sin nombre',
+          ...p,
+          id_producto: String(p.productId || p.id_producto || p.id_prod_ref || p.id || '0'),
+          cod_prod: p.productCode || p.codigo || p.cod_prod || p.codigoProducto || 'S/N',
+          descripcion: p.productName || p.descripcion || p.name || p.nombre || 'Producto sin nombre',
           cantidad: p.quantity || p.cantidad || 1,
-          pre_uni: p.unitPrice || p.precio || p.pre_uni || 0
+          // Atrapamos cualquier variante del precio que mande el backend
+          pre_uni: p.unitPrice || p.precio_unit || p.precio || p.pre_uni || p.total || 0,
+          precio: p.unitPrice || p.precio_unit || p.precio || p.pre_uni || p.total || 0
         }));
 
         return {
@@ -262,17 +276,13 @@ export class ReclamosCrear implements OnInit {
           fec_emision: c.fechaEmision || c.fecha_emision || c.createdAt || c.fec_emision || new Date(),
           estado: c.status === 'EMITIDO' || c.estado === true || c.status === true,
           id_sede: String(c.sedeId || c.id_sede),
-          
-          // 👉 Asignamos los productos ya traducidos
           detalles: detallesMapeados
         } as ComprobanteVenta;
       });
 
-      const filtrados = comprobantesMapeados
-        .filter(c => {
-           return true; 
-        })
-        .sort((a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime());
+      const filtrados = comprobantesMapeados.sort(
+        (a, b) => new Date(b.fec_emision).getTime() - new Date(a.fec_emision).getTime()
+      );
         
       this.comprobantesCliente.set(filtrados);
       this.comprobanteSeleccionado.set(null);
@@ -293,21 +303,16 @@ export class ReclamosCrear implements OnInit {
     const valorFinal = valorLimpio.slice(0, longitudMaxima);
 
     this.busquedaComprobante.set(valorFinal);
-
     input.value = valorFinal;
   }
 
   async manejarBuscarComprobante(): Promise<void> {
     const busqueda = this.busquedaComprobante();
     const tipoDoc = this.tipoDocumento();
-
     const documentoIngresado =
       typeof busqueda === 'string' ? busqueda.trim() : busqueda?.num_doc || '';
-
     if (!documentoIngresado || documentoIngresado.length < 8) return;
-
     this.guardando.set(true);
-
     try {
       const cliente = await firstValueFrom(
         this.clientesService.buscarPorDocumento(documentoIngresado),
@@ -344,13 +349,11 @@ export class ReclamosCrear implements OnInit {
   }
 
   getNombreCliente(cliente: any): string {
-    const nombre = cliente.nombres || cliente.name || '';
-    const apellido = cliente.apellidos || cliente.apellido || '';
-    const razonSocial = cliente.razon_social || cliente.displayName || 'Sin nombre';
-
-    return this.tipoDocumento() === 'DNI'
-      ? `${nombre} ${apellido}`.trim()
-      : razonSocial;
+    if (!cliente) return 'Cliente no identificado';
+    return cliente.displayName || 
+           cliente.razon_social || 
+           `${cliente.nombres || cliente.name || ''} ${cliente.apellidos || cliente.apellido || ''}`.trim() || 
+           'Sin nombre';
   }
 
   get textoBotonBuscar(): string {
@@ -484,9 +487,8 @@ export class ReclamosCrear implements OnInit {
     this.identificacionUnidad.set('');
   }
 
-  getPrecioProducto(detalle: DetalleComprobante): number {
-    const producto = this.productosService.getProductoPorCodigo(detalle.cod_prod);
-    return producto?.precioVenta || 0;
+  getPrecioProducto(detalle: any): number {
+    return detalle?.precio || detalle?.pre_uni || detalle?.unitPrice || 0;
   }
 
   getSubtotalDetalle(detalle: DetalleComprobante): number {
@@ -538,7 +540,7 @@ export class ReclamosCrear implements OnInit {
         }
         return true;
 
-      case 1: // Paso: Seleccionar Comprobante
+      case 1:
         if (!comprobante) {
           this.messageService.add({
             severity: 'warn',
@@ -550,7 +552,7 @@ export class ReclamosCrear implements OnInit {
         }
         return true;
 
-      case 2: // Paso: Seleccionar Producto
+      case 2:
         if (!producto) {
           this.messageService.add({
             severity: 'warn',
@@ -561,7 +563,6 @@ export class ReclamosCrear implements OnInit {
           return false;
         }
 
-        // Validación de unidades si el producto tiene cantidad > 1
         if (producto.cantidad > 1) {
           if (!unidades || unidades < 1) {
             this.messageService.add({
@@ -647,7 +648,6 @@ export class ReclamosCrear implements OnInit {
       return;
     }
 
-    // 1. Preparamos el detalle técnico
     let detalleInfo = `Unidades: ${this.unidadesAfectadas()}`;
     if (this.identificacionUnidad().trim()) {
       detalleInfo += ` | ID/Serie: ${this.identificacionUnidad().trim()}`;
@@ -691,31 +691,27 @@ export class ReclamosCrear implements OnInit {
     }
   }
 
-  // 2. verDetalle: Navega al detalle del reclamo recién creado
   verDetalle(): void {
     const reclamo = this.reclamoGenerado();
     if (reclamo) {
       const base = this.router.url.includes('/admin')
-        ? '/admin/reclamos-garantia'
-        : '/ventas/reclamos-garantia';
-      this.router.navigate([`${base}/detalles`, reclamo.id]);
+        ? '/admin/reclamos-listado'
+        : '/ventas/reclamos-listado';
+      this.router.navigate([`${base}/detalle`, reclamo.id]);
     }
   }
 
-  // 3. nuevoReclamo: Reinicia el flujo
   nuevoReclamo(): void {
     this.limpiarFormulario();
   }
 
-  // 4. cancelar: Regresa al listado
   cancelar(): void {
     const base = this.router.url.includes('/admin')
-      ? '/admin/reclamos-garantia'
-      : '/ventas/reclamos-garantia';
-    this.router.navigate([`${base}/listado`]);
+      ? '/admin/reclamos-listado'
+      : '/ventas/reclamos-listado';
+    this.router.navigate([`${base}`]);
   }
 
-  // 5. limpiarFormulario: Resetea todos los Signals a su estado inicial
   limpiarFormulario(): void {
     this.busquedaComprobante.set(null);
     this.clienteEncontrado.set(null);
@@ -730,7 +726,7 @@ export class ReclamosCrear implements OnInit {
     this.reclamoGenerado.set(null);
     this.sugerenciasComprobantesObj.set([]);
     this.tipoDocumento.set('DNI');
-    this.resetearUnidades(); // Este método ya usa signals internamente
+    this.resetearUnidades();
 
     this.messageService.add({
       severity: 'info',

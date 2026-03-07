@@ -540,9 +540,9 @@
               <div class="comprobante-header">
                 <div class="comprobante-numero">
                   <span class="numero-label">RECLAMO N°:</span>
-                  <h3 class="numero-valor">{{ reclamoGenerado()?.id }}</h3>
+                  <h3 class="numero-valor">{{ $any(reclamoGenerado()).claimId || $any(reclamoGenerado()).id || 'S/N' }}</h3>
                 </div>
-                <p-tag value="PENDIENTE" severity="warn" />
+                <p-tag [value]="$any(reclamoGenerado()).status || 'REGISTRADO'" severity="warn" />
               </div>
 
               <p-divider styleClass="comprobante-divider" />
@@ -553,28 +553,31 @@
                     <i class="pi pi-user"></i>
                     Cliente:
                   </span>
-                  <strong>{{ reclamoGenerado()?.customerName }}</strong>
+                  <strong>{{ resumenClienteNombre() }}</strong>
                 </div>
+                
                 <div class="info-item">
                   <span class="label">
                     <i class="pi pi-box"></i>
                     Producto:
                   </span>
-                  <strong>{{ reclamoGenerado()?.productDescription }}</strong>
+                  <strong>{{ resumenProductoNombre() }}</strong>
                 </div>
+                
                 <div class="info-item">
                   <span class="label">
                     <i class="pi pi-calendar"></i>
                     Fecha de Registro:
                   </span>
-                  <strong>{{ reclamoGenerado()?.registerDate | date: 'dd/MM/yyyy HH:mm' }}</strong>
+                  <strong>{{ ($any(reclamoGenerado()).registeredAt | date: 'dd/MM/yyyy HH:mm') || ($any(reclamoGenerado()).registerDate | date: 'dd/MM/yyyy HH:mm') }}</strong>
                 </div>
+                
                 <div class="info-item">
                   <span class="label">
                     <i class="pi pi-exclamation-triangle"></i>
                     Motivo:
                   </span>
-                  <strong>{{ reclamoGenerado()?.reason }}</strong>
+                  <strong>{{ $any(reclamoGenerado()).reason || motivoSeleccionado() }}</strong>
                 </div>
               </div>
             </p-card>

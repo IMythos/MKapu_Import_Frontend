@@ -1,5 +1,5 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { firstValueFrom, Observable } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 
@@ -53,7 +53,9 @@ export class ClaimService {
   readonly selected = signal<ClaimResponseDto | null>(null);
   readonly loading  = signal<boolean>(false);
   readonly error    = signal<string | null>(null);
-
+  private get headers(): HttpHeaders {
+    return new HttpHeaders({ 'x-role': 'Administrador' }); 
+  }
   readonly stats = computed(() => {
     const list = this.claims();
     return {
@@ -197,10 +199,18 @@ export class ClaimService {
   }
 
   atenderReclamo(id: number, respuesta: string): Observable<any> {
-    return this.http.patch<any>(`${this.baseUrl}/${id}/attend`, { respuesta });
+    return this.http.patch<any>(
+      `${this.baseUrl}/${id}/attend`, 
+      { respuesta: respuesta },
+      { headers: this.headers }
+    );
   }
 
   resolverReclamo(id: number, respuesta: string): Observable<any> {
-    return this.http.patch<any>(`${this.baseUrl}/${id}/resolve`, { respuesta });
+    return this.http.patch<any>(
+      `${this.baseUrl}/${id}/resolve`, 
+      { respuesta: respuesta },
+      { headers: this.headers }
+    );
   }
 }

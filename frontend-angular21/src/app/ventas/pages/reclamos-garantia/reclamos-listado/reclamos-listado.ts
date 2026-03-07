@@ -95,7 +95,7 @@ export class ReclamosListado implements OnInit {
 
   verDetalle(id: string): void {
     const base = this.getRouteBase();
-    this.router.navigate([`${base}/detalles`, id]);
+    this.router.navigate([`${base}/detalle`, id]);
   }
 
   editarReclamo(id: string): void {

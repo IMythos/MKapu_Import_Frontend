@@ -32,7 +32,7 @@ export interface ClaimResponseDto {
 
 export interface ReclamoResponse {
   id: number;
-  status: 'PENDIENTE' | 'ATENDIDO' | 'RESUELTO' | 'CERRADO';
+  status: 'REGISTRADO' | 'EN_PROCESO' | 'RESUELTO' | 'RECHAZADO';
   reason: string;
   description: string;
   customerName: string;
@@ -75,31 +75,24 @@ export class ReclamosEditar implements OnInit, OnDestroy {
 
   private subscriptions = new Subscription();
 
-  // SIGNALS
   empleadoActual = signal<Empleado | null>(null);
   idReclamo = signal<number>(0);
 
-  // Usamos el tipo unificado
   reclamoOriginal = signal<ReclamoDetalle | null>(null);
 
   cargando = signal<boolean>(true);
   guardando = signal<boolean>(false);
 
-  estadoSeleccionado = signal<string>('PENDIENTE');
+  estadoSeleccionado = signal<string>('REGISTRADO');
   respuesta = signal<string>('');
 
   estadosOptions = signal([
-    { label: 'Pendiente', value: 'PENDIENTE', icon: 'pi pi-clock', severity: 'warn' },
-    { label: 'Atender (En Proceso)', value: 'ATENDIDO', icon: 'pi pi-cog', severity: 'info' },
-    {
-      label: 'Resolver (Finalizar)',
-      value: 'RESUELTO',
-      icon: 'pi pi-check-circle',
-      severity: 'success',
-    },
+    { label: 'Registrado', value: 'REGISTRADO', icon: 'pi pi-inbox', severity: 'warn' },
+    { label: 'Atender (En Proceso)', value: 'EN_PROCESO', icon: 'pi pi-cog', severity: 'info' },
+    { label: 'Resuelto (Aprobado)', value: 'RESUELTO', icon: 'pi pi-check-circle', severity: 'success' },
+    { label: 'Rechazado (Denegado)', value: 'RECHAZADO', icon: 'pi pi-times-circle', severity: 'danger' }
   ]);
 
-  // COMPUTED
   hayCambios = computed(() => {
     const original = this.reclamoOriginal();
     if (!original) return false;
@@ -125,70 +118,70 @@ export class ReclamosEditar implements OnInit, OnDestroy {
 
   async cargarReclamo(): Promise<void> {
     const idParam = this.route.snapshot.paramMap.get('id');
-
     if (!idParam) {
       this.messageService.add({ severity: 'error', summary: 'Error', detail: 'ID no válido' });
       this.volver();
       return;
     }
-
     const id = parseInt(idParam, 10);
     this.idReclamo.set(id);
     this.cargando.set(true);
-
     try {
-      const claimData = await firstValueFrom(this.reclamosApi.getReclamoById(id));
-
-      if (claimData) {
+      const crudo = await firstValueFrom<any>(this.reclamosApi.getReclamoById(id));
+      if (crudo) {
+        const claimData = {
+          ...crudo,
+          claimId: crudo.claimId || crudo.id_reclamo,
+          receiptId: crudo.receiptId || crudo.id_comprobante,
+          sellerId: crudo.sellerId || crudo.id_vendedor_ref,
+          reason: crudo.reason || crudo.motivo,
+          description: crudo.description || crudo.descripcion,
+          status: crudo.status || crudo.estado,
+          registeredAt: crudo.registeredAt || crudo.fecha_registro,
+          resolvedAt: crudo.resolvedAt || crudo.fecha_resolucion,
+          observations: crudo.respuesta || crudo.observaciones
+        };
         let nombreCliente = 'No disponible';
         let nombreProducto = 'Revisar comprobante';
-
         try {
           if (claimData.receiptId) {
-            // 👉 AQUÍ ESTÁ EL ARREGLO: Forzamos el tipado a <any>
-            const recibo = await firstValueFrom<any>(
-              this.ventasService.getDetalleComprobante(claimData.receiptId),
-            );
+            const reciboCrudo = await firstValueFrom<any>(this.ventasService.getDetalleComprobante(claimData.receiptId));
+            
+            console.log('ESTRUCTURA REAL DEL RECIBO:', reciboCrudo);
+            
+            const recibo = reciboCrudo.data || reciboCrudo;
 
             if (recibo) {
-              // Mapeamos el cliente
-              nombreCliente =
-                recibo.cliente_nombre ||
-                recibo.customer?.name ||
-                recibo.customerName ||
-                'Desconocido';
-
-              // Mapeamos los productos
-              const items = recibo.detalles || recibo.items || [];
+              nombreCliente = 
+                recibo.cliente.nombre ||
+                'Cliente no identificado';
+              
+              const items = recibo.detalles || recibo.items || recibo.details || [];
               if (items.length > 0) {
-                nombreProducto = items
-                  .map((i: any) => i.descripcion || i.productName || i.name)
-                  .join(', ');
+                nombreProducto = items.map((i: any) => {
+                  return i.descripcion || i.productName || i.name || i.product?.name || 'Producto';
+                }).join(', ');
               }
             }
           }
         } catch (err) {
-          console.warn('No se pudo cargar el detalle del comprobante desde Ventas', err);
+          console.error('Error al enriquecer data desde Ventas:', err);
         }
 
         const reclamoEnriquecido: ReclamoDetalle = {
           ...claimData,
           customerName: nombreCliente,
-          productDescription: nombreProducto,
+          productDescription: nombreProducto
         };
 
         this.reclamoOriginal.set(reclamoEnriquecido);
-        this.estadoSeleccionado.set(claimData.status);
+        this.estadoSeleccionado.set(claimData.status); 
       } else {
         throw new Error('Reclamo no encontrado');
       }
     } catch (error) {
       console.error(error);
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo cargar el reclamo',
-      });
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar el reclamo' });
       this.volver();
     } finally {
       this.cargando.set(false);
@@ -208,20 +201,18 @@ export class ReclamosEditar implements OnInit, OnDestroy {
   }
 
   confirmarGuardar(): void {
-    if (!this.hayCambios()) return;
+    if (!this.hayCambios()) {
+      return;
+    }
 
     if (this.respuesta().trim() === '') {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Atención',
-        detail: 'Debe ingresar el detalle de la acción/respuesta.',
-      });
-      return;
+       this.messageService.add({ severity: 'warn', summary: 'Atención', detail: 'Debe ingresar el detalle de la acción/respuesta.' });
+       return;
     }
 
     const original = this.reclamoOriginal();
     let mensaje = '¿Está seguro de procesar este reclamo?';
-
+    
     if (original && this.estadoSeleccionado() !== original.status) {
       mensaje += `\n\nCambiará el estado de ${original.status} a ${this.estadoSeleccionado()}`;
     }
@@ -230,7 +221,10 @@ export class ReclamosEditar implements OnInit, OnDestroy {
       header: 'Confirmar Acción',
       message: mensaje,
       icon: 'pi pi-question-circle',
-      accept: () => this.ejecutarPatch(),
+      accept: () => {
+        console.log('🔴 PASO 3: Usuario aceptó, llamando a ejecutarPatch()');
+        this.ejecutarPatch();
+      },
     });
   }
 
@@ -240,29 +234,30 @@ export class ReclamosEditar implements OnInit, OnDestroy {
     const estado = this.estadoSeleccionado();
     const textoRespuesta = this.respuesta();
 
+    console.log('📦 DATOS A ENVIAR:', { id, estado, textoRespuesta });
+
     try {
-      if (estado === 'ATENDIDO') {
+      if (estado === 'EN_PROCESO') {
         await firstValueFrom(this.reclamosApi.atenderReclamo(id, textoRespuesta));
-      } else if (estado === 'RESUELTO') {
-        await firstValueFrom(this.reclamosApi.resolverReclamo(id, textoRespuesta));
-      } else {
-        throw new Error('Debe seleccionar Atender o Resolver.');
+      } 
+      else if (estado === 'RESUELTO' || estado === 'RECHAZADO') {
+        // podrías enviar el estado dentro del texto, o ajustar tu endpoint de NestJS a futuro.
+        // Por ahora usamos tu endpoint de resolve que pide solo la respuesta.
+        await firstValueFrom(this.reclamosApi.resolverReclamo(id, `[${estado}] - ${textoRespuesta}`));
+      } 
+      else {
+         console.log('🔴 DETENIDO LOCALMENTE: Estado inválido');
+         throw new Error('Debe cambiar el estado a "En Proceso", "Resuelto" o "Rechazado".');
       }
 
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Éxito',
-        detail: 'Reclamo actualizado correctamente',
-      });
-
+      this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Reclamo actualizado correctamente' });
       await this.cargarReclamo();
-      this.respuesta.set('');
+      this.respuesta.set(''); 
+      this.router.navigate(['admin/reclamos-listado'])
+
     } catch (error) {
-      this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo procesar el reclamo',
-      });
+      console.error('❌ ERROR AL EJECUTAR PATCH:', error);
+      this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo procesar el reclamo' });
     } finally {
       this.guardando.set(false);
     }
@@ -282,6 +277,6 @@ export class ReclamosEditar implements OnInit, OnDestroy {
   }
 
   volver(): void {
-    this.router.navigate(['/ventas/reclamos-listado']);
+    this.router.navigate(['admin/reclamos-listado']);
   }
 }

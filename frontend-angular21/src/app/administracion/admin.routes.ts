@@ -625,7 +625,7 @@ export const ADMIN_ROUTES: Routes = [
         ),
     },
     {
-      path: 'detalle/:id',   // ← faltaba esta
+      path: 'detalle/:id',
       loadComponent: () =>
         import('../ventas/pages/reclamos-garantia/reclamos-detalles/reclamos-detalles').then(
           (m) => m.ReclamosDetalles,

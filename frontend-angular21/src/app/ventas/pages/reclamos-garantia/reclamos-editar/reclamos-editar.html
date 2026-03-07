@@ -37,7 +37,6 @@
 </div>
 
 <ng-container *ngIf="reclamoOriginal() as reclamo">
-  
   <div class="p-2">
     <p-card class="producto-card mb-4">
       <div class="card-header">
@@ -94,7 +93,9 @@
               <i class="pi pi-calendar"></i>
               Fecha de Registro
             </label>
-            <strong class="block mt-2">{{ (reclamo.registeredAt || reclamo.registerDate) | date:'dd/MM/yyyy HH:mm' }}</strong>
+            <strong class="block mt-2">{{
+              reclamo.registeredAt || reclamo.registerDate | date: 'dd/MM/yyyy HH:mm'
+            }}</strong>
           </div>
         </div>
 
@@ -107,7 +108,15 @@
             <div class="mt-2">
               <p-tag
                 [value]="reclamo.status"
-                [severity]="(reclamo.status === 'RESUELTO' || reclamo.status === 'CERRADO') ? 'success' : (reclamo.status === 'ATENDIDO' ? 'info' : 'warn')"
+                [severity]="
+                  reclamo.status === 'RESUELTO'
+                    ? 'success'
+                    : reclamo.status === 'RECHAZADO'
+                      ? 'danger'
+                      : reclamo.status === 'EN_PROCESO'
+                        ? 'info'
+                        : 'warn'
+                "
                 styleClass="text-base px-3 py-2"
               />
             </div>
@@ -120,7 +129,9 @@
               <i class="pi pi-calendar-plus"></i>
               Fecha de Resolución
             </label>
-            <strong class="block mt-2 text-green-600">{{ reclamo.resolvedAt | date:'dd/MM/yyyy HH:mm' }}</strong>
+            <strong class="block mt-2 text-green-600">{{
+              reclamo.resolvedAt | date: 'dd/MM/yyyy HH:mm'
+            }}</strong>
           </div>
         </div>
 
@@ -144,7 +155,9 @@
               <i class="pi pi-align-left"></i>
               Descripción Detallada del Problema
             </label>
-            <p class="descripcion-texto mt-2 p-3 surface-100 border-round">{{ reclamo.description }}</p>
+            <p class="descripcion-texto mt-2 p-3 surface-100 border-round">
+              {{ reclamo.description }}
+            </p>
           </div>
         </div>
       </div>
@@ -168,7 +181,7 @@
               Acción / Nuevo Estado
               <span class="text-red-500">*</span>
             </label>
-            
+
             <p-select
               [ngModel]="estadoSeleccionado()"
               (ngModelChange)="estadoSeleccionado.set($event); onEstadoChange($event)"
@@ -177,7 +190,7 @@
               optionValue="value"
               placeholder="Seleccione la acción a realizar"
               styleClass="w-full"
-              [disabled]="reclamo.status === 'RESUELTO' || reclamo.status === 'CERRADO'"
+              [disabled]="reclamo.status === 'RESUELTO' || reclamo.status === 'RECHAZADO'"
             >
               <ng-template pTemplate="selectedItem" let-option>
                 <div class="flex align-items-center gap-2" *ngIf="option">
@@ -202,7 +215,7 @@
               Detalle de la Respuesta / Resolución
               <span class="text-red-500">*</span>
             </label>
-            
+
             <textarea
               pTextarea
               [ngModel]="respuesta()"
@@ -211,18 +224,16 @@
               placeholder="Describa la resolución técnica, la respuesta al cliente o la acción de atención..."
               class="w-full"
               [maxlength]="1000"
-              [disabled]="reclamo.status === 'RESUELTO' || reclamo.status === 'CERRADO'"
+              [disabled]="reclamo.status === 'RESUELTO' || reclamo.status === 'RECHAZADO'"
             ></textarea>
-            <small class="text-500 block mt-1">
-              Obligatorio para guardar los cambios.
-            </small>
+            <small class="text-500 block mt-1"> Obligatorio para guardar los cambios. </small>
           </div>
         </div>
       </div>
     </p-card>
   </div>
 
-  <div class="p-2" *ngIf="reclamo.status !== 'RESUELTO' && reclamo.status !== 'CERRADO'">
+  <div class="p-2" *ngIf="reclamo.status !== 'RESUELTO' && reclamo.status !== 'RECHAZADO'">
     <p-card class="actions-card">
       <div class="flex justify-content-between gap-2 flex-wrap">
         <p-button

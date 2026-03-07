@@ -122,7 +122,10 @@ export class VentasAdminService {
   }
 
   getDetalleComprobante(receiptId: number): Observable<any> {
-    return this.http.get<any>(`${this.salesUrl}/receipts/${receiptId}/detalle`);
+    return this.http.get<any>(
+      `${this.salesUrl}/receipts/${receiptId}/detalle`, 
+      { headers: this.headers }
+    );
   }
 
   buscarProductosVentas(

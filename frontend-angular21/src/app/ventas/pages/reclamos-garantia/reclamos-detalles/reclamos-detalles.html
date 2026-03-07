@@ -26,17 +26,16 @@
   </p-card>
 </div>
 
-<div class="p-2" *ngIf="cargando || !reclamo">
+<div class="p-2" *ngIf="cargando()">
   <p-card class="section-card">
     <div class="flex flex-column align-items-center gap-3 py-5">
       <i class="pi pi-spin pi-spinner" style="font-size: 3rem; color: #f0d067"></i>
-      <p class="text-500 m-0">Cargando reclamo...</p>
+      <p class="text-500 m-0">Cargando datos del reclamo...</p>
     </div>
   </p-card>
 </div>
 
-<ng-container *ngIf="reclamo">
-  <!-- CLIENTE -->
+<ng-container *ngIf="reclamo() as rec">
   <div class="p-2">
     <p-card class="cliente-card mb-4">
       <div class="card-header">
@@ -53,7 +52,7 @@
               <i class="pi pi-id-card"></i>
               Nombre Completo
             </label>
-            <strong class="block mt-2">{{ reclamo.cliente_nombre }}</strong>
+            <strong class="block mt-2">{{ rec.customerName }}</strong>
           </div>
         </div>
 
@@ -63,52 +62,56 @@
               <i class="pi pi-hashtag"></i>
               Documento de Identidad
             </label>
-            <strong class="block mt-2">{{ reclamo.cliente_dni }}</strong>
+            <strong class="block mt-2">{{ rec.customerDoc }}</strong>
           </div>
         </div>
 
-        <div class="col-12 md:col-6" *ngIf="reclamo.cliente_telefono">
+        <div class="col-12 md:col-6" *ngIf="rec.customerPhone">
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-phone"></i>
               Teléfono
             </label>
-            <strong class="block mt-2">{{ reclamo.cliente_telefono }}</strong>
+            <strong class="block mt-2">{{ rec.customerPhone }}</strong>
           </div>
         </div>
 
-        <div class="col-12 md:col-6" *ngIf="reclamo.cliente_email">
+        <div class="col-12 md:col-6" *ngIf="rec.customerEmail">
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-envelope"></i>
               Correo Electrónico
             </label>
-            <strong class="block mt-2">{{ reclamo.cliente_email }}</strong>
+            <strong class="block mt-2">{{ rec.customerEmail }}</strong>
           </div>
         </div>
       </div>
     </p-card>
   </div>
 
-  <!-- PRODUCTO / COMPROBANTE / GARANTÍA -->
   <div class="p-2">
     <p-card class="producto-card mb-4">
-      <div class="card-header">
-        <h3>
+      <div class="card-header flex justify-content-between align-items-center">
+        <h3 class="m-0">
           <span class="icon-reclamo"><i class="pi pi-box"></i></span>
-          Datos del Producto Reclamado
+          Detalle del Problema
         </h3>
+        <p-tag
+          [value]="rec.status"
+          [severity]="getEstadoSeverity(rec.status)"
+          [icon]="getEstadoIcon(rec.status)"
+          styleClass="text-base px-3 py-2"
+        />
       </div>
 
-      <div class="grid">
+      <div class="grid mt-3">
         <div class="col-12 md:col-6">
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-shopping-bag"></i>
               Producto Reclamado
             </label>
-            <strong class="block mt-2">{{ reclamo.descripcion_producto }}</strong>
-            <small class="text-500">Código: {{ reclamo.cod_producto }}</small>
+            <strong class="block mt-2">{{ rec.productDescription }}</strong>
           </div>
         </div>
 
@@ -116,24 +119,9 @@
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-file"></i>
-              Comprobante de Compra
+              ID de Comprobante
             </label>
-            <strong class="block mt-2">
-              {{ reclamo.serie_comprobante }}-{{
-                reclamo.numero_comprobante.toString().padStart(8, '0')
-              }}
-            </strong>
-            <small class="text-500">{{ formatearFecha(reclamo.fecha_compra) }}</small>
-          </div>
-        </div>
-
-        <div class="col-12 md:col-6">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-calendar-plus"></i>
-              Fecha de Compra
-            </label>
-            <strong class="block mt-2">{{ formatearFecha(reclamo.fecha_compra) }}</strong>
+            <strong class="block mt-2">Nº {{ rec.receiptId || 'S/N' }}</strong>
           </div>
         </div>
 
@@ -141,55 +129,35 @@
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-calendar"></i>
-              Fecha de Registro del Reclamo
+              Fecha de Registro
             </label>
-            <strong class="block mt-2">{{ formatearFecha(reclamo.fecha_registro) }}</strong>
+            <strong class="block mt-2">{{ rec.registeredAt | date: 'dd/MM/yyyy HH:mm' }}</strong>
           </div>
         </div>
 
-        <div class="col-12 md:col-6">
+        <div class="col-12 md:col-6" *ngIf="rec.resolvedAt">
           <div class="info-item">
             <label class="info-label">
-              <i class="pi pi-shield"></i>
-              Estado de Garantía
+              <i class="pi pi-calendar-plus"></i>
+              Fecha de Resolución
             </label>
-            <div
-              class="garantia-badge mt-2"
-              [class.vigente]="garantiaVigente"
-              [class.vencida]="!garantiaVigente"
-            >
-              <i [class]="garantiaVigente ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-              <span *ngIf="garantiaVigente">Vigente ({{ diasRestantes }} días restantes)</span>
-              <span *ngIf="!garantiaVigente"
-                >Vencida (hace {{ Math.abs(diasRestantes) }} días)</span
-              >
-            </div>
+            <strong class="block mt-2 text-green-600">{{
+              rec.resolvedAt | date: 'dd/MM/yyyy HH:mm'
+            }}</strong>
           </div>
         </div>
 
-        <div class="col-12 md:col-6">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-info-circle"></i>
-              Estado Actual
-            </label>
-            <div class="mt-2">
-              <p-tag
-                [value]="reclamo.estado"
-                [severity]="getEstadoSeverity(reclamo.estado)"
-                [icon]="getEstadoIcon(reclamo.estado)"
-                styleClass="text-base px-3 py-2"
-              />
-            </div>
-          </div>
+        <div class="col-12">
+          <p-divider></p-divider>
         </div>
+
         <div class="col-12">
           <div class="info-item">
             <label class="info-label">
-              <i class="pi pi-flag"></i>
+              <i class="pi pi-exclamation-triangle"></i>
               Motivo del Reclamo
             </label>
-            <strong class="block mt-2">{{ reclamo.motivo }}</strong>
+            <strong class="block mt-2 text-orange-500 text-lg">{{ rec.reason }}</strong>
           </div>
         </div>
 
@@ -197,16 +165,15 @@
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-align-left"></i>
-              Descripción Detallada del Problema
+              Descripción del Problema (Cliente)
             </label>
-            <p class="descripcion-texto mt-2">{{ reclamo.descripcion_problema }}</p>
+            <p class="descripcion-texto mt-2 p-3 surface-100 border-round">{{ rec.description }}</p>
           </div>
         </div>
       </div>
     </p-card>
   </div>
 
-  <!-- DETALLE DEL RECLAMO / HISTORIAL -->
   <div class="p-2">
     <p-card class="gestion-card mb-4">
       <div class="card-header">
@@ -217,25 +184,44 @@
       </div>
 
       <div class="grid">
-        <div class="col-12" *ngIf="reclamo.observaciones">
-          <div class="form-field">
-            <div class="observaciones-historial">
-              <pre>{{ reclamo.observaciones }}</pre>
-            </div>
+        <div class="col-12" *ngIf="rec.detalles && rec.detalles.length > 0; else antiguoMetodo">
+          <div *ngFor="let detalle of rec.detalles" class="mb-3">
+             <div class="observaciones-historial p-3 border-round border-1 border-blue-200">
+                <div class="flex justify-content-between align-items-center mb-2 border-bottom-1 border-blue-100 pb-2">
+                  <strong class="text-blue-800">
+                    <i class="pi pi-bookmark mr-2"></i>{{ detalle.tipo }}
+                  </strong>
+                  <span class="text-500 text-sm" *ngIf="detalle.fecha">
+                    <i class="pi pi-clock mr-1"></i>{{ detalle.fecha | date:'dd/MM/yyyy HH:mm' }}
+                  </span>
+                </div>
+                <p class="m-0 pl-2 border-left-2 border-blue-500 text-700">{{ detalle.descripcion }}</p>
+             </div>
           </div>
         </div>
 
-        <div class="col-12" *ngIf="!reclamo.observaciones">
-          <div class="info-box">
-            <i class="pi pi-info-circle"></i>
-            <span>Aún no hay observaciones registradas para este reclamo.</span>
+        <ng-template #antiguoMetodo>
+          <div class="col-12" *ngIf="rec.observations; else noObservaciones">
+            <div class="form-field">
+              <div class="observaciones-historial p-3 border-round border-1 border-blue-200">
+                <pre class="m-0 font-italic">{{ rec.observations }}</pre>
+              </div>
+            </div>
           </div>
-        </div>
+        </ng-template>
+
+        <ng-template #noObservaciones>
+          <div class="col-12">
+            <div class="info-box p-3 surface-100 border-round text-500">
+              <i class="pi pi-info-circle mr-2"></i>
+              <span>Aún no hay respuestas o resoluciones registradas para este reclamo.</span>
+            </div>
+          </div>
+        </ng-template>
       </div>
     </p-card>
   </div>
 
-  <!-- FOOTER -->
   <div class="p-2">
     <p-card class="actions-card">
       <div class="flex justify-content-between gap-2 flex-wrap">
@@ -244,11 +230,13 @@
           icon="pi pi-arrow-left"
           styleClass="ventas-pill btn-cancelar"
           (onClick)="volver()"
+          [outlined]="true"
         />
 
         <p-button
-          label="Ir a edición"
-          icon="pi pi-file-edit"
+          *ngIf="rec.status !== 'RESUELTO' && rec.status !== 'RECHAZADO'"
+          label="Gestionar Reclamo"
+          icon="pi pi-cog"
           styleClass="btn-guardar-cambios"
           (onClick)="irAEditar()"
         />
