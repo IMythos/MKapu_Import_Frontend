@@ -50,7 +50,7 @@ export class ListadoDespacho {
   // ================================
   // 🔥 INYECCIÓN
   // ================================
-  readonly dispatchService         = inject(DispatchService); // public para usarlo en el template (reintentar)
+  readonly dispatchService         = inject(DispatchService);
   private readonly empleadosService    = inject(EmpleadosService);
   private readonly messageService      = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -69,27 +69,27 @@ export class ListadoDespacho {
   estadoFiltro = signal<string>('TODOS');
   empleados    = signal<Empleado[]>([]);
 
-  // Incluye CANCELADO alineado a DispatchStatus
+  // ✅ Opciones alineadas a DispatchStatus del backend
   estadoOptions = [
-    { label: 'Todos',      value: 'TODOS'      },
-    { label: 'Pendiente',  value: 'PENDIENTE'  },
-    { label: 'Enviado',    value: 'ENVIADO'    },
-    { label: 'Entregado',  value: 'ENTREGADO'  },
-    { label: 'Cancelado',  value: 'CANCELADO'  },
+    { label: 'Todos',          value: 'TODOS'         },
+    { label: 'Generado',       value: 'GENERADO'      },
+    { label: 'En preparación', value: 'EN_PREPARACION'},
+    { label: 'En tránsito',    value: 'EN_TRANSITO'   },
+    { label: 'Entregado',      value: 'ENTREGADO'     },
+    { label: 'Cancelado',      value: 'CANCELADO'     },
   ];
 
   // ================================
   // 🔗 SIGNALS DEL SERVICIO (fuente de verdad)
   // ================================
-  dispatches = this.dispatchService.dispatches; // computed → Dispatch[]
-  loading    = this.dispatchService.loading;    // computed → boolean
-  error      = this.dispatchService.error;      // computed → string | null
+  dispatches = this.dispatchService.dispatches;
+  loading    = this.dispatchService.loading;
+  error      = this.dispatchService.error;
 
   // ================================
   // 🏗️ CONSTRUCTOR — carga inicial
   // ================================
   constructor() {
-    // Dispara GET /dispatch → rellena el signal interno del servicio
     this.dispatchService.loadDispatches().subscribe({
       error: () => {
         this.messageService.add({
@@ -101,7 +101,6 @@ export class ListadoDespacho {
       }
     });
 
-    // Empleados para mostrar nombre del almacenero y asesor
     this.empleadosService.getEmpleados().subscribe({
       next: (lista) => this.empleados.set(lista),
       error: () => {
@@ -123,15 +122,18 @@ export class ListadoDespacho {
 
   // ================================
   // 🔥 COMPUTED: CONTADORES
-  // Sobre el total de dispatches (no filasFiltradas) para
-  // reflejar la realidad completa del catálogo.
+  // ✅ Estados corregidos para coincidir con DispatchStatus del backend
   // ================================
-  totalPendientes = computed(() =>
-    this.dispatches().filter(d => d.estado === 'PENDIENTE').length
+  totalGenerados = computed(() =>
+    this.dispatches().filter(d => d.estado === 'GENERADO').length
   );
 
-  totalEnviados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'ENVIADO').length
+  totalEnPreparacion = computed(() =>
+    this.dispatches().filter(d => d.estado === 'EN_PREPARACION').length
+  );
+
+  totalEnTransito = computed(() =>
+    this.dispatches().filter(d => d.estado === 'EN_TRANSITO').length
   );
 
   totalEntregados = computed(() =>
@@ -142,12 +144,16 @@ export class ListadoDespacho {
     this.dispatches().filter(d => d.estado === 'CANCELADO').length
   );
 
+  // Pendientes = GENERADO + EN_PREPARACION (útil para el card "PENDIENTES")
+  totalPendientes = computed(() =>
+    this.totalGenerados() + this.totalEnPreparacion()
+  );
+
+  // Enviados = EN_TRANSITO (útil para el card "ENVIADOS")
+  totalEnviados = computed(() => this.totalEnTransito());
+
   // ================================
   // 🔥 COMPUTED: FILTRADO REACTIVO
-  // Se recalcula automáticamente cuando cambia:
-  //   dispatches()   → nueva data del backend
-  //   estadoFiltro() → usuario cambia el select
-  //   searchTerm()   → usuario escribe en el input
   // ================================
   filasFiltradas = computed(() => {
     let data = this.dispatches();
@@ -157,13 +163,14 @@ export class ListadoDespacho {
       data = data.filter(d => d.estado === this.estadoFiltro());
     }
 
-    // 2. Filtro por búsqueda: id_despacho, id_venta_ref o tipo_envio
+    // 2. Búsqueda: id_despacho, id_venta_ref o direccion_entrega
+    // ✅ tipo_envio reemplazado por direccion_entrega (campo real del backend)
     const term = this.searchTerm()?.trim().toLowerCase();
     if (term) {
       data = data.filter(d =>
-        d.id_despacho?.toString().includes(term)      ||
-        d.id_venta_ref?.toString().includes(term)     ||
-        d.tipo_envio?.toLowerCase().includes(term)
+        d.id_despacho?.toString().includes(term)           ||
+        d.id_venta_ref?.toString().includes(term)          ||
+        d.direccion_entrega?.toLowerCase().includes(term)
       );
     }
 
@@ -174,23 +181,25 @@ export class ListadoDespacho {
   // 🔥 ACCIONES
   // ================================
 
-  /** Confirmación + DELETE al backend */
-  eliminar(despacho: Dispatch): void {
+  /**
+   * ✅ cancelar() reemplaza a eliminar()
+   * El backend no tiene DELETE — usa PATCH /despachos/:id/cancelar
+   */
+  cancelar(despacho: Dispatch): void {
     this.confirmationService.confirm({
-      header: 'Confirmar eliminación',
-      message: `¿Eliminar el despacho <strong>#${despacho.id_despacho}</strong>? Esta acción no se puede deshacer.`,
+      header: 'Confirmar cancelación',
+      message: `¿Cancelar el despacho <strong>#${despacho.id_despacho}</strong>? Esta acción cambiará su estado a CANCELADO.`,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, eliminar',
-      rejectLabel: 'Cancelar',
+      acceptLabel: 'Sí, cancelar',
+      rejectLabel: 'Volver',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        this.dispatchService.deleteDispatch(despacho.id_despacho).subscribe({
+        this.dispatchService.cancelarDespacho(despacho.id_despacho).subscribe({
           next: () => {
-            // El servicio ya elimina del cache → la tabla se actualiza sola vía signal
             this.messageService.add({
               severity: 'success',
-              summary: 'Eliminado',
-              detail: `Despacho #${despacho.id_despacho} eliminado correctamente.`,
+              summary: 'Cancelado',
+              detail: `Despacho #${despacho.id_despacho} cancelado correctamente.`,
               life: 3000,
             });
           },
@@ -198,7 +207,7 @@ export class ListadoDespacho {
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
-              detail: 'No se pudo eliminar el despacho.',
+              detail: 'No se pudo cancelar el despacho.',
               life: 4000,
             });
           }
@@ -213,14 +222,32 @@ export class ListadoDespacho {
     this.estadoFiltro.set('TODOS');
   }
 
-  /** Severity de p-tag según DispatchStatus */
-  getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' {
+  /**
+   * ✅ Severity de p-tag alineada a DispatchStatus real del backend
+   */
+  getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' | 'info' {
     switch (estado) {
-      case 'ENTREGADO':  return 'success';
-      case 'ENVIADO':    return 'warn';
-      case 'CANCELADO':  return 'secondary';
-      default:           return 'danger';   // PENDIENTE
+      case 'GENERADO':       return 'secondary';
+      case 'EN_PREPARACION': return 'info';
+      case 'EN_TRANSITO':    return 'warn';
+      case 'ENTREGADO':      return 'success';
+      case 'CANCELADO':      return 'danger';
+      default:               return 'secondary';
     }
+  }
+
+  /**
+   * Etiqueta legible para mostrar en la tabla
+   */
+  getEstadoLabel(estado: DispatchStatus): string {
+    const labels: Record<DispatchStatus, string> = {
+      GENERADO:       'Generado',
+      EN_PREPARACION: 'En preparación',
+      EN_TRANSITO:    'En tránsito',
+      ENTREGADO:      'Entregado',
+      CANCELADO:      'Cancelado',
+    };
+    return labels[estado] ?? estado;
   }
 
   // ================================

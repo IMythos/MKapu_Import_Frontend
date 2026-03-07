@@ -577,7 +577,7 @@ export const ADMIN_ROUTES: Routes = [
       ),
   },
   {
-    path: 'despacho-productos/agregar-despacho/:id',
+    path: 'despacho-productos/agregar-despacho',
     loadComponent: () =>
       import('./pages/despacho-productos/pages/agregar-despacho/agregar-despacho').then(
         (m) => m.AgregarDespacho,

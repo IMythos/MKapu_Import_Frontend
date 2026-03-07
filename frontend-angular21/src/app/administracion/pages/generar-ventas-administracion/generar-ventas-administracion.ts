@@ -26,6 +26,9 @@ import { ActivatedRoute } from '@angular/router';
 import { QuoteService } from '../../services/quote.service';
 import { Quote } from '../../interfaces/quote.interface';
 
+import { DispatchService } from '../../services/dispatch.service';
+import { CreateDispatchRequest } from '../../interfaces/dispatch.interfaces';
+
 import {
   ClienteBusquedaAdminResponse,
   CrearClienteAdminRequest,
@@ -82,6 +85,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   private readonly route = inject(ActivatedRoute);
   private readonly quoteService = inject(QuoteService);
   private readonly arService = inject(AccountReceivableService);
+  private readonly dispatchService = inject(DispatchService);
 
   readonly tituloKicker = 'VENTAS - GENERAR VENTAS';
   readonly subtituloKicker = 'GENERAR NUEVA VENTA (ADMIN)';
@@ -300,6 +304,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     const v = this.montoRecibido() - this.total();
     return v >= 0 ? v : 0;
   });
+
+  //casa chica ingresa el vuelto 200 so de base o la cantidad que haya
 
   readonly precioSegunTipo = computed(() => {
     const p = this.productoTemp();
@@ -1190,8 +1196,17 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.ventasService.registrarVenta(request).subscribe({
       next: (response: any) => {
         this.loading.set(false);
+
+
+        const idComprobante: number =
+          response.receiptId      ??
+          response.id_comprobante ??
+          response.idComprobante  ?? 0;
+
+        const numeroCompleto = `${response.serie ?? serie}-${String(response.receiptNumber ?? response.numero ?? '').padStart(8, '0')}`;
+
         this.comprobanteGenerado.set({
-          numero_completo: `${response.serie ?? serie}-${String(response.receiptNumber ?? response.numero ?? '').padStart(8, '0')}`,
+          numero_completo: numeroCompleto,
           fec_emision: response.createdAt ?? response.fec_emision ?? new Date().toISOString(),
           total: response.total ?? total,
           serie: response.serie ?? serie,
@@ -1201,9 +1216,79 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
         this.messageService.add({
           severity: 'success',
           summary: '¡Venta Exitosa!',
-          detail: `Comprobante ${serie}-${String(response.receiptNumber ?? response.numero ?? '').padStart(8, '0')} generado`,
+          detail: `Comprobante ${numeroCompleto} generado`,
           life: 5000,
         });
+
+        
+
+          console.log('[DESPACHO] response completo:', response);
+          console.log('[DESPACHO] idComprobante:', idComprobante);
+          console.log('[DESPACHO] almacenSeleccionado:', this.almacenSeleccionado());
+          console.log('[DESPACHO] productosSeleccionados:', this.productosSeleccionados());
+
+           const almacenId = this.almacenSeleccionado();
+
+              
+            const almacenParaDespacho = almacenId ?? request.warehouseId;
+             
+            const idVentaParaDespacho = Number(idComprobante) || Number(response.receiptId) || Number(response.id_comprobante) || 0;
+
+            if (idVentaParaDespacho > 0 && almacenParaDespacho > 0) {
+              const direccion = this.tipoEntrega() === 'delivery'
+                ? this.direccionDelivery().trim()
+                : (this.clienteEncontrado()?.address?.trim() || 'Recojo en tienda');
+
+                const dispatchPayload: CreateDispatchRequest = {
+                  id_venta_ref:      idVentaParaDespacho,
+                  id_usuario_ref:    this.idUsuarioActual().toString(),
+                  id_almacen_origen: almacenParaDespacho,
+                  direccion_entrega: direccion,
+                  observacion:       `Venta ${numeroCompleto}`,
+                  detalles: this.productosSeleccionados().map((item: ItemVentaUIAdmin) => ({
+                    id_producto:         Number(item.productId),
+                    cantidad_solicitada: item.quantity,
+                  })),
+                };
+
+                console.log('[DESPACHO] payload a enviar:', dispatchPayload);
+
+                this.dispatchService.createDispatch(dispatchPayload).subscribe({
+                  next: (despacho) => {
+                    console.log('[DESPACHO] creado exitosamente:', despacho);
+                    this.messageService.add({
+                      severity: 'info',
+                      summary:  'Despacho Creado',
+                      detail:   `Despacho #${despacho.id_despacho} generado automáticamente`,
+                      life:     4000,
+                    });
+                  },
+                  error: (err) => {
+                    console.error('[DESPACHO] error al crear:', err);
+                    this.messageService.add({
+                      severity: 'warn',
+                      summary:  'Venta creada',
+                      detail:   'La venta se registró pero no se pudo crear el despacho. Créalo desde "Nuevo Despacho".',
+                      life:     6000,
+                    });
+                  },
+                });
+              } else {
+                // ← Si llegamos aquí, uno de los valores era 0/null — lo reportamos
+                console.warn('[DESPACHO] No se creó despacho automático.', {
+                  idVentaParaDespacho,
+                  almacenParaDespacho,
+                  responseCompleto: response,
+                });
+                this.messageService.add({
+                  severity: 'warn',
+                  summary:  'Despacho pendiente',
+                  detail:   `Venta creada. No se pudo crear el despacho automáticamente (sin almacén o ID de venta). Créalo manualmente.`,
+                  life:     6000,
+                });
+             }
+
+
         if (cotizId) {
           this.quoteService.updateQuoteStatus(cotizId, 'APROBADA').subscribe({
             next: () => console.log(`Cotización #${cotizId} marcada como APROBADA`),

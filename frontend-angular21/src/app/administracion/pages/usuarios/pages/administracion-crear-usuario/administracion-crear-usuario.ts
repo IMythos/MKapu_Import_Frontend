@@ -9,12 +9,11 @@ import { TagModule } from 'primeng/tag';
 import { CardModule } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-
 import { UsuarioService } from '../../../../services/usuario.service';
 import { UsuarioInterfaceResponse } from '../../../../interfaces/usuario.interface';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { SedeService } from '../../../../services/sede.service';
-
+import {RoleService} from "../../../../services/role.service";
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
@@ -50,38 +49,52 @@ interface SelectOption {
 })
 export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
 
- ngOnInit(): void {
-    this.cargandoUsuarios = true;
-    const currentUser = this.authService.getCurrentUser();
-    if (currentUser?.idSede) {
-      this.filtroSede = currentUser.idSede;
-    } else {
-      this.filtroSede = null;
-    }
-    this.cdr.detectChanges();  // <-- aquí
 
-    forkJoin({
-      sedes    : this.sedeService.getSedes(),
-      usuarios : this.usuarioService.getUsuariosPorEstado(true)
-    }).subscribe({
-      next: ({ sedes, usuarios }) => {
-        this.Sede = [
-          { label: 'Todas', value: null },
-          ...sedes.headquarters.map(s => ({
-            label: s.nombre,
-            value: s.id_sede
-          }))
-        ];
-        this.allUsers = usuarios.users;
-        this.cargandoUsuarios = false;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        this.cargandoUsuarios = false;
-        this.errorUsuarios = 'Error al cargar usuarios';
-      }
-    });
+  ngOnInit(): void {
+  this.cargandoUsuarios = true;
+  const currentUser = this.authService.getCurrentUser();
+  if (currentUser?.idSede) {
+    this.filtroSede = currentUser.idSede;
+  } else {
+    this.filtroSede = null;
   }
+  this.cdr.detectChanges();
+
+  forkJoin({
+    sedes    : this.sedeService.getSedes(),
+    usuarios : this.usuarioService.getUsuariosPorEstado(true),
+    roles    : this.roleService.loadRoles(), // ← agregar
+  }).subscribe({
+    next: ({ sedes, usuarios, roles }) => {
+      this.Sede = [
+        { label: 'Todas', value: null },
+        ...sedes.headquarters.map(s => ({
+          label: s.nombre,
+          value: s.id_sede,
+        })),
+      ];
+
+      // Roles desde BD — solo activos, opción "Todos" al inicio
+      this.Rol = [
+        { label: 'Todos', value: null },
+        ...roles
+          .filter(r => r.activo)
+          .map(r => ({
+            label: r.nombre.toUpperCase(),
+            value: r.nombre.toUpperCase(),
+          })),
+      ];
+
+      this.allUsers = usuarios.users;
+      this.cargandoUsuarios = false;
+      this.cdr.detectChanges();
+    },
+    error: () => {
+      this.cargandoUsuarios = false;
+      this.errorUsuarios = 'Error al cargar datos';
+    },
+  });
+}
 
   private allUsers: UsuarioInterfaceResponse[] = [];
   cargandoUsuarios = false;
@@ -131,7 +144,6 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
         return rol === this.filtroRol;
       });
     }
-
     return result;
   }
 
@@ -147,6 +159,7 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
     private cdr: ChangeDetectorRef,
     private confirmationService: ConfirmationService,
     private messageService: MessageService,
+    private roleService: RoleService
   ) {}
 
   ngAfterViewInit(): void {
@@ -155,37 +168,49 @@ export class AdministracionCrearUsuario implements AfterViewInit, OnInit {
 
   private inicializar(): void {
     this.cargandoUsuarios = true;
-    setTimeout(() => {   // Simular retardo para ver el loader más tiempo
+    setTimeout(() => {
       const currentUser = this.authService.getCurrentUser();
       if (currentUser?.idSede) {
         this.filtroSede = currentUser.idSede;
       } else {
         this.filtroSede = null;
       }
+
       forkJoin({
         sedes    : this.sedeService.getSedes(),
-        usuarios : this.usuarioService.getUsuariosPorEstado(true)
+        usuarios : this.usuarioService.getUsuariosPorEstado(true),
+        roles    : this.roleService.loadRoles(), // ← agregar
       }).subscribe({
-        next: ({ sedes, usuarios }) => {
+        next: ({ sedes, usuarios, roles }) => {
           this.Sede = [
             { label: 'Todas', value: null },
             ...sedes.headquarters.map(s => ({
               label: s.nombre,
-              value: s.id_sede
-            }))
+              value: s.id_sede,
+            })),
           ];
+
+          this.Rol = [
+            { label: 'Todos', value: null },
+            ...roles
+              .filter(r => r.activo)
+              .map(r => ({
+                label: r.nombre.toUpperCase(),
+                value: r.nombre.toUpperCase(),
+              })),
+          ];
+
           this.allUsers = usuarios.users;
           this.cargandoUsuarios = false;
           this.cdr.detectChanges();
         },
-        error: (err) => {
+        error: () => {
           this.cargandoUsuarios = false;
-          this.errorUsuarios = 'Error al cargar usuarios';
-        }
+          this.errorUsuarios = 'Error al cargar datos';
+        },
       });
-    }, 2000); 
+    }, 2000);
   }
-
 
   // Recarga backend según filtro estado
   onEstadoChange(): void {
