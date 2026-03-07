@@ -1,1 +1,232 @@
-<p>agregar-despacho works!</p>
+<div class="p-2">
+
+  <!-- ===================== CABECERA ===================== -->
+  <p-card styleClass="despacho-header-card mb-4">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="despacho-title-icon">
+          <i [class]="iconoCabecera"></i>
+        </span>
+        <div>
+          <p class="despacho-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="despacho-title mb-0">{{ subtituloKicker }}</h2>
+        </div>
+      </div>
+      <p-button
+        label="Volver al listado"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="cancelar()">
+      </p-button>
+    </div>
+  </p-card>
+
+  <!-- ===================== FORMULARIO ===================== -->
+  <div class="grid">
+
+    <!-- Columna izquierda: datos principales -->
+    <div class="col-12 lg:col-7">
+      <p-card styleClass="mb-4">
+        <ng-template pTemplate="header">
+          <div class="px-4 pt-4 pb-2">
+            <h3 class="text-lg font-semibold m-0">
+              <i class="pi pi-info-circle mr-2 text-primary"></i>
+              Datos del Despacho
+            </h3>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-column gap-4 px-2">
+
+          <!-- ID Venta Referencia -->
+          <div class="flex flex-column gap-2">
+            <label class="font-semibold">
+              ID Venta Referencia <span class="text-red-400">*</span>
+            </label>
+            <p-inputNumber
+              [ngModel]="id_venta_ref()"
+              (ngModelChange)="id_venta_ref.set($event)"
+              placeholder="Ej: 1023"
+              [min]="1"
+              [useGrouping]="false"
+              styleClass="w-full">
+            </p-inputNumber>
+            <small class="text-500">ID del comprobante de venta asociado a este despacho.</small>
+          </div>
+
+          <!-- Almacén Origen -->
+          <div class="flex flex-column gap-2">
+            <label class="font-semibold">
+              Almacén de Origen <span class="text-red-400">*</span>
+            </label>
+            <p-select
+              [options]="almacenesOptions()"
+              [ngModel]="id_almacen_origen()"
+              (ngModelChange)="id_almacen_origen.set($event)"
+              [loading]="almacenesLoading()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccione almacén"
+              styleClass="w-full">
+            </p-select>
+          </div>
+
+          <!-- Dirección de Entrega -->
+          <div class="flex flex-column gap-2">
+            <label class="font-semibold">
+              Dirección de Entrega <span class="text-red-400">*</span>
+            </label>
+            <input
+              pInputText
+              type="text"
+              [ngModel]="direccion_entrega()"
+              (ngModelChange)="direccion_entrega.set($event)"
+              placeholder="Ej: Av. Los Álamos 123, Lima"
+              class="w-full"
+            />
+          </div>
+
+          <!-- Observación -->
+          <div class="flex flex-column gap-2">
+            <label class="font-semibold">
+              Observación <span class="text-500">(opcional)</span>
+            </label>
+            <textarea
+              pTextarea
+              [ngModel]="observacion()"
+              (ngModelChange)="observacion.set($event)"
+              placeholder="Notas adicionales..."
+              rows="3"
+              class="w-full resize-none">
+            </textarea>
+          </div>
+
+        </div>
+      </p-card>
+    </div>
+
+    <!-- Columna derecha: productos + acciones -->
+    <div class="col-12 lg:col-5">
+
+      <!-- Productos -->
+      <p-card styleClass="mb-4">
+        <ng-template pTemplate="header">
+          <div class="px-4 pt-4 pb-2 flex align-items-center justify-content-between">
+            <h3 class="text-lg font-semibold m-0">
+              <i class="pi pi-box mr-2 text-primary"></i>
+              Productos
+            </h3>
+            <p-button
+              icon="pi pi-plus"
+              label="Agregar"
+              size="small"
+              severity="secondary"
+              [outlined]="true"
+              (onClick)="agregarDetalle()">
+            </p-button>
+          </div>
+        </ng-template>
+
+        <div class="flex flex-column gap-3 px-2">
+
+          <div
+            *ngFor="let detalle of detalles(); let i = index"
+            class="flex align-items-end gap-2 p-3 border-round-lg surface-100">
+
+            <!-- ID Producto -->
+            <div class="flex flex-column gap-1 flex-1">
+              <label class="text-sm font-medium">
+                ID Producto <span class="text-red-400">*</span>
+              </label>
+              <p-inputNumber
+                [ngModel]="detalle.id_producto"
+                (ngModelChange)="actualizarDetalle(i, 'id_producto', $event)"
+                placeholder="ID"
+                [min]="1"
+                [useGrouping]="false"
+                styleClass="w-full">
+              </p-inputNumber>
+            </div>
+
+            <!-- Cantidad -->
+            <div class="flex flex-column gap-1" style="width: 120px">
+              <label class="text-sm font-medium">
+                Cantidad <span class="text-red-400">*</span>
+              </label>
+              <p-inputNumber
+                [ngModel]="detalle.cantidad_solicitada"
+                (ngModelChange)="actualizarDetalle(i, 'cantidad_solicitada', $event)"
+                [min]="1"
+                [showButtons]="true"
+                styleClass="w-full">
+              </p-inputNumber>
+            </div>
+
+            <!-- Eliminar -->
+            <p-button
+              icon="pi pi-trash"
+              severity="danger"
+              [text]="true"
+              pTooltip="Eliminar"
+              (onClick)="eliminarDetalle(i)">
+            </p-button>
+
+          </div>
+
+          <div *ngIf="detalles().length === 0" class="text-center py-4 text-500">
+            <i class="pi pi-box text-3xl mb-2 block"></i>
+            <p class="m-0">Agrega al menos un producto</p>
+          </div>
+
+        </div>
+      </p-card>
+
+      <!-- Resumen + Acciones -->
+      <p-card>
+        <div class="flex flex-column gap-3">
+
+          <div class="surface-100 border-round-lg p-3">
+            <div class="flex justify-content-between mb-2">
+              <span class="text-600">Venta ref.</span>
+              <span class="font-bold">{{ id_venta_ref() ? '#' + id_venta_ref() : '—' }}</span>
+            </div>
+            <div class="flex justify-content-between mb-2">
+              <span class="text-600">Almacén</span>
+              <span class="font-bold">
+                {{ almacenLabel() }}
+              </span>
+            </div>
+            <div class="flex justify-content-between">
+              <span class="text-600">Productos</span>
+              <span class="font-bold">{{ detalles().length }} ítem(s)</span>
+            </div>
+          </div>
+
+          <p-button
+            label="Crear Despacho"
+            icon="pi pi-check"
+            styleClass="w-full"
+            [loading]="loading()"
+            [disabled]="!formularioValido() || loading()"
+            (onClick)="guardarDespacho()">
+          </p-button>
+
+          <p-button
+            label="Cancelar"
+            icon="pi pi-times"
+            severity="secondary"
+            [outlined]="true"
+            styleClass="w-full"
+            (onClick)="cancelar()">
+          </p-button>
+
+        </div>
+      </p-card>
+
+    </div>
+  </div>
+
+</div>
+
+<p-toast position="bottom-right"></p-toast>

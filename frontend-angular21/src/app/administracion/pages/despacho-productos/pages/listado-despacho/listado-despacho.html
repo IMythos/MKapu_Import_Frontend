@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <!-- Pendientes -->
+    <!-- Pendientes (GENERADO + EN_PREPARACION) -->
     <div class="contador-card">
       <i class="pi pi-clock"></i>
       <div>
@@ -66,7 +66,7 @@
       </div>
     </div>
 
-    <!-- Enviados -->
+    <!-- Enviados (EN_TRANSITO) -->
     <div class="contador-card">
       <i class="pi pi-send"></i>
       <div>
@@ -93,7 +93,7 @@
     <div class="p-3">
       <div class="flex flex-wrap gap-3 align-items-end">
 
-        <!-- Buscador: busca por id_despacho, id_venta_ref y tipo_envio -->
+        <!-- ✅ Placeholder actualizado: ya no menciona tipo de envío -->
         <div class="flex-1 p-fluid" style="min-width: 220px;">
           <label class="font-medium mb-2 block">Buscar Despacho</label>
           <input
@@ -101,12 +101,12 @@
             type="text"
             [ngModel]="searchTerm()"
             (ngModelChange)="searchTerm.set($event)"
-            placeholder="ID despacho, venta o tipo de envío..."
+            placeholder="ID despacho, venta o dirección de entrega..."
             class="w-full"
           />
         </div>
 
-        <!-- Filtro Estado: incluye CANCELADO -->
+        <!-- Filtro Estado: opciones alineadas al backend -->
         <div class="flex flex-column" style="min-width: 200px;">
           <label class="font-medium mb-2 block">Filtrar por Estado</label>
           <p-select
@@ -162,11 +162,12 @@
 
         <ng-template pTemplate="header">
           <tr>
-            <th style="width: 15%">ID Despacho</th>
-            <th style="width: 20%">ID Venta Ref.</th>
-            <th style="width: 30%">Tipo de Envío</th>
+            <th style="width: 12%">ID Despacho</th>
+            <th style="width: 15%">ID Venta Ref.</th>
+            <!-- ✅ Columna renombrada: Tipo de Envío → Dirección de Entrega -->
+            <th style="width: 33%">Dirección de Entrega</th>
             <th style="width: 20%">Estado</th>
-            <th style="width: 15%">Acciones</th>
+            <th style="width: 20%">Acciones</th>
           </tr>
         </ng-template>
 
@@ -178,23 +179,23 @@
               #{{ d.id_despacho }}
             </td>
 
-            <!-- id_venta_ref → campo correcto de la interfaz Dispatch -->
+            <!-- id_venta_ref -->
             <td class="font-semibold">
               {{ d.id_venta_ref ?? '—' }}
             </td>
 
-            <!-- tipo_envio -->
+            <!-- ✅ direccion_entrega reemplaza a tipo_envio (campo real del backend) -->
             <td>
               <span class="flex align-items-center gap-2">
-                <i class="pi pi-box text-400"></i>
-                {{ d.tipo_envio ?? '—' }}
+                <i class="pi pi-map-marker text-400"></i>
+                {{ d.direccion_entrega ?? '—' }}
               </span>
             </td>
 
-            <!-- estado → badge con color según DispatchStatus -->
+            <!-- ✅ Estado con etiqueta legible usando getEstadoLabel() -->
             <td>
               <p-tag
-                [value]="d.estado"
+                [value]="getEstadoLabel(d.estado)"
                 [severity]="getEstadoSeverity(d.estado)"
                 styleClass="font-bold">
               </p-tag>
@@ -217,13 +218,14 @@
                   styleClass="despacho-icon-btn despacho-icon-warn"
                   pTooltip="Editar Despacho">
                 </p-button>
+                <!-- ✅ eliminar(d) → cancelar(d) — el backend no tiene DELETE -->
                 <p-button
-                  icon="pi pi-trash"
+                  icon="pi pi-ban"
                   text
                   severity="danger"
                   styleClass="despacho-icon-btn despacho-icon-danger"
-                  pTooltip="Eliminar Despacho"
-                  (onClick)="eliminar(d)">
+                  pTooltip="Cancelar Despacho"
+                  (onClick)="cancelar(d)">
                 </p-button>
               </div>
             </td>
