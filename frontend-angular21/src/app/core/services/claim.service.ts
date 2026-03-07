@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { firstValueFrom, Observable } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
+import { AuthService } from '../../auth/services/auth.service'; 
 
 export enum ClaimStatus {
   REGISTRADO = 'REGISTRADO',

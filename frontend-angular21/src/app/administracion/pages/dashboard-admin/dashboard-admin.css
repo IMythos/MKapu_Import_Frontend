@@ -20,3 +20,12 @@ table {
   background: rgba(0, 0, 0, 0.85) !important;
   color: #fff !important;
 }
+/* Evita que las leyendas/tooltips de Chart.js se salgan del card */
+p-card {
+  overflow: hidden;
+}
+
+/* O más específico si no quieres afectar todos los cards */
+.p-card {
+  overflow: hidden;
+}

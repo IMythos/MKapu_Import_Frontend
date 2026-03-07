@@ -1,6 +1,6 @@
 <div class="p-2">
 
-  <!-- ===================== CABECERA ===================== -->
+  <!-- CABECERA -->
   <p-card styleClass="despacho-header-card mb-4">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
@@ -25,10 +25,9 @@
 
 </div>
 
-
 <div class="p-2">
 
-  <!-- ===================== BANNER DE ERROR ===================== -->
+  <!-- BANNER DE ERROR -->
   <div *ngIf="error()"
     class="despacho-error-banner mb-4 flex align-items-center gap-3 p-3 border-round-xl">
     <i class="pi pi-exclamation-circle text-2xl"></i>
@@ -43,10 +42,8 @@
     </p-button>
   </div>
 
-  <!-- ===================== CONTADORES ===================== -->
+  <!-- CONTADORES -->
   <div class="contadores-despacho mb-4">
-
-    <!-- Total -->
     <div class="contador-card">
       <i class="pi pi-truck"></i>
       <div>
@@ -55,8 +52,6 @@
         <span class="contador-detalle"><i class="pi pi-list"></i> Registrados</span>
       </div>
     </div>
-
-    <!-- Pendientes -->
     <div class="contador-card">
       <i class="pi pi-clock"></i>
       <div>
@@ -65,8 +60,6 @@
         <span class="contador-detalle"><i class="pi pi-hourglass"></i> Por procesar</span>
       </div>
     </div>
-
-    <!-- Enviados -->
     <div class="contador-card">
       <i class="pi pi-send"></i>
       <div>
@@ -75,8 +68,6 @@
         <span class="contador-detalle"><i class="pi pi-arrow-right"></i> En camino</span>
       </div>
     </div>
-
-    <!-- Entregados -->
     <div class="contador-card">
       <i class="pi pi-check-square"></i>
       <div>
@@ -85,15 +76,13 @@
         <span class="contador-detalle"><i class="pi pi-verified"></i> Completados</span>
       </div>
     </div>
-
   </div>
 
-  <!-- ===================== FILTROS ===================== -->
+  <!-- FILTROS -->
   <div class="surface-card border-round-xl shadow-1 mb-4">
     <div class="p-3">
       <div class="flex flex-wrap gap-3 align-items-end">
 
-        <!-- Buscador: busca por id_despacho, id_venta_ref y tipo_envio -->
         <div class="flex-1 p-fluid" style="min-width: 220px;">
           <label class="font-medium mb-2 block">Buscar Despacho</label>
           <input
@@ -101,12 +90,11 @@
             type="text"
             [ngModel]="searchTerm()"
             (ngModelChange)="searchTerm.set($event)"
-            placeholder="ID despacho, venta o tipo de envío..."
+            placeholder="ID despacho, venta o dirección de entrega..."
             class="w-full"
           />
         </div>
 
-        <!-- Filtro Estado: incluye CANCELADO -->
         <div class="flex flex-column" style="min-width: 200px;">
           <label class="font-medium mb-2 block">Filtrar por Estado</label>
           <p-select
@@ -120,7 +108,6 @@
           </p-select>
         </div>
 
-        <!-- Responsables -->
         <div class="despacho-responsables-card flex flex-column gap-1 px-3 py-2 border-round-lg">
           <span class="despacho-responsable-label">
             <i class="pi pi-user mr-1"></i>
@@ -132,7 +119,6 @@
           </span>
         </div>
 
-        <!-- Limpiar filtros -->
         <div class="flex align-items-end">
           <p-button
             icon="pi pi-filter-slash"
@@ -147,111 +133,101 @@
     </div>
   </div>
 
-  <!-- ===================== TABLA ===================== -->
+  <!-- TABLA con overlay -->
   <div class="mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative;">
 
-      <p-table
-        [value]="filasFiltradas()"
-        [loading]="loading()"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[5, 10, 25, 50]"
-        styleClass="despacho-table-nativa despacho-table-hover"
-        [rowHover]="true">
+      <app-loading-overlay
+        [visible]="loading()"
+        mensaje="Cargando despachos..."
+        modo="inline">
+      </app-loading-overlay>
 
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width: 15%">ID Despacho</th>
-            <th style="width: 20%">ID Venta Ref.</th>
-            <th style="width: 30%">Tipo de Envío</th>
-            <th style="width: 20%">Estado</th>
-            <th style="width: 15%">Acciones</th>
-          </tr>
-        </ng-template>
+      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
 
-        <ng-template pTemplate="body" let-d>
-          <tr>
+        <p-table
+          [value]="filasFiltradas()"
+          [loading]="false"
+          [paginator]="true"
+          [rows]="10"
+          [rowsPerPageOptions]="[5, 10, 25, 50]"
+          styleClass="despacho-table-nativa despacho-table-hover"
+          [rowHover]="true">
 
-            <!-- id_despacho -->
-            <td class="font-semibold text-primary">
-              #{{ d.id_despacho }}
-            </td>
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 12%">ID Despacho</th>
+              <th style="width: 15%">ID Venta Ref.</th>
+              <th style="width: 33%">Dirección de Entrega</th>
+              <th style="width: 20%">Estado</th>
+              <th style="width: 20%">Acciones</th>
+            </tr>
+          </ng-template>
 
-            <!-- id_venta_ref → campo correcto de la interfaz Dispatch -->
-            <td class="font-semibold">
-              {{ d.id_venta_ref ?? '—' }}
-            </td>
+          <ng-template pTemplate="body" let-d>
+            <tr>
+              <td class="font-semibold text-primary">#{{ d.id_despacho }}</td>
+              <td class="font-semibold">{{ d.id_venta_ref ?? '—' }}</td>
+              <td>
+                <span class="flex align-items-center gap-2">
+                  <i class="pi pi-map-marker text-400"></i>
+                  {{ d.direccion_entrega ?? '—' }}
+                </span>
+              </td>
+              <td>
+                <p-tag
+                  [value]="getEstadoLabel(d.estado)"
+                  [severity]="getEstadoSeverity(d.estado)"
+                  styleClass="font-bold">
+                </p-tag>
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <p-button
+                    icon="pi pi-eye"
+                    text severity="secondary"
+                    styleClass="despacho-icon-btn despacho-icon-soft"
+                    pTooltip="Ver Detalle">
+                  </p-button>
+                  <p-button
+                    icon="pi pi-pencil"
+                    text severity="secondary"
+                    styleClass="despacho-icon-btn despacho-icon-warn"
+                    pTooltip="Editar Despacho">
+                  </p-button>
+                  <p-button
+                    icon="pi pi-ban"
+                    text severity="danger"
+                    styleClass="despacho-icon-btn despacho-icon-danger"
+                    pTooltip="Cancelar Despacho"
+                    (onClick)="cancelar(d)">
+                  </p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
 
-            <!-- tipo_envio -->
-            <td>
-              <span class="flex align-items-center gap-2">
-                <i class="pi pi-box text-400"></i>
-                {{ d.tipo_envio ?? '—' }}
-              </span>
-            </td>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="text-center py-6">
+                <i class="pi pi-truck text-4xl text-400 mb-3 block"></i>
+                <p class="text-900 font-medium mb-0">No se encontraron despachos</p>
+                <p class="text-600 mt-2">
+                  {{ (searchTerm() || estadoFiltro() !== 'TODOS')
+                    ? 'Prueba ajustando los filtros de búsqueda'
+                    : 'Aún no hay despachos registrados' }}
+                </p>
+              </td>
+            </tr>
+          </ng-template>
 
-            <!-- estado → badge con color según DispatchStatus -->
-            <td>
-              <p-tag
-                [value]="d.estado"
-                [severity]="getEstadoSeverity(d.estado)"
-                styleClass="font-bold">
-              </p-tag>
-            </td>
+        </p-table>
 
-            <!-- Acciones -->
-            <td>
-              <div class="flex align-items-center gap-2">
-                <p-button
-                  icon="pi pi-eye"
-                  text
-                  severity="secondary"
-                  styleClass="despacho-icon-btn despacho-icon-soft"
-                  pTooltip="Ver Detalle">
-                </p-button>
-                <p-button
-                  icon="pi pi-pencil"
-                  text
-                  severity="secondary"
-                  styleClass="despacho-icon-btn despacho-icon-warn"
-                  pTooltip="Editar Despacho">
-                </p-button>
-                <p-button
-                  icon="pi pi-trash"
-                  text
-                  severity="danger"
-                  styleClass="despacho-icon-btn despacho-icon-danger"
-                  pTooltip="Eliminar Despacho"
-                  (onClick)="eliminar(d)">
-                </p-button>
-              </div>
-            </td>
-
-          </tr>
-        </ng-template>
-
-        <!-- Mensaje vacío dinámico -->
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="5" class="text-center py-6">
-              <i class="pi pi-truck text-4xl text-400 mb-3 block"></i>
-              <p class="text-900 font-medium mb-0">No se encontraron despachos</p>
-              <p class="text-600 mt-2">
-                {{ (searchTerm() || estadoFiltro() !== 'TODOS')
-                  ? 'Prueba ajustando los filtros de búsqueda'
-                  : 'Aún no hay despachos registrados' }}
-              </p>
-            </td>
-          </tr>
-        </ng-template>
-
-      </p-table>
+      </div>
     </div>
   </div>
 
 </div>
 
-<!-- ===================== SERVICIOS GLOBALES ===================== -->
 <p-toast position="bottom-right"></p-toast>
 <p-confirmdialog></p-confirmdialog>

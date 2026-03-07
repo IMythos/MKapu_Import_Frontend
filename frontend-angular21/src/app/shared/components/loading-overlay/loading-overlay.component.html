@@ -1,0 +1,61 @@
+<!-- ══ MODO OVERLAY — pantalla completa con fondo oscuro ═══════════ -->
+@if (visible() && modo() === 'overlay') {
+  <div class="lo-backdrop">
+    <div class="lo-card">
+      <div class="lo-ring">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="var(--surface-200)" stroke-width="4"/>
+          <circle cx="32" cy="32" r="28"
+            stroke="var(--p-primary-color)" stroke-width="4"
+            stroke-linecap="round" stroke-dasharray="60 120"
+            class="lo-arc"/>
+        </svg>
+        <i class="pi pi-bolt lo-ring-icon"></i>
+      </div>
+      <p class="lo-title">{{ mensaje() ?? 'Procesando...' }}</p>
+      @if (paso()) { <p class="lo-step">{{ paso() }}</p> }
+      <div class="lo-bar-track"><div class="lo-bar-fill"></div></div>
+    </div>
+  </div>
+}
+
+<!-- ══ MODO INLINE — superpuesto sobre tabla/card (absolute) ═══════
+     El padre DEBE tener position: relative                          -->
+@if (visible() && modo() === 'inline') {
+  <div class="lo-inline-backdrop">
+    <div class="lo-inline-spinner">
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="16" stroke="rgba(255,255,255,0.2)" stroke-width="3"/>
+        <circle cx="20" cy="20" r="16"
+          stroke="var(--p-primary-color)" stroke-width="3"
+          stroke-linecap="round" stroke-dasharray="35 70"
+          class="lo-arc"/>
+      </svg>
+    </div>
+    <div class="lo-inline-text">
+      <span class="lo-inline-msg">{{ mensaje() ?? 'Cargando...' }}</span>
+      @if (paso()) { <span class="lo-inline-step">{{ paso() }}</span> }
+    </div>
+    <div class="lo-inline-bar-track"><div class="lo-inline-bar-fill"></div></div>
+  </div>
+}
+
+<!-- ══ MODO PAGE — spinner centrado en pantalla sin fondo oscuro ════ -->
+@if (visible() && modo() === 'page') {
+  <div class="lo-page">
+    <div class="lo-inline-spinner">
+      <svg viewBox="0 0 40 40" fill="none">
+        <circle cx="20" cy="20" r="16" stroke="var(--surface-200)" stroke-width="3"/>
+        <circle cx="20" cy="20" r="16"
+          stroke="var(--p-primary-color)" stroke-width="3"
+          stroke-linecap="round" stroke-dasharray="35 70"
+          class="lo-arc"/>
+      </svg>
+    </div>
+    <div class="lo-inline-text">
+      <span class="lo-inline-msg">{{ mensaje() ?? 'Cargando...' }}</span>
+      @if (paso()) { <span class="lo-inline-step">{{ paso() }}</span> }
+    </div>
+    <div class="lo-inline-bar-track"><div class="lo-inline-bar-fill"></div></div>
+  </div>
+}

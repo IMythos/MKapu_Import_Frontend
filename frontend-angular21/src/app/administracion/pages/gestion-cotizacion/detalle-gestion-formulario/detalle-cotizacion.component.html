@@ -1,0 +1,329 @@
+<div class="p-2">
+
+  <!-- CABECERA -->
+  <p-card styleClass="cotizaciones-header-card mb-4 cotizaciones-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="cotizaciones-title-icon"><i class="pi pi-file-check"></i></span>
+        <div>
+          <p class="cotizaciones-kicker mb-0">ADMINISTRACIÓN · COTIZACIONES</p>
+          <h2 class="cotizaciones-title mb-0">
+            DETALLE DE COTIZACIÓN
+            <span *ngIf="cotizacion()" class="cotizacion-codigo-badge">
+              {{ getCodigo() }}
+            </span>
+          </h2>
+        </div>
+      </div>
+
+      <div class="flex gap-2 flex-wrap">
+        <ng-container *ngIf="cotizacion() as c">
+
+          <p-button label="Imprimir" icon="pi pi-print"
+            styleClass="cotizaciones-pill"
+            severity="secondary"
+            (onClick)="imprimir()">
+          </p-button>
+
+          <p-button label="Enviar" icon="pi pi-send"
+            styleClass="cotizaciones-pill"
+            severity="secondary">
+          </p-button>
+
+          <ng-container *ngIf="c.estado === 'PENDIENTE'">
+            <p-button label="Agregar Venta" icon="pi pi-shopping-cart"
+              styleClass="cotizaciones-pill accion-btn--venta"
+              (onClick)="irAgregarVenta()">
+            </p-button>
+            <p-button label="Venta por Cobrar" icon="pi pi-credit-card"
+              styleClass="cotizaciones-pill accion-btn--cobrar"
+              (onClick)="irAgregarVentaPorCobrar()">
+            </p-button>
+            <p-button label="Rechazar" icon="pi pi-times"
+              styleClass="cotizaciones-pill"
+              severity="danger"
+              (onClick)="rechazar()">
+            </p-button>
+          </ng-container>
+
+          <ng-container *ngIf="c.estado === 'RECHAZADA'">
+            <p-button label="Reactivar" icon="pi pi-refresh"
+              styleClass="cotizaciones-pill"
+              severity="success"
+              (onClick)="reactivar()">
+            </p-button>
+          </ng-container>
+
+        </ng-container>
+
+        <p-button label="Volver" icon="pi pi-arrow-left"
+          styleClass="cotizaciones-pill"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="volver()">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+</div>
+
+<div class="p-2" style="position:relative;">
+
+  <app-loading-overlay
+    [visible]="loading()"
+    mensaje="Cargando cotización..."
+    modo="inline">
+  </app-loading-overlay>
+
+  <div [style.opacity]="loading() ? '0.2' : '1'" style="transition: opacity 0.2s ease;">
+
+    <ng-container *ngIf="cotizacion() as c">
+
+      <!-- ── FILA 1: ESTADO + FECHAS + RESUMEN ───────────────────── -->
+      <div class="detalle-grid-top mb-4">
+
+        <!-- Estado general -->
+        <p-card styleClass="tarjeta-principal detalle-estado-card">
+          <div class="flex flex-column gap-3">
+            <div class="flex align-items-center justify-content-between">
+              <span class="detalle-section-label"><i class="pi pi-info-circle mr-2"></i>Estado</span>
+              <p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)" styleClass="detalle-estado-tag"></p-tag>
+            </div>
+            <p-divider styleClass="my-1"></p-divider>
+            <div class="flex flex-column gap-2">
+              <div class="detalle-info-row">
+                <span class="detalle-info-label">Código</span>
+                <span class="detalle-info-value font-bold" style="font-family:monospace">
+                  {{ getCodigo() }}
+                </span>
+              </div>
+              <div class="detalle-info-row">
+                <span class="detalle-info-label">Sede</span>
+                <span class="detalle-info-value">{{ getSedeNombre() }}</span>
+              </div>
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Fechas -->
+        <p-card styleClass="tarjeta-principal detalle-fechas-card">
+          <div class="flex flex-column gap-3">
+            <span class="detalle-section-label"><i class="pi pi-calendar mr-2"></i>Fechas</span>
+            <p-divider styleClass="my-1"></p-divider>
+            <div class="flex flex-column gap-3">
+
+              <div class="detalle-fecha-bloque">
+                <div class="flex align-items-center gap-2 mb-1">
+                  <i class="pi pi-calendar-plus" style="color:var(--text-muted); font-size:0.85rem"></i>
+                  <span class="detalle-info-label">Fecha de Emisión</span>
+                </div>
+                <span class="detalle-fecha-valor">{{ c.fec_emision | date:'dd/MM/yyyy' }}</span>
+              </div>
+
+              <div class="detalle-fecha-bloque">
+                <div class="flex align-items-center gap-2 mb-1">
+                  <i class="pi pi-calendar-times" style="font-size:0.85rem"></i>
+                  <span class="detalle-info-label">Fecha de Vencimiento</span>
+                </div>
+                <div class="flex align-items-center gap-2">
+                  <span class="detalle-fecha-valor">{{ c.fec_venc | date:'dd/MM/yyyy' }}</span>
+                  <span class="dias-badge" [ngClass]="getDiasBadgeClass(c.fec_venc)">
+                    {{ getDiasLabel(c.fec_venc) }}
+                  </span>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </p-card>
+
+        <!-- Resumen económico -->
+        <p-card styleClass="tarjeta-principal detalle-totales-card">
+          <div class="flex flex-column gap-3">
+            <span class="detalle-section-label"><i class="pi pi-money-bill mr-2"></i>Resumen Económico</span>
+            <p-divider styleClass="my-1"></p-divider>
+            <div class="flex flex-column gap-2">
+              <div class="detalle-info-row">
+                <span class="detalle-info-label">Subtotal</span>
+                <span class="detalle-info-value">S/. {{ subtotal() | number:'1.2-2' }}</span>
+              </div>
+              <div class="detalle-info-row">
+                <span class="detalle-info-label">IGV (18%)</span>
+                <span class="detalle-info-value">S/. {{ igv() | number:'1.2-2' }}</span>
+              </div>
+              <p-divider styleClass="my-1"></p-divider>
+              <div class="detalle-info-row">
+                <span class="detalle-info-label" style="font-weight:700; font-size:0.95rem">TOTAL</span>
+                <span class="detalle-total-valor">S/. {{ total() | number:'1.2-2' }}</span>
+              </div>
+            </div>
+          </div>
+        </p-card>
+
+      </div>
+
+      <!-- ── FILA 2: CLIENTE + SEDE ───────────────────────────────── -->
+      <div class="detalle-grid-bottom mb-4">
+
+        <!-- Cliente -->
+        <p-card styleClass="tarjeta-principal">
+          <div class="flex flex-column gap-3">
+            <span class="detalle-section-label"><i class="pi pi-user mr-2"></i>Datos del Cliente</span>
+            <p-divider styleClass="my-1"></p-divider>
+
+            <ng-container *ngIf="cliente() as cl; else sinCliente">
+              <div class="grid">
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Nombre / Razón Social</label>
+                  <div class="detalle-field-value">{{ clienteNombre() }}</div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Documento</label>
+                  <div class="detalle-field-value" style="font-family:monospace">
+                    {{ cl.valor_doc }}
+                  </div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Email</label>
+                  <div class="detalle-field-value">{{ cl.email ?? '—' }}</div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Teléfono</label>
+                  <div class="detalle-field-value">{{ cl.telefono }}</div>
+                </div>
+                <div class="field col-12">
+                  <label class="detalle-field-label">Dirección</label>
+                  <div class="detalle-field-value">{{ cl.direccion ?? '—' }}</div>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #sinCliente>
+              <div class="empty-state-small">
+                <i class="pi pi-user-minus"></i>
+                <span>Sin información de cliente</span>
+              </div>
+            </ng-template>
+          </div>
+        </p-card>
+
+        <!-- Sede -->
+        <p-card styleClass="tarjeta-principal">
+          <div class="flex flex-column gap-3">
+            <span class="detalle-section-label"><i class="pi pi-building mr-2"></i>Datos de la Sede</span>
+            <p-divider styleClass="my-1"></p-divider>
+
+            <ng-container *ngIf="sede() as s; else sinSede">
+              <div class="grid">
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Nombre</label>
+                  <div class="detalle-field-value">{{ s.nombre_sede }}</div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Código</label>
+                  <div class="detalle-field-value" style="font-family:monospace">{{ s.codigo }}</div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Ciudad</label>
+                  <div class="detalle-field-value">{{ s.ciudad }}</div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Departamento</label>
+                  <div class="detalle-field-value">{{ s.departamento }}</div>
+                </div>
+                <div class="field col-12">
+                  <label class="detalle-field-label">Dirección</label>
+                  <div class="detalle-field-value">{{ s.direccion }}</div>
+                </div>
+                <div class="field col-12 md:col-6">
+                  <label class="detalle-field-label">Teléfono</label>
+                  <div class="detalle-field-value">{{ s.telefono }}</div>
+                </div>
+              </div>
+            </ng-container>
+
+            <ng-template #sinSede>
+              <div class="empty-state-small">
+                <i class="pi pi-building"></i>
+                <span>Sin información de sede</span>
+              </div>
+            </ng-template>
+          </div>
+        </p-card>
+
+      </div>
+
+      <!-- ── TABLA DE PRODUCTOS ───────────────────────────────────── -->
+      <p-card styleClass="tarjeta-principal mb-4">
+        <div class="flex flex-column gap-3">
+          <span class="detalle-section-label"><i class="pi pi-shopping-cart mr-2"></i>Productos Cotizados</span>
+          <p-divider styleClass="my-1"></p-divider>
+
+          <ng-container *ngIf="detalles().length > 0; else sinProductos">
+            <p-table
+              [value]="detalles()"
+              [showGridlines]="true"
+              styleClass="p-datatable-sm cotizaciones-table-hover">
+
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width:90px">Código</th>
+                  <th>Descripción</th>
+                  <th style="width:80px" class="text-center">Cantidad</th>
+                  <th style="width:130px" class="text-right">Precio Unit.</th>
+                  <th style="width:130px" class="text-right">Importe</th>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="body" let-d>
+                <tr>
+                  <td style="font-family:monospace; font-size:0.8rem; color:var(--text-muted)">
+                    {{ d.cod_prod ?? '—' }}
+                  </td>
+                  <td style="font-weight:500">{{ d.descripcion }}</td>
+                  <td class="text-center">{{ d.cantidad }}</td>
+                  <td class="text-right">S/. {{ d.precio | number:'1.2-2' }}</td>
+                  <td class="text-right font-bold" style="color:var(--gold)">
+                    S/. {{ (d.importe ?? (d.cantidad * d.precio)) | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </ng-template>
+
+              <ng-template pTemplate="footer">
+                <tr class="totales-footer-row">
+                  <td colspan="4" class="text-right" style="font-size:0.85rem; color:var(--text-muted)">Subtotal</td>
+                  <td class="text-right">S/. {{ subtotal() | number:'1.2-2' }}</td>
+                </tr>
+                <tr class="totales-footer-row">
+                  <td colspan="4" class="text-right" style="font-size:0.85rem; color:var(--text-muted)">IGV (18%)</td>
+                  <td class="text-right">S/. {{ igv() | number:'1.2-2' }}</td>
+                </tr>
+                <tr class="totales-footer-row totales-footer-total">
+                  <td colspan="4" class="text-right font-bold">TOTAL</td>
+                  <td class="text-right" style="color:var(--gold); font-size:1.05rem; font-weight:700;">
+                    S/. {{ total() | number:'1.2-2' }}
+                  </td>
+                </tr>
+              </ng-template>
+
+            </p-table>
+          </ng-container>
+
+          <ng-template #sinProductos>
+            <div class="empty-state">
+              <i class="pi pi-inbox"></i>
+              <span>No hay productos en esta cotización</span>
+            </div>
+          </ng-template>
+
+        </div>
+      </p-card>
+
+    </ng-container>
+
+  </div>
+</div>
+
+<p-toast></p-toast>
+<p-confirmdialog></p-confirmdialog>

@@ -1,5 +1,5 @@
 <div class="p-2">
-  <!-- CABECERA — mismo patrón que productos -->
+  <!-- CABECERA -->
   <p-card class="productos-header-card mb-4 productos-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
@@ -16,16 +16,16 @@
           label="Nueva Guía"
           icon="pi pi-plus"
           styleClass="productos-pill productos-pill-warning"
-          (onClick)="abrirFormulario()"
-        ></p-button>
+          (onClick)="abrirFormulario()">
+        </p-button>
       </div>
     </div>
   </p-card>
 </div>
 
-
 <div class="p-2">
-  <!-- CONTADORES — mismo patrón que productos -->
+
+  <!-- CONTADORES -->
   <div class="contadores-productos mb-4">
     <div class="contador-card">
       <i class="pi pi-file-export"></i>
@@ -35,7 +35,6 @@
         <span class="contador-detalle"><i class="pi pi-check-circle"></i> Guías emitidas</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-clock"></i>
       <div>
@@ -44,7 +43,6 @@
         <span class="contador-detalle"><i class="pi pi-map-marker"></i> En camino</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-check-circle"></i>
       <div>
@@ -53,7 +51,6 @@
         <span class="contador-detalle"><i class="pi pi-arrow-up"></i> Completadas</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-exclamation-triangle"></i>
       <div>
@@ -64,12 +61,11 @@
     </div>
   </div>
 
-  <!-- FILTROS — mismo patrón que productos -->
+  <!-- FILTROS -->
   <div class="surface-card border-round-xl shadow-1 mb-4">
     <div class="p-3">
       <div class="flex flex-wrap gap-6 align-items-end h-full">
 
-        <!-- Buscador -->
         <div class="flex-1 p-fluid h-full">
           <label class="font-medium mb-2 block">Buscar Guía</label>
           <input
@@ -83,7 +79,6 @@
           />
         </div>
 
-        <!-- Estado de envío -->
         <div class="flex flex-column w-16rem h-full">
           <label class="font-medium mb-2 block">Estado de Envío</label>
           <p-select
@@ -94,11 +89,10 @@
             [showClear]="true"
             class="w-full"
             [ngModel]="filtroEstado()"
-            (ngModelChange)="filtroEstado.set($event); aplicarFiltros()"
-          ></p-select>
+            (ngModelChange)="filtroEstado.set($event); aplicarFiltros()">
+          </p-select>
         </div>
 
-        <!-- Rango de fechas -->
         <div class="flex flex-column w-16rem h-full">
           <label class="font-medium mb-2 block">Rango de Fechas</label>
           <p-datepicker
@@ -107,11 +101,10 @@
             placeholder="Seleccionar fechas"
             styleClass="w-full"
             [ngModel]="filtroFechas()"
-            (ngModelChange)="filtroFechas.set($event); aplicarFiltros()"
-          ></p-datepicker>
+            (ngModelChange)="filtroFechas.set($event); aplicarFiltros()">
+          </p-datepicker>
         </div>
 
-        <!-- Acciones de filtro -->
         <div class="flex gap-3 align-items-center">
           <p-button
             icon="pi pi-file-excel"
@@ -119,98 +112,109 @@
             severity="success"
             [outlined]="true"
             size="small"
-            styleClass="productos-pill"
-          ></p-button>
-
+            styleClass="productos-pill">
+          </p-button>
           <p-button
             icon="pi pi-filter-slash"
             label="Limpiar"
             severity="danger"
             size="small"
             styleClass="productos-pill"
-            (onClick)="limpiarFiltros()"
-          ></p-button>
+            (onClick)="limpiarFiltros()">
+          </p-button>
         </div>
 
       </div>
     </div>
   </div>
 
-  <!-- TABLA — mismo patrón que productos -->
+  <!-- TABLA con overlay -->
   <div class="mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-      <p-table
-        [value]="remisiones()"
-        [lazy]="true"
-        (onLazyLoad)="onPageChange($event)"
-        [rows]="10"
-        [totalRecords]="totalRecords()"
-        [loading]="loading()"
-        [paginator]="true"
-        [rowsPerPageOptions]="[5, 10, 25, 50]"
-        styleClass="productos-table-nativa productos-table-hover"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width: 12%">Ref. Comprobante</th>
-            <th style="width: 14%">Tipo de Guía</th>
-            <th style="width: 13%">Fecha Traslado</th>
-            <th style="width: 18%">Motivo</th>
-            <th style="width: 12%">Modalidad</th>
-            <th style="width: 13%">Peso Total</th>
-            <th style="width: 10%">N° Productos</th>
-            <th style="width: 8%">Acciones</th>
-          </tr>
-        </ng-template>
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative;">
 
-        <ng-template pTemplate="body" let-remision>
-          <tr>
-            <td class="font-semibold">#{{ remision.id_comprobante_ref || 'N/A' }}</td>
-            <td>
-              <p-tag
-                [severity]="remision.tipo_guia === 0 ? 'success' : 'warn'"
-                [value]="remision.tipo_guia === 0 ? 'REMITENTE' : 'TRANSPORTISTA'"
-                styleClass="font-bold"
-              ></p-tag>
-            </td>
-            <td>{{ remision.fecha_inicio | date: 'dd/MM/yyyy' }}</td>
-            <td>{{ remision.motivo_traslado }}</td>
-            <td>
-              <p-tag
-                [severity]="remision.modalidad === 0 ? 'success' : 'secondary'"
-                [value]="remision.modalidad === 0 ? 'PÚBLICO' : 'PRIVADO'"
-                styleClass="font-bold"
-              ></p-tag>
-            </td>
-            <td>{{ remision.peso_total }} {{ remision.unidad_peso }}</td>
-            <td>
-              <p-tag [value]="remision.cantidad + ' ítems'" styleClass="font-bold"></p-tag>
-            </td>
-            <td>
-              <div class="flex align-items-center gap-2">
-                <p-button
-                  icon="pi pi-eye"
-                  text
-                  severity="secondary"
-                  styleClass="productos-icon-btn productos-icon-soft"
-                  pTooltip="Ver Detalles"
-                  (onClick)="verDetalles(remision.id_guia)"
-                ></p-button>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
+      <app-loading-overlay
+        [visible]="loading()"
+        mensaje="Cargando guías de remisión..."
+        modo="inline">
+      </app-loading-overlay>
 
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="8" class="text-center py-6">
-              <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
-              <p class="text-900 font-medium mb-0">No se encontraron guías de remisión</p>
-              <p class="text-600 mt-2">Ajusta los filtros arriba</p>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
+      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
+
+        <p-table
+          [value]="remisiones()"
+          [lazy]="true"
+          (onLazyLoad)="onPageChange($event)"
+          [rows]="10"
+          [totalRecords]="totalRecords()"
+          [loading]="false"
+          [paginator]="true"
+          [rowsPerPageOptions]="[5, 10, 25, 50]"
+          styleClass="productos-table-nativa productos-table-hover">
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width: 12%">Ref. Comprobante</th>
+              <th style="width: 14%">Tipo de Guía</th>
+              <th style="width: 13%">Fecha Traslado</th>
+              <th style="width: 18%">Motivo</th>
+              <th style="width: 12%">Modalidad</th>
+              <th style="width: 13%">Peso Total</th>
+              <th style="width: 10%">N° Productos</th>
+              <th style="width: 8%">Acciones</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-remision>
+            <tr>
+              <td class="font-semibold">#{{ remision.id_comprobante_ref || 'N/A' }}</td>
+              <td>
+                <p-tag
+                  [severity]="remision.tipo_guia === 0 ? 'success' : 'warn'"
+                  [value]="remision.tipo_guia === 0 ? 'REMITENTE' : 'TRANSPORTISTA'"
+                  styleClass="font-bold">
+                </p-tag>
+              </td>
+              <td>{{ remision.fecha_inicio | date: 'dd/MM/yyyy' }}</td>
+              <td>{{ remision.motivo_traslado }}</td>
+              <td>
+                <p-tag
+                  [severity]="remision.modalidad === 0 ? 'success' : 'secondary'"
+                  [value]="remision.modalidad === 0 ? 'PÚBLICO' : 'PRIVADO'"
+                  styleClass="font-bold">
+                </p-tag>
+              </td>
+              <td>{{ remision.peso_total }} {{ remision.unidad_peso }}</td>
+              <td>
+                <p-tag [value]="remision.cantidad + ' ítems'" styleClass="font-bold"></p-tag>
+              </td>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <p-button
+                    icon="pi pi-eye"
+                    text
+                    severity="secondary"
+                    styleClass="productos-icon-btn productos-icon-soft"
+                    pTooltip="Ver Detalles"
+                    (onClick)="verDetalles(remision.id_guia)">
+                  </p-button>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="8" class="text-center py-6">
+                <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
+                <p class="text-900 font-medium mb-0">No se encontraron guías de remisión</p>
+                <p class="text-600 mt-2">Ajusta los filtros arriba</p>
+              </td>
+            </tr>
+          </ng-template>
+
+        </p-table>
+
+      </div>
     </div>
   </div>
 

@@ -13,6 +13,20 @@
   font-size: 18px;
 }
 
+
+.contador-detalle {
+  font-size: 0.75rem;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.contador-detalle i {
+  font-size: 0.75rem;
+}
+
+
 .ventas-kicker {
   margin: 0;
   font-size: 0.65rem;
@@ -1340,4 +1354,29 @@
   :host ::ng-deep .p-paginator {
     padding: 0.75rem !important;
   }
+
+
+@media (max-width: 600px) {
+  .contador-card {
+    padding: 1rem;
+  }
+
+  .contador-label {
+    font-size: 0.6rem;
+  }
+
+  .contador-valor {
+    font-size: 1.25rem;
+  }
+
+  .contador-card i {
+    font-size: 1.65rem;
+  }
+
+  .contador-detalle {
+    font-size: 0.65rem;
+  }
 }
+
+}
+

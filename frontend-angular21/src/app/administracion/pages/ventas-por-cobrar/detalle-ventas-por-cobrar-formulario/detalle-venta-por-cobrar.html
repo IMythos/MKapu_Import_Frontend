@@ -1,0 +1,349 @@
+<p-toast></p-toast>
+
+<div class="p-2">
+  <p-card class="ventas-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="ventas-title-icon">
+          <i [class]="iconoCabecera"></i>
+        </span>
+        <div>
+          <p class="ventas-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
+        </div>
+      </div>
+      <div class="flex gap-3">
+        <p-button
+          label="Ventas por Cobrar"
+          icon="pi pi-list"
+          (click)="irListado()"
+          pTooltip="Ir al listado"
+          tooltipPosition="bottom"
+        />
+        <p-button
+          label="Imprimir"
+          icon="pi pi-print"
+          [outlined]="true"
+          (click)="imprimirDetalle()"
+          pTooltip="Imprimir detalle"
+          tooltipPosition="bottom"
+          [disabled]="!cuenta()"
+        />
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- ── SKELETON ──────────────────────────────────────────────────────────── -->
+@if (loading()) {
+  <div class="p-2">
+    <p-card>
+      <div class="skeleton-wrapper">
+        <p-skeleton width="100%" height="150px" styleClass="mb-3" />
+        <p-skeleton width="100%" height="300px" styleClass="mb-3" />
+        <p-skeleton width="100%" height="200px" />
+      </div>
+    </p-card>
+  </div>
+}
+
+<!-- ── CONTENIDO ─────────────────────────────────────────────────────────── -->
+@if (!loading() && cuenta(); as c) {
+
+  <!-- ── CABECERA CUENTA ──────────────────────────────────────────────────── -->
+  <div class="p-2">
+    <p-card class="comprobante-card mb-4">
+      <div class="comprobante-header">
+        <div class="comprobante-tipo">
+          <span class="tipo-icon">
+            <i class="pi pi-credit-card"></i>
+          </span>
+          <div>
+            <h2>VENTA POR COBRAR</h2>
+            <p class="serie-numero"># {{ c.id | number: '8.0-0' }}</p>
+          </div>
+        </div>
+        <div class="comprobante-estado">
+          <p-tag [value]="c.estado" [severity]="getEstadoSeverity(c.estado)" [rounded]="true" />
+        </div>
+      </div>
+
+      <div class="info-grid-wrapper">
+        <div class="info-grid">
+
+          <!-- Cliente -->
+          <div class="info-section">
+            <h3><i class="pi pi-user"></i> Cliente</h3>
+            <div class="info-row">
+              <span class="label">Nombre:</span>
+              <span class="value">{{ c.cliente_nombre }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Documento:</span>
+              <span class="value">{{ c.cliente_doc }}</span>
+            </div>
+            @if (c.cliente_email !== '—') {
+              <div class="info-row">
+                <span class="label">Email:</span>
+                <span class="value">{{ c.cliente_email }}</span>
+              </div>
+            }
+            @if (c.cliente_telefono !== '—') {
+              <div class="info-row">
+                <span class="label">Teléfono:</span>
+                <span class="value">{{ c.cliente_telefono }}</span>
+              </div>
+            }
+          </div>
+
+          <!-- Cuenta -->
+          <div class="info-section">
+            <h3><i class="pi pi-file-edit"></i> Cuenta por Cobrar</h3>
+            <div class="info-row">
+              <span class="label">Fecha creación:</span>
+              <span class="value">{{ c.fec_creacion | date: 'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Fecha vencimiento:</span>
+              <span class="value" [style.color]="getDiasColor(c.fec_vencimiento)">
+                {{ c.fec_vencimiento | date: 'dd/MM/yyyy' }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Días restantes:</span>
+              <span class="dias-badge" [ngClass]="getDiasBadgeClass(c.fec_vencimiento)">
+                {{ getDiasLabel(c.fec_vencimiento) }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Tipo de pago:</span>
+              <span class="value">{{ c.tipo_pago }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Moneda:</span>
+              <span class="value">{{ c.moneda === 'PEN' ? 'Soles (S/.)' : 'Dólares ($)' }}</span>
+            </div>
+          </div>
+
+          <!-- Montos -->
+          <div class="info-section">
+            <h3><i class="pi pi-wallet"></i> Resumen de Montos</h3>
+            <div class="info-row">
+              <span class="label">Monto total:</span>
+              <span class="value amount">S/. {{ c.monto_total | number: '1.2-2' }}</span>
+            </div>
+            <div class="info-row">
+              <span class="label">Total pagado:</span>
+              <span class="value" style="color: var(--green-500); font-weight: 600;">
+                S/. {{ c.monto_pagado | number: '1.2-2' }}
+              </span>
+            </div>
+            <div class="info-row">
+              <span class="label">Saldo pendiente:</span>
+              <span class="value" [style.color]="c.saldo > 0 ? '#fb923c' : 'var(--green-500)'" style="font-weight: 700; font-size: 1.05rem;">
+                S/. {{ c.saldo | number: '1.2-2' }}
+              </span>
+            </div>
+            @if (c.observacion) {
+              <div class="info-row" style="margin-top: 0.5rem;">
+                <span class="label">Observación:</span>
+                <span class="value text-600">{{ c.observacion }}</span>
+              </div>
+            }
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Barra de progreso de pago -->
+      <div class="pago-progreso-wrapper mt-3">
+        <div class="flex justify-content-between align-items-center mb-1">
+          <span class="text-sm text-600 font-medium">Progreso de pago</span>
+          <span class="text-sm font-bold" [style.color]="getPorcentajePago(c) >= 100 ? 'var(--green-500)' : 'var(--primary-color)'">
+            {{ getPorcentajePago(c) | number: '1.0-0' }}%
+          </span>
+        </div>
+        <div class="pago-progreso-bar">
+          <div class="pago-progreso-fill"
+            [style.width.%]="getPorcentajePago(c)"
+            [style.background]="getPorcentajePago(c) >= 100 ? 'var(--green-500)' : 'var(--primary-color)'">
+          </div>
+        </div>
+      </div>
+
+    </p-card>
+  </div>
+
+  <!-- ── COMPROBANTE ORIGEN ─────────────────────────────────────────────── -->
+  @if (c.comprobante) {
+    <div class="p-2">
+      <p-card class="productos-card mb-4">
+        <ng-template pTemplate="header">
+          <div class="card-header">
+            <h3>
+              <span class="icon-shopping"><i class="pi pi-file"></i></span>
+              Comprobante de Venta Asociado
+            </h3>
+            <p-tag [value]="c.comprobante.tipo_label" severity="info" [rounded]="true" />
+          </div>
+        </ng-template>
+
+        <div class="info-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+          <div class="info-row flex-column">
+            <span class="label">N° Comprobante:</span>
+            <span class="value font-bold">{{ c.comprobante.numero_completo }}</span>
+          </div>
+          <div class="info-row flex-column">
+            <span class="label">Fecha emisión:</span>
+            <span class="value">{{ c.comprobante.fec_emision | date: 'dd/MM/yyyy' }}</span>
+          </div>
+          <div class="info-row flex-column">
+            <span class="label">Responsable:</span>
+            <span class="value">{{ c.comprobante.responsable }}</span>
+          </div>
+          <div class="info-row flex-column">
+            <span class="label">Sede:</span>
+            <span class="value">{{ c.comprobante.sede_nombre }}</span>
+          </div>
+          <div class="info-row flex-column">
+            <span class="label">Total comprobante:</span>
+            <span class="value font-bold text-primary">S/. {{ c.comprobante.total | number: '1.2-2' }}</span>
+          </div>
+          <div class="info-row flex-column">
+            <span class="label">Estado:</span>
+            <p-tag [value]="c.comprobante.estado" [severity]="getEstadoComprobanteTag(c.comprobante.estado)" />
+          </div>
+        </div>
+
+        <!-- Productos del comprobante -->
+        @if (c.comprobante.detalles && c.comprobante.detalles.length > 0) {
+          <p-divider />
+          <h4 style="margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--text-color-secondary);">
+            <i class="pi pi-shopping-cart mr-2"></i>Productos incluidos
+          </h4>
+          <p-table
+            [value]="c.comprobante.detalles"
+            styleClass="p-datatable-gridlines p-datatable-sm"
+            [tableStyle]="{ 'min-width': '40rem' }">
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width:12%">Código</th>
+                <th style="width:44%">Descripción</th>
+                <th style="width:10%; text-align:center">Cant.</th>
+                <th style="width:14%; text-align:right">P. Unit.</th>
+                <th style="width:10%; text-align:right">IGV</th>
+                <th style="width:10%; text-align:right">Total</th>
+              </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item>
+              <tr>
+                <td><span class="codigo-producto">{{ item.cod_prod }}</span></td>
+                <td><strong>{{ item.descripcion }}</strong></td>
+                <td style="text-align:center">{{ item.cantidad }}</td>
+                <td style="text-align:right">S/. {{ item.pre_uni | number: '1.2-2' }}</td>
+                <td style="text-align:right">S/. {{ item.igv | number: '1.2-2' }}</td>
+                <td style="text-align:right"><strong>S/. {{ item.total | number: '1.2-2' }}</strong></td>
+              </tr>
+            </ng-template>
+          </p-table>
+        }
+      </p-card>
+    </div>
+  }
+
+  <!-- ── HISTORIAL DE PAGOS ─────────────────────────────────────────────── -->
+  <div class="p-2">
+    <p-card class="historial-card">
+      <ng-template pTemplate="header">
+        <div class="card-header">
+          <h3>
+            <span class="icon-history"><i class="pi pi-history"></i></span>
+            Historial de Pagos
+          </h3>
+          @if (pagos().length > 0) {
+            <p-tag [value]="pagos().length + ' pago(s)'" severity="success" [rounded]="true" />
+          }
+        </div>
+      </ng-template>
+
+      @if (pagos().length > 0) {
+        <p-table
+          [value]="pagos()"
+          styleClass="p-datatable-gridlines p-datatable-sm"
+          [tableStyle]="{ 'min-width': '40rem' }">
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width:8%">#</th>
+              <th style="width:18%">Fecha pago</th>
+              <th style="width:18%">Método</th>
+              <th style="width:20%">Referencia</th>
+              <th style="width:14%; text-align:right">Monto</th>
+              <th style="width:12%; text-align:center">Estado</th>
+              <th style="width:10%; text-align:center">Acciones</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-pago let-i="rowIndex">
+            <tr>
+              <td class="font-semibold">{{ i + 1 }}</td>
+              <td>{{ pago.fec_pago | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>
+                <span class="flex align-items-center gap-1">
+                  <i [class]="getIconoPago(pago.metodo_pago)"></i>
+                  {{ pago.metodo_pago }}
+                </span>
+              </td>
+              <td>{{ pago.referencia || '—' }}</td>
+              <td style="text-align:right">
+                <strong style="color: var(--green-500);">S/. {{ pago.monto | number: '1.2-2' }}</strong>
+              </td>
+              <td style="text-align:center">
+                <p-tag [value]="pago.estado" [severity]="getPagoEstadoTag(pago.estado)" />
+              </td>
+              <td style="text-align:center">
+                <p-button
+                  icon="pi pi-print"
+                  [text]="true"
+                  severity="secondary"
+                  (click)="imprimirPago(pago)"
+                  pTooltip="Imprimir recibo"
+                  tooltipPosition="top"
+                  styleClass="icon-btn"
+                />
+              </td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="footer">
+            <tr>
+              <td colspan="4" style="text-align:right; font-weight:600;">Total pagado:</td>
+              <td style="text-align:right; font-weight:700; color: var(--green-500);">
+                S/. {{ totalPagado() | number: '1.2-2' }}
+              </td>
+              <td colspan="2"></td>
+            </tr>
+          </ng-template>
+        </p-table>
+      } @else {
+        <div class="no-data">
+          <i class="pi pi-info-circle"></i>
+          <span>No se han registrado pagos aún</span>
+        </div>
+      }
+
+      <!-- Acciones de pago -->
+      @if (c.estado === 'PENDIENTE' || c.estado === 'PARCIAL') {
+        <p-divider />
+        <div class="flex justify-content-end gap-2">
+          <p-button
+            label="Registrar Pago"
+            icon="pi pi-plus-circle"
+            (click)="registrarPago(c.id)"
+            pTooltip="Registrar un nuevo abono"
+            tooltipPosition="top"
+          />
+        </div>
+      }
+
+    </p-card>
+  </div>
+
+}

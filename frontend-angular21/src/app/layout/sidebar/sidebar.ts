@@ -45,43 +45,48 @@ export class Sidebar implements OnInit {
   // ========== Definición de rutas del menú ==========
 
   private readonly SIDEBAR_ROUTES: RouteConfig[] = [
-    { path: '/admin/dashboard-admin',                 allowedRoles: [UserRole.ADMIN],   label: 'Dashboard',icon: 'pi pi-home',},
-    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'VENTAS', isSection: true },
-    { path: '/admin/generar-ventas-administracion',   allowedRoles: [UserRole.ADMIN],   label: 'Crear Venta Administración', icon: 'pi pi-plus-circle' },
-    { path: '/admin/historial-ventas-administracion', allowedRoles: [UserRole.ADMIN],   label: 'Historial Ventas Administración', icon: 'pi pi-list' },
-    { path: '/admin/nota-credito',                    allowedRoles: [UserRole.ADMIN],   label: 'Notas de Crédito', icon: 'pi pi-credit-card' },
-    { path: '/admin/descuentos',                      allowedRoles: [UserRole.ADMIN],   label: 'Descuentos', icon: 'pi pi-tag' },
-    { path: '/admin/promociones',                     allowedRoles: [UserRole.ADMIN],   label: 'Promociones', icon: 'pi pi-percentage' },
-    { path: '/admin/ventas-por-cobrar',               allowedRoles: [UserRole.ADMIN],   label: 'Ventas por Cobrar', icon: 'pi pi-wallet' },
-    { path: '/admin/clientes',                        allowedRoles: [UserRole.ADMIN],   label: 'Clientes', icon: 'pi pi-users' },
-    { path: '/admin/cotizaciones',                    allowedRoles: [UserRole.ADMIN],   label: 'Cotizaciones', icon: 'pi pi-id-card' },
-    { path: '/admin/reclamos-listado',                allowedRoles: [UserRole.ADMIN],   label: 'Reclamos',icon: 'pi pi-exclamation-circle'},
+    { path: '/admin/dashboard-admin',                 allowedRoles: [UserRole.ADMIN],   label: 'Dashboard',                         icon: 'pi pi-home' },
 
-    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'ALMACÉN', isSection: true },
-    { path: '/admin/dashboard-almacen',               allowedRoles: [UserRole.ADMIN],   label: 'Dashboard Almacén', icon: 'pi pi-chart-bar' },
-    { path: '/admin/almacen',                         allowedRoles: [UserRole.ADMIN],   label: 'Almacén', icon: 'pi pi-box' },
-    { path: '/logistica/remision',                    allowedRoles: [UserRole.ADMIN],   label: 'Remision', icon: 'pi pi-truck',},
-    { path: '/logistica/conteo-inventario',           allowedRoles: [UserRole.ADMIN],   label: 'Conteo Inventario', icon: 'pi pi-folder', },
-    { path: '/logistica/movimiento-inventario',       allowedRoles: [UserRole.ADMIN],   label: 'Movimiento Inventario', icon: 'pi pi-database' },
-    { path: '/logistica/ajuste-inventario',           allowedRoles: [UserRole.ADMIN],  label: 'Ajuste Inventario', icon: 'pi pi-cog'},
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'VENTAS',                            isSection: true },
+    { path: '/admin/generar-ventas-administracion',   allowedRoles: [UserRole.ADMIN],   label: 'Crear Venta Administración',        icon: 'pi pi-plus-circle' },
+    { path: '/admin/historial-ventas-administracion', allowedRoles: [UserRole.ADMIN],   label: 'Historial Ventas Administración',   icon: 'pi pi-list' },
+    { path: '/admin/ventas-por-cobrar',               allowedRoles: [UserRole.ADMIN],   label: 'Ventas por Cobrar',                 icon: 'pi pi-wallet' },
+    { path: '/admin/nota-credito',                    allowedRoles: [UserRole.ADMIN],   label: 'Notas de Crédito',                  icon: 'pi pi-file-edit' },
+    { path: '/admin/cotizaciones',                    allowedRoles: [UserRole.ADMIN],   label: 'Cotizaciones',                      icon: 'pi pi-id-card' },
+    { path: '/admin/reclamos-listado',                allowedRoles: [UserRole.ADMIN],   label: 'Reclamos',                          icon: 'pi pi-exclamation-circle' },
 
-    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'ADMINISTRACIÓN', isSection: true },
-    { path: '/admin/transferencia',                   allowedRoles: [UserRole.ADMIN],   label: 'Transferencias', icon: 'pi pi-arrows-h' },
-    { path: '/admin/despacho-productos',              allowedRoles: [UserRole.ADMIN],   label: 'Despacho',      icon: 'pi pi-truck' },
-    { path: '/admin/usuarios',                        allowedRoles: [UserRole.ADMIN],   label: 'Usuarios',      icon: 'pi pi-user-plus' },
-    { path: '/admin/gestion-productos',               allowedRoles: [UserRole.ADMIN],   label: 'Productos',     icon: 'pi pi-tags' },
-    { path: '/admin/categoria',                       allowedRoles: [UserRole.ADMIN],   label: 'Categorías',    icon: 'pi pi-list' },
-    { path: '/admin/sedes',                           allowedRoles: [UserRole.ADMIN],   label: 'Sedes',         icon: 'pi pi-building' },
-    { path: '/admin/comision',                        allowedRoles: [UserRole.ADMIN],   label: 'Comisiones',    icon: 'pi pi-wallet' },
-    { path: '/admin/mermas',                          allowedRoles: [UserRole.ADMIN],   label: 'Mermas',        icon: 'pi pi-exclamation-triangle' },
-    { path: '/admin/remates',                         allowedRoles: [UserRole.ADMIN],   label: 'Remates',       icon: 'pi pi-tag' },
-    { path: '/admin/proveedores',                     allowedRoles: [UserRole.ADMIN],   label: 'Proveedores',   icon: 'pi pi-truck' },
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'ALMACÉN',                      isSection: true },
+    { path: '/admin/dashboard-almacen',               allowedRoles: [UserRole.ADMIN],   label: 'Dashboard Almacén',            icon: 'pi pi-chart-bar' },
+    { path: '/logistica/conteo-inventario',           allowedRoles: [UserRole.ADMIN],   label: 'Conteo Inventario',            icon: 'pi pi-folder' },
+    { path: '/logistica/movimiento-inventario',       allowedRoles: [UserRole.ADMIN],   label: 'Movimiento Inventario',        icon: 'pi pi-database' },
+    { path: '/logistica/ajuste-inventario',           allowedRoles: [UserRole.ADMIN],   label: 'Ajuste Inventario',            icon: 'pi pi-cog' },
+
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'LOGÍSTICA',                    isSection: true },
+    { path: '/logistica/remision',                    allowedRoles: [UserRole.ADMIN],   label: 'Remisión',                     icon: 'pi pi-truck' },
+    { path: '/admin/transferencia',                   allowedRoles: [UserRole.ADMIN],   label: 'Transferencias',               icon: 'pi pi-sync' },
+    { path: '/admin/despacho-productos',              allowedRoles: [UserRole.ADMIN],   label: 'Despacho',                     icon: 'pi pi-send' },
+    { path: '/admin/proveedores',                     allowedRoles: [UserRole.ADMIN],   label: 'Proveedores',                  icon: 'pi pi-briefcase' },
+
+    { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'ADMINISTRACIÓN',               isSection: true },
+    { path: '/admin/usuarios',                        allowedRoles: [UserRole.ADMIN],   label: 'Trabajadores',                 icon: 'pi pi-user-plus' },
+    { path: '/admin/roles-permisos',                  allowedRoles: [UserRole.ADMIN],   label: 'Rol y Permisos',                icon: 'pi pi-users' },
+    { path: '/admin/clientes',                        allowedRoles: [UserRole.ADMIN],   label: 'Clientes',                     icon: 'pi pi-users' },
+    { path: '/admin/sedes',                           allowedRoles: [UserRole.ADMIN],   label: 'Sedes',                        icon: 'pi pi-building' },
+    { path: '/admin/almacen',                         allowedRoles: [UserRole.ADMIN],   label: 'Almacén',                      icon: 'pi pi-box' },
+    { path: '/admin/gestion-productos',               allowedRoles: [UserRole.ADMIN],   label: 'Productos',                    icon: 'pi pi-tags' },
+    { path: '/admin/categoria',                       allowedRoles: [UserRole.ADMIN],   label: 'Familias',                     icon: 'pi pi-list' },
+    { path: '/admin/descuentos',                      allowedRoles: [UserRole.ADMIN],   label: 'Descuentos',                   icon: 'pi pi-tag' },
+    { path: '/admin/comision',                        allowedRoles: [UserRole.ADMIN],   label: 'Comisiones',                   icon: 'pi pi-wallet' },
+    { path: '/admin/mermas',                          allowedRoles: [UserRole.ADMIN],   label: 'Mermas',                       icon: 'pi pi-exclamation-triangle' },
+    { path: '/admin/remates',                         allowedRoles: [UserRole.ADMIN],   label: 'Remates',                      icon: 'pi pi-tag' },
+
 
 
 
     // ==================== VENTAS ====================
     { path: '/ventas/caja',                            allowedRoles: [UserRole.VENTAS],   label: 'Estado Caja',   icon: 'pi pi-wallet'},
     { path: '/ventas/dashboard-ventas',                allowedRoles: [UserRole.VENTAS],   label: 'Dashboard',     icon: 'pi pi-chart-line'},
+    { path: '/admin/promociones',                      allowedRoles: [UserRole.ADMIN],   label: 'Promociones', icon: 'pi pi-percentage' },
     { path: '/ventas/generar-ventas',                  allowedRoles: [UserRole.VENTAS],   label: 'Generar Venta',icon: 'pi pi-plus-circle'},
     { path: '/ventas/historial-ventas',                allowedRoles: [UserRole.VENTAS],   label: 'Historial Ventas',icon: 'pi pi-list'},
     { path: '/ventas/reclamos-listado',                allowedRoles: [UserRole.VENTAS],   label: 'Reclamos y Garantías',icon: 'pi pi-exclamation-circle'},
@@ -93,6 +98,17 @@ export class Sidebar implements OnInit {
     { path: '/ventas/movimientos',                     allowedRoles: [UserRole.VENTAS],   label: 'Movimientos',icon: 'pi pi-book'},
     { path: '/ventas/cotizaciones',                    allowedRoles: [UserRole.VENTAS],   label: 'Cotizaciones',icon: 'pi pi-file'},
     { path: '/ventas/remates',                         allowedRoles: [UserRole.VENTAS],   label: 'Remates',icon: 'pi pi-tag'},
+
+
+    // ==================== DELIVERY ====================
+
+
+
+
+
+    // ==================== CONTADOR ====================
+
+
 
 
     // ==================== ALMACÉN ====================

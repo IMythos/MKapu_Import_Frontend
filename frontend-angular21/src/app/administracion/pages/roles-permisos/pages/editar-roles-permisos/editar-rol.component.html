@@ -1,0 +1,201 @@
+<div class="p-2">
+
+  <!-- CABECERA -->
+  <p-card styleClass="sedes-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="sedes-title-icon"><i class="pi pi-pencil"></i></span>
+        <div>
+          <p class="sedes-kicker">ADMINISTRADOR - ROLES Y PERMISOS</p>
+          <h2 class="sedes-title">EDITAR ROL Y PERMISOS</h2>
+        </div>
+      </div>
+      <p-button label="Volver" icon="pi pi-arrow-left"
+        severity="secondary" [outlined]="true"
+        styleClass="sedes-pill" (onClick)="cancelar()">
+      </p-button>
+    </div>
+  </p-card>
+
+  <!-- STEPPER VISUAL -->
+  <p-card styleClass="mb-4">
+    <div class="flex align-items-center gap-3">
+
+      <div class="flex align-items-center gap-2">
+        <span class="flex align-items-center justify-content-center border-circle font-bold text-sm"
+          style="width:2rem; height:2rem;"
+          [style.background]="step() >= 1 ? 'var(--p-primary-color)' : 'var(--surface-300)'"
+          [style.color]="step() >= 1 ? '#fff' : 'var(--text-color-secondary)'">
+          @if (step() > 1) { <i class="pi pi-check"></i> } @else { 1 }
+        </span>
+        <span class="font-medium text-sm"
+          [class.text-primary]="step() === 1"
+          [class.text-500]="step() !== 1">
+          Datos del Rol
+        </span>
+      </div>
+
+      <div class="flex-1 border-top-1 surface-border mx-2"></div>
+
+      <div class="flex align-items-center gap-2">
+        <span class="flex align-items-center justify-content-center border-circle font-bold text-sm"
+          style="width:2rem; height:2rem;"
+          [style.background]="step() >= 2 ? 'var(--p-primary-color)' : 'var(--surface-300)'"
+          [style.color]="step() >= 2 ? '#fff' : 'var(--text-color-secondary)'">
+          2
+        </span>
+        <span class="font-medium text-sm"
+          [class.text-primary]="step() === 2"
+          [class.text-500]="step() !== 2">
+          Permisos del Rol
+        </span>
+      </div>
+
+    </div>
+  </p-card>
+
+  <!-- ═══ PASO 1: Datos del Rol ═══ -->
+  @if (step() === 1) {
+    <p-card>
+      <div class="flex align-items-center gap-2 mb-4">
+        <span class="sedes-section-icon"><i class="pi pi-id-card"></i></span>
+        <span class="text-sm font-semibold text-700">DATOS DEL ROL</span>
+      </div>
+
+      @if (rolSvc.loading()) {
+        <div class="flex align-items-center gap-2 text-500 py-3">
+          <i class="pi pi-spin pi-spinner"></i> Cargando rol...
+        </div>
+      }
+
+      @if (!rolSvc.loading()) {
+        <form [formGroup]="form" class="formgrid grid">
+
+          <div class="field col-12 md:col-6">
+            <label class="font-medium mb-2 block">
+              Nombre <span class="text-red-400">*</span>
+            </label>
+            <input pInputText formControlName="nombre" class="w-full"
+                   [ngClass]="{ 'ng-invalid ng-dirty': isInvalid('nombre') }">
+            @if (isInvalid('nombre')) {
+              <small class="text-red-400 block mt-1">
+                <i class="pi pi-exclamation-circle mr-1"></i>
+                Nombre requerido (máx. 45 caracteres).
+              </small>
+            }
+          </div>
+
+          <div class="field col-12 md:col-6">
+            <label class="font-medium mb-2 block">Descripción</label>
+            <input pInputText formControlName="descripcion" class="w-full"
+                   placeholder="Descripción opcional">
+          </div>
+
+          <div class="field col-12 flex align-items-center gap-2 mt-1">
+            <p-checkbox formControlName="activo" [binary]="true" inputId="activo"></p-checkbox>
+            <label for="activo" class="font-medium cursor-pointer">Activo</label>
+          </div>
+
+          <div class="col-12 flex gap-2 justify-content-end pt-3">
+            <p-button label="Cancelar" icon="pi pi-times"
+              severity="secondary" [outlined]="true"
+              styleClass="sedes-pill" (onClick)="cancelar()">
+            </p-button>
+            <p-button label="Siguiente: Permisos" icon="pi pi-arrow-right"
+              iconPos="right"
+              [loading]="submitting()"
+              [disabled]="form.invalid || submitting()"
+              styleClass="sedes-pill"
+              (onClick)="guardarDatos()">
+            </p-button>
+          </div>
+
+        </form>
+      }
+    </p-card>
+  }
+
+  <!-- ═══ PASO 2: Permisos del Rol ═══ -->
+  @if (step() === 2) {
+    <p-card>
+      <div class="flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+        <div class="flex align-items-center gap-2">
+          <span class="sedes-section-icon"><i class="pi pi-key"></i></span>
+          <span class="text-sm font-semibold text-700">PERMISOS DEL ROL</span>
+          <p-tag
+            [value]="getPermisosLabel(selectedPermIds().length)"
+            [severity]="selectedPermIds().length === 0 ? 'danger' : 'success'">
+          </p-tag>
+        </div>
+        <div class="flex gap-2">
+          <p-button label="Seleccionar todos" icon="pi pi-check-square"
+            severity="secondary" [outlined]="true" styleClass="sedes-pill"
+            (onClick)="seleccionarTodos()">
+          </p-button>
+          <p-button label="Limpiar" icon="pi pi-times"
+            severity="danger" [outlined]="true" styleClass="sedes-pill"
+            (onClick)="limpiarSeleccion()">
+          </p-button>
+        </div>
+      </div>
+
+      <p class="text-500 text-sm mb-3">
+        Rol: <strong class="text-900">{{ rolNombre() }}</strong> —
+        Marca los permisos que tendrá este rol. Los cambios reemplazan la asignación actual.
+      </p>
+
+      @if (permSvc.loading()) {
+        <div class="text-center py-4 text-500">
+          <i class="pi pi-spin pi-spinner mr-2"></i> Cargando permisos...
+        </div>
+      }
+
+      <div class="grid">
+        @for (perm of todosLosPermisos(); track perm.id_permiso) {
+          <div class="col-12 md:col-6 lg:col-4 mb-2">
+
+            <!-- ✅ Solo el div maneja el click, checkbox es solo visual -->
+            <div class="flex align-items-start gap-2 surface-100 border-round p-3 cursor-pointer"
+                 [style.opacity]="perm.activo ? '1' : '0.5'"
+                 [style.border]="selectedPermIds().includes(perm.id_permiso)
+                   ? '1px solid var(--p-primary-color)'
+                   : '1px solid transparent'"
+                 (click)="togglePerm(perm.id_permiso)">
+              <p-checkbox
+                [binary]="true"
+                [ngModel]="selectedPermIds().includes(perm.id_permiso)"
+                [inputId]="'perm_' + perm.id_permiso">
+              </p-checkbox>
+              <label [for]="'perm_' + perm.id_permiso"
+                     class="cursor-pointer flex-1"
+                     (click)="$event.stopPropagation()">
+                <span class="font-medium text-sm text-900 block">{{ perm.nombre }}</span>
+                <span class="text-400 text-xs">{{ perm.descripcion || '—' }}</span>
+              </label>
+            </div>
+
+          </div>
+        }
+      </div>
+
+      @if (!permSvc.loading() && todosLosPermisos().length === 0) {
+        <div class="text-center text-500 py-4">
+          <i class="pi pi-info-circle mr-2"></i>
+          No hay permisos disponibles.
+        </div>
+      }
+
+      <div class="flex gap-2 justify-content-end pt-4 border-top-1 surface-border mt-3">
+        <p-button label="Guardar permisos" icon="pi pi-check"
+          [loading]="submitting()"
+          [disabled]="submitting() || selectedPermIds().length === 0"
+          styleClass="sedes-pill"
+          (onClick)="guardarPermisos()">
+        </p-button>
+      </div>
+
+    </p-card>
+  }
+
+</div>
+<p-toast position="top-right"></p-toast>

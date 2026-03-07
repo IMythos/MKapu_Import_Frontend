@@ -12,10 +12,13 @@ import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoComplete } from 'primeng/autocomplete';
 import { TooltipModule } from 'primeng/tooltip';
+import { DatePickerModule } from 'primeng/datepicker';
 import { SedeService } from '../../../services/sede.service';
 import { QuoteListItem } from '../../../interfaces/quote.interface';
 import { QuoteService } from '../../../services/quote.service';
 import { SedeAlmacenService } from '../../../services/sede-almacen.service';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 
 @Component({
   selector: 'app-gestion-cotizaciones',
@@ -23,7 +26,8 @@ import { SedeAlmacenService } from '../../../services/sede-almacen.service';
   imports: [
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
-    RouterModule, AutoComplete, TooltipModule
+    RouterModule, AutoComplete, TooltipModule, DatePickerModule,
+    LoadingOverlayComponent,
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
@@ -48,6 +52,8 @@ export class GestionCotizacionesComponent implements OnInit {
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
   rows                  = signal<number>(10);
+  fechaFin              = signal<Date | null>(null);
+  fechaInicio           = signal<Date | null>(getHoyPeru());
 
   estadosOptions = [
     { label: 'Todos',     value: null        },
@@ -63,15 +69,42 @@ export class GestionCotizacionesComponent implements OnInit {
     value: sede.id_sede,
   })));
 
-  cotizaciones          = computed(() => this.quoteService.quotes());
-  cotizacionesFiltradas = computed(() => this.cotizaciones());
-  totalRecords          = computed(() => this.quoteService.total());
-  totalPages            = computed(() => this.quoteService.totalPages());
-  loading               = computed(() => this.quoteService.loading());
-  totalAprobadas        = computed(() => this.cotizaciones().filter(c => c.estado === 'APROBADA').length);
-  totalPendientes       = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
+  private getHoyPeru(): Date {
+    const ahora = new Date();
+    const offsetPeru  = -5 * 60;
+    const offsetLocal = ahora.getTimezoneOffset();
+    const diferencia  = (offsetLocal - offsetPeru) * 60 * 1000;
+    const horaPeruana = new Date(ahora.getTime() + diferencia);
+    horaPeruana.setHours(0, 0, 0, 0);
+    return horaPeruana;
+  }
+
+  cotizaciones = computed(() => this.quoteService.quotes());
+
+  cotizacionesFiltradas = computed(() => {
+    const inicio = this.fechaInicio();
+    const fin    = this.fechaFin();
+    if (!inicio && !fin) return this.cotizaciones();
+    return this.cotizaciones().filter(c => {
+      const fec = new Date(c.fec_emision);
+      if (inicio && fec < inicio) return false;
+      if (fin) {
+        const finDia = new Date(fin); finDia.setHours(23, 59, 59, 999);
+        if (fec > finDia) return false;
+      }
+      return true;
+    });
+  });
+
+  totalRecords    = computed(() => this.quoteService.total());
+  totalPages      = computed(() => this.quoteService.totalPages());
+  loading         = computed(() => this.quoteService.loading());
+  totalAprobadas  = computed(() => this.cotizaciones().filter(c => c.estado === 'APROBADA').length);
+  totalPendientes = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
 
   // ── Lifecycle ─────────────────────────────────────────────────────────────
+  constructor(private router: Router) {}
+
   ngOnInit() {
     const sedeDefaultId = this.getSedeUsuarioActual();
     if (sedeDefaultId) this.sedeSeleccionada.set(sedeDefaultId);
@@ -88,9 +121,7 @@ export class GestionCotizacionesComponent implements OnInit {
         const user = JSON.parse(userString);
         return user.idSede ?? null;
       }
-    } catch (e) {
-      console.error('Error parseando usuario', e);
-    }
+    } catch (e) { console.error('Error parseando usuario', e); }
     return null;
   }
 
@@ -114,6 +145,19 @@ export class GestionCotizacionesComponent implements OnInit {
 
   onEstadoChange(estado: string | null) {
     this.estadoSeleccionado.set(estado);
+    this.currentPage.set(1);
+    this.cargarCotizacion();
+  }
+
+  onFechaChange() { /* filtro local */ }
+
+  limpiarFiltros() {
+    this.buscarValue.set('');
+    this.cotizacionSugerencias.set([]);
+    this.fechaInicio.set(getHoyPeru());
+    this.fechaFin.set(null);
+    this.sedeSeleccionada.set(null);
+    this.estadoSeleccionado.set('PENDIENTE');
     this.currentPage.set(1);
     this.cargarCotizacion();
   }
@@ -156,75 +200,80 @@ export class GestionCotizacionesComponent implements OnInit {
     }
   }
 
-  // ── Rechazar cotización ───────────────────────────────────────────────────
+  // ── Rechazar ──────────────────────────────────────────────────────────────
   rechazarCotizacion(id: number) {
     this.confirmationService.confirm({
-      message:                '¿Estás seguro de rechazar esta cotización? El estado cambiará a <strong>RECHAZADA</strong>.',
-      header:                 'Confirmar rechazo',
-      icon:                   'pi pi-exclamation-triangle',
-      acceptLabel:            'Sí, rechazar',
-      rejectLabel:            'Cancelar',
+      message: '¿Estás seguro de rechazar esta cotización? El estado cambiará a <strong>RECHAZADA</strong>.',
+      header: 'Confirmar rechazo', icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, rechazar', rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
       accept: () => {
         this.quoteService.updateQuoteStatus(id, 'RECHAZADA').subscribe({
-          next: () => {
-            this.messageService.add({ severity: 'success', summary: 'Cotización rechazada', detail: 'El estado fue actualizado a RECHAZADA.' });
-            this.cargarCotizacion();
-          },
-          error: () => {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado.' });
-          },
+          next:  () => { this.messageService.add({ severity: 'success', summary: 'Cotización rechazada', detail: 'El estado fue actualizado a RECHAZADA.' }); this.cargarCotizacion(); },
+          error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar el estado.' }); },
         });
       },
     });
   }
 
-  // ── Reactivar cotización (RECHAZADA → PENDIENTE) ──────────────────────────
+  // ── Reactivar ─────────────────────────────────────────────────────────────
   reactivarCotizacion(id: number) {
     this.confirmationService.confirm({
-      message:                '¿Deseas reactivar esta cotización? El estado volverá a <strong>PENDIENTE</strong>.',
-      header:                 'Confirmar reactivación',
-      icon:                   'pi pi-refresh',
-      acceptLabel:            'Sí, reactivar',
-      rejectLabel:            'Cancelar',
+      message: '¿Deseas reactivar esta cotización? El estado volverá a <strong>PENDIENTE</strong>.',
+      header: 'Confirmar reactivación', icon: 'pi pi-refresh',
+      acceptLabel: 'Sí, reactivar', rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-success',
       rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
       accept: () => {
         this.quoteService.updateQuoteStatus(id, 'PENDIENTE').subscribe({
-          next: () => {
-            this.messageService.add({ severity: 'success', summary: 'Cotización reactivada', detail: 'El estado volvió a PENDIENTE.' });
-            this.cargarCotizacion();
-          },
-          error: () => {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo reactivar la cotización.' });
-          },
+          next:  () => { this.messageService.add({ severity: 'success', summary: 'Cotización reactivada', detail: 'El estado volvió a PENDIENTE.' }); this.cargarCotizacion(); },
+          error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo reactivar la cotización.' }); },
         });
       },
     });
   }
 
-  // ── Eliminar permanentemente ──────────────────────────────────────────────
+  // ── Eliminar ──────────────────────────────────────────────────────────────
   eliminarCotizacion(id: number) {
     this.confirmationService.confirm({
-      message:                '¿Estás seguro de <strong>eliminar permanentemente</strong> esta cotización? Esta acción no se puede deshacer.',
-      header:                 'Eliminar cotización',
-      icon:                   'pi pi-trash',
-      acceptLabel:            'Sí, eliminar',
-      rejectLabel:            'Cancelar',
+      message: '¿Estás seguro de <strong>eliminar permanentemente</strong> esta cotización? Esta acción no se puede deshacer.',
+      header: 'Eliminar cotización', icon: 'pi pi-trash',
+      acceptLabel: 'Sí, eliminar', rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
       accept: () => {
         this.quoteService.deleteQuote(id).subscribe({
-          next: () => {
-            this.messageService.add({ severity: 'success', summary: 'Eliminada', detail: 'La cotización fue eliminada permanentemente.' });
-            this.cargarCotizacion();
-          },
-          error: () => {
-            this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar la cotización.' });
-          },
+          next:  () => { this.messageService.add({ severity: 'success', summary: 'Eliminada', detail: 'La cotización fue eliminada permanentemente.' }); this.cargarCotizacion(); },
+          error: () => { this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar la cotización.' }); },
         });
       },
+    });
+  }
+
+  // ── Imprimir ──────────────────────────────────────────────────────────────
+  imprimirCotizacion(c: QuoteListItem) {
+    this.quoteService.exportPdf(c.id_cotizacion);
+  }
+
+  // ── Enviar por email ──────────────────────────────────────────────────────
+  enviarCotizacion(c: QuoteListItem) {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Enviando...',
+      detail: `Enviando cotización ${c.codigo} por email.`,
+    });
+    this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
+      next: (res) => this.messageService.add({
+        severity: 'success',
+        summary: 'Email enviado',
+        detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`,
+      }),
+      error: () => this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
+      }),
     });
   }
 
@@ -262,23 +311,15 @@ export class GestionCotizacionesComponent implements OnInit {
   }
 
   // ── Navegación ────────────────────────────────────────────────────────────
-  constructor(private router: Router) {}
-
   irCrear()             { this.router.navigate(['/admin/agregar-cotizaciones']); }
   irEditar(id: number)  { this.router.navigate(['/admin/editar-cotizacion', id]); }
   irDetalle(id: number) { this.router.navigate(['/admin/ver-detalle-cotizacion', id]); }
 
   irAgregarVenta(id: number) {
-    this.router.navigate(
-      ['/admin/generar-ventas-administracion'],
-      { queryParams: { cotizacion: id, tipo: 'contado' } }
-    );
+    this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'contado' } });
   }
-  
+
   irAgregarVentaPorCobrar(id: number) {
-    this.router.navigate(
-      ['/admin/generar-ventas-administracion'],
-      { queryParams: { cotizacion: id, tipo: 'credito' } }
-    );
+    this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'credito' } });
   }
 }

@@ -10,6 +10,7 @@ import { SelectModule } from 'primeng/select';
 import { DashboardService } from '../../services/dashboard.service';
 import { SedeService } from '../../services/sede.service';
 import { forkJoin } from 'rxjs';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 export interface TopProducto {
   nombre: string;
@@ -56,6 +57,7 @@ export interface MejorVendedor {
     ButtonModule,
     SelectModule,
     FormsModule,
+    LoadingOverlayComponent
   ],
   templateUrl: './dashboard-admin.html',
   standalone: true,
@@ -585,20 +587,22 @@ export class DashboardAdmin implements OnInit {
 
     // ── Dona — Categorías y Ventas por Sede ─────
     this.doughnutChartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'bottom',
-          labels: {
-            color: textColor,
-            font: { size: 12 },
-            padding: 16,
-            usePointStyle: true,
-            pointStyleWidth: 10,
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'bottom',
+            align: 'center',  // ← agregar esto
+            labels: {
+              color: textColor,
+              font: { size: 11 }, // ← reducir un poco
+              padding: 10,        // ← reducir padding
+              usePointStyle: true,
+              pointStyleWidth: 8,
+              boxWidth: 8,        // ← agregar esto
+            },
           },
-        },
         tooltip: {
           ...tooltipBase,
           callbacks: {

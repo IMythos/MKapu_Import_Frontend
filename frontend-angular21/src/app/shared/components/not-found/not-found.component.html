@@ -1,0 +1,26 @@
+<!-- shared/components/not-found/not-found.component.html -->
+<div class="not-found">
+
+  <div class="not-found__card">
+
+    <!-- Código grande -->
+    <div class="not-found__code">{{ codigo() }}</div>
+
+    <!-- Icono -->
+    <div class="not-found__icon-wrap">
+      <i class="pi pi-compass not-found__icon"></i>
+    </div>
+
+    <!-- Textos -->
+    <h1 class="not-found__title">{{ titulo() }}</h1>
+    <p  class="not-found__detail">{{ detalle() }}</p>
+
+    <!-- Botón -->
+    <button class="not-found__btn" (click)="volver()">
+      <i class="pi pi-arrow-left"></i>
+      {{ labelVolver() }}
+    </button>
+
+  </div>
+
+</div>

@@ -25,6 +25,9 @@ import {
   ClienteAdminResponse,
   TipoDocumentoAdmin,
   PromocionAdmin,
+  MetodoPagoAdmin,
+  TipoVentaAdmin,
+  TipoComprobanteAdmin,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -61,6 +64,14 @@ export class VentasAdminService {
     return this.http.get<SalesReceiptSummaryListResponseAdmin>(
       `${this.salesUrl}/receipts/historial`,
       { headers: this.headers, params },
+    );
+  }
+
+  emitirComprobante(id: number, paymentTypeId?: number): Observable<any> {
+    return this.http.put<any>(
+      `${this.salesUrl}/receipts/${id}/emit`,
+      { paymentTypeId },
+      { headers: this.headers },
     );
   }
 
@@ -242,6 +253,58 @@ export class VentasAdminService {
   obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
     return this.http
       .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
+  // En ventas.service.ts — reemplaza consultarDniReniec por esto:
+
+  consultarDocumentoIdentidad(numero: string): Observable<{
+    nombres: string;
+    apellidoPaterno: string;
+    apellidoMaterno: string;
+    nombreCompleto: string;
+    tipoDocumento: 'DNI' | 'RUC';
+    razonSocial?: string;
+    direccion?: string;
+  }> {
+    return this.http
+      .get<any>(`${this.salesUrl}/reniec/consultar/${numero}`, {
+        headers: this.headers,
+      })
+      .pipe(
+        catchError(() =>
+          of({
+            nombres: '',
+            apellidoPaterno: '',
+            apellidoMaterno: '',
+            nombreCompleto: '',
+            tipoDocumento: 'DNI' as const,
+          }),
+        ),
+      );
+  }
+
+  obtenerMetodosPago(): Observable<MetodoPagoAdmin[]> {
+    return this.http
+      .get<MetodoPagoAdmin[]>(`${this.salesUrl}/receipts/payment-types`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
+  obtenerTiposVenta(): Observable<TipoVentaAdmin[]> {
+    return this.http
+      .get<TipoVentaAdmin[]>(`${this.salesUrl}/receipts/sale-types`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
+  obtenerTiposComprobante(): Observable<TipoComprobanteAdmin[]> {
+    return this.http
+      .get<TipoComprobanteAdmin[]>(`${this.salesUrl}/receipts/receipt-types`, {
         headers: this.headers,
       })
       .pipe(catchError(() => of([])));

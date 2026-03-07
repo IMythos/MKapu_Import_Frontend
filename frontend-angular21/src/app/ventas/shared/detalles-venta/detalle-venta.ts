@@ -11,7 +11,7 @@ import { TableModule } from 'primeng/table';
 import { Skeleton } from 'primeng/skeleton';
 import { Tooltip } from 'primeng/tooltip';
 import { Toast } from 'primeng/toast';
-import { Paginator } from 'primeng/paginator'; // ← AÑADIDO
+import { Paginator } from 'primeng/paginator'; 
 import { MessageService } from 'primeng/api';
 
 import { VentasApiService } from '../../services/ventas-api.service';

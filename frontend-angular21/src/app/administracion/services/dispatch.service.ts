@@ -1,208 +1,201 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { environment } from '../../../enviroments/enviroment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { finalize, tap, catchError } from 'rxjs/operators';
 import { Observable, throwError } from 'rxjs';
-import { Dispatch } from '../interfaces/dispatch.interfaces';
+import { finalize, tap, catchError } from 'rxjs/operators';
 
-/**
- * Respuesta esperada del backend para listado de despachos.
- * (Si tu backend solo devuelve array simple, ajustamos esto)
- */
-export interface DispatchListResponse {
-  dispatches: Dispatch[];
-}
-
-export type CreateDispatchRequest = Omit<Dispatch, 'id_despacho'>;
-export type UpdateDispatchRequest = Partial<Omit<Dispatch, 'id_despacho'>>;
+import { environment } from '../../../enviroments/enviroment';
+import {
+  Dispatch,
+  DispatchListResponse,
+  CreateDispatchRequest,
+  IniciarTransitoRequest,
+  ConfirmarEntregaRequest,
+  CancelarDespachoRequest,
+  MarcarDetallePreparadoRequest,
+} from '../interfaces/dispatch.interfaces';
 
 @Injectable({ providedIn: 'root' })
 export class DispatchService {
+  /**
+   * El gateway en :3000 enruta /logistics → microservicio logistics (:3005)
+   * Controller NestJS: @Controller('despachos')
+   */
+  private readonly baseUrl = `${environment.apiUrl}/logistics/despachos`;
 
-  private readonly api = environment.apiUrl;
-
-  // =========================
-  // 🔥 SIGNALS INTERNAS
-  // =========================
+  // -------------------------------------------------------------------------
+  // 🔥 STATE (SIGNALS)
+  // -------------------------------------------------------------------------
   private readonly _dispatchResponse = signal<DispatchListResponse | null>(null);
-  private readonly _loading = signal(false);
-  private readonly _error = signal<string | null>(null);
+  private readonly _loading          = signal<boolean>(false);
+  private readonly _error            = signal<string | null>(null);
 
-  // =========================
-  // ✅ EXPOSICIÓN PÚBLICA
-  // =========================
+  // -------------------------------------------------------------------------
+  // ✅ PUBLIC API (READ-ONLY)
+  // -------------------------------------------------------------------------
   readonly dispatchResponse = computed(() => this._dispatchResponse());
-  readonly dispatches = computed(() => this._dispatchResponse()?.dispatches ?? []);
-  readonly loading = computed(() => this._loading());
-  readonly error = computed(() => this._error());
+  readonly dispatches       = computed(() => this._dispatchResponse()?.dispatches ?? []);
+  readonly loading          = computed(() => this._loading());
+  readonly error            = computed(() => this._error());
 
   constructor(private http: HttpClient) {}
 
+  /**
+   * Helper para construir headers dinámicos
+   */
   private buildHeaders(role: string = 'Administrador'): HttpHeaders {
-    return new HttpHeaders({ 'x-role': role ?? '' });
+    return new HttpHeaders({ 'x-role': role });
   }
 
-  /* =========================
-     READ / LIST
-  ========================= */
-  loadDispatches(role: string = 'Administrador'): Observable<Dispatch[]> {
-    this._loading.set(true);
-    this._error.set(null);
+  // -------------------------------------------------------------------------
+  // 📦 MÉTODOS DE CONSULTA (GET)
+  // -------------------------------------------------------------------------
+
+  /** Obtiene todos los despachos y actualiza el estado global */
+  loadDispatches(role = 'Administrador'): Observable<Dispatch[]> {
+    this.setLoadingState();
 
     return this.http
-      .get<Dispatch[]>(`${this.api}/logistics/dispatch`, {
-        headers: this.buildHeaders(role),
-      })
+      .get<Dispatch[]>(this.baseUrl, { headers: this.buildHeaders(role) })
       .pipe(
-        tap((res) => {
-          this._dispatchResponse.set({ dispatches: res });
-        }),
-        catchError((err) => {
-          this._error.set('No se pudo cargar los despachos.');
-          return throwError(() => err);
-        }),
+        tap((res) => this._dispatchResponse.set({ dispatches: res })),
+        catchError((err) => this.handleError('No se pudo cargar los despachos.', err)),
         finalize(() => this._loading.set(false))
       );
   }
 
-  /* =========================
-     CREATE
-  ========================= */
-  createDispatch(
-    payload: CreateDispatchRequest,
-    role: string = 'Administrador'
-  ): Observable<Dispatch> {
-    this._loading.set(true);
-    this._error.set(null);
-
+  getDispatchById(id: number, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
     return this.http
-      .post<Dispatch>(`${this.api}/logistics/dispatch`, payload, {
-        headers: this.buildHeaders(role),
-      })
+      .get<Dispatch>(`${this.baseUrl}/${id}`, { headers: this.buildHeaders(role) })
+      .pipe(
+        catchError((err) => this.handleError('No se pudo cargar el despacho.', err)),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  getDispatchByVenta(id_venta: number, role = 'Administrador'): Observable<Dispatch[]> {
+    this.setLoadingState();
+    return this.http
+      .get<Dispatch[]>(`${this.baseUrl}/venta/${id_venta}`, { headers: this.buildHeaders(role) })
+      .pipe(
+        catchError((err) => this.handleError('No se pudo cargar despachos de la venta.', err)),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  // -------------------------------------------------------------------------
+  // 🚀 MÉTODOS DE ACCIÓN (POST / PATCH)
+  // -------------------------------------------------------------------------
+
+  createDispatch(payload: CreateDispatchRequest, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
+    return this.http
+      .post<Dispatch>(this.baseUrl, payload, { headers: this.buildHeaders(role) })
       .pipe(
         tap((created) => {
           const prev = this._dispatchResponse();
-          if (!prev) return;
-
-          this._dispatchResponse.set({
-            dispatches: [created, ...prev.dispatches],
-          });
+          if (prev) {
+            this._dispatchResponse.set({ dispatches: [created, ...prev.dispatches] });
+          }
         }),
-        catchError((err: any) => {
-          this._error.set('No se pudo registrar el despacho.');
-          return throwError(() => err);
-        }),
+        catchError((err) => this.handleError('No se pudo registrar el despacho.', err)),
         finalize(() => this._loading.set(false))
       );
   }
 
-  /* =========================
-     READ BY ID
-  ========================= */
-  getDispatchById(
-    id: number,
-    role: string = 'Administrador'
-  ): Observable<Dispatch> {
-    this._loading.set(true);
-    this._error.set(null);
-
+  cancelarDespacho(id: number, payload: CancelarDespachoRequest = {}, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
     return this.http
-      .get<Dispatch>(`${this.api}/logistics/dispatch/${id}`, {
-        headers: this.buildHeaders(role),
-      })
-      .pipe(
-        catchError((err) => {
-          this._error.set('No se pudo cargar el despacho.');
-          return throwError(() => err);
-        }),
-        finalize(() => this._loading.set(false))
-      );
-  }
-
-  /* =========================
-     UPDATE
-  ========================= */
-  updateDispatch(
-    id: number,
-    payload: UpdateDispatchRequest,
-    role: string = 'Administrador'
-  ): Observable<Dispatch> {
-    this._loading.set(true);
-    this._error.set(null);
-
-    return this.http
-      .patch<Dispatch>(`${this.api}/logistics/dispatch/${id}`, payload, {
-        headers: this.buildHeaders(role),
-      })
+      .patch<Dispatch>(`${this.baseUrl}/${id}/cancelar`, payload, { headers: this.buildHeaders(role) })
       .pipe(
         tap((updated) => this.patchCachedDispatch(id, updated)),
-        catchError((err) => {
-          this._error.set('No se pudo actualizar el despacho.');
-          return throwError(() => err);
-        }),
+        catchError((err) => this.handleError('No se pudo cancelar el despacho.', err)),
         finalize(() => this._loading.set(false))
       );
   }
 
-  /* =========================
-     DELETE
-  ========================= */
-  deleteDispatch(
-    id: number,
-    role: string = 'Administrador'
-  ): Observable<void> {
-    this._loading.set(true);
-    this._error.set(null);
-
+  iniciarPreparacion(id: number, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
     return this.http
-      .delete<void>(`${this.api}/logistics/dispatch/${id}`, {
-        headers: this.buildHeaders(role),
-      })
+      .patch<Dispatch>(`${this.baseUrl}/${id}/preparacion`, {}, { headers: this.buildHeaders(role) })
       .pipe(
-        tap(() => {
-          const prev = this._dispatchResponse();
-          if (!prev) return;
-
-          this._dispatchResponse.set({
-            dispatches: prev.dispatches.filter(
-              (d) => Number(d.id_despacho) !== Number(id)
-            ),
-          });
-        }),
-        catchError((err) => {
-          this._error.set('No se pudo eliminar el despacho.');
-          return throwError(() => err);
-        }),
+        tap((updated) => this.patchCachedDispatch(id, updated)),
+        catchError((err) => this.handleError('No se pudo iniciar preparación.', err)),
         finalize(() => this._loading.set(false))
       );
   }
 
-  /* =========================
-     PATCH CACHE (como tu almacén)
-  ========================= */
+  iniciarTransito(id: number, payload: IniciarTransitoRequest, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
+    return this.http
+      .patch<Dispatch>(`${this.baseUrl}/${id}/transito`, payload, { headers: this.buildHeaders(role) })
+      .pipe(
+        tap((updated) => this.patchCachedDispatch(id, updated)),
+        catchError((err) => this.handleError('No se pudo iniciar tránsito.', err)),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  confirmarEntrega(id: number, payload: ConfirmarEntregaRequest, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
+    return this.http
+      .patch<Dispatch>(`${this.baseUrl}/${id}/entrega`, payload, { headers: this.buildHeaders(role) })
+      .pipe(
+        tap((updated) => this.patchCachedDispatch(id, updated)),
+        catchError((err) => this.handleError('No se pudo confirmar entrega.', err)),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  // -------------------------------------------------------------------------
+  // 🔍 DETALLES ESPECÍFICOS
+  // -------------------------------------------------------------------------
+
+  marcarDetallePreparado(id_detalle: number, payload: MarcarDetallePreparadoRequest, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
+    return this.http
+      .patch<Dispatch>(`${this.baseUrl}/detalle/${id_detalle}/preparado`, payload, { headers: this.buildHeaders(role) })
+      .pipe(
+        tap((updated) => updated.id_despacho && this.patchCachedDispatch(updated.id_despacho, updated)),
+        catchError((err) => this.handleError('No se pudo marcar detalle como preparado.', err)),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  marcarDetalleDespachado(id_detalle: number, role = 'Administrador'): Observable<Dispatch> {
+    this.setLoadingState();
+    return this.http
+      .patch<Dispatch>(`${this.baseUrl}/detalle/${id_detalle}/despachado`, {}, { headers: this.buildHeaders(role) })
+      .pipe(
+        tap((updated) => updated.id_despacho && this.patchCachedDispatch(updated.id_despacho, updated)),
+        catchError((err) => this.handleError('No se pudo marcar detalle como despachado.', err)),
+        finalize(() => this._loading.set(false))
+      );
+  }
+
+  // -------------------------------------------------------------------------
+  // 🛠 HELPERS PRIVADOS
+  // -------------------------------------------------------------------------
+
+  /** Actualiza un despacho específico en la lista local sin recargar todo */
   private patchCachedDispatch(id: number, updated: Dispatch): void {
     const prev = this._dispatchResponse();
     if (!prev) return;
 
-    const normalizedId = Number(id);
-    let found = false;
+    const newDispatches = prev.dispatches.map((d) => 
+      Number(d.id_despacho) === Number(id) ? updated : d
+    );
 
-    const newDispatches = prev.dispatches.map((d) => {
-      if (Number(d.id_despacho) === normalizedId) {
-        found = true;
-        return updated;
-      }
-      return d;
-    });
+    this._dispatchResponse.set({ dispatches: newDispatches });
+  }
 
-    if (found) {
-      this._dispatchResponse.set({
-        dispatches: newDispatches,
-      });
-      return;
-    }
+  private setLoadingState(): void {
+    this._loading.set(true);
+    this._error.set(null);
+  }
 
-    // fallback: si no está en cache, recargamos
-    this.loadDispatches().subscribe({ next: () => {}, error: () => {} });
+  private handleError(message: string, error: any): Observable<never> {
+    this._error.set(message);
+    return throwError(() => error);
   }
 }

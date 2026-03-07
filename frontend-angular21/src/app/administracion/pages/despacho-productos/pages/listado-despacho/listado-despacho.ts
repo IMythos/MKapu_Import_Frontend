@@ -23,6 +23,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DispatchService } from '../../../../services/dispatch.service';
 import { Dispatch, DispatchStatus } from '../../../../interfaces/dispatch.interfaces';
 import { EmpleadosService, Empleado } from '../../../../../core/services/empleados.service';
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-listado-despacho',
@@ -40,6 +41,7 @@ import { EmpleadosService, Empleado } from '../../../../../core/services/emplead
     ToastModule,
     ConfirmDialog,
     TooltipModule,
+    LoadingOverlayComponent, // ← agregado
   ],
   templateUrl: './listado-despacho.html',
   styleUrl: './listado-despacho.css',
@@ -50,7 +52,7 @@ export class ListadoDespacho {
   // ================================
   // 🔥 INYECCIÓN
   // ================================
-  readonly dispatchService         = inject(DispatchService); // public para usarlo en el template (reintentar)
+  readonly dispatchService         = inject(DispatchService);
   private readonly empleadosService    = inject(EmpleadosService);
   private readonly messageService      = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
@@ -69,27 +71,26 @@ export class ListadoDespacho {
   estadoFiltro = signal<string>('TODOS');
   empleados    = signal<Empleado[]>([]);
 
-  // Incluye CANCELADO alineado a DispatchStatus
   estadoOptions = [
-    { label: 'Todos',      value: 'TODOS'      },
-    { label: 'Pendiente',  value: 'PENDIENTE'  },
-    { label: 'Enviado',    value: 'ENVIADO'    },
-    { label: 'Entregado',  value: 'ENTREGADO'  },
-    { label: 'Cancelado',  value: 'CANCELADO'  },
+    { label: 'Todos',          value: 'TODOS'          },
+    { label: 'Generado',       value: 'GENERADO'       },
+    { label: 'En preparación', value: 'EN_PREPARACION' },
+    { label: 'En tránsito',    value: 'EN_TRANSITO'    },
+    { label: 'Entregado',      value: 'ENTREGADO'      },
+    { label: 'Cancelado',      value: 'CANCELADO'      },
   ];
 
   // ================================
-  // 🔗 SIGNALS DEL SERVICIO (fuente de verdad)
+  // 🔗 SIGNALS DEL SERVICIO
   // ================================
-  dispatches = this.dispatchService.dispatches; // computed → Dispatch[]
-  loading    = this.dispatchService.loading;    // computed → boolean
-  error      = this.dispatchService.error;      // computed → string | null
+  dispatches = this.dispatchService.dispatches;
+  loading    = this.dispatchService.loading;
+  error      = this.dispatchService.error;
 
   // ================================
-  // 🏗️ CONSTRUCTOR — carga inicial
+  // 🏗️ CONSTRUCTOR
   // ================================
   constructor() {
-    // Dispara GET /dispatch → rellena el signal interno del servicio
     this.dispatchService.loadDispatches().subscribe({
       error: () => {
         this.messageService.add({
@@ -98,10 +99,9 @@ export class ListadoDespacho {
           detail: 'No se pudieron cargar los despachos. Intenta de nuevo.',
           life: 4000,
         });
-      }
+      },
     });
 
-    // Empleados para mostrar nombre del almacenero y asesor
     this.empleadosService.getEmpleados().subscribe({
       next: (lista) => this.empleados.set(lista),
       error: () => {
@@ -111,59 +111,37 @@ export class ListadoDespacho {
           detail: 'No se pudieron cargar los empleados.',
           life: 3000,
         });
-      }
+      },
     });
   }
 
   // ================================
-  // 🔥 COMPUTED: RESPONSABLES
+  // 🔥 COMPUTED
   // ================================
   despachador = computed(() => this.obtenerNombreEmpleado('ALMACENERO'));
   asesor      = computed(() => this.obtenerNombreEmpleado('VENTAS'));
 
-  // ================================
-  // 🔥 COMPUTED: CONTADORES
-  // Sobre el total de dispatches (no filasFiltradas) para
-  // reflejar la realidad completa del catálogo.
-  // ================================
-  totalPendientes = computed(() =>
-    this.dispatches().filter(d => d.estado === 'PENDIENTE').length
-  );
+  totalGenerados     = computed(() => this.dispatches().filter(d => d.estado === 'GENERADO').length);
+  totalEnPreparacion = computed(() => this.dispatches().filter(d => d.estado === 'EN_PREPARACION').length);
+  totalEnTransito    = computed(() => this.dispatches().filter(d => d.estado === 'EN_TRANSITO').length);
+  totalEntregados    = computed(() => this.dispatches().filter(d => d.estado === 'ENTREGADO').length);
+  totalCancelados    = computed(() => this.dispatches().filter(d => d.estado === 'CANCELADO').length);
+  totalPendientes    = computed(() => this.totalGenerados() + this.totalEnPreparacion());
+  totalEnviados      = computed(() => this.totalEnTransito());
 
-  totalEnviados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'ENVIADO').length
-  );
-
-  totalEntregados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'ENTREGADO').length
-  );
-
-  totalCancelados = computed(() =>
-    this.dispatches().filter(d => d.estado === 'CANCELADO').length
-  );
-
-  // ================================
-  // 🔥 COMPUTED: FILTRADO REACTIVO
-  // Se recalcula automáticamente cuando cambia:
-  //   dispatches()   → nueva data del backend
-  //   estadoFiltro() → usuario cambia el select
-  //   searchTerm()   → usuario escribe en el input
-  // ================================
   filasFiltradas = computed(() => {
     let data = this.dispatches();
 
-    // 1. Filtro por estado
     if (this.estadoFiltro() !== 'TODOS') {
       data = data.filter(d => d.estado === this.estadoFiltro());
     }
 
-    // 2. Filtro por búsqueda: id_despacho, id_venta_ref o tipo_envio
     const term = this.searchTerm()?.trim().toLowerCase();
     if (term) {
       data = data.filter(d =>
-        d.id_despacho?.toString().includes(term)      ||
-        d.id_venta_ref?.toString().includes(term)     ||
-        d.tipo_envio?.toLowerCase().includes(term)
+        d.id_despacho?.toString().includes(term)   ||
+        d.id_venta_ref?.toString().includes(term)  ||
+        d.direccion_entrega?.toLowerCase().includes(term)
       );
     }
 
@@ -173,24 +151,21 @@ export class ListadoDespacho {
   // ================================
   // 🔥 ACCIONES
   // ================================
-
-  /** Confirmación + DELETE al backend */
-  eliminar(despacho: Dispatch): void {
+  cancelar(despacho: Dispatch): void {
     this.confirmationService.confirm({
-      header: 'Confirmar eliminación',
-      message: `¿Eliminar el despacho <strong>#${despacho.id_despacho}</strong>? Esta acción no se puede deshacer.`,
+      header: 'Confirmar cancelación',
+      message: `¿Cancelar el despacho <strong>#${despacho.id_despacho}</strong>? Esta acción cambiará su estado a CANCELADO.`,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, eliminar',
-      rejectLabel: 'Cancelar',
+      acceptLabel: 'Sí, cancelar',
+      rejectLabel: 'Volver',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
-        this.dispatchService.deleteDispatch(despacho.id_despacho).subscribe({
+        this.dispatchService.cancelarDespacho(despacho.id_despacho).subscribe({
           next: () => {
-            // El servicio ya elimina del cache → la tabla se actualiza sola vía signal
             this.messageService.add({
               severity: 'success',
-              summary: 'Eliminado',
-              detail: `Despacho #${despacho.id_despacho} eliminado correctamente.`,
+              summary: 'Cancelado',
+              detail: `Despacho #${despacho.id_despacho} cancelado correctamente.`,
               life: 3000,
             });
           },
@@ -198,29 +173,40 @@ export class ListadoDespacho {
             this.messageService.add({
               severity: 'error',
               summary: 'Error',
-              detail: 'No se pudo eliminar el despacho.',
+              detail: 'No se pudo cancelar el despacho.',
               life: 4000,
             });
-          }
+          },
         });
-      }
+      },
     });
   }
 
-  /** Resetea los filtros activos */
   limpiarFiltros(): void {
     this.searchTerm.set(null);
     this.estadoFiltro.set('TODOS');
   }
 
-  /** Severity de p-tag según DispatchStatus */
-  getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' {
+  getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' | 'info' {
     switch (estado) {
-      case 'ENTREGADO':  return 'success';
-      case 'ENVIADO':    return 'warn';
-      case 'CANCELADO':  return 'secondary';
-      default:           return 'danger';   // PENDIENTE
+      case 'GENERADO':       return 'secondary';
+      case 'EN_PREPARACION': return 'info';
+      case 'EN_TRANSITO':    return 'warn';
+      case 'ENTREGADO':      return 'success';
+      case 'CANCELADO':      return 'danger';
+      default:               return 'secondary';
     }
+  }
+
+  getEstadoLabel(estado: DispatchStatus): string {
+    const labels: Record<DispatchStatus, string> = {
+      GENERADO:       'Generado',
+      EN_PREPARACION: 'En preparación',
+      EN_TRANSITO:    'En tránsito',
+      ENTREGADO:      'Entregado',
+      CANCELADO:      'Cancelado',
+    };
+    return labels[estado] ?? estado;
   }
 
   // ================================
