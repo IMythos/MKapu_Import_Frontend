@@ -25,12 +25,14 @@ import {
   ApproveTransferDto,
   ConfirmReceiptTransferDto,
   TransferListResponseDto,
+  TransferSocketEventDto,
   TransferStatus,
   TransferenciaUserResponse,
 } from '../../../../interfaces/transferencia.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TransferUserContextService } from '../../../../services/transfer-user-context.service';
 import { SedeService } from '../../../../services/sede.service';
+import { TransferSocketService } from '../../../../services/transfer-socket.service';
 
 interface TransferenciaRow {
   id: number;
@@ -76,11 +78,14 @@ export class Transferencia {
   private readonly destroyRef = inject(DestroyRef);
   private readonly transferUserContext = inject(TransferUserContextService);
   private readonly sedeService = inject(SedeService);
+  private readonly transferSocket = inject(TransferSocketService);
 
   private readonly searchTermSig = signal('');
   private readonly estadoFilterSig = signal<TransferStatus | null>(null);
   private readonly solicitudFilterSig = signal<string | null>(null);
   private readonly lastErrorShown = signal<string | null>(null);
+  private readonly lastSocketErrorShown = signal<string | null>(null);
+  private readonly lastRealtimeEventKey = signal<string | null>(null);
   private readonly paginationSig = this.transferStore.pagination;
 
   readonly transferenciasSig = computed(() =>
@@ -167,15 +172,57 @@ export class Transferencia {
         detail: error,
       });
     });
+
+    effect(() => {
+      const socketError = this.transferSocket.lastError();
+      if (!socketError || this.lastSocketErrorShown() === socketError) {
+        return;
+      }
+
+      this.lastSocketErrorShown.set(socketError);
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Tiempo real no disponible',
+        detail: socketError,
+        life: 4500,
+      });
+    });
+
+    effect(() => {
+      const realtimeEvent = this.transferSocket.lastNewRequest();
+      if (!realtimeEvent) {
+        return;
+      }
+
+      this.handleRealtimeEvent('new_transfer_request', realtimeEvent, true);
+    });
+
+    effect(() => {
+      const realtimeEvent = this.transferSocket.lastStatusUpdate();
+      if (!realtimeEvent) {
+        return;
+      }
+
+      this.handleRealtimeEvent('transfer_status_updated', realtimeEvent, false);
+    });
   }
 
   ngOnInit(): void {
+    const currentHeadquarterId = this.transferUserContext.getCurrentHeadquarterId();
+    if (currentHeadquarterId) {
+      this.transferSocket.connect(currentHeadquarterId);
+    }
+
+    this.destroyRef.onDestroy(() => {
+      this.transferSocket.disconnect();
+    });
+
     this.sedeService
       .loadSedes()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         error: () => {
-          // Si falla este catálogo, la tabla sigue operando con el fallback actual.
+          // Si falla este catalogo, la tabla sigue operando con el fallback actual.
         },
       });
 
@@ -375,9 +422,9 @@ export class Transferencia {
     ) {
       this.messageService.add({
         severity: 'warn',
-        summary: 'Acción no permitida',
+        summary: 'Accion no permitida',
         detail:
-          'Solo un administrador de la sede destino, distinto al que aprobó, puede completar esta transferencia.',
+          'Solo un administrador de la sede destino, distinto al que aprobo, puede completar esta transferencia.',
       });
       return;
     }
@@ -394,10 +441,135 @@ export class Transferencia {
 
         this.messageService.add({
           severity: 'success',
-          summary: 'Recepción confirmada',
-          detail: `La transferencia #${row.codigo} pasó a COMPLETADA`,
+          summary: 'Recepcion confirmada',
+          detail: `La transferencia #${row.codigo} paso a COMPLETADA`,
         });
       });
+  }
+
+  private handleRealtimeEvent(
+    eventName: 'new_transfer_request' | 'transfer_status_updated',
+    event: TransferSocketEventDto,
+    resetToFirstPage: boolean,
+  ): void {
+    const eventKey = this.buildRealtimeEventKey(eventName, event);
+    if (this.lastRealtimeEventKey() === eventKey) {
+      return;
+    }
+
+    this.lastRealtimeEventKey.set(eventKey);
+
+    const status = this.normalizeStatus(event.transfer.status);
+    const isNewRequest = eventName === 'new_transfer_request';
+
+    this.messageService.add({
+      severity: isNewRequest ? 'info' : this.getRealtimeSeverity(status),
+      summary: isNewRequest
+        ? 'Nueva transferencia'
+        : `Transferencia ${this.formatRealtimeStatus(status)}`,
+      detail: isNewRequest
+        ? this.buildNewTransferMessage(event)
+        : this.buildStatusTransferMessage(event, status),
+      life: 4500,
+    });
+
+    this.refreshTransfers(resetToFirstPage);
+  }
+
+  private refreshTransfers(resetToFirstPage: boolean): void {
+    const pagination = this.paginationSig();
+    this.transferStore.loadAll({
+      page: resetToFirstPage ? 1 : pagination.page,
+      pageSize: pagination.pageSize,
+    });
+  }
+
+  private buildRealtimeEventKey(
+    eventName: string,
+    event: TransferSocketEventDto,
+  ): string {
+    const transferId = Number(event.transfer.id ?? 0);
+    const status = String(event.transfer.status ?? '').trim();
+    const reason = String(event.transfer.reason ?? '').trim();
+    const emittedAt = String(event.emittedAt ?? '').trim();
+    return `${eventName}:${transferId}:${status}:${reason}:${emittedAt}`;
+  }
+
+  private buildNewTransferMessage(event: TransferSocketEventDto): string {
+    const subject = String(event.transfer.nomProducto ?? '').trim();
+    const route = this.buildRealtimeRoute(event.transfer);
+
+    return [
+      this.buildTransferLabel(event.transfer.id),
+      subject || null,
+      route ? `Ruta: ${route}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
+  }
+
+  private buildStatusTransferMessage(
+    event: TransferSocketEventDto,
+    status: TransferStatus,
+  ): string {
+    const route = this.buildRealtimeRoute(event.transfer);
+    const reason = String(event.transfer.reason ?? '').trim();
+
+    return [
+      `${this.buildTransferLabel(event.transfer.id)} ahora esta ${this.formatRealtimeStatus(status).toLowerCase()}`,
+      route ? `Ruta: ${route}` : null,
+      reason ? `Motivo: ${reason}` : null,
+    ]
+      .filter(Boolean)
+      .join(' | ');
+  }
+
+  private buildRealtimeRoute(transfer: TransferSocketEventDto['transfer']): string {
+    const origin = String(transfer.origin?.nomSede ?? '').trim();
+    const destination = String(transfer.destination?.nomSede ?? '').trim();
+
+    if (!origin || !destination) {
+      return '';
+    }
+
+    return `${origin} -> ${destination}`;
+  }
+
+  private buildTransferLabel(id: unknown): string {
+    const transferId = Number(id);
+    return Number.isFinite(transferId) && transferId > 0
+      ? `Transferencia #${transferId}`
+      : 'Transferencia';
+  }
+
+  private formatRealtimeStatus(status: TransferStatus): string {
+    switch (status) {
+      case 'APROBADA':
+        return 'Aprobada';
+      case 'RECHAZADA':
+        return 'Rechazada';
+      case 'COMPLETADA':
+        return 'Completada';
+      case 'SOLICITADA':
+      default:
+        return 'Solicitada';
+    }
+  }
+
+  private getRealtimeSeverity(
+    status: TransferStatus,
+  ): 'success' | 'info' | 'warn' | 'error' {
+    switch (status) {
+      case 'COMPLETADA':
+        return 'success';
+      case 'APROBADA':
+        return 'info';
+      case 'RECHAZADA':
+        return 'error';
+      case 'SOLICITADA':
+      default:
+        return 'warn';
+    }
   }
 
   private mapTransferencia(transferencia: TransferListResponseDto): TransferenciaRow {
