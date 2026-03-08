@@ -1,5 +1,26 @@
+/* sales/src/app/interfaces/ventas.interface.ts */
+
 // ─────────────────────────────────────────────────────────────────────────────
-// COMPROBANTES
+// CONSTANTES — solo las que afectan display en tiempo real
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const IGV_RATE_ADMIN = 0.18;
+export const IGVRATEADMIN = IGV_RATE_ADMIN;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SEDES
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SedeAdmin {
+  id_sede: number;
+  idsede?: number;
+  nombre: string;
+  direccion?: string;
+  activo: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COMPROBANTES — Listado
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface SalesReceiptSummaryAdmin {
@@ -21,7 +42,7 @@ export interface SalesReceiptSummaryAdmin {
 }
 
 export interface SalesReceiptSummaryListResponseAdmin {
-  receipts: SalesReceiptSummaryAdmin[]; // ← era 'data', ahora es 'receipts'
+  receipts: SalesReceiptSummaryAdmin[];
   total: number;
   page: number;
   limit: number;
@@ -39,12 +60,11 @@ export interface SalesReceiptsQueryAdmin {
   sedeId?: number;
   page?: number;
   limit?: number;
-  _t?: number; // ← anti-caché
+  _t?: number;
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
-// DETALLE COMPROBANTE
+// COMPROBANTES — Detalle completo
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProductoDetalleAdmin {
@@ -113,32 +133,23 @@ export interface SalesReceiptWithHistoryDtoAdmin {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// KPI
+// COMPROBANTES — KPI
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface SalesReceiptKpiDto {
-  total_ventas:      number;
-  cantidad_ventas:   number;
-  total_boletas:     number;
-  total_facturas:    number;
-  cantidad_boletas:  number;   
-  cantidad_facturas: number;   
-  semana_desde?:     string;
-  semana_hasta?:     string;
+  total_ventas: number;
+  cantidad_ventas: number;
+  total_boletas: number;
+  total_facturas: number;
+  cantidad_boletas: number;
+  cantidad_facturas: number;
+  semana_desde?: string;
+  semana_hasta?: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// REGISTRO DE VENTA — Body y Response alineados con backend real
+// REGISTRO DE VENTA — Request
 // ─────────────────────────────────────────────────────────────────────────────
-
-export interface ItemVentaAdminRequest {
-  id_prod_ref: number;
-  cod_prod: string;
-  descripcion: string;
-  cantidad: number;
-  pre_uni: number;
-  igv: number;
-}
 
 export interface RegistroVentaAdminRequest {
   customerId: string;
@@ -146,16 +157,12 @@ export interface RegistroVentaAdminRequest {
   serie: string;
   receiptTypeId: number;
   dueDate: string;
-  operationType: string;
   subtotal: number;
   igv: number;
   isc: number;
   total: number;
   descuento: number;
   promotionId?: number | null;
-  deliveryType?: 'recojo' | 'delivery';       // ✅ nuevo
-  deliveryAddress?: string | null;            // ✅ nuevo
-  currencyCode: string;
   responsibleId: string;
   branchId: number;
   warehouseId: number;
@@ -171,14 +178,42 @@ export interface RegistroVentaAdminRequest {
   }[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// REGISTRO DE VENTA — Response
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface RegistroVentaItemResponseAdmin {
+  productId: string;
+  productName: string;
+  codigoProducto: string;
+  quantity: number;
+  unitPrice: number;
+  unitValue: number;
+  igv: number;
+  tipoAfectacionIgv: number;
+  total: number;
+}
 
 export interface RegistroVentaAdminResponse {
-  numero_completo: string;
-  fec_emision: string;
-  total: number;
+  idComprobante: number;
+  idCliente: string;
+  numeroCompleto: string;
   serie: string;
   numero: number;
-  id_comprobante: number;
+  fecEmision: string;
+  fecVenc?: string;
+  tipoOperacion: string;
+  subtotal: number;
+  igv: number;
+  isc: number;
+  total: number;
+  estado: string;
+  codMoneda: string;
+  idTipoComprobante: number;
+  idTipoVenta: number;
+  idSedeRef: number;
+  idResponsableRef: string;
+  items: RegistroVentaItemResponseAdmin[];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -197,14 +232,26 @@ export interface AnularVentaAdminResponse {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SEDES
+// TIPOS — dinámicos desde DB, sin valores hardcodeados
 // ─────────────────────────────────────────────────────────────────────────────
 
-export interface SedeAdmin {
-  id_sede: number;
-  nombre: string;
-  direccion?: string;
-  activo: boolean;
+export interface TipoVentaAdmin {
+  id: number;
+  tipo: string;
+  descripcion: string;
+}
+
+export interface TipoComprobanteAdmin {
+  id: number;
+  codSunat: string;
+  descripcion: string;
+  estado: boolean;
+}
+
+export interface MetodoPagoAdmin {
+  id: number;
+  codSunat: string;
+  descripcion: string;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -258,13 +305,12 @@ export interface ProductoUIAdmin {
   codigo: string;
   nombre: string;
   familia: string;
-  id_categoria: number;
-  stock: number;
   precioUnidad: number;
   precioCaja: number;
   precioMayorista: number;
+  stock: number;
   sede: string;
-  id_sede: number;
+  almacenes: Array<{ nombre: string; stock: number }>; // ← NUEVO
 }
 
 export interface CategoriaConStockAdmin {
@@ -282,7 +328,7 @@ export interface ClienteBusquedaAdminResponse {
   documentValue: string;
   documentTypeDescription: string;
   documentTypeSunatCode: string;
-  invoiceType: 'BOLETA' | 'FACTURA';
+  invoiceType: string;
   status: string;
   address?: string | null;
   email?: string | null;
@@ -341,41 +387,15 @@ export interface ItemVentaUIAdmin {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTES
+// PROMOCIONES
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const IGV_RATE_ADMIN = 0.18;
-export const CURRENCY_PEN_ADMIN = 'PEN';
-export const OPERATION_TYPE_VENTA_INTERNA = '0101';
-
-export interface MetodoPagoAdmin {
-  id: number;
-  codSunat: string;
-  descripcion: string;
-}
-
-
-export interface TipoVentaAdmin {
-  id: number;
-  tipo: string;
-  descripcion: string;
-}
-
-export interface TipoComprobanteAdmin {
-  id: number;
-  codSunat: string;
-  descripcion: string;
-  estado: boolean;
-}
-
-
-
 export interface PromocionAdmin {
-  idPromocion: number;         // ← era "id"
+  idPromocion: number;
   concepto: string;
-  tipo: 'PORCENTAJE' | 'MONTO' | string;
+  tipo: string;
   valor: number;
-  activo: boolean | { type: 'Buffer'; data: number[] }; // Buffer de MySQL
+  activo: boolean | { type: 'Buffer'; data: number[] };
   descripcion?: string;
   reglas?: {
     idRegla: number;
@@ -386,8 +406,36 @@ export interface PromocionAdmin {
     idDescuento: number;
     monto: string;
   }[];
-  productosIds?: number[];     // opcional, si lo necesitas
+  productosIds?: number[];
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// COTIZACIÓN — prefill desde módulo de cotizaciones
+// ─────────────────────────────────────────────────────────────────────────────
 
-export type TipoEntrega = 'recojo' | 'delivery';
+export interface QuoteDetalleItem {
+  idprodref: number;
+  codprod: string;
+  descripcion: string;
+  cantidad: number;
+  precio: number;
+}
+
+export interface QuoteCliente {
+  idtipodocumento: number;
+  valordoc: string;
+  razonsocial?: string;
+  nombrecliente?: string;
+  apellidoscliente?: string;
+  direccion?: string;
+  email?: string;
+  telefono?: string;
+}
+
+export interface Quote {
+  idcotizacion: number;
+  idsede?: number;
+  idcliente: number;
+  cliente?: QuoteCliente;
+  detalles?: QuoteDetalleItem[];
+}
