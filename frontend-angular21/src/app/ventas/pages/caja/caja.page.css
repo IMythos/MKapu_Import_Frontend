@@ -1,17 +1,20 @@
 .ventas-header-card .p-card-body {
   padding: 1rem 1.25rem;
 }
-
+.resumen-icon.dinero {
+  color: #22c55e;
+}
 .ventas-title-icon {
   width: 40px;
   height: 40px;
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #F5C34D;
-  color: #1F2937;
+  background: #f5c34d;
+  color: #1f2937;
   font-size: 18px;
 }
+
 
 .ventas-kicker {
   margin: 0;
@@ -1464,9 +1467,156 @@
   color: #ffffff !important;
 }
 
+:host-context(.app-dark) .ventas-title-icon {
+    background: #e8a424;
+    color: #1f2937;
+}
+
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
   .resumen-grid     { grid-template-columns: 1fr; }
   .apertura-form    { flex-direction: column; }
   :host ::ng-deep .apertura-input { width: 100%; }
 }
+
+/* ── Agregar al archivo caja.page.css existente ── */
+
+/* Forzar 5 columnas en la fila de estadísticas superiores */
+.seccion-estadisticas--cinco {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+
+@media (max-width: 1100px) {
+  .seccion-estadisticas--cinco {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .seccion-estadisticas--cinco {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Tarjetas de estadística con borde de color (Figma) */
+.estadistica-card--amarillo {
+  border: 1px solid rgba(255, 193, 7, 0.55) !important;
+  background: rgba(255, 193, 7, 0.06) !important;
+}
+.estadistica-card--amarillo .estadistica-valor {
+  color: #ffc107;
+}
+.estadistica-card--amarillo i {
+  color: #ffc107;
+}
+
+.estadistica-card--azul {
+  border: 1px solid rgba(79, 156, 249, 0.55) !important;
+  background: rgba(79, 156, 249, 0.06) !important;
+}
+.estadistica-card--azul .estadistica-valor {
+  color: #4f9cf9;
+}
+.estadistica-card--azul i {
+  color: #4f9cf9;
+}
+
+
+/* Gráfico de barras */
+.grafico-container {
+  position: relative;
+  height: 200px;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+/* ── Agregar al archivo caja.page.css existente ── */
+
+/* Forzar 5 columnas en la fila de estadísticas superiores */
+.seccion-estadisticas--cinco {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+
+@media (max-width: 1100px) {
+  .seccion-estadisticas--cinco {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 700px) {
+  .seccion-estadisticas--cinco {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Grid resumen del día — 5 columnas */
+.resumen-grid--cinco {
+  grid-template-columns: repeat(5, 1fr) !important;
+}
+
+@media (max-width: 1200px) {
+  .resumen-grid--cinco {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .resumen-grid--cinco {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Tarjetas de estadística con borde de color (Figma) */
+.estadistica-card--amarillo {
+  border: 1px solid rgba(255, 193, 7, 0.55) !important;
+  background: rgba(255, 193, 7, 0.06) !important;
+}
+.estadistica-card--amarillo .estadistica-valor {
+  color: #ffc107;
+}
+.estadistica-card--amarillo i {
+  color: #ffc107;
+}
+
+.estadistica-card--azul {
+  border: 1px solid rgba(79, 156, 249, 0.55) !important;
+  background: rgba(79, 156, 249, 0.06) !important;
+}
+.estadistica-card--azul .estadistica-valor {
+  color: #4f9cf9;
+}
+.estadistica-card--azul i {
+  color: #4f9cf9;
+}
+
+/* Resumen grid extendido */
+.resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Tarjeta resumen destacada (Total Ingresado) */
+.resumen-card--highlight {
+  border: 1px solid rgba(34, 197, 94, 0.35) !important;
+  background: rgba(34, 197, 94, 0.05) !important;
+}
+
+/* Valores con color */
+.resumen-valor--verde    { color: #22c55e; }
+.resumen-valor--amarillo { color: #ffc107; }
+
+/* Iconos por tipo */
+.resumen-icon.ganancia  { color: #a78bfa; }
+.resumen-icon.productos { color: #38bdf8; }
+
+/* Gráfico de barras */
+.grafico-container {
+  position: relative;
+  height: 200px;
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
