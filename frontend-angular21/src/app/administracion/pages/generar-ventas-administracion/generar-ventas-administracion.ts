@@ -1158,6 +1158,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       serie,
       receiptTypeId: this.tipoComprobante(),
       dueDate: fechaVencimiento.toISOString(),
+      operationType: '0101',  
+      currencyCode: 'PEN',    
       subtotal,
       igv,
       isc: 0,
@@ -1179,6 +1181,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       })),
     };
 
+
+    
     this.ventasService.registrarVenta(request).subscribe({
       next: (response: any) => {
         this.loading.set(false);
