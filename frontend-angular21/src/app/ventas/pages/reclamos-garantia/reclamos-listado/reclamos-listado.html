@@ -23,6 +23,7 @@
   </p-card>
 </div>
 
+<!-- ESTADÍSTICAS -->
 <div class="p-2">
   <div class="ventas-header-bordered mb-4">
     <div class="seccion-estadisticas">
@@ -58,10 +59,13 @@
   </div>
 </div>
 
+<!-- FILTROS -->
 <div class="p-2">
   <div class="filtros-container mb-4">
     <div class="seccion-filtros">
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <!-- Línea 1: Búsqueda + Rango de fechas -->
       <div class="filtros-linea-1">
 
         <div class="filtro-item filtro-busqueda-65">
@@ -74,6 +78,32 @@
             class="w-full"
           />
         </div>
+
+        <div class="filtro-item filtro-grupo-fechas">
+          <label>Rango de Fechas</label>
+          <div class="fechas-con-guion">
+            <p-datepicker
+              [(ngModel)]="filtroFechaInicio"
+              dateFormat="dd/mm/yy"
+              placeholder="Fecha Inicio"
+              [showClear]="true"
+              [showIcon]="true"
+            />
+            <span class="fecha-separador">-</span>
+            <p-datepicker
+              [(ngModel)]="filtroFechaFin"
+              dateFormat="dd/mm/yy"
+              placeholder="Fecha Fin"
+              [showClear]="true"
+              [showIcon]="true"
+            />
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Línea 2: Estado + Limpiar -->
+      <div class="filtros-linea-2">
 
         <div class="filtro-item filtro-compacto">
           <label>Estado</label>
@@ -90,7 +120,7 @@
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button
-            label="Limpiar"
+            label="Limpiar Filtros"
             icon="pi pi-filter-slash"
             (onClick)="limpiarFiltros()"
             severity="danger"
@@ -103,117 +133,163 @@
   </div>
 </div>
 
+<!-- TABLA -->
 <div class="p-2">
-  <p-card class="tarjeta-principal">
-    <div class="seccion-tabla">
-      <div class="tabla-header">
-        <h3><i class="pi pi-shield"></i> Listado de Reclamos</h3>
+  <div style="position: relative">
+    <p-card class="tarjeta-principal">
+
+      <!-- Loading overlay compartido -->
+      <app-loading-overlay
+        [visible]="claimService.loading()"
+        mensaje="Cargando reclamos..."
+        modo="inline"
+      />
+
+      <div
+        class="seccion-tabla"
+        [style.opacity]="claimService.loading() ? '0.3' : '1'"
+        style="transition: opacity 0.2s ease;"
+      >
+        <div class="tabla-header">
+          <h3><i class="pi pi-shield"></i> Listado de Reclamos</h3>
+        </div>
+
+        <p-table
+          [value]="reclamosFiltrados"
+          [paginator]="true"
+          [rows]="5"
+          [rowsPerPageOptions]="[5,10, 25, 50]"
+          [loading]="false"
+          [tableStyle]="{ 'min-width': '60rem' }"
+          styleClass="p-datatable-striped"
+          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
+          [showCurrentPageReport]="true"
+          paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width:8%"># Reclamo</th>
+              <th style="width:10%">Comprobante</th>
+              <th style="width:13%">Motivo</th>
+              <th style="width:19%">Descripción</th>
+              <th style="width:10%">Estado</th>
+              <th style="width:10%">Registrado</th>
+              <th style="width:7%">Días</th>
+              <th style="width:9%">Resuelto</th>
+              <th class="text-center" style="width:14%">Acciones</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-reclamo>
+            <tr>
+              <!-- id interno del reclamo — ajusta al campo real de tu DTO -->
+              <td class="font-semibold">#{{ reclamo.id }}</td>
+
+              <!-- campo real del DTO: saleReceiptId -->
+              <td>
+                <span class="codigo-comprobante">
+                  Comp. #{{ reclamo.saleReceiptId }}
+                </span>
+              </td>
+
+              <td>{{ reclamo.reason }}</td>
+
+              <td>
+                <span class="text-sm text-600" style="white-space:pre-wrap;">
+                  {{ reclamo.description | slice:0:80 }}{{ reclamo.description?.length > 80 ? '...' : '' }}
+                </span>
+              </td>
+
+              <td>
+                <p-tag
+                  [value]="getStatusLabel(reclamo.status)"
+                  [severity]="getStatusSeverity(reclamo.status)"
+                />
+              </td>
+
+              <!-- campo real del DTO: registerDate -->
+              <td>{{ formatDate(reclamo.registerDate) }}</td>
+
+              <td>
+                <span class="dias-transcurridos">
+                  {{ diasDesde(reclamo.registerDate) }} días
+                </span>
+              </td>
+
+              <td>
+                <span
+                  *ngIf="reclamo.resolveDate; else sinResolver"
+                  class="text-green-500 text-sm font-semibold"
+                >
+                  {{ formatDate(reclamo.resolveDate) }}
+                </span>
+                <ng-template #sinResolver>
+                  <span class="text-400 text-sm">—</span>
+                </ng-template>
+              </td>
+
+              <!-- Acciones: Ver | Editar | Imprimir | Correo -->
+              <td class="text-center">
+                <div class="acciones-tabla">
+
+                  <p-button
+                    icon="pi pi-eye"
+                    (onClick)="verDetalle(reclamo.id)"
+                    [rounded]="true" [text]="true"
+                    severity="secondary"
+                    pTooltip="Ver detalle"
+                    tooltipPosition="top"
+                  />
+
+                  <p-button
+                    icon="pi pi-file-edit"
+                    (onClick)="editarReclamo(reclamo.id)"
+                    [rounded]="true" [text]="true"
+                    severity="secondary"
+                    pTooltip="Editar reclamo"
+                    tooltipPosition="top"
+                  />
+
+                  <!-- IMPRIMIR — pendiente backend -->
+                  <p-button
+                    icon="pi pi-print"
+                    (onClick)="imprimirReclamo(reclamo)"
+                    [rounded]="true" [text]="true"
+                    severity="secondary"
+                    pTooltip="Imprimir reclamo"
+                    tooltipPosition="top"
+                  />
+
+                  <!-- ENVIAR CORREO — pendiente backend -->
+                  <p-button
+                    icon="pi pi-send"
+                    (onClick)="enviarCorreo(reclamo)"
+                    [rounded]="true" [text]="true"
+                    severity="secondary"
+                    pTooltip="Enviar a correo"
+                    tooltipPosition="top"
+                  />
+
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="9" class="text-center">
+                <div class="mensaje-vacio">
+                  <i class="pi pi-inbox"></i>
+                  <p>No se encontraron reclamos</p>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
       </div>
 
-      <p-table
-        [value]="reclamosFiltrados"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[10, 25, 50]"
-        [loading]="claimService.loading()"
-        [tableStyle]="{ 'min-width': '60rem' }"
-        styleClass="p-datatable-striped"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-        [showCurrentPageReport]="true"
-        paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th style="width:8%"># Reclamo</th>
-            <th style="width:10%">Comprobante</th>
-            <th style="width:14%">Motivo</th>
-            <th style="width:22%">Descripción</th>
-            <th style="width:10%">Estado</th>
-            <th style="width:10%">Registrado</th>
-            <th style="width:8%">Días</th>
-            <th style="width:10%">Resuelto</th>
-            <th class="text-center" style="width:8%">Acciones</th>
-          </tr>
-        </ng-template>
+    </p-card>
+  </div>
 
-        <ng-template pTemplate="body" let-reclamo>
-          <tr>
-            <td class="font-semibold">#{{ reclamo.claimId }}</td>
-
-            <td>
-              <span class="codigo-comprobante">
-                Comp. #{{ reclamo.receiptId }}
-              </span>
-            </td>
-
-            <td>{{ reclamo.reason }}</td>
-
-            <td>
-              <span class="text-sm text-600" style="white-space:pre-wrap;">
-                {{ reclamo.description | slice:0:80 }}{{ reclamo.description.length > 80 ? '...' : '' }}
-              </span>
-            </td>
-
-            <td>
-              <p-tag
-                [value]="getStatusLabel(reclamo.status)"
-                [severity]="getStatusSeverity(reclamo.status)"
-              />
-            </td>
-
-            <td>{{ formatDate(reclamo.registeredAt) }}</td>
-
-            <td>
-              <span class="dias-transcurridos">
-                {{ diasDesde(reclamo.registeredAt) }} días
-              </span>
-            </td>
-
-            <td>
-              <span *ngIf="reclamo.resolvedAt; else sinResolver" class="text-green-500 text-sm font-semibold">
-                {{ formatDate(reclamo.resolvedAt) }}
-              </span>
-              <ng-template #sinResolver>
-                <span class="text-400 text-sm">—</span>
-              </ng-template>
-            </td>
-
-            <td class="text-center">
-              <p-button
-                icon="pi pi-eye"
-                (onClick)="verDetalle(reclamo.claimId)"
-                [rounded]="true"
-                [text]="true"
-                severity="secondary"
-                pTooltip="Ver detalle"
-                tooltipPosition="top"
-              />
-              <p-button
-                icon="pi pi-file-edit"
-                (onClick)="editarReclamo(reclamo.claimId)"
-                [rounded]="true"
-                [text]="true"
-                severity="secondary"
-                pTooltip="Editar reclamo"
-                tooltipPosition="top"
-              />
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="9" class="text-center">
-              <div class="mensaje-vacio">
-                <i class="pi pi-inbox"></i>
-                <p>No se encontraron reclamos</p>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-  </p-card>
-
-  <p-toast></p-toast>
+  <p-toast />
 </div>

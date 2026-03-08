@@ -157,7 +157,7 @@ private actualizarCabecera() {
         this.iconoCabecera = 'pi pi-eye';
       } else {
         // RUTA PRINCIPAL
-        this.tituloKicker = 'ADMINISTRACIÓN - PRODUCTOS ACTIVOS';
+        this.tituloKicker = 'ADMINISTRADOR - ADMINISTRACIÓA - PRODUCTOS ';
         this.subtituloKicker = 'GESTIÓN DE PRODUCTOS'; // Esto es lo que se estaba perdiendo
         this.iconoCabecera = 'pi pi-building';
       }

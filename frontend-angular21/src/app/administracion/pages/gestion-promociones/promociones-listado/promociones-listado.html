@@ -5,8 +5,8 @@
         <span class="ventas-title-icon">
           <i class="pi pi-tags"></i></span>
         <div>
-          <p class="ventas-kicker">GESTIÓN DEL SISTEMA</p>
-          <h2 class="ventas-title">Promociones y Ofertas</h2>
+          <p class="ventas-kicker">ADMINISTRADOR · ADMINISTRACIÓN ·  PROMOCIONES</p>
+          <h2 class="ventas-title">PROMOCIONES Y OFERTAS</h2>
         </div>
       </div>
       <p-button
@@ -57,6 +57,7 @@
           <span class="estadistica-valor">{{ kpiConReglas() }}</span>
         </div>
       </div>
+
     </div>
   </div>
 </div>
@@ -147,131 +148,145 @@
         <h3><i class="pi pi-list"></i> Listado de Promociones</h3>
       </div>
 
-      <p-table
-        [value]="filteredPromociones()"
-        [loading]="loading()"
-        [lazy]="false"
-        [paginator]="true"
-        [rows]="itemsPorPagina()"
-        [totalRecords]="totalItems()"
-        [first]="paginaActual() * itemsPorPagina()"
-        (onPageChange)="onPageChange($event)"
-        styleClass="p-datatable-striped"
-        [tableStyle]="{ 'min-width': '55rem' }"
-      >
-        <ng-template pTemplate="header">
-          <tr>
-            <th>Codigo</th>
-            <th>Concepto</th>
-            <th>Tipo</th>
-            <th>Descuento</th>
-            <th>Reglas</th>
-            <th>Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </ng-template>
+      <!-- wrapper para anclar el overlay -->
+      <div style="position: relative">
 
-        <ng-template pTemplate="body" let-promo>
-          <tr>
-            <td><strong>COD{{ promo.idPromocion }}</strong></td>
+        <app-loading-overlay
+          [visible]="loading()"
+          mensaje="Cargando promociones..."
+          modo="inline">
+        </app-loading-overlay>
 
-            <td>{{ promo.concepto }}</td>
+        <div
+          [style.opacity]="loading() ? '0.3' : '1'"
+          style="transition: opacity 0.2s ease;">
 
-            <td>
-              <p-tag
-                [value]="promo.tipo"
-                [severity]="promo.tipo === 'PORCENTAJE' ? 'info' : 'warn'"
-              />
-            </td>
+          <p-table
+            [value]="filteredPromociones()"
+            [loading]="false"
+            [lazy]="false"
+            [paginator]="true"
+            [rows]="itemsPorPagina()"
+            [totalRecords]="totalItems()"
+            [first]="paginaActual() * itemsPorPagina()"
+            (onPageChange)="onPageChange($event)"
+            styleClass="p-datatable-striped"
+            [tableStyle]="{ 'min-width': '55rem' }"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th>Codigo</th>
+                <th>Concepto</th>
+                <th>Tipo</th>
+                <th>Descuento</th>
+                <th>Reglas</th>
+                <th>Estado</th>
+                <th class="text-center">Acciones</th>
+              </tr>
+            </ng-template>
 
-            <td>
-              <span
-                class="descuento-badge"
-                [ngClass]="{ 'descuento-alto': promo.valor > 20 }"
-              >
-                {{ formatearDescuento(promo) }}
+            <ng-template pTemplate="body" let-promo>
+              <tr>
+                <td><strong>COD{{ promo.idPromocion }}</strong></td>
+
+                <td>{{ promo.concepto }}</td>
+
+                <td>
+                  <p-tag
+                    [value]="promo.tipo"
+                    [severity]="promo.tipo === 'PORCENTAJE' ? 'info' : 'warn'"
+                  />
+                </td>
+
+                <td>
+                  <span
+                    class="descuento-badge"
+                    [ngClass]="{ 'descuento-alto': promo.valor > 20 }"
+                  >
+                    {{ formatearDescuento(promo) }}
+                  </span>
+                </td>
+
+                <td>
+                  <span *ngIf="promo.reglas.length; else sinReglas">
+                    {{ promo.reglas.length }} regla(s)
+                  </span>
+                  <ng-template #sinReglas><span class="text-400">—</span></ng-template>
+                </td>
+
+                <td>
+                  <p-tag
+                    [value]="obtenerEstado(promo)"
+                    [severity]="severidadEstado(obtenerEstado(promo))"
+                  />
+                </td>
+
+                <td class="text-center">
+                  <div class="acciones-tabla">
+                    <p-button
+                      icon="pi pi-eye"
+                      (onClick)="verPromocion(promo.idPromocion)"
+                      [rounded]="true" [text]="true" severity="secondary"
+                      pTooltip="Ver Detalles" tooltipPosition="top"
+                      styleClass="ventas-icon-btn ventas-icon-soft"
+                    />
+                    <p-button
+                      icon="pi pi-pencil"
+                      (onClick)="editarPromocion(promo.idPromocion)"
+                      [rounded]="true" [text]="true" severity="secondary"
+                      pTooltip="Editar" tooltipPosition="top"
+                      styleClass="ventas-icon-btn ventas-icon-soft"
+                    />
+
+                    @if (promo.activo) {
+                      <p-button
+                        icon="pi pi-times"
+                        (onClick)="toggleEstado(promo)"
+                        [rounded]="true" [text]="true" severity="warn"
+                        pTooltip="Desactivar" tooltipPosition="top"
+                        styleClass="ventas-icon-btn"
+                      />
+                    } @else {
+                      <p-button
+                        icon="pi pi-check"
+                        (onClick)="toggleEstado(promo)"
+                        [rounded]="true" [text]="true" severity="success"
+                        pTooltip="Activar" tooltipPosition="top"
+                        styleClass="ventas-icon-btn"
+                      />
+                      <p-button
+                        icon="pi pi-trash"
+                        (onClick)="eliminarPromocion(promo.idPromocion, promo.concepto)"
+                        [rounded]="true" [text]="true" severity="danger"
+                        pTooltip="Eliminar" tooltipPosition="top"
+                        styleClass="ventas-icon-btn ventas-icon-danger"
+                      />
+                    }
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="7" class="text-center">
+                  <div class="mensaje-vacio">
+                    <i class="pi pi-inbox"></i>
+                    <p>No se encontraron promociones</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="paginatorleft">
+              <span class="p-paginator-current">
+                Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de {{ totalItems() }} registros
               </span>
-            </td>
+            </ng-template>
+          </p-table>
 
-            <td>
-              <span *ngIf="promo.reglas.length; else sinReglas">
-                {{ promo.reglas.length }} regla(s)
-              </span>
-              <ng-template #sinReglas><span class="text-400">—</span></ng-template>
-            </td>
-
-            <td>
-              <p-tag
-                [value]="obtenerEstado(promo)"
-                [severity]="severidadEstado(obtenerEstado(promo))"
-              />
-            </td>
-
-            <td class="text-center">
-              <div class="acciones-tabla">
-                <p-button
-                  icon="pi pi-eye"
-                  (onClick)="verPromocion(promo.idPromocion)"
-                  [rounded]="true" [text]="true" severity="secondary"
-                  pTooltip="Ver Detalles" tooltipPosition="top"
-                  styleClass="ventas-icon-btn ventas-icon-soft"
-                />
-                <p-button
-                  icon="pi pi-pencil"
-                  (onClick)="editarPromocion(promo.idPromocion)"
-                  [rounded]="true" [text]="true" severity="secondary"
-                  pTooltip="Editar" tooltipPosition="top"
-                  styleClass="ventas-icon-btn ventas-icon-soft"
-                />
-
-                <!-- Activa → botón desactivar (X) -->
-                @if (promo.activo) {
-                  <p-button
-                    icon="pi pi-times"
-                    (onClick)="toggleEstado(promo)"
-                    [rounded]="true" [text]="true" severity="warn"
-                    pTooltip="Desactivar" tooltipPosition="top"
-                    styleClass="ventas-icon-btn"
-                  />
-                } @else {
-                  <!-- Inactiva → botón activar (check) + botón eliminar (tacho) -->
-                  <p-button
-                    icon="pi pi-check"
-                    (onClick)="toggleEstado(promo)"
-                    [rounded]="true" [text]="true" severity="success"
-                    pTooltip="Activar" tooltipPosition="top"
-                    styleClass="ventas-icon-btn"
-                  />
-                  <p-button
-                    icon="pi pi-trash"
-                    (onClick)="eliminarPromocion(promo.idPromocion, promo.concepto)"
-                    [rounded]="true" [text]="true" severity="danger"
-                    pTooltip="Eliminar" tooltipPosition="top"
-                    styleClass="ventas-icon-btn ventas-icon-danger"
-                  />
-                }
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="7" class="text-center">
-              <div class="mensaje-vacio">
-                <i class="pi pi-inbox"></i>
-                <p>No se encontraron promociones</p>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="paginatorleft">
-          <span class="p-paginator-current">
-            Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de {{ totalItems() }} registros
-          </span>
-        </ng-template>
-      </p-table>
+        </div>
+      </div>
     </div>
   </p-card>
 

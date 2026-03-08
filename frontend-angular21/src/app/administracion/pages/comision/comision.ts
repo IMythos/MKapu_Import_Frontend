@@ -10,6 +10,7 @@ import { SelectModule } from 'primeng/select';
 import { RouterModule } from '@angular/router';
 import { CommissionService, CommissionRule } from '../../services/commission.service';
 import { CategoriaService } from '../../services/categoria.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 @Component({
   selector: 'app-comision',
@@ -18,6 +19,7 @@ import { CategoriaService } from '../../services/categoria.service';
     CommonModule, FormsModule, ButtonModule,
     InputTextModule, TableModule, TagModule,
     SelectModule, CardModule, RouterModule,
+    LoadingOverlayComponent,
   ],
   templateUrl: './comision.html',
   styleUrls: ['./comision.css'],
@@ -26,8 +28,8 @@ export class Comision implements OnInit {
   private readonly commissionService = inject(CommissionService);
   private readonly categoriaService  = inject(CategoriaService);
 
-  readonly loading  = this.commissionService.loading;
-  readonly error    = this.commissionService.error;
+  readonly loading    = this.commissionService.loading;
+  readonly error      = this.commissionService.error;
   readonly categorias = this.categoriaService.categorias;
 
   // ── Filtros como signals ───────────────────────────────────────────────────
@@ -38,18 +40,18 @@ export class Comision implements OnInit {
 
   tiposObjetivo = [
     { label: 'Categoría', value: 'CATEGORIA' },
-    { label: 'Producto',  value: 'PRODUCTO' },
+    { label: 'Producto',  value: 'PRODUCTO'  },
   ];
 
   tiposRecompensa = [
-    { label: 'Monto Fijo', value: 'MONTO_FIJO' },
-    { label: 'Porcentaje', value: 'PORCENTAJE' },
+    { label: 'Monto Fijo', value: 'MONTO_FIJO'  },
+    { label: 'Porcentaje', value: 'PORCENTAJE'  },
   ];
 
   estadosFiltro = [
-    { label: 'Activas',   value: true },
+    { label: 'Activas',   value: true  },
     { label: 'Inactivas', value: false },
-    { label: 'Todas',     value: null },
+    { label: 'Todas',     value: null  },
   ];
 
   limpiarFiltros() {
@@ -80,24 +82,17 @@ export class Comision implements OnInit {
   });
 
   readonly reglasFiltradas = computed(() => {
-    let data = this.reglas();
+    let data       = this.reglas();
     const activo     = this.filtroActivo();
     const busqueda   = this.filtroBusqueda().trim().toLowerCase();
     const tipo       = this.filtroTipo();
     const recompensa = this.filtroRecompensa();
 
-    if (activo !== null) {
-      data = data.filter(r => r.activo === activo);
-    }
-    if (busqueda) {
-      data = data.filter(r => r.nombre.toLowerCase().includes(busqueda));
-    }
-    if (tipo) {
-      data = data.filter(r => r.raw.tipo_objetivo === tipo);
-    }
-    if (recompensa) {
-      data = data.filter(r => r.raw.tipo_recompensa === recompensa);
-    }
+    if (activo !== null) data = data.filter(r => r.activo === activo);
+    if (busqueda)        data = data.filter(r => r.nombre.toLowerCase().includes(busqueda));
+    if (tipo)            data = data.filter(r => r.raw.tipo_objetivo === tipo);
+    if (recompensa)      data = data.filter(r => r.raw.tipo_recompensa === recompensa);
+
     return data;
   });
 

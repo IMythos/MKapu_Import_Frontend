@@ -17,6 +17,7 @@ import { TooltipModule }       from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { PromotionsService, Promotion } from '../../../services/promotions.service';
+import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 
 interface Filtros {
   busqueda:       string;
@@ -32,6 +33,7 @@ interface Filtros {
     CommonModule, FormsModule,
     CardModule, ButtonModule, InputTextModule, SelectModule,
     ConfirmDialogModule, ToastModule, TableModule, TagModule, TooltipModule,
+    LoadingOverlayComponent,
   ],
   templateUrl: './promociones-listado.html',
   styleUrl:    './promociones-listado.css',
@@ -48,18 +50,18 @@ export class PromocionesListado implements OnInit, OnDestroy {
 
   tiposPromocion = [
     { label: 'Porcentaje', value: 'PORCENTAJE' },
-    { label: 'Monto fijo', value: 'MONTO' },
+    { label: 'Monto fijo', value: 'MONTO'      },
   ];
 
   estadosPromocion = [
-    { label: 'Activa',   value: 'Activa' },
+    { label: 'Activa',   value: 'Activa'   },
     { label: 'Inactiva', value: 'Inactiva' },
   ];
 
   rangosDescuento = [
-    { label: 'Hasta 10%',    value: '0-10' },
-    { label: 'De 10% a 25%', value: '10-25' },
-    { label: 'De 25% a 50%', value: '25-50' },
+    { label: 'Hasta 10%',    value: '0-10'   },
+    { label: 'De 10% a 25%', value: '10-25'  },
+    { label: 'De 25% a 50%', value: '25-50'  },
     { label: 'Más de 50%',   value: '50-100' },
   ];
 
@@ -78,18 +80,13 @@ export class PromocionesListado implements OnInit, OnDestroy {
       const t = f.busqueda.trim().toLowerCase();
       filtradas = filtradas.filter(p =>
         p.concepto.toLowerCase().includes(t) ||
-        p.tipo.toLowerCase().includes(t) ||
+        p.tipo.toLowerCase().includes(t)     ||
         String(p.valor).includes(t)
       );
     }
 
-    if (f.tipo) {
-      filtradas = filtradas.filter(p => p.tipo === f.tipo);
-    }
-
-    if (f.estado) {
-      filtradas = filtradas.filter(p => this.obtenerEstado(p) === f.estado);
-    }
+    if (f.tipo)  filtradas = filtradas.filter(p => p.tipo === f.tipo);
+    if (f.estado) filtradas = filtradas.filter(p => this.obtenerEstado(p) === f.estado);
 
     if (f.rangoDescuento) {
       const [min, max] = f.rangoDescuento.split('-').map(Number);
@@ -107,8 +104,9 @@ export class PromocionesListado implements OnInit, OnDestroy {
   readonly kpiTotal     = computed(() => this.promociones().length);
   readonly kpiInactivas = computed(() => this.promociones().filter(p => !p.activo).length);
   readonly kpiConReglas = computed(() => this.promociones().filter(p => p.reglas.length > 0).length);
+
   // ─── Lifecycle ───────────────────────────────────────────────────────────
-  ngOnInit(): void { this.cargarPromociones(); }
+  ngOnInit(): void  { this.cargarPromociones(); }
   ngOnDestroy(): void { this.destroy$.next(); this.destroy$.complete(); }
 
   // ─── Carga ───────────────────────────────────────────────────────────────
@@ -120,21 +118,10 @@ export class PromocionesListado implements OnInit, OnDestroy {
   }
 
   // ─── Filtros ─────────────────────────────────────────────────────────────
-  setBusqueda(valor: string): void {
-    this.filtros.update(f => ({ ...f, busqueda: valor }));
-  }
-
-  setTipo(valor: string): void {
-    this.filtros.update(f => ({ ...f, tipo: valor ?? '' }));
-  }
-
-  setEstado(valor: string): void {
-    this.filtros.update(f => ({ ...f, estado: valor ?? '' }));
-  }
-
-  setRangoDescuento(valor: string): void {
-    this.filtros.update(f => ({ ...f, rangoDescuento: valor ?? '' }));
-  }
+  setBusqueda(valor: string):       void { this.filtros.update(f => ({ ...f, busqueda:       valor        })); }
+  setTipo(valor: string):           void { this.filtros.update(f => ({ ...f, tipo:           valor ?? '' })); }
+  setEstado(valor: string):         void { this.filtros.update(f => ({ ...f, estado:         valor ?? '' })); }
+  setRangoDescuento(valor: string): void { this.filtros.update(f => ({ ...f, rangoDescuento: valor ?? '' })); }
 
   limpiarFiltros(): void {
     this.filtros.set({ busqueda: '', tipo: '', estado: '', rangoDescuento: '' });
@@ -149,11 +136,11 @@ export class PromocionesListado implements OnInit, OnDestroy {
   }
 
   // ─── Navegación ──────────────────────────────────────────────────────────
-  irANueva():               void { this.router.navigate(['/admin/promociones/crear']); }
-  verPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/ver-detalle', id]); }
-  editarPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/editar', id]); }
+  irANueva():                  void { this.router.navigate(['/admin/promociones/crear']);                }
+  verPromocion(id: number):    void { if (id) this.router.navigate(['/admin/promociones/ver-detalle', id]); }
+  editarPromocion(id: number): void { if (id) this.router.navigate(['/admin/promociones/editar', id]);  }
 
-  // ─── Toggle estado (activar / desactivar) ────────────────────────────────
+  // ─── Toggle estado ────────────────────────────────────────────────────────
   toggleEstado(promo: Promotion): void {
     const accion = promo.activo ? 'desactivar' : 'activar';
     this.confirmationService.confirm({
@@ -161,7 +148,6 @@ export class PromocionesListado implements OnInit, OnDestroy {
       header:  'Confirmar cambio de estado',
       icon:    'pi pi-exclamation-triangle',
       accept:  () => {
-        // Usa updatePromotionStatus que llama al endpoint /status del backend
         this.promotionsService.updatePromotionStatus(promo.idPromocion, !promo.activo).subscribe({
           next: () => {
             this.messageService.add({
@@ -169,20 +155,15 @@ export class PromocionesListado implements OnInit, OnDestroy {
               summary:  'Éxito',
               detail:   `Promoción ${promo.activo ? 'desactivada' : 'activada'} correctamente`,
             });
-            // Recargar para sincronizar estado real desde backend
             this.cargarPromociones();
           },
-          error: () => this.messageService.add({
-            severity: 'error',
-            summary:  'Error',
-            detail:   'No se pudo cambiar el estado',
-          }),
+          error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cambiar el estado' }),
         });
       },
     });
   }
 
-  // ─── Eliminar físicamente (solo inactivas) ────────────────────────────────
+  // ─── Eliminar (solo inactivas) ────────────────────────────────────────────
   eliminarPromocion(id: number, concepto: string): void {
     this.confirmationService.confirm({
       message: `¿Deseas eliminar permanentemente la promoción "${concepto}"? Esta acción no se puede deshacer.`,
@@ -192,19 +173,10 @@ export class PromocionesListado implements OnInit, OnDestroy {
       accept:  () => {
         this.promotionsService.hardDeletePromotion(id).subscribe({
           next: () => {
-            this.messageService.add({
-              severity: 'success',
-              summary:  'Éxito',
-              detail:   'Promoción eliminada permanentemente',
-            });
-            // Recargar para sincronizar
+            this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Promoción eliminada permanentemente' });
             this.cargarPromociones();
           },
-          error: () => this.messageService.add({
-            severity: 'error',
-            summary:  'Error',
-            detail:   'No se pudo eliminar la promoción',
-          }),
+          error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo eliminar la promoción' }),
         });
       },
     });

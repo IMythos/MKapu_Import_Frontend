@@ -60,7 +60,7 @@ export class ListadoDespacho {
   // ================================
   // 🏷️ CABECERA
   // ================================
-  tituloKicker    = 'ADMINISTRADOR - DESPACHO - PRODUCTOS';
+  tituloKicker    = 'ADMINISTRADOR - LOGISTICA - DESPACHO';
   subtituloKicker = 'LISTADO DE DESPACHO';
   iconoCabecera   = 'pi pi-truck';
 

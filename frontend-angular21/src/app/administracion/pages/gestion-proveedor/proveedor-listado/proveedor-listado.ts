@@ -80,7 +80,7 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
     if (url.includes('crear'))       return 'ADMINISTRACIÓN - PROVEEDORES CREACIÓN';
     if (url.includes('editar'))      return 'ADMINISTRACIÓN - PROVEEDORES EDICIÓN';
     if (url.includes('ver-detalle')) return 'ADMINISTRACIÓN - PROVEEDORES DETALLE';
-    return 'ADMINISTRACIÓN - PROVEEDORES ACTIVOS';
+    return 'ADMINISTRACIÓN - LOGISTICA - PROVEEDORES ACTIVOS';
   });
 
   iconoCabecera = computed(() => {
