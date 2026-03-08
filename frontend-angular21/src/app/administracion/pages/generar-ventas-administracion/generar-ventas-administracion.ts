@@ -42,10 +42,8 @@ import {
   RegistroVentaAdminResponse,
   SedeAdmin,
   IGV_RATE_ADMIN,
-  OPERATION_TYPE_VENTA_INTERNA,
-  CURRENCY_PEN_ADMIN,
   PromocionAdmin,
-  MetodoPagoAdmin, // ← coma corregida
+  MetodoPagoAdmin,
   TipoVentaAdmin,
   TipoComprobanteAdmin,
 } from '../../interfaces/ventas.interface';
@@ -71,7 +69,7 @@ export type TipoEntrega = 'recojo' | 'delivery';
     InputNumberModule,
     TableModule,
     TooltipModule,
-    LoadingOverlayComponent
+    LoadingOverlayComponent,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './generar-ventas-administracion.html',
@@ -127,6 +125,9 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   sedesLoading = signal(false);
   sedeSeleccionada = signal<number | null>(null);
 
+  // ← interno: solo para despacho, sin selector visual
+  almacenSeleccionado = signal<number | null>(null);
+
   activeStep = signal(0);
   isLoading = signal(false);
   tipoComprobante = signal(2);
@@ -143,10 +144,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   guardandoCliente = signal(false);
 
   metodosPago = signal<MetodoPagoAdmin[]>([]);
-
-  almacenSeleccionado = signal<number | null>(null);
-  almacenesOptions = signal<{ label: string; value: number }[]>([]);
-  almacenesLoading = signal(false);
 
   cotizacionOrigen = signal<number | null>(null);
   tipoPagoOrigen = signal<'contado' | 'credito'>('contado');
@@ -207,7 +204,13 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   snapshotMetodoPago = signal<string>('');
   snapshotTipoComprobante = signal<number>(2);
 
-  tipoVentaSeleccionado = signal<number>(1); 
+  tipoVentaSeleccionado = signal<number>(1);
+
+  codigoPromocionInput = signal('');
+  promoNoEncontrada = signal(false);
+  promoYaAplicada = signal(false);
+
+  // ─── COMPUTEDS ─────────────────────────────────────────────────────────────
 
   readonly nombreTipoVentaSeleccionado = computed(
     () => this.tiposVenta().find((t) => t.id === this.tipoVentaSeleccionado())?.descripcion ?? '—',
@@ -234,6 +237,22 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
 
   readonly tiposDocumentoBoleta = computed(() =>
     this.tiposDocumento().filter((t) => !t.description?.toUpperCase().includes('RUC')),
+  );
+
+  readonly tiposDocumentoBoleta2 = computed(() =>
+    this.tiposDocumento().filter((t) => !t.description?.toUpperCase().includes('RUC')),
+  );
+
+  readonly tiposDocumentoParaBusqueda = computed(() =>
+    this.tipoComprobante() === 1
+      ? this.tiposDocumento().filter((t) => t.description?.toUpperCase().includes('RUC'))
+      : this.tiposDocumento(),
+  );
+
+  readonly tipoDocRucId = computed(
+    () =>
+      this.tiposDocumento().find((t) => t.description?.toUpperCase().includes('RUC'))
+        ?.documentTypeId ?? null,
   );
 
   readonly documentoConfig = computed(() => {
@@ -307,8 +326,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     return v >= 0 ? v : 0;
   });
 
-  //casa chica ingresa el vuelto 200 so de base o la cantidad que haya
-
   readonly precioSegunTipo = computed(() => {
     const p = this.productoTemp();
     if (!p) return 0;
@@ -334,16 +351,20 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.sedes().map((s) => ({ label: s.nombre, value: s.id_sede })),
   );
 
-  esPorcentaje(tipo: string): boolean {
-    return tipo?.toUpperCase().trim() === 'PORCENTAJE';
-  }
+  readonly esDniSeleccionado = computed(() => {
+    const tipoId = this.nuevoClienteForm.documentTypeId;
+    if (!tipoId) return false;
+    const tipo = this.tiposDocumento().find((t) => t.documentTypeId === tipoId);
+    const desc = tipo?.description?.toUpperCase() ?? '';
+    return (
+      desc.includes('DNI') ||
+      desc.includes('IDENTIDAD') ||
+      desc.includes('RUC') ||
+      desc.includes('CONTRIBUYENTE')
+    );
+  });
 
-  private normalizarActivo(activo: any): boolean {
-    if (typeof activo === 'boolean') return activo;
-    if (typeof activo === 'number') return activo === 1;
-    if (activo && typeof activo === 'object' && 'data' in activo) return activo.data[0] === 1;
-    return false;
-  }
+  // ─── LIFECYCLE ─────────────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.cargarSesion();
@@ -351,13 +372,15 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.cargarSedes();
     this.leerParamsCotizacion();
     this.cargarMetodosPago();
-    this.cargarTiposVenta(); // ← nuevo
-    this.cargarTiposComprobante(); // ← nuevo
+    this.cargarTiposVenta();
+    this.cargarTiposComprobante();
   }
 
   ngAfterViewInit(): void {
     setTimeout(() => this.cargarFamilias(), 0);
   }
+
+  // ─── SESIÓN ────────────────────────────────────────────────────────────────
 
   private cargarSesion(): void {
     const user = this.authService.getCurrentUser();
@@ -376,26 +399,42 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   private cargarMetodosPago(): void {
     this.ventasService.obtenerMetodosPago().subscribe({
       next: (data) => {
-        this.metodosPago.set(data);
-        const efectivo = data.find((m) => m.codSunat === '008');
+        // Solo Efectivo, Tarjeta Débito, Tarjeta Crédito y Transferencia
+        const filtrados = data.filter((m) => ['008', '005', '006', '003'].includes(m.codSunat));
+        this.metodosPago.set(filtrados);
+        const efectivo = filtrados.find((m) => m.codSunat === '008');
         if (efectivo) this.metodoPagoSeleccionado.set(efectivo.id);
       },
     });
   }
 
-  // ← nuevo
   private cargarTiposVenta(): void {
     this.ventasService.obtenerTiposVenta().subscribe({
       next: (data) => this.tiposVenta.set(data),
     });
   }
 
-  // ← nuevo
   private cargarTiposComprobante(): void {
     this.ventasService.obtenerTiposComprobante().subscribe({
-      next: (data) => this.tiposComprobante.set(data),
+      next: (data) => {
+        const filtrados = data.filter((t) => t.codSunat === '03' || t.codSunat === '01');
+        this.tiposComprobante.set(filtrados);
+      },
     });
   }
+
+  private cargarTiposDocumento(): void {
+    this.ventasService.obtenerTiposDocumento().subscribe({
+      next: (tipos) => {
+        this.tiposDocumento.set(tipos);
+        const dni = tipos.find((t) => t.description?.toUpperCase().includes('DNI'));
+        if (dni) this.tipoDocBoleta.set(dni.documentTypeId);
+      },
+      error: () => console.warn('No se pudieron cargar tipos de documento'),
+    });
+  }
+
+  // ─── SEDES ─────────────────────────────────────────────────────────────────
 
   private cargarSedes(): void {
     this.sedesLoading.set(true);
@@ -420,32 +459,21 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   onSedeChange(sedeId: number | null): void {
     this.sedeSeleccionada.set(sedeId);
     this.almacenSeleccionado.set(null);
-    this.almacenesOptions.set([]);
     this.familiaSeleccionada.set(null);
     this.productoTemp.set(null);
     this.cargarProductos(true);
     this.cargarFamilias();
     if (!sedeId) return;
-    this.almacenesLoading.set(true);
+    // Auto-selección silenciosa del primer almacén (para despacho)
     this.sedeAlmacenService.loadWarehouseOptionsBySede(sedeId).subscribe({
       next: (options) => {
-        this.almacenesOptions.set(options);
-        this.almacenesLoading.set(false);
+        if (options.length > 0) this.almacenSeleccionado.set(options[0].value);
       },
-      error: () => {
-        this.almacenesLoading.set(false);
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Almacenes',
-          detail: 'No se pudieron cargar los almacenes de esta sede',
-        });
-      },
+      error: () => console.warn('No se pudieron cargar almacenes de esta sede'),
     });
   }
 
-  onAlmacenChange(almacenId: number | null): void {
-    this.almacenSeleccionado.set(almacenId);
-  }
+  // ─── PRODUCTOS ─────────────────────────────────────────────────────────────
 
   private cargarProductos(resetear = true): void {
     if (!this.sedeSeleccionada()) {
@@ -494,99 +522,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       });
   }
 
-  private leerParamsCotizacion(): void {
-    const cotizacionId = this.route.snapshot.queryParamMap.get('cotizacion');
-    const tipo = this.route.snapshot.queryParamMap.get('tipo') as 'contado' | 'credito';
-    if (!cotizacionId) return;
-    this.cotizacionOrigen.set(Number(cotizacionId));
-    this.tipoPagoOrigen.set(tipo ?? 'contado');
-  }
-
-  private cargarDatosDeCotizacion(id: number): void {
-    this.loading.set(true);
-    this.quoteService.getQuoteById(id).subscribe({
-      next: (cotizacion) => {
-        this.loading.set(false);
-        this.prefillDesdeCotizacion(cotizacion);
-      },
-      error: () => {
-        this.loading.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo cargar la cotización',
-        });
-      },
-    });
-  }
-
-  private prefillDesdeCotizacion(cotizacion: Quote): void {
-    if (cotizacion.id_sede) {
-      this.onSedeChange(cotizacion.id_sede);
-      const waitAlmacen = setInterval(() => {
-        if (!this.almacenesLoading() && this.almacenesOptions().length > 0) {
-          clearInterval(waitAlmacen);
-          this.almacenSeleccionado.set(this.almacenesOptions()[0].value);
-        }
-      }, 100);
-    }
-    const tipoDoc = cotizacion.cliente?.id_tipo_documento;
-    this.tipoComprobante.set(tipoDoc === 1 ? 1 : 2);
-    if (cotizacion.cliente?.valor_doc) {
-      this.clienteDocumento.set(cotizacion.cliente.valor_doc);
-      const nombreCompleto = cotizacion.cliente.razon_social
-        ? cotizacion.cliente.razon_social
-        : `${cotizacion.cliente.nombre_cliente ?? ''} ${cotizacion.cliente.apellidos_cliente ?? ''}`.trim();
-      this.clienteEncontrado.set({
-        customerId: String(cotizacion.id_cliente),
-        name: nombreCompleto,
-        documentValue: cotizacion.cliente.valor_doc,
-        documentTypeDescription: tipoDoc === 1 ? 'RUC' : 'DNI',
-        documentTypeSunatCode: tipoDoc === 1 ? '6' : '1',
-        invoiceType: tipoDoc === 1 ? 'FACTURA' : 'BOLETA',
-        status: 'ACTIVO',
-        address: cotizacion.cliente.direccion ?? '',
-        email: cotizacion.cliente.email ?? '',
-        phone: cotizacion.cliente.telefono ?? '',
-        displayName: nombreCompleto,
-      });
-      this.busquedaRealizada.set(true);
-    }
-    if (cotizacion.detalles?.length) {
-      const items: ItemVentaUIAdmin[] = cotizacion.detalles.map((d) => {
-        const precio = Number(d.precio);
-        const cantidad = Number(d.cantidad);
-        return {
-          productId: d.id_prod_ref,
-          codigo: d.cod_prod,
-          quantity: cantidad,
-          unitPrice: precio,
-          description: d.descripcion,
-          total: cantidad * precio,
-          igvUnitario: Number((precio - precio / (1 + IGV_RATE_ADMIN)).toFixed(2)),
-        };
-      });
-      this.productosSeleccionados.set(items);
-    }
-    if (this.tipoPagoOrigen() === 'credito') {
-      const credito = this.metodosPago().find((m) => m.codSunat === '003' || m.codSunat === '005');
-      if (credito) this.metodoPagoSeleccionado.set(credito.id);
-    }
-    this.activeStep.set(1);
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Cotización cargada',
-      detail: `Datos pre-llenados desde cotización #${this.cotizacionOrigen()}`,
-      life: 4000,
-    });
-  }
-
-  cargarMasProductos(): void {
-    if (!this.hayMasPaginas() || this.cargandoMas()) return;
-    this.paginaActual.update((p) => p + 1);
-    this.cargarProductos(false);
-  }
-
   private cargarFamilias(): void {
     const sedeId = this.sedeSeleccionada();
     if (!sedeId) return;
@@ -606,6 +541,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   onFamiliaChange(idCategoria: number | null): void {
     this.familiaSeleccionada.set(idCategoria);
     this.cargarProductos(true);
+  }
+
+  cargarMasProductos(): void {
+    if (!this.hayMasPaginas() || this.cargandoMas()) return;
+    this.paginaActual.update((p) => p + 1);
+    this.cargarProductos(false);
   }
 
   buscarProductos(event: AutoCompleteCompleteEvent): void {
@@ -718,16 +659,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  private cargarTiposDocumento(): void {
-    this.ventasService.obtenerTiposDocumento().subscribe({
-      next: (tipos) => {
-        this.tiposDocumento.set(tipos);
-        const dni = tipos.find((t) => t.description?.toUpperCase().includes('DNI'));
-        if (dni) this.tipoDocBoleta.set(dni.documentTypeId);
-      },
-      error: () => console.warn('No se pudieron cargar tipos de documento'),
-    });
-  }
+  // ─── CLIENTE ───────────────────────────────────────────────────────────────
 
   onTipoDocBoleta(id: number): void {
     this.tipoDocBoleta.set(id);
@@ -749,7 +681,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     if (!this.botonClienteHabilitado() || this.clienteEncontrado()) return;
     this.clienteLoading.set(true);
     this.busquedaRealizada.set(false);
-    this.ventasService.buscarCliente(this.clienteDocumento(), this.tipoComprobante()).subscribe({
+    // ✅ Sin receiptTypeId — el backend determina el invoiceType
+    this.ventasService.buscarCliente(this.clienteDocumento()).subscribe({
       next: (res) => {
         this.clienteEncontrado.set(res);
         this.busquedaRealizada.set(true);
@@ -770,30 +703,14 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  readonly tiposDocumentoBoleta2 = computed(() =>
-    this.tiposDocumento().filter((t) => !t.description?.toUpperCase().includes('RUC')),
-  );
-
-  readonly tiposDocumentoParaBusqueda = computed(() =>
-    this.tipoComprobante() === 1
-      ? this.tiposDocumento().filter((t) => t.description?.toUpperCase().includes('RUC'))
-      : this.tiposDocumento(),
-  );
-
-  readonly tipoDocRucId = computed(
-    () =>
-      this.tiposDocumento().find((t) => t.description?.toUpperCase().includes('RUC'))
-        ?.documentTypeId ?? null,
-  );
-
   onDocumentoNuevoClienteChange(valor: string): void {
     this.nuevoClienteForm.documentValue = valor;
     this.nombreDesdeReniec.set(false);
     const tipos = this.tiposDocumento();
     const tipoId = this.nuevoClienteForm.documentTypeId;
     if (!tipoId) return;
-    const tipoSeleccionado = tipos.find((t) => t.documentTypeId === tipoId);
-    const desc = tipoSeleccionado?.description?.toUpperCase() ?? '';
+    const tipoSel = tipos.find((t) => t.documentTypeId === tipoId);
+    const desc = tipoSel?.description?.toUpperCase() ?? '';
     const esDni = desc.includes('DNI') || desc.includes('IDENTIDAD');
     const esRuc = desc.includes('RUC') || desc.includes('CONTRIBUYENTE');
     const debeConsultar = (esDni && valor.length === 8) || (esRuc && valor.length === 11);
@@ -832,19 +749,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       },
     });
   }
-
-  readonly esDniSeleccionado = computed(() => {
-    const tipoId = this.nuevoClienteForm.documentTypeId;
-    if (!tipoId) return false;
-    const tipo = this.tiposDocumento().find((t) => t.documentTypeId === tipoId);
-    const desc = tipo?.description?.toUpperCase() ?? '';
-    return (
-      desc.includes('DNI') ||
-      desc.includes('IDENTIDAD') ||
-      desc.includes('RUC') ||
-      desc.includes('CONTRIBUYENTE')
-    );
-  });
 
   limpiarCliente(): void {
     this.clienteEncontrado.set(null);
@@ -904,7 +808,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           documentValue: res.documentValue,
           documentTypeDescription: res.documentTypeDescription,
           documentTypeSunatCode: res.documentTypeSunatCode,
-          invoiceType: res.invoiceType as 'BOLETA' | 'FACTURA',
+          invoiceType: res.invoiceType,
           status: res.status,
           address: res.address,
           email: res.email,
@@ -987,6 +891,100 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
+  onTipoComprobanteChange(): void {
+    this.limpiarCliente();
+    if (this.tipoComprobante() === 2) {
+      const dni = this.tiposDocumento().find((t) => t.description?.toUpperCase().includes('DNI'));
+      if (dni) this.tipoDocBoleta.set(dni.documentTypeId);
+    }
+  }
+
+  // ─── COTIZACIÓN ────────────────────────────────────────────────────────────
+
+  private leerParamsCotizacion(): void {
+    const cotizacionId = this.route.snapshot.queryParamMap.get('cotizacion');
+    const tipo = this.route.snapshot.queryParamMap.get('tipo') as 'contado' | 'credito';
+    if (!cotizacionId) return;
+    this.cotizacionOrigen.set(Number(cotizacionId));
+    this.tipoPagoOrigen.set(tipo ?? 'contado');
+  }
+
+  private cargarDatosDeCotizacion(id: number): void {
+    this.loading.set(true);
+    this.quoteService.getQuoteById(id).subscribe({
+      next: (cotizacion) => {
+        this.loading.set(false);
+        this.prefillDesdeCotizacion(cotizacion);
+      },
+      error: () => {
+        this.loading.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar la cotización',
+        });
+      },
+    });
+  }
+
+  private prefillDesdeCotizacion(cotizacion: Quote): void {
+    // ✅ onSedeChange ya auto-selecciona el primer almacén internamente
+    if (cotizacion.id_sede) {
+      this.onSedeChange(cotizacion.id_sede);
+    }
+    const tipoDoc = cotizacion.cliente?.id_tipo_documento;
+    this.tipoComprobante.set(tipoDoc === 1 ? 1 : 2);
+    if (cotizacion.cliente?.valor_doc) {
+      this.clienteDocumento.set(cotizacion.cliente.valor_doc);
+      const nombreCompleto = cotizacion.cliente.razon_social
+        ? cotizacion.cliente.razon_social
+        : `${cotizacion.cliente.nombre_cliente ?? ''} ${cotizacion.cliente.apellidos_cliente ?? ''}`.trim();
+      this.clienteEncontrado.set({
+        customerId: String(cotizacion.id_cliente),
+        name: nombreCompleto,
+        documentValue: cotizacion.cliente.valor_doc,
+        documentTypeDescription: tipoDoc === 1 ? 'RUC' : 'DNI',
+        documentTypeSunatCode: tipoDoc === 1 ? '6' : '1',
+        invoiceType: tipoDoc === 1 ? 'FACTURA' : 'BOLETA',
+        status: 'ACTIVO',
+        address: cotizacion.cliente.direccion ?? '',
+        email: cotizacion.cliente.email ?? '',
+        phone: cotizacion.cliente.telefono ?? '',
+        displayName: nombreCompleto,
+      });
+      this.busquedaRealizada.set(true);
+    }
+    if (cotizacion.detalles?.length) {
+      const items: ItemVentaUIAdmin[] = cotizacion.detalles.map((d) => {
+        const precio = Number(d.precio);
+        const cantidad = Number(d.cantidad);
+        return {
+          productId: d.id_prod_ref,
+          codigo: d.cod_prod,
+          quantity: cantidad,
+          unitPrice: precio,
+          description: d.descripcion,
+          total: cantidad * precio,
+          igvUnitario: Number((precio - precio / (1 + IGV_RATE_ADMIN)).toFixed(2)),
+        };
+      });
+      this.productosSeleccionados.set(items);
+    }
+    if (this.tipoPagoOrigen() === 'credito') {
+      const credito = this.metodosPago().find((m) => m.codSunat === '003' || m.codSunat === '005');
+      if (credito) this.metodoPagoSeleccionado.set(credito.id);
+    }
+    this.activeStep.set(1);
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Cotización cargada',
+      detail: `Datos pre-llenados desde cotización #${this.cotizacionOrigen()}`,
+      life: 4000,
+    });
+  }
+
+  // ─── PROMOCIONES ───────────────────────────────────────────────────────────
+
   private cargarPromociones(): void {
     this.promocionesLoading.set(true);
     this.ventasService.obtenerPromocionesActivas().subscribe({
@@ -1032,10 +1030,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  quitarPromocion(): void {
-    this.promocionAplicada.set(null);
-    this.messageService.add({ severity: 'info', summary: 'Promoción removida', life: 2000 });
-  }
+  // ─── ENTREGA ───────────────────────────────────────────────────────────────
 
   onTipoEntregaChange(tipo: TipoEntrega): void {
     this.tipoEntrega.set(tipo);
@@ -1047,6 +1042,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       if (dir) this.direccionDelivery.set(dir);
     }
   }
+
+  // ─── WIZARD ────────────────────────────────────────────────────────────────
 
   nextStep(): void {
     if (!this.validarPasoActual()) return;
@@ -1070,14 +1067,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
             severity: 'warn',
             summary: 'Sede Requerida',
             detail: 'Debe seleccionar una sede para continuar',
-          });
-          return false;
-        }
-        if (!this.almacenSeleccionado()) {
-          this.messageService.add({
-            severity: 'warn',
-            summary: 'Almacén Requerido',
-            detail: 'Debe seleccionar un almacén para continuar',
           });
           return false;
         }
@@ -1132,6 +1121,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     }
   }
 
+  // ─── VENTA ─────────────────────────────────────────────────────────────────
+
   generarVenta(): void {
     if (!this.clienteEncontrado()) return;
     this.confirmationService.confirm({
@@ -1163,58 +1154,49 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
 
     const request: RegistroVentaAdminRequest = {
       customerId: this.clienteEncontrado()!.customerId,
-      saleTypeId: 1,
+      saleTypeId: this.tipoVentaSeleccionado(),
       serie,
       receiptTypeId: this.tipoComprobante(),
       dueDate: fechaVencimiento.toISOString(),
-      operationType: OPERATION_TYPE_VENTA_INTERNA,
       subtotal,
       igv,
       isc: 0,
       total,
       descuento: Number(this.descuentoPromocion().toFixed(2)),
       promotionId: this.promocionAplicada()?.idPromocion ?? null,
-      deliveryType: this.tipoEntrega(),
-      deliveryAddress: this.tipoEntrega() === 'delivery' ? this.direccionDelivery().trim() : null,
       esCreditoPendiente: this.tipoPagoOrigen() === 'credito',
-      currencyCode: CURRENCY_PEN_ADMIN,
       responsibleId: this.idUsuarioActual().toString(),
       branchId: this.sedeSeleccionada() ?? 0,
       warehouseId: this.almacenSeleccionado() ?? 0,
       paymentMethodId: this.metodoPagoSeleccionado()!,
       operationNumber: this.metodoPagoSeleccionado() === 1 ? null : this.numeroOperacion(),
-      items: this.productosSeleccionados().map((item) => {
-        const producto = this.productosCargados().find((p) => p.id === item.productId);
-        return {
-          productId: producto ? producto.id.toString() : item.productId.toString(),
-          quantity: item.quantity,
-          unitPrice: Number(Number(item.unitPrice).toFixed(2)),
-          description: item.description,
-          total: Number(Number(item.total).toFixed(2)),
-        };
-      }),
+      items: this.productosSeleccionados().map((item) => ({
+        productId: item.productId.toString(),
+        quantity: item.quantity,
+        unitPrice: Number(item.unitPrice.toFixed(2)),
+        description: item.description,
+        total: Number(item.total.toFixed(2)),
+      })),
     };
 
     this.ventasService.registrarVenta(request).subscribe({
       next: (response: any) => {
         this.loading.set(false);
 
-
         const idComprobante: number =
-          response.receiptId      ??
-          response.id_comprobante ??
-          response.idComprobante  ?? 0;
+          response.receiptId ?? response.id_comprobante ?? response.idComprobante ?? 0;
 
         const numeroCompleto = `${response.serie ?? serie}-${String(response.receiptNumber ?? response.numero ?? '').padStart(8, '0')}`;
 
         this.comprobanteGenerado.set({
-          numero_completo: numeroCompleto,
-          fec_emision: response.createdAt ?? response.fec_emision ?? new Date().toISOString(),
+          numeroCompleto: numeroCompleto,
+          fecEmision: response.createdAt ?? response.fecEmision ?? new Date().toISOString(),
           total: response.total ?? total,
           serie: response.serie ?? serie,
           numero: response.receiptNumber ?? response.numero ?? 0,
-          id_comprobante: response.receiptId ?? response.id_comprobante ?? 0,
-        });
+          idComprobante: response.receiptId ?? response.idComprobante ?? 0,
+        } as RegistroVentaAdminResponse);
+
         this.messageService.add({
           severity: 'success',
           summary: '¡Venta Exitosa!',
@@ -1222,81 +1204,75 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           life: 5000,
         });
 
-        
+        // ─── Despacho automático ──────────────────────────────────────────
+        const almacenParaDespacho = this.almacenSeleccionado() ?? request.warehouseId;
+        const idVentaParaDespacho =
+          Number(idComprobante) ||
+          Number(response.receiptId) ||
+          Number(response.id_comprobante) ||
+          0;
 
-          console.log('[DESPACHO] response completo:', response);
-          console.log('[DESPACHO] idComprobante:', idComprobante);
-          console.log('[DESPACHO] almacenSeleccionado:', this.almacenSeleccionado());
-          console.log('[DESPACHO] productosSeleccionados:', this.productosSeleccionados());
+        if (idVentaParaDespacho > 0 && almacenParaDespacho > 0) {
+          const direccion =
+            this.tipoEntrega() === 'delivery'
+              ? this.direccionDelivery().trim()
+              : this.clienteEncontrado()?.address?.trim() || 'Recojo en tienda';
 
-           const almacenId = this.almacenSeleccionado();
+          const dispatchPayload: CreateDispatchRequest = {
+            id_venta_ref: idVentaParaDespacho,
+            id_usuario_ref: this.idUsuarioActual().toString(),
+            id_almacen_origen: almacenParaDespacho,
+            direccion_entrega: direccion,
+            observacion: `Venta ${numeroCompleto}`,
+            detalles: this.productosSeleccionados().map((item: ItemVentaUIAdmin) => ({
+              id_producto: Number(item.productId),
+              cantidad_solicitada: item.quantity,
+            })),
+          };
 
-              
-            const almacenParaDespacho = almacenId ?? request.warehouseId;
-             
-            const idVentaParaDespacho = Number(idComprobante) || Number(response.receiptId) || Number(response.id_comprobante) || 0;
+          this.dispatchService.createDispatch(dispatchPayload).subscribe({
+            next: (despacho) => {
+              this.messageService.add({
+                severity: 'info',
+                summary: 'Despacho Creado',
+                detail: `Despacho #${despacho.id_despacho} generado automáticamente`,
+                life: 4000,
+              });
+            },
+            error: (err) => {
+              console.error('[DESPACHO] error al crear:', err);
+              this.messageService.add({
+                severity: 'warn',
+                summary: 'Venta creada',
+                detail:
+                  'La venta se registró pero no se pudo crear el despacho. Créalo desde "Nuevo Despacho".',
+                life: 6000,
+              });
+            },
+          });
+        } else {
+          console.warn('[DESPACHO] No se creó despacho automático.', {
+            idVentaParaDespacho,
+            almacenParaDespacho,
+          });
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Despacho pendiente',
+            detail:
+              'Venta creada. No se pudo crear el despacho automáticamente. Créalo manualmente.',
+            life: 6000,
+          });
+        }
 
-            if (idVentaParaDespacho > 0 && almacenParaDespacho > 0) {
-              const direccion = this.tipoEntrega() === 'delivery'
-                ? this.direccionDelivery().trim()
-                : (this.clienteEncontrado()?.address?.trim() || 'Recojo en tienda');
-
-                const dispatchPayload: CreateDispatchRequest = {
-                  id_venta_ref:      idVentaParaDespacho,
-                  id_usuario_ref:    this.idUsuarioActual().toString(),
-                  id_almacen_origen: almacenParaDespacho,
-                  direccion_entrega: direccion,
-                  observacion:       `Venta ${numeroCompleto}`,
-                  detalles: this.productosSeleccionados().map((item: ItemVentaUIAdmin) => ({
-                    id_producto:         Number(item.productId),
-                    cantidad_solicitada: item.quantity,
-                  })),
-                };
-
-                console.log('[DESPACHO] payload a enviar:', dispatchPayload);
-
-                this.dispatchService.createDispatch(dispatchPayload).subscribe({
-                  next: (despacho) => {
-                    console.log('[DESPACHO] creado exitosamente:', despacho);
-                    this.messageService.add({
-                      severity: 'info',
-                      summary:  'Despacho Creado',
-                      detail:   `Despacho #${despacho.id_despacho} generado automáticamente`,
-                      life:     4000,
-                    });
-                  },
-                  error: (err) => {
-                    console.error('[DESPACHO] error al crear:', err);
-                    this.messageService.add({
-                      severity: 'warn',
-                      summary:  'Venta creada',
-                      detail:   'La venta se registró pero no se pudo crear el despacho. Créalo desde "Nuevo Despacho".',
-                      life:     6000,
-                    });
-                  },
-                });
-              } else {
-                // ← Si llegamos aquí, uno de los valores era 0/null — lo reportamos
-                console.warn('[DESPACHO] No se creó despacho automático.', {
-                  idVentaParaDespacho,
-                  almacenParaDespacho,
-                  responseCompleto: response,
-                });
-                this.messageService.add({
-                  severity: 'warn',
-                  summary:  'Despacho pendiente',
-                  detail:   `Venta creada. No se pudo crear el despacho automáticamente (sin almacén o ID de venta). Créalo manualmente.`,
-                  life:     6000,
-                });
-             }
-
-
+        // ─── Actualizar cotización de origen ─────────────────────────────
         if (cotizId) {
           this.quoteService.updateQuoteStatus(cotizId, 'APROBADA').subscribe({
             next: () => console.log(`Cotización #${cotizId} marcada como APROBADA`),
             error: () => console.warn('No se pudo actualizar estado de cotización'),
           });
         }
+
+        // ─── Cuenta por cobrar (crédito) ─────────────────────────────────
         if (this.tipoPagoOrigen() === 'credito') {
           const receiptId =
             typeof response.receiptId === 'number' && response.receiptId > 0
@@ -1317,6 +1293,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           }
           const fechaVenc = new Date();
           fechaVenc.setDate(fechaVenc.getDate() + 30);
+
           this.arService
             .create({
               salesReceiptId: receiptId,
@@ -1324,7 +1301,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
               totalAmount: total,
               dueDate: fechaVenc.toISOString().split('T')[0],
               paymentTypeId: this.metodoPagoSeleccionado()!,
-              currencyCode: CURRENCY_PEN_ADMIN,
+              currencyCode: 'PEN', // ← literal directo
               observation: cotizId
                 ? `Crédito generado desde cotización #${cotizId}`
                 : 'Venta a crédito',
@@ -1357,6 +1334,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       },
     });
   }
+
+  // ─── RESET / NAVEGACIÓN ────────────────────────────────────────────────────
 
   nuevaVenta(): void {
     this.confirmationService.confirm({
@@ -1400,10 +1379,23 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.direccionDelivery.set('');
     this.costoDelivery.set(0);
     this.activeStep.set(0);
+    // ✅ Solo reset interno — sin almacenesOptions
     this.almacenSeleccionado.set(null);
-    this.almacenesOptions.set([]);
     this.cargarProductos(true);
     this.cargarFamilias();
+  }
+
+  // ─── HELPERS ───────────────────────────────────────────────────────────────
+
+  esPorcentaje(tipo: string): boolean {
+    return tipo?.toUpperCase().trim() === 'PORCENTAJE';
+  }
+
+  private normalizarActivo(activo: any): boolean {
+    if (typeof activo === 'boolean') return activo;
+    if (typeof activo === 'number') return activo === 1;
+    if (activo && typeof activo === 'object' && 'data' in activo) return activo.data[0] === 1;
+    return false;
   }
 
   obtenerSeveridadStock(stock: number | undefined): 'success' | 'warn' | 'danger' {
@@ -1432,11 +1424,37 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     return `${this.obtenerSiglasDocumento(c.documentTypeDescription)} ${c.documentValue}`;
   }
 
-  onTipoComprobanteChange(): void {
-    this.limpiarCliente();
-    if (this.tipoComprobante() === 2) {
-      const dni = this.tiposDocumento().find((t) => t.description?.toUpperCase().includes('DNI'));
-      if (dni) this.tipoDocBoleta.set(dni.documentTypeId);
+  buscarYAplicarPromocion(): void {
+    const texto = this.codigoPromocionInput().trim().toLowerCase();
+    this.promoNoEncontrada.set(false);
+    this.promoYaAplicada.set(false);
+
+    if (!texto) return;
+
+    const promo = this.promocionesDisponibles().find(
+      (p) => p.concepto.trim().toLowerCase() === texto,
+    );
+
+    if (!promo) {
+      this.promoNoEncontrada.set(true);
+      return;
     }
+
+    if (this.promocionAplicada()?.idPromocion === promo.idPromocion) {
+      this.promoYaAplicada.set(true);
+      return;
+    }
+
+    this.aplicarPromocion(promo);
+    this.codigoPromocionInput.set('');
+  }
+
+  // También limpiar flags al quitar promo (en quitarPromocion ya existente)
+  quitarPromocion(): void {
+    this.promocionAplicada.set(null);
+    this.codigoPromocionInput.set('');
+    this.promoNoEncontrada.set(false);
+    this.promoYaAplicada.set(false);
+    this.messageService.add({ severity: 'info', summary: 'Promoción removida', life: 2000 });
   }
 }
