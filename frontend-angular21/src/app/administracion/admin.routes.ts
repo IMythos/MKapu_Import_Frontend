@@ -400,8 +400,8 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'detalles-ventas-administracion/:id',
     loadComponent: () =>
-      import('../ventas/shared/detalles-venta/detalle-venta').then(
-        (m) => m.DetalleVenta,
+      import('./shared/detalles-ventas-administracion/detalles-ventas-administracion').then(
+        (m) => m.DetallesVentasAdministracion,
       ),
   },
   {

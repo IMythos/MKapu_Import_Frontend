@@ -16,9 +16,7 @@ import {
   AnularVentaAdminResponse,
   SedeAdmin,
   ProductoStockAdminResponse,
-  ProductoStockAdmin,
   ProductoAutocompleteAdminResponse,
-  ProductoAutocompleteAdmin,
   ProductoUIAdmin,
   CategoriaConStockAdmin,
   ClienteBusquedaAdminResponse,
@@ -30,12 +28,12 @@ import {
   MetodoPagoAdmin,
   TipoVentaAdmin,
   TipoComprobanteAdmin,
+  SalesReceiptDetalleCompletoDto,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
 export class VentasAdminService {
   private readonly http = inject(HttpClient);
-
   private readonly url = environment.apiUrl;
   private readonly salesUrl = `${environment.apiUrl}/sales`;
   private readonly adminUrl = `${environment.apiUrl}/admin`;
@@ -174,6 +172,16 @@ export class VentasAdminService {
       .pipe(catchError(() => of([])));
   }
 
+  // ─── PROMOCIONES ───────────────────────────────────────────────────────────
+
+  obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
+    return this.http
+      .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
   // ─── SEDES ─────────────────────────────────────────────────────────────────
 
   obtenerSedes(): Observable<SedeAdmin[]> {
@@ -224,62 +232,53 @@ export class VentasAdminService {
     );
   }
 
-  // ─── Mapper: lista de productos disponibles ───────────────────────────────────
   mapearProductoConStock(p: any): ProductoUIAdmin {
+  // ← tipo explícito aquí
+  const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
+    ? p.almacenes.map((a: any) => ({
+        nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
+        stock:  Number(a.stock ?? a.cantidad ?? 0),
+      }))
+    : [{ nombre: p.nombre_almacen ?? 'Almacén', stock: Number(p.stock ?? 0) }];
 
-    const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
-      ? p.almacenes.map((a: any) => ({
-          nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
-          stock: Number(a.stock ?? a.cantidad ?? 0),
-        }))
-      : [
-          {
-            nombre: p.nombre_almacen ?? p.almacen ?? 'Almacén',
-            stock: Number(p.stock ?? 0),
-          },
-        ];
+  return {
+    id:              Number(p.id ?? p.id_producto),
+    codigo:          p.codigo          ?? p.cod_prod ?? '',
+    nombre:          p.nombre          ?? p.descripcion ?? '',
+    familia:         p.familia         ?? p.categoria  ?? '',
+    categoriaId:     Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
+    precioUnidad:    Number(p.precioUnidad  ?? p.precio_unitario ?? 0),
+    precioCaja:      Number(p.precioCaja    ?? p.precio_caja     ?? 0),
+    precioMayorista: Number(p.precioMayorista ?? p.precio_mayor  ?? 0),
+    stock:           almacenes.reduce((s, a) => s + a.stock, 0),  // ← s ya tiene tipo number
+    sede:            p.sede ?? '',
+    almacenes,
+  };
+}
 
-    return {
-      id: Number(p.id ?? p.id_producto),
-      codigo: p.codigo ?? p.cod_prod ?? '',
-      nombre: p.nombre ?? p.descripcion ?? '',
-      familia: p.familia ?? p.categoria ?? '',
-      precioUnidad: Number(p.precioUnidad ?? p.precio_unitario ?? p.precio_unidad ?? 0),
-      precioCaja: Number(p.precioCaja ?? p.precio_caja ?? 0),
-      precioMayorista: Number(p.precioMayorista ?? p.precio_mayor ?? 0),
-      stock: almacenes.reduce((s, a) => s + a.stock, 0),
-      sede: p.sede ?? '',
-      almacenes,
-    };
-  }
+mapearAutocompleteVentas(p: any): ProductoUIAdmin {
+  // ← tipo explícito aquí
+  const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
+    ? p.almacenes.map((a: any) => ({
+        nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
+        stock:  Number(a.stock ?? a.cantidad ?? 0),
+      }))
+    : [{ nombre: p.nombre_almacen ?? 'Almacén', stock: Number(p.stock ?? 0) }];
 
-  // ─── Mapper: sugerencias del autocomplete ────────────────────────────────────
-  mapearAutocompleteVentas(p: any): ProductoUIAdmin {
-    const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
-      ? p.almacenes.map((a: any) => ({
-          nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
-          stock: Number(a.stock ?? a.cantidad ?? 0),
-        }))
-      : [
-          {
-            nombre: p.nombre_almacen ?? p.almacen ?? 'Almacén',
-            stock: Number(p.stock ?? 0),
-          },
-        ];
-
-    return {
-      id: p.id ?? p.id_producto,
-      codigo: p.codigo ?? p.cod_prod ?? '',
-      nombre: p.nombre ?? p.descripcion ?? '',
-      familia: p.familia ?? p.categoria ?? '',
-      precioUnidad: Number(p.precioUnidad ?? p.precio_unitario ?? p.precio_unidad ?? 0),
-      precioCaja: Number(p.precioCaja ?? p.precio_caja ?? 0),
-      precioMayorista: Number(p.precioMayorista ?? p.precio_mayor ?? 0),
-      stock: almacenes.reduce((s, a) => s + a.stock, 0),
-      sede: p.sede ?? '',
-      almacenes,
-    };
-  }
+  return {
+    id:              p.id ?? p.id_producto,
+    codigo:          p.codigo          ?? p.cod_prod ?? '',
+    nombre:          p.nombre          ?? p.descripcion ?? '',
+    familia:         p.familia         ?? p.categoria  ?? '',
+    categoriaId:     Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
+    precioUnidad:    Number(p.precioUnidad  ?? p.precio_unitario ?? 0),
+    precioCaja:      Number(p.precioCaja    ?? p.precio_caja     ?? 0),
+    precioMayorista: Number(p.precioMayorista ?? p.precio_mayor  ?? 0),
+    stock:           almacenes.reduce((s, a) => s + a.stock, 0),
+    sede:            p.sede ?? '',
+    almacenes,
+  };
+}
 
   // ─── CLIENTES ──────────────────────────────────────────────────────────────
 
@@ -356,13 +355,13 @@ export class VentasAdminService {
       );
   }
 
-  // ─── PROMOCIONES ───────────────────────────────────────────────────────────
+  // ─── DETALLE COMPLETO ──────────────────────────────────────────────────────
 
-  obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
-    return this.http
-      .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
-        headers: this.headers,
-      })
-      .pipe(catchError(() => of([])));
+  getDetalleCompleto(id: number, historialPage = 1): Observable<SalesReceiptDetalleCompletoDto> {
+    const params = new HttpParams().set('historialPage', String(historialPage));
+    return this.http.get<SalesReceiptDetalleCompletoDto>(
+      `${this.salesUrl}/receipts/${id}/detalle`,
+      { headers: this.headers, params },
+    );
   }
 }

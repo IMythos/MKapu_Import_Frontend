@@ -94,7 +94,6 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         this.sedes = core_1.signal([]);
         this.sedesLoading = core_1.signal(false);
         this.sedeSeleccionada = core_1.signal(null);
-        // ← interno: solo para despacho, sin selector visual
         this.almacenSeleccionado = core_1.signal(null);
         this.activeStep = core_1.signal(0);
         this.isLoading = core_1.signal(false);
@@ -171,42 +170,17 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         this.documentoConfig = core_1.computed(function () {
             var _a, _b;
             if (_this.tipoComprobante() === 1) {
-                return {
-                    maxLength: 11,
-                    minLength: 11,
-                    soloNumeros: true,
-                    placeholder: 'Ingrese RUC (11 dígitos)'
-                };
+                return { maxLength: 11, minLength: 11, soloNumeros: true, placeholder: 'Ingrese RUC (11 dígitos)' };
             }
             var tipo = _this.tiposDocumento().find(function (t) { return t.documentTypeId === _this.tipoDocBoleta(); });
             var desc = (_b = (_a = tipo === null || tipo === void 0 ? void 0 : tipo.description) === null || _a === void 0 ? void 0 : _a.toUpperCase()) !== null && _b !== void 0 ? _b : '';
             if (desc.includes('DNI'))
-                return {
-                    maxLength: 8,
-                    minLength: 8,
-                    soloNumeros: true,
-                    placeholder: 'Ingrese DNI (8 dígitos)'
-                };
+                return { maxLength: 8, minLength: 8, soloNumeros: true, placeholder: 'Ingrese DNI (8 dígitos)' };
             if (desc.includes('CARNET') || desc.includes('EXTRANJERI'))
-                return {
-                    maxLength: 12,
-                    minLength: 9,
-                    soloNumeros: false,
-                    placeholder: 'Ingrese Carnet de Extranjería'
-                };
+                return { maxLength: 12, minLength: 9, soloNumeros: false, placeholder: 'Ingrese Carnet de Extranjería' };
             if (desc.includes('PASAPORTE'))
-                return {
-                    maxLength: 20,
-                    minLength: 5,
-                    soloNumeros: false,
-                    placeholder: 'Ingrese número de pasaporte'
-                };
-            return {
-                maxLength: 20,
-                minLength: 1,
-                soloNumeros: false,
-                placeholder: 'Ingrese número de documento'
-            };
+                return { maxLength: 20, minLength: 5, soloNumeros: false, placeholder: 'Ingrese número de pasaporte' };
+            return { maxLength: 20, minLength: 1, soloNumeros: false, placeholder: 'Ingrese número de documento' };
         });
         this.longitudDocumento = core_1.computed(function () { return _this.documentoConfig().maxLength; });
         this.botonClienteHabilitado = core_1.computed(function () {
@@ -216,21 +190,34 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             return len >= config.minLength && len <= config.maxLength;
         });
         this.descuentoPromocion = core_1.computed(function () {
+            var _a;
             var promo = _this.promocionAplicada();
             if (!promo)
                 return 0;
-            var base = _this.productosSeleccionados().reduce(function (s, i) { return s + i.total; }, 0);
+            var reglaProducto = (_a = promo.reglas) === null || _a === void 0 ? void 0 : _a.find(function (r) { return r.tipoCondicion === 'PRODUCTO'; });
+            var base;
+            if (reglaProducto) {
+                var itemAfectado = _this.productosSeleccionados().find(function (i) {
+                    return i.codigo === reglaProducto.valorCondicion ||
+                        i.productId.toString() === reglaProducto.valorCondicion;
+                });
+                base = itemAfectado ? itemAfectado.total : 0;
+            }
+            else {
+                base = _this.productosSeleccionados().reduce(function (s, i) { return s + Number(i.total); }, 0);
+            }
             return _this.esPorcentaje(promo.tipo)
-                ? Number(((base * promo.valor) / 100).toFixed(2))
-                : Number(promo.valor.toFixed(2));
+                ? Number(((base * Number(promo.valor)) / 100).toFixed(2))
+                : Number(Number(promo.valor).toFixed(2));
         });
+        // ✅ total para MOSTRAR en pantalla (con descuento restado)
         this.total = core_1.computed(function () {
             var base = _this.productosSeleccionados().reduce(function (s, i) { return s + i.total; }, 0);
             var delivery = _this.tipoEntrega() === 'delivery' ? _this.costoDelivery() : 0;
             return Number((base - _this.descuentoPromocion() + delivery).toFixed(2));
         });
-        this.subtotal = core_1.computed(function () { return _this.total() / (1 + ventas_interface_1.IGV_RATE_ADMIN); });
-        this.igv = core_1.computed(function () { return _this.subtotal() * ventas_interface_1.IGV_RATE_ADMIN; });
+        this.subtotal = core_1.computed(function () { return Number((_this.total() / (1 + ventas_interface_1.IGV_RATE_ADMIN)).toFixed(2)); });
+        this.igv = core_1.computed(function () { return Number((_this.total() - _this.subtotal()).toFixed(2)); });
         this.vuelto = core_1.computed(function () {
             var v = _this.montoRecibido() - _this.total();
             return v >= 0 ? v : 0;
@@ -240,12 +227,9 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             if (!p)
                 return 0;
             switch (_this.tipoPrecioTemp()) {
-                case 'caja':
-                    return p.precioCaja;
-                case 'mayorista':
-                    return p.precioMayorista;
-                default:
-                    return p.precioUnidad;
+                case 'caja': return p.precioCaja;
+                case 'mayorista': return p.precioMayorista;
+                default: return p.precioUnidad;
             }
         });
         this.hayMasPaginas = core_1.computed(function () { return _this.productosCargados().length < _this.totalRegistros(); });
@@ -316,7 +300,6 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         var _this = this;
         this.ventasService.obtenerMetodosPago().subscribe({
             next: function (data) {
-                // Solo Efectivo, Tarjeta Débito, Tarjeta Crédito y Transferencia
                 var filtrados = data.filter(function (m) { return ['008', '005', '006', '003'].includes(m.codSunat); });
                 _this.metodosPago.set(filtrados);
                 var efectivo = filtrados.find(function (m) { return m.codSunat === '008'; });
@@ -366,11 +349,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             },
             error: function () {
                 _this.sedesLoading.set(false);
-                _this.messageService.add({
-                    severity: 'warn',
-                    summary: 'Sedes',
-                    detail: 'No se pudieron cargar las sedes'
-                });
+                _this.messageService.add({ severity: 'warn', summary: 'Sedes', detail: 'No se pudieron cargar las sedes' });
             }
         });
     };
@@ -384,7 +363,6 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         this.cargarFamilias();
         if (!sedeId)
             return;
-        // Auto-selección silenciosa del primer almacén (para despacho)
         this.sedeAlmacenService.loadWarehouseOptionsBySede(sedeId).subscribe({
             next: function (options) {
                 if (options.length > 0)
@@ -432,11 +410,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             error: function () {
                 _this.productosLoading.set(false);
                 _this.cargandoMas.set(false);
-                _this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'No se pudieron cargar los productos'
-                });
+                _this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los productos' });
             }
         });
     };
@@ -514,28 +488,27 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             });
             return;
         }
-        var precioUnitario = this.precioSegunTipo();
+        var precioBase = this.precioSegunTipo();
+        var precioConIgv = Number((precioBase * (1 + ventas_interface_1.IGV_RATE_ADMIN)).toFixed(2));
+        var igvUnitario = Number((precioBase * ventas_interface_1.IGV_RATE_ADMIN).toFixed(2));
         var item = {
             productId: producto.id,
             codigo: producto.codigo,
             quantity: cantidad,
-            unitPrice: precioUnitario,
+            unitPrice: precioBase,
             description: producto.nombre,
-            total: precioUnitario * cantidad,
-            igvUnitario: Number((precioUnitario - precioUnitario / (1 + ventas_interface_1.IGV_RATE_ADMIN)).toFixed(2))
+            total: Number((precioConIgv * cantidad).toFixed(2)),
+            igvUnitario: igvUnitario,
+            categoriaId: producto.categoriaId
         };
         var lista = __spreadArrays(this.productosSeleccionados());
         var idx = lista.findIndex(function (p) { return p.productId === item.productId && p.unitPrice === item.unitPrice; });
         if (idx >= 0) {
             var actualizado = __assign({}, lista[idx]);
             actualizado.quantity += cantidad;
-            actualizado.total = actualizado.quantity * actualizado.unitPrice;
+            actualizado.total = Number((precioConIgv * actualizado.quantity).toFixed(2));
             if (actualizado.quantity > producto.stock) {
-                this.messageService.add({
-                    severity: 'error',
-                    summary: 'Stock Insuficiente',
-                    detail: "Solo hay " + producto.stock + " unidades disponibles"
-                });
+                this.messageService.add({ severity: 'error', summary: 'Stock Insuficiente', detail: "Solo hay " + producto.stock + " unidades disponibles" });
                 return;
             }
             lista[idx] = actualizado;
@@ -544,11 +517,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             lista.push(item);
         }
         this.productosSeleccionados.set(lista);
-        this.messageService.add({
-            severity: 'success',
-            summary: 'Producto Agregado',
-            detail: cantidad + " \u00D7 " + producto.nombre
-        });
+        this.messageService.add({ severity: 'success', summary: 'Producto Agregado', detail: cantidad + " \u00D7 " + producto.nombre });
         this.productoTemp.set(null);
         this.cantidadTemp.set(1);
     };
@@ -564,11 +533,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 var lista = __spreadArrays(_this.productosSeleccionados());
                 lista.splice(index, 1);
                 _this.productosSeleccionados.set(lista);
-                _this.messageService.add({
-                    severity: 'info',
-                    summary: 'Producto Eliminado',
-                    detail: 'El producto fue removido del carrito'
-                });
+                _this.messageService.add({ severity: 'info', summary: 'Producto Eliminado', detail: 'El producto fue removido del carrito' });
             }
         });
     };
@@ -594,18 +559,13 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             return;
         this.clienteLoading.set(true);
         this.busquedaRealizada.set(false);
-        // ✅ Sin receiptTypeId — el backend determina el invoiceType
         this.ventasService.buscarCliente(this.clienteDocumento()).subscribe({
             next: function (res) {
                 _this.clienteEncontrado.set(res);
                 _this.busquedaRealizada.set(true);
                 _this.clienteLoading.set(false);
                 _this.editandoCliente.set(false);
-                _this.messageService.add({
-                    severity: 'success',
-                    summary: 'Cliente Encontrado',
-                    detail: res.name
-                });
+                _this.messageService.add({ severity: 'success', summary: 'Cliente Encontrado', detail: res.name });
             },
             error: function () {
                 _this.clienteEncontrado.set(null);
@@ -640,30 +600,15 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                     _this.nombreDesdeReniec.set(true);
                     if (esRuc && res.direccion)
                         _this.nuevoClienteForm.address = res.direccion;
-                    _this.messageService.add({
-                        severity: 'success',
-                        summary: esRuc ? 'SUNAT' : 'RENIEC',
-                        detail: res.nombreCompleto,
-                        life: 3000
-                    });
+                    _this.messageService.add({ severity: 'success', summary: esRuc ? 'SUNAT' : 'RENIEC', detail: res.nombreCompleto, life: 3000 });
                 }
                 else {
-                    _this.messageService.add({
-                        severity: 'warn',
-                        summary: esRuc ? 'RUC no encontrado' : 'DNI no encontrado',
-                        detail: 'No se encontraron datos. Ingrese el nombre manualmente.',
-                        life: 3000
-                    });
+                    _this.messageService.add({ severity: 'warn', summary: esRuc ? 'RUC no encontrado' : 'DNI no encontrado', detail: 'No se encontraron datos. Ingrese el nombre manualmente.', life: 3000 });
                 }
             },
             error: function () {
                 _this.reniecLoading.set(false);
-                _this.messageService.add({
-                    severity: 'warn',
-                    summary: 'Sin conexión a RENIEC',
-                    detail: 'Ingrese el nombre manualmente.',
-                    life: 3000
-                });
+                _this.messageService.add({ severity: 'warn', summary: 'Sin conexión a RENIEC', detail: 'Ingrese el nombre manualmente.', life: 3000 });
             }
         });
     };
@@ -686,24 +631,13 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             this.nuevoClienteForm.documentTypeId = tipoActivo.documentTypeId;
     };
     GenerarVentasAdministracion.prototype.resetNuevoClienteForm = function () {
-        this.nuevoClienteForm = {
-            documentTypeId: null,
-            documentValue: '',
-            name: '',
-            address: '',
-            email: '',
-            phone: ''
-        };
+        this.nuevoClienteForm = { documentTypeId: null, documentValue: '', name: '', address: '', email: '', phone: '' };
     };
     GenerarVentasAdministracion.prototype.crearNuevoCliente = function () {
         var _this = this;
         var _a = this.nuevoClienteForm, documentTypeId = _a.documentTypeId, documentValue = _a.documentValue, name = _a.name;
         if (!documentTypeId || !documentValue.trim() || !name.trim()) {
-            this.messageService.add({
-                severity: 'warn',
-                summary: 'Campos requeridos',
-                detail: 'Tipo de documento, número y nombre son obligatorios'
-            });
+            this.messageService.add({ severity: 'warn', summary: 'Campos requeridos', detail: 'Tipo de documento, número y nombre son obligatorios' });
             return;
         }
         this.creandoCliente.set(true);
@@ -736,20 +670,12 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 _this.busquedaRealizada.set(true);
                 _this.editandoCliente.set(false);
                 _this.resetNuevoClienteForm();
-                _this.messageService.add({
-                    severity: 'success',
-                    summary: 'Cliente Creado',
-                    detail: nuevo.name + " fue registrado y seleccionado"
-                });
+                _this.messageService.add({ severity: 'success', summary: 'Cliente Creado', detail: nuevo.name + " fue registrado y seleccionado" });
             },
             error: function (err) {
                 var _a, _b;
                 _this.creandoCliente.set(false);
-                _this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error al crear cliente',
-                    detail: (_b = (_a = err === null || err === void 0 ? void 0 : err.error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : 'Ocurrió un error al registrar el cliente'
-                });
+                _this.messageService.add({ severity: 'error', summary: 'Error al crear cliente', detail: (_b = (_a = err === null || err === void 0 ? void 0 : err.error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : 'Ocurrió un error al registrar el cliente' });
             }
         });
     };
@@ -758,12 +684,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         var c = this.clienteEncontrado();
         if (!c)
             return;
-        this.editarClienteForm = {
-            name: (_a = c.name) !== null && _a !== void 0 ? _a : '',
-            address: (_b = c.address) !== null && _b !== void 0 ? _b : '',
-            email: (_c = c.email) !== null && _c !== void 0 ? _c : '',
-            phone: (_d = c.phone) !== null && _d !== void 0 ? _d : ''
-        };
+        this.editarClienteForm = { name: (_a = c.name) !== null && _a !== void 0 ? _a : '', address: (_b = c.address) !== null && _b !== void 0 ? _b : '', email: (_c = c.email) !== null && _c !== void 0 ? _c : '', phone: (_d = c.phone) !== null && _d !== void 0 ? _d : '' };
         this.editandoCliente.set(true);
     };
     GenerarVentasAdministracion.prototype.cancelarEdicionCliente = function () {
@@ -786,20 +707,12 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 _this.guardandoCliente.set(false);
                 _this.editandoCliente.set(false);
                 _this.clienteEncontrado.set(__assign(__assign({}, cliente), { name: res.name, address: res.address, email: res.email, phone: res.phone }));
-                _this.messageService.add({
-                    severity: 'success',
-                    summary: 'Cliente Actualizado',
-                    detail: 'Los datos del cliente se actualizaron correctamente'
-                });
+                _this.messageService.add({ severity: 'success', summary: 'Cliente Actualizado', detail: 'Los datos del cliente se actualizaron correctamente' });
             },
             error: function (err) {
                 var _a, _b;
                 _this.guardandoCliente.set(false);
-                _this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error al actualizar cliente',
-                    detail: (_b = (_a = err === null || err === void 0 ? void 0 : err.error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : 'Ocurrió un error al actualizar el cliente'
-                });
+                _this.messageService.add({ severity: 'error', summary: 'Error al actualizar cliente', detail: (_b = (_a = err === null || err === void 0 ? void 0 : err.error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : 'Ocurrió un error al actualizar el cliente' });
             }
         });
     };
@@ -824,26 +737,17 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         var _this = this;
         this.loading.set(true);
         this.quoteService.getQuoteById(id).subscribe({
-            next: function (cotizacion) {
-                _this.loading.set(false);
-                _this.prefillDesdeCotizacion(cotizacion);
-            },
+            next: function (cotizacion) { _this.loading.set(false); _this.prefillDesdeCotizacion(cotizacion); },
             error: function () {
                 _this.loading.set(false);
-                _this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error',
-                    detail: 'No se pudo cargar la cotización'
-                });
+                _this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la cotización' });
             }
         });
     };
     GenerarVentasAdministracion.prototype.prefillDesdeCotizacion = function (cotizacion) {
         var _a, _b, _c, _d, _e, _f, _g, _h;
-        // ✅ onSedeChange ya auto-selecciona el primer almacén internamente
-        if (cotizacion.id_sede) {
+        if (cotizacion.id_sede)
             this.onSedeChange(cotizacion.id_sede);
-        }
         var tipoDoc = (_a = cotizacion.cliente) === null || _a === void 0 ? void 0 : _a.id_tipo_documento;
         this.tipoComprobante.set(tipoDoc === 1 ? 1 : 2);
         if ((_b = cotizacion.cliente) === null || _b === void 0 ? void 0 : _b.valor_doc) {
@@ -868,16 +772,17 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         }
         if ((_h = cotizacion.detalles) === null || _h === void 0 ? void 0 : _h.length) {
             var items = cotizacion.detalles.map(function (d) {
-                var precio = Number(d.precio);
+                var precioBase = Number(d.precio);
+                var precioConIgv = Number((precioBase * (1 + ventas_interface_1.IGV_RATE_ADMIN)).toFixed(2));
                 var cantidad = Number(d.cantidad);
                 return {
                     productId: d.id_prod_ref,
                     codigo: d.cod_prod,
                     quantity: cantidad,
-                    unitPrice: precio,
+                    unitPrice: precioBase,
                     description: d.descripcion,
-                    total: cantidad * precio,
-                    igvUnitario: Number((precio - precio / (1 + ventas_interface_1.IGV_RATE_ADMIN)).toFixed(2))
+                    total: Number((precioConIgv * cantidad).toFixed(2)),
+                    igvUnitario: Number((precioBase * ventas_interface_1.IGV_RATE_ADMIN).toFixed(2))
                 };
             });
             this.productosSeleccionados.set(items);
@@ -888,12 +793,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 this.metodoPagoSeleccionado.set(credito.id);
         }
         this.activeStep.set(1);
-        this.messageService.add({
-            severity: 'info',
-            summary: 'Cotización cargada',
-            detail: "Datos pre-llenados desde cotizaci\u00F3n #" + this.cotizacionOrigen(),
-            life: 4000
-        });
+        this.messageService.add({ severity: 'info', summary: 'Cotización cargada', detail: "Datos pre-llenados desde cotizaci\u00F3n #" + this.cotizacionOrigen(), life: 4000 });
     };
     // ─── PROMOCIONES ───────────────────────────────────────────────────────────
     GenerarVentasAdministracion.prototype.cargarPromociones = function () {
@@ -906,24 +806,14 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 _this.promocionesDisponibles.set(activas);
                 _this.promocionesLoading.set(false);
                 if (!activas.length) {
-                    _this.messageService.add({
-                        severity: 'info',
-                        summary: 'Sin promociones',
-                        detail: 'No hay promociones disponibles',
-                        life: 3000
-                    });
+                    _this.messageService.add({ severity: 'info', summary: 'Sin promociones', detail: 'No hay promociones disponibles', life: 3000 });
                 }
             },
             error: function (err) {
                 _this.promocionesLoading.set(false);
                 _this.promocionesDisponibles.set([]);
                 if ((err === null || err === void 0 ? void 0 : err.status) !== 404) {
-                    _this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Promociones',
-                        detail: 'No se pudieron cargar las promociones',
-                        life: 3000
-                    });
+                    _this.messageService.add({ severity: 'warn', summary: 'Promociones', detail: 'No se pudieron cargar las promociones', life: 3000 });
                 }
             }
         });
@@ -971,57 +861,33 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         switch (this.activeStep()) {
             case 0:
                 if (!this.sedeSeleccionada()) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Sede Requerida',
-                        detail: 'Debe seleccionar una sede para continuar'
-                    });
+                    this.messageService.add({ severity: 'warn', summary: 'Sede Requerida', detail: 'Debe seleccionar una sede para continuar' });
                     return false;
                 }
                 if (this.productosSeleccionados().length === 0) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Carrito Vacío',
-                        detail: 'Debe agregar al menos un producto'
-                    });
+                    this.messageService.add({ severity: 'warn', summary: 'Carrito Vacío', detail: 'Debe agregar al menos un producto' });
                     return false;
                 }
                 return true;
             case 1:
                 if (!this.clienteEncontrado()) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Cliente Requerido',
-                        detail: 'Debe buscar y seleccionar un cliente'
-                    });
+                    this.messageService.add({ severity: 'warn', summary: 'Cliente Requerido', detail: 'Debe buscar y seleccionar un cliente' });
                     return false;
                 }
                 return true;
             case 2:
                 if (this.tipoEntrega() === 'delivery' && !this.direccionDelivery().trim()) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Dirección Requerida',
-                        detail: 'Ingrese la dirección de delivery'
-                    });
+                    this.messageService.add({ severity: 'warn', summary: 'Dirección Requerida', detail: 'Ingrese la dirección de delivery' });
                     return false;
                 }
                 if (this.tipoPagoOrigen() === 'credito')
                     return true;
                 if (this.metodoPagoSeleccionado() === 1 && this.montoRecibido() < this.total()) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Monto Insuficiente',
-                        detail: 'El monto recibido debe ser mayor o igual al total'
-                    });
+                    this.messageService.add({ severity: 'warn', summary: 'Monto Insuficiente', detail: 'El monto recibido debe ser mayor o igual al total' });
                     return false;
                 }
                 if (this.metodoPagoSeleccionado() !== 1 && !this.numeroOperacion().trim()) {
-                    this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Número de Operación Requerido',
-                        detail: 'Debe ingresar el número de operación'
-                    });
+                    this.messageService.add({ severity: 'warn', summary: 'Número de Operación Requerido', detail: 'Debe ingresar el número de operación' });
                     return false;
                 }
                 return true;
@@ -1034,13 +900,16 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         var _this = this;
         if (!this.clienteEncontrado())
             return;
+        if (this.loading())
+            return;
         this.confirmationService.confirm({
             message: '¿Está seguro de generar esta venta?',
             header: 'Confirmar Venta',
             icon: 'pi pi-question-circle',
             acceptLabel: 'Sí, generar',
             rejectLabel: 'Cancelar',
-            accept: function () { return _this.procesarVenta(); }
+            accept: function () { if (_this.loading())
+                return; _this.procesarVenta(); }
         });
     };
     GenerarVentasAdministracion.prototype.procesarVenta = function () {
@@ -1051,9 +920,15 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         this.snapshotSede.set(this.nombreSedeSeleccionada());
         this.snapshotMetodoPago.set(this.getLabelMetodoPago(this.metodoPagoSeleccionado()));
         this.snapshotTipoComprobante.set(this.tipoComprobante());
-        var subtotal = Number(this.subtotal().toFixed(2));
-        var igv = Number(this.igv().toFixed(2));
-        var total = Number(this.total().toFixed(2));
+        // ── Totales BRUTOS sin descontar ─────────────────────────────────────────
+        // El backend recalcula el descuento real y lo aplica en el mapper.
+        // Si enviamos el total ya descontado (computed total()), el mapper vuelve
+        // a restar y genera montos negativos.
+        var delivery = this.tipoEntrega() === 'delivery' ? this.costoDelivery() : 0;
+        var totalBruto = Number((this.productosSeleccionados().reduce(function (s, i) { return s + i.total; }, 0) + delivery).toFixed(2));
+        var subtotalBruto = Number((totalBruto / 1.18).toFixed(2));
+        var igvBruto = Number((totalBruto - subtotalBruto).toFixed(2));
+        // ─────────────────────────────────────────────────────────────────────────
         var serie = this.tipoComprobante() === 1 ? 'F001' : 'B001';
         var cotizId = this.cotizacionOrigen();
         var fechaVencimiento = new Date();
@@ -1065,10 +940,10 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             serie: serie,
             receiptTypeId: this.tipoComprobante(),
             dueDate: fechaVencimiento.toISOString(),
-            subtotal: subtotal,
-            igv: igv,
+            subtotal: subtotalBruto,
+            igv: igvBruto,
             isc: 0,
-            total: total,
+            total: totalBruto,
             descuento: Number(this.descuentoPromocion().toFixed(2)),
             promotionId: (_b = (_a = this.promocionAplicada()) === null || _a === void 0 ? void 0 : _a.idPromocion) !== null && _b !== void 0 ? _b : null,
             esCreditoPendiente: this.tipoPagoOrigen() === 'credito',
@@ -1082,7 +957,9 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 quantity: item.quantity,
                 unitPrice: Number(item.unitPrice.toFixed(2)),
                 description: item.description,
-                total: Number(item.total.toFixed(2))
+                total: Number((item.unitPrice * 1.18 * item.quantity).toFixed(2)),
+                codigo: item.codigo,
+                categoriaId: item.categoriaId
             }); })
         };
         this.ventasService.registrarVenta(request).subscribe({
@@ -1094,18 +971,13 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 _this.comprobanteGenerado.set({
                     numeroCompleto: numeroCompleto,
                     fecEmision: (_h = (_g = response.createdAt) !== null && _g !== void 0 ? _g : response.fecEmision) !== null && _h !== void 0 ? _h : new Date().toISOString(),
-                    total: (_j = response.total) !== null && _j !== void 0 ? _j : total,
+                    total: (_j = response.total) !== null && _j !== void 0 ? _j : totalBruto,
                     serie: (_k = response.serie) !== null && _k !== void 0 ? _k : serie,
                     numero: (_m = (_l = response.receiptNumber) !== null && _l !== void 0 ? _l : response.numero) !== null && _m !== void 0 ? _m : 0,
                     idComprobante: (_p = (_o = response.receiptId) !== null && _o !== void 0 ? _o : response.idComprobante) !== null && _p !== void 0 ? _p : 0
                 });
-                _this.messageService.add({
-                    severity: 'success',
-                    summary: '¡Venta Exitosa!',
-                    detail: "Comprobante " + numeroCompleto + " generado",
-                    life: 5000
-                });
-                // ─── Despacho automático ──────────────────────────────────────────
+                _this.messageService.add({ severity: 'success', summary: '¡Venta Exitosa!', detail: "Comprobante " + numeroCompleto + " generado", life: 5000 });
+                // ─── Despacho automático ─────────────────────────────────────────
                 var almacenParaDespacho = (_q = _this.almacenSeleccionado()) !== null && _q !== void 0 ? _q : request.warehouseId;
                 var idVentaParaDespacho = Number(idComprobante) ||
                     Number(response.receiptId) ||
@@ -1128,35 +1000,17 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                     };
                     _this.dispatchService.createDispatch(dispatchPayload).subscribe({
                         next: function (despacho) {
-                            _this.messageService.add({
-                                severity: 'info',
-                                summary: 'Despacho Creado',
-                                detail: "Despacho #" + despacho.id_despacho + " generado autom\u00E1ticamente",
-                                life: 4000
-                            });
+                            _this.messageService.add({ severity: 'info', summary: 'Despacho Creado', detail: "Despacho #" + despacho.id_despacho + " generado autom\u00E1ticamente", life: 4000 });
                         },
                         error: function (err) {
                             console.error('[DESPACHO] error al crear:', err);
-                            _this.messageService.add({
-                                severity: 'warn',
-                                summary: 'Venta creada',
-                                detail: 'La venta se registró pero no se pudo crear el despacho. Créalo desde "Nuevo Despacho".',
-                                life: 6000
-                            });
+                            _this.messageService.add({ severity: 'warn', summary: 'Venta creada', detail: 'La venta se registró pero no se pudo crear el despacho. Créalo desde "Nuevo Despacho".', life: 6000 });
                         }
                     });
                 }
                 else {
-                    console.warn('[DESPACHO] No se creó despacho automático.', {
-                        idVentaParaDespacho: idVentaParaDespacho,
-                        almacenParaDespacho: almacenParaDespacho
-                    });
-                    _this.messageService.add({
-                        severity: 'warn',
-                        summary: 'Despacho pendiente',
-                        detail: 'Venta creada. No se pudo crear el despacho automáticamente. Créalo manualmente.',
-                        life: 6000
-                    });
+                    console.warn('[DESPACHO] No se creó despacho automático.', { idVentaParaDespacho: idVentaParaDespacho, almacenParaDespacho: almacenParaDespacho });
+                    _this.messageService.add({ severity: 'warn', summary: 'Despacho pendiente', detail: 'Venta creada. No se pudo crear el despacho automáticamente. Créalo manualmente.', life: 6000 });
                 }
                 // ─── Actualizar cotización de origen ─────────────────────────────
                 if (cotizId) {
@@ -1167,19 +1021,12 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                 }
                 // ─── Cuenta por cobrar (crédito) ─────────────────────────────────
                 if (_this.tipoPagoOrigen() === 'credito') {
-                    var receiptId = typeof response.receiptId === 'number' && response.receiptId > 0
-                        ? response.receiptId
-                        : typeof response.id_comprobante === 'number' && response.id_comprobante > 0
-                            ? response.id_comprobante
-                            : typeof response.idComprobante === 'number' && response.idComprobante > 0
-                                ? response.idComprobante
-                                : undefined;
+                    var receiptId = typeof response.receiptId === 'number' && response.receiptId > 0 ? response.receiptId :
+                        typeof response.id_comprobante === 'number' && response.id_comprobante > 0 ? response.id_comprobante :
+                            typeof response.idComprobante === 'number' && response.idComprobante > 0 ? response.idComprobante :
+                                undefined;
                     if (!receiptId) {
-                        _this.messageService.add({
-                            severity: 'error',
-                            summary: 'Error interno',
-                            detail: 'No se pudo registrar la cuenta por cobrar porque el comprobante no tiene ID.'
-                        });
+                        _this.messageService.add({ severity: 'error', summary: 'Error interno', detail: 'No se pudo registrar la cuenta por cobrar porque el comprobante no tiene ID.' });
                         return;
                     }
                     var fechaVenc = new Date();
@@ -1188,30 +1035,19 @@ var GenerarVentasAdministracion = /** @class */ (function () {
                         .create({
                         salesReceiptId: receiptId,
                         userRef: _this.clienteEncontrado().name,
-                        totalAmount: total,
+                        totalAmount: totalBruto,
                         dueDate: fechaVenc.toISOString().split('T')[0],
                         paymentTypeId: _this.metodoPagoSeleccionado(),
                         currencyCode: 'PEN',
-                        observation: cotizId
-                            ? "Cr\u00E9dito generado desde cotizaci\u00F3n #" + cotizId
-                            : 'Venta a crédito'
+                        observation: cotizId ? "Cr\u00E9dito generado desde cotizaci\u00F3n #" + cotizId : 'Venta a crédito'
                     })
                         .then(function (ar) {
                         var _a;
                         if (ar) {
-                            _this.messageService.add({
-                                severity: 'info',
-                                summary: 'Cuenta por Cobrar Creada',
-                                detail: "Cuenta #" + ar.id + " registrada. Saldo: S/. " + ar.pendingBalance.toFixed(2),
-                                life: 5000
-                            });
+                            _this.messageService.add({ severity: 'info', summary: 'Cuenta por Cobrar Creada', detail: "Cuenta #" + ar.id + " registrada. Saldo: S/. " + ar.pendingBalance.toFixed(2), life: 5000 });
                         }
                         else {
-                            _this.messageService.add({
-                                severity: 'error',
-                                summary: 'Error al crear cuenta por cobrar',
-                                detail: (_a = _this.arService.error()) !== null && _a !== void 0 ? _a : undefined
-                            });
+                            _this.messageService.add({ severity: 'error', summary: 'Error al crear cuenta por cobrar', detail: (_a = _this.arService.error()) !== null && _a !== void 0 ? _a : undefined });
                         }
                     });
                 }
@@ -1219,11 +1055,7 @@ var GenerarVentasAdministracion = /** @class */ (function () {
             error: function (err) {
                 var _a, _b;
                 _this.loading.set(false);
-                _this.messageService.add({
-                    severity: 'error',
-                    summary: 'Error al Generar Venta',
-                    detail: (_b = (_a = err.error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : 'Ocurrió un error al procesar la venta'
-                });
+                _this.messageService.add({ severity: 'error', summary: 'Error al Generar Venta', detail: (_b = (_a = err.error) === null || _a === void 0 ? void 0 : _a.message) !== null && _b !== void 0 ? _b : 'Ocurrió un error al procesar la venta' });
             }
         });
     };
@@ -1270,7 +1102,6 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         this.direccionDelivery.set('');
         this.costoDelivery.set(0);
         this.activeStep.set(0);
-        // ✅ Solo reset interno — sin almacenesOptions
         this.almacenSeleccionado.set(null);
         this.cargarProductos(true);
         this.cargarFamilias();
@@ -1338,7 +1169,6 @@ var GenerarVentasAdministracion = /** @class */ (function () {
         this.aplicarPromocion(promo);
         this.codigoPromocionInput.set('');
     };
-    // También limpiar flags al quitar promo (en quitarPromocion ya existente)
     GenerarVentasAdministracion.prototype.quitarPromocion = function () {
         this.promocionAplicada.set(null);
         this.codigoPromocionInput.set('');

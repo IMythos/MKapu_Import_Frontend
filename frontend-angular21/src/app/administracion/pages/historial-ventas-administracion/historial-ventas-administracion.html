@@ -1,6 +1,4 @@
 <div class="p-2">
-
-  <!-- CABECERA -->
   <p-card class="ventas-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
@@ -12,22 +10,32 @@
           <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
         </div>
       </div>
+      <div class="flex align-items-center gap-3 flex-wrap">
+        <span class="ventas-rango-semana">
+          <i class="pi pi-calendar mr-1"></i>{{ rangoSemanaLabel() }}
+        </span>
+        <p-button
+          label="Nueva Venta"
+          icon="pi pi-plus"
+          (onClick)="nuevaVenta()"
+          severity="primary"
+          size="small"
+        >
+        </p-button>
+      </div>
     </div>
   </p-card>
-
 </div>
 
 <!-- KPIs -->
 <div class="p-2">
   <div class="ventas-header-bordered mb-4">
     <div class="seccion-estadisticas">
-
       <div class="estadistica-card">
         <i class="pi pi-chart-line"></i>
         <div>
           <span class="estadistica-label">Total Ventas</span>
-          <span class="estadistica-valor">S/. {{ totalVentas | number:'1.2-2' }}</span>
-        
+          <span class="estadistica-valor">S/. {{ totalVentas | number: '1.2-2' }}</span>
         </div>
       </div>
 
@@ -54,7 +62,6 @@
           <span class="estadistica-valor">{{ totalFacturas }}</span>
         </div>
       </div>
-
     </div>
   </div>
 </div>
@@ -66,19 +73,21 @@
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
 
       <div class="filtros-linea-1">
-
         <div class="filtro-item filtro-cliente-50">
-          <label>Cliente (DNI/RUC)</label>
+          <label>Cliente (Nombre / DNI / RUC)</label>
           <p-autocomplete
             [(ngModel)]="filtros.busqueda"
             [suggestions]="sugerenciasBusqueda"
             (completeMethod)="buscarSugerencias($event)"
-            (onSelect)="aplicarFiltros()"
+            (onSelect)="onSeleccionarSugerencia($event)"
             (onClear)="aplicarFiltros()"
-            placeholder="Buscar por DNI o RUC"
+            (onKeyUp)="onBusquedaKeyUp($event)"
+            placeholder="Buscar por nombre, DNI o RUC..."
             [dropdown]="true"
             [showClear]="true"
-            styleClass="w-full">
+            [minLength]="0"
+            styleClass="w-full"
+          >
           </p-autocomplete>
         </div>
 
@@ -92,7 +101,8 @@
               (onSelect)="aplicarFiltros()"
               (onClear)="aplicarFiltros()"
               [showClear]="true"
-              [showIcon]="true">
+              [showIcon]="true"
+            >
             </p-datepicker>
             <span class="fecha-separador">-</span>
             <p-datepicker
@@ -102,15 +112,14 @@
               (onSelect)="aplicarFiltros()"
               (onClear)="aplicarFiltros()"
               [showClear]="true"
-              [showIcon]="true">
+              [showIcon]="true"
+            >
             </p-datepicker>
           </div>
         </div>
-
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Sede</label>
           <p-select
@@ -120,7 +129,8 @@
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
-            styleClass="w-full">
+            styleClass="w-full"
+          >
           </p-select>
         </div>
 
@@ -133,7 +143,8 @@
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
-            styleClass="w-full">
+            styleClass="w-full"
+          >
           </p-select>
         </div>
 
@@ -141,12 +152,13 @@
           <label>Tipo de Pago</label>
           <p-select
             [(ngModel)]="filtros.tipoPago"
-            [options]="tiposPago"
+            [options]="metodosPago"
             placeholder="Todos"
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
-            styleClass="w-full">
+            styleClass="w-full"
+          >
           </p-select>
         </div>
 
@@ -159,7 +171,8 @@
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
-            styleClass="w-full">
+            styleClass="w-full"
+          >
           </p-select>
         </div>
 
@@ -170,10 +183,10 @@
             icon="pi pi-filter-slash"
             (onClick)="limpiarFiltros()"
             severity="danger"
-            styleClass="btn-limpiar-filtros">
+            styleClass="btn-limpiar-filtros"
+          >
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
@@ -181,21 +194,16 @@
 
 <!-- TABLA -->
 <div class="p-2">
-
-  <!-- Se mueve el style al div wrapper externo                              -->
   <div style="position: relative">
     <p-card class="tarjeta-principal">
-
-      <!-- Loading superpuesto solo sobre la tabla -->
-      <app-loading-overlay
-        [visible]="loading"
-        mensaje="Cargando ventas..."
-        modo="inline">
+      <app-loading-overlay [visible]="loading" mensaje="Cargando ventas..." modo="inline">
       </app-loading-overlay>
 
-      <div class="seccion-tabla" [style.opacity]="loading ? '0.3' : '1'"
-           style="transition: opacity 0.2s ease;">
-
+      <div
+        class="seccion-tabla"
+        [style.opacity]="loading ? '0.3' : '1'"
+        style="transition: opacity 0.2s ease"
+      >
         <div class="tabla-header">
           <h3><i class="pi pi-list"></i> Listado de comprobantes</h3>
           <p-button
@@ -206,7 +214,8 @@
             [outlined]="true"
             pTooltip="Descargar reporte en Excel"
             tooltipPosition="bottom"
-            size="small">
+            size="small"
+          >
           </p-button>
         </div>
 
@@ -218,37 +227,26 @@
           [lazy]="true"
           (onLazyLoad)="onPageChange($event)"
           [first]="firstRow"
-          [rowsPerPageOptions]="[5,10,20,50]"
+          [rowsPerPageOptions]="[5, 10, 20, 50]"
           [loading]="false"
           [tableStyle]="{ 'min-width': '75rem' }"
           styleClass="p-datatable-striped"
           currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-          [showCurrentPageReport]="true">
-
+          [showCurrentPageReport]="true"
+        >
           <ng-template pTemplate="header">
             <tr>
-              <th pSortableColumn="numero">
-                N° Comprobante <p-sortIcon field="numero" />
-              </th>
-              <th pSortableColumn="tipoComprobante">
-                Tipo <p-sortIcon field="tipoComprobante" />
-              </th>
-              <th pSortableColumn="fecEmision">
-                Fecha Emisión <p-sortIcon field="fecEmision" />
-              </th>
+              <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
+              <th pSortableColumn="tipoComprobante">Tipo <p-sortIcon field="tipoComprobante" /></th>
+              <th pSortableColumn="fecEmision">Fecha Emisión <p-sortIcon field="fecEmision" /></th>
               <th>Cliente</th>
               <th>Documento</th>
-              <th pSortableColumn="sedeNombre">
-                Sede <p-sortIcon field="sedeNombre" />
-              </th>
-              <th pSortableColumn="metodoPago">
-                Tipo Pago <p-sortIcon field="metodoPago" />
-              </th>
+              <th pSortableColumn="sedeNombre">Sede <p-sortIcon field="sedeNombre" /></th>
+              <th pSortableColumn="metodoPago">Tipo Pago <p-sortIcon field="metodoPago" /></th>
               <th pSortableColumn="responsableNombre">
                 Responsable <p-sortIcon field="responsableNombre" />
               </th>
-              <th pSortableColumn="total" class="text-right"
-                  style="min-width:125px; width:125px">
+              <th pSortableColumn="total" class="text-right" style="min-width: 125px; width: 125px">
                 Total <p-sortIcon field="total" />
               </th>
               <th pSortableColumn="estado">Estado</th>
@@ -258,15 +256,21 @@
 
           <ng-template pTemplate="body" let-comprobante>
             <tr>
-              <td><strong>{{ getNumeroFormateado(comprobante) }}</strong></td>
+              <td>
+                <strong>{{ getNumeroFormateado(comprobante) }}</strong>
+              </td>
               <td>
                 <p-tag
                   [value]="getTipoComprobanteLabel(comprobante.tipoComprobante)"
-                  [severity]="getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta'
-                                ? 'info' : 'warn'">
+                  [severity]="
+                    getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta'
+                      ? 'info'
+                      : 'warn'
+                  "
+                >
                 </p-tag>
               </td>
-              <td>{{ comprobante.fecEmision | date:'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ comprobante.fecEmision | date: 'dd/MM/yyyy HH:mm' }}</td>
               <td>{{ comprobante.clienteNombre }}</td>
               <td>{{ comprobante.clienteDocumento }}</td>
               <td>{{ comprobante.sedeNombre }}</td>
@@ -274,53 +278,78 @@
                 <p-tag
                   [value]="getTipoPagoLabel(comprobante.metodoPago)"
                   [severity]="getSeverityTipoPago(comprobante.metodoPago)"
-                  styleClass="tipo-pago-tag">
+                  styleClass="tipo-pago-tag"
+                >
                 </p-tag>
               </td>
               <td>{{ comprobante.responsableNombre }}</td>
               <td class="text-right">
-                <strong>S/. {{ comprobante.total | number:'1.2-2' }}</strong>
+                <strong>S/. {{ comprobante.total | number: '1.2-2' }}</strong>
               </td>
               <td>
                 <p-tag
-                  [value]="getEstadoComprobante(comprobante)"
-                  [severity]="getSeverityEstado(getEstadoComprobante(comprobante))">
+                  [value]="comprobante.estado"
+                  [severity]="getSeverityEstado(comprobante.estado)"
+                >
                 </p-tag>
               </td>
               <td class="text-center">
                 <div class="acciones-tabla">
-
-                  <p-button icon="pi pi-eye"
+                  <p-button
+                    icon="pi pi-eye"
                     (onClick)="verDetalleVenta(comprobante)"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Ver detalle" tooltipPosition="top">
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    pTooltip="Ver detalle"
+                    tooltipPosition="top"
+                  >
                   </p-button>
 
-                  <p-button icon="pi pi-print"
+                  <p-button
+                    icon="pi pi-print"
                     (onClick)="imprimirComprobante(comprobante)"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Imprimir" tooltipPosition="top">
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    pTooltip="Imprimir"
+                    tooltipPosition="top"
+                  >
                   </p-button>
 
-                  <p-button icon="pi pi-send"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Enviar a Correo" tooltipPosition="top">
+                  <p-button
+                    icon="pi pi-send"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    pTooltip="Enviar a Correo"
+                    tooltipPosition="top"
+                  >
                   </p-button>
 
-                  <p-button icon="pi pi-truck"
+                  <p-button
+                    icon="pi pi-truck"
                     (onClick)="crearGuiaRemision(comprobante)"
-                    [rounded]="true" [text]="true" severity="info"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="info"
                     [disabled]="comprobante.estado !== 'EMITIDO'"
-                    pTooltip="Generar Guía de Remisión" tooltipPosition="top">
+                    pTooltip="Generar Guía de Remisión"
+                    tooltipPosition="top"
+                  >
                   </p-button>
 
-                  <p-button icon="pi pi-trash"
+                  <p-button
+                    icon="pi pi-trash"
                     (onClick)="anularComprobante(comprobante)"
-                    [rounded]="true" [text]="true" severity="danger"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
                     [disabled]="comprobante.estado !== 'EMITIDO'"
-                    pTooltip="Generar Nota de Crédito" tooltipPosition="top">
+                    pTooltip="Generar Nota de Crédito"
+                    tooltipPosition="top"
+                  >
                   </p-button>
-
                 </div>
               </td>
             </tr>
@@ -336,10 +365,8 @@
               </td>
             </tr>
           </ng-template>
-
         </p-table>
       </div>
-
     </p-card>
   </div>
 
