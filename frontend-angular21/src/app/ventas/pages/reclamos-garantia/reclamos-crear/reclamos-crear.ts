@@ -31,6 +31,7 @@ import {
 } from '../../../../core/services/claim.service';
 import { VentaService } from '../../../services/venta.service';
 import { ClienteService } from '../../../services/cliente.service';
+import { AuthService } from '../../../../auth/services/auth.service';
 
 interface ComprobanteConProductos extends ComprobanteVenta {
   productosSeleccionados?: DetalleComprobante[];
@@ -64,6 +65,7 @@ export class ReclamosCrear implements OnInit {
   private readonly empleadosService = inject(EmpleadosService);
   private readonly clientesService = inject(ClienteService);
   private readonly messageService = inject(MessageService);
+  private readonly authService = inject(AuthService);
   readonly resumenClienteNombre = computed(() => this.getNombreCliente(this.clienteEncontrado()));
   
   readonly resumenClienteDoc = computed(() => {
@@ -625,7 +627,7 @@ export class ReclamosCrear implements OnInit {
 
   async guardarReclamo(): Promise<void> {
     if (!this.validarStepActual()) return;
-
+    const currentUser = this.authService.getCurrentUser();
     const producto = this.productoSeleccionado();
     const comprobante = this.comprobanteSeleccionado();
 
@@ -657,6 +659,7 @@ export class ReclamosCrear implements OnInit {
       id_vendedor_ref: String(this.empleadoActual()?.id_empleado || 'SISTEMA'),
       motivo: String(this.motivoSeleccionado()),
       descripcion: String(this.descripcionProblema()),
+      id_sede: currentUser?.idSede,
       detalles: [
         {
           tipo: String(producto.id_producto || producto.cod_prod),
