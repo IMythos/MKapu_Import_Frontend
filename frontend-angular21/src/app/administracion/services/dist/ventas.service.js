@@ -129,6 +129,46 @@ var VentasAdminService = /** @class */ (function () {
         })
             .pipe(operators_1.catchError(function () { return rxjs_1.of([]); }));
     };
+    // ─── PDF DEL COMPROBANTE ───────────────────────────────────────────────────
+    /**
+     * Descarga el PDF del comprobante directamente desde el navegador.
+     * Llama a GET /sales/receipts/:id/pdf → blob → dispara la descarga.
+     * @param id          ID del comprobante
+     * @param nombreArchivo  Nombre opcional del archivo (default: comprobante-{id}.pdf)
+     */
+    VentasAdminService.prototype.descargarComprobantePdf = function (id, nombreArchivo) {
+        return this.http
+            .get(this.salesUrl + "/receipts/" + id + "/pdf", {
+            headers: this.headers,
+            responseType: 'blob'
+        })
+            .pipe(operators_1.map(function (blob) {
+            var url = URL.createObjectURL(blob);
+            var anchor = document.createElement('a');
+            anchor.href = url;
+            anchor.download = nombreArchivo !== null && nombreArchivo !== void 0 ? nombreArchivo : "comprobante-" + id + ".pdf";
+            anchor.click();
+            URL.revokeObjectURL(url);
+        }), operators_1.catchError(function (err) { return rxjs_1.throwError(function () { return err; }); }));
+    };
+    /**
+     * Abre el PDF en una pestaña nueva del navegador (para previsualizar).
+     * @param id  ID del comprobante
+     */
+    VentasAdminService.prototype.verComprobantePdfEnPestana = function (id) {
+        return this.http
+            .get(this.salesUrl + "/receipts/" + id + "/pdf", {
+            headers: this.headers,
+            responseType: 'blob'
+        })
+            .pipe(operators_1.map(function (blob) {
+            var pdfBlob = new Blob([blob], { type: 'application/pdf' });
+            var url = URL.createObjectURL(pdfBlob);
+            window.open(url, '_blank');
+            // Liberar el object URL después de que el navegador lo cargue
+            setTimeout(function () { return URL.revokeObjectURL(url); }, 10000);
+        }), operators_1.catchError(function (err) { return rxjs_1.throwError(function () { return err; }); }));
+    };
     // ─── PROMOCIONES ───────────────────────────────────────────────────────────
     VentasAdminService.prototype.obtenerPromocionesActivas = function () {
         return this.http
@@ -173,7 +213,6 @@ var VentasAdminService = /** @class */ (function () {
     };
     VentasAdminService.prototype.mapearProductoConStock = function (p) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t;
-        // ← tipo explícito aquí
         var almacenes = Array.isArray(p.almacenes)
             ? p.almacenes.map(function (a) {
                 var _a, _b, _c, _d;
@@ -199,7 +238,6 @@ var VentasAdminService = /** @class */ (function () {
     };
     VentasAdminService.prototype.mapearAutocompleteVentas = function (p) {
         var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t;
-        // ← tipo explícito aquí
         var almacenes = Array.isArray(p.almacenes)
             ? p.almacenes.map(function (a) {
                 var _a, _b, _c, _d;
