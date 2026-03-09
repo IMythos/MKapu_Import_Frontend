@@ -127,12 +127,10 @@
           </div>
 
           <p-table
-            [value]="usuariosFiltrados"
+            [value]="usuariosPaginados"
             responsiveLayout="scroll"
             class="p-datatable-sm usuarios-table--espaciada"
-            [rows]="5"
-            [rowsPerPageOptions]="[5, 10, 20, 50]"
-            [paginator]="true">
+            [paginator]="false">
 
             <ng-template pTemplate="header">
               <tr>
@@ -199,6 +197,17 @@
             </ng-template>
 
           </p-table>
+
+          <app-paginador
+            [page]="paginaActual()"
+            [totalPages]="totalPaginas"
+            [total]="totalusers"
+            [limit]="limitePagina()"
+            [limitOpciones]="[5, 10, 20, 50]"
+            (pageChange)="onPageChange($event)"
+            (limitChange)="onLimitChange($event)">
+          </app-paginador>
+
           <p-confirmdialog />
         </div>
       </p-card>

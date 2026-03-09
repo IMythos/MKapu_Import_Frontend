@@ -127,10 +127,8 @@
 
         <p-table
           *ngIf="filteredDescuentos().length > 0"
-          [value]="filteredDescuentos()"
-          [paginator]="true"
-          [rows]="5"
-          [rowsPerPageOptions]="[5,10,20,50]">
+          [value]="descuentosPaginados()"
+          [paginator]="false">
 
           <ng-template pTemplate="header">
             <tr>
@@ -168,6 +166,18 @@
           </ng-template>
 
         </p-table>
+
+        <app-paginador
+          *ngIf="filteredDescuentos().length > 0"
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="filteredDescuentos().length"
+          [limit]="limitePagina()"
+          [limitOpciones]="[5, 10, 20, 50]"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
+
         <p-confirmdialog />
 
       </div>

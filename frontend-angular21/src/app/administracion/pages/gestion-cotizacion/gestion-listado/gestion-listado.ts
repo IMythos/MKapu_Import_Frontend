@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoComplete } from 'primeng/autocomplete';
@@ -17,6 +18,8 @@ import { SedeService } from '../../../services/sede.service';
 import { QuoteListItem } from '../../../interfaces/quote.interface';
 import { QuoteService } from '../../../services/quote.service';
 import { SedeAlmacenService } from '../../../services/sede-almacen.service';
+
+import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 
@@ -27,31 +30,30 @@ import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
     RouterModule, AutoComplete, TooltipModule, DatePickerModule,
-    LoadingOverlayComponent,
+    LoadingOverlayComponent, PaginadorComponent,
+    DialogModule, // ← nuevo
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
   providers: [MessageService, ConfirmationService]
 })
-export class GestionCotizacionesComponent implements OnInit {
+export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   public iconoCabecera   = 'pi pi-wallet';
   public tituloKicker    = 'ADMINISTRACIÓN';
   public subtituloKicker = 'GESTIÓN DE COTIZACIONES';
 
-  // ── Servicios ─────────────────────────────────────────────────────────────
-  private sedeService         = inject(SedeService);
-  private quoteService        = inject(QuoteService);
+  private sedeService               = inject(SedeService);
+  private quoteService              = inject(QuoteService);
   private readonly sedeAlmacenService = inject(SedeAlmacenService);
-  private confirmationService = inject(ConfirmationService);
-  private messageService      = inject(MessageService);
+  private confirmationService       = inject(ConfirmationService);
+  private messageService            = inject(MessageService);
 
-  // ── Signals ───────────────────────────────────────────────────────────────
   buscarValue           = signal<string>('');
   cotizacionSugerencias = signal<QuoteListItem[]>([]);
   estadoSeleccionado    = signal<string | null>('PENDIENTE');
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
-  rows                  = signal<number>(10);
+  rows                  = signal<number>(5);
   fechaFin              = signal<Date | null>(null);
   fechaInicio           = signal<Date | null>(getHoyPeru());
 
@@ -63,14 +65,13 @@ export class GestionCotizacionesComponent implements OnInit {
     { label: 'Vencida',   value: 'VENCIDA'   },
   ];
 
-  // ── Computed ──────────────────────────────────────────────────────────────
   sedesOptions = computed(() => this.sedeService.sedes().map(sede => ({
     label: sede.nombre,
     value: sede.id_sede,
   })));
 
   private getHoyPeru(): Date {
-    const ahora = new Date();
+    const ahora       = new Date();
     const offsetPeru  = -5 * 60;
     const offsetLocal = ahora.getTimezoneOffset();
     const diferencia  = (offsetLocal - offsetPeru) * 60 * 1000;
@@ -102,7 +103,14 @@ export class GestionCotizacionesComponent implements OnInit {
   totalAprobadas  = computed(() => this.cotizaciones().filter(c => c.estado === 'APROBADA').length);
   totalPendientes = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  // ── WhatsApp dialog ───────────────────────────────────────────────────────
+  mostrarDialogWsp                   = false;
+  enviandoWsp                        = false;
+  wspReady                           = false;
+  wspQr: string | null               = null;
+  cotizacionWsp: QuoteListItem | null = null;
+  private pollingInterval: any       = null;
+
   constructor(private router: Router) {}
 
   ngOnInit() {
@@ -112,6 +120,10 @@ export class GestionCotizacionesComponent implements OnInit {
     this.sedeService.loadSedes().subscribe({
       error: (err) => console.error('Error cargando sedes', err),
     });
+  }
+
+  ngOnDestroy() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
   }
 
   private getSedeUsuarioActual(): number | null {
@@ -125,7 +137,6 @@ export class GestionCotizacionesComponent implements OnInit {
     return null;
   }
 
-  // ── Carga ─────────────────────────────────────────────────────────────────
   cargarCotizacion() {
     this.quoteService.loadQuotes({
       estado:  this.estadoSeleccionado(),
@@ -136,7 +147,6 @@ export class GestionCotizacionesComponent implements OnInit {
     }).subscribe();
   }
 
-  // ── Filtros / paginación ──────────────────────────────────────────────────
   onSedeChange(nuevaSedeId: number | null) {
     this.sedeSeleccionada.set(nuevaSedeId);
     this.currentPage.set(1);
@@ -154,21 +164,25 @@ export class GestionCotizacionesComponent implements OnInit {
   limpiarFiltros() {
     this.buscarValue.set('');
     this.cotizacionSugerencias.set([]);
-    this.fechaInicio.set(getHoyPeru());
+    this.fechaInicio.set(null);
     this.fechaFin.set(null);
     this.sedeSeleccionada.set(null);
-    this.estadoSeleccionado.set('PENDIENTE');
+    this.estadoSeleccionado.set(null);
     this.currentPage.set(1);
     this.cargarCotizacion();
   }
 
-  onPageChange(event: any) {
-    this.currentPage.set(event.page + 1);
-    this.rows.set(event.rows);
+  onPageChange(page: number) {
+    this.currentPage.set(page);
     this.cargarCotizacion();
   }
 
-  // ── Búsqueda autocomplete ─────────────────────────────────────────────────
+  onLimitChange(limit: number) {
+    this.rows.set(limit);
+    this.currentPage.set(1);
+    this.cargarCotizacion();
+  }
+
   searchCotizacion(event: any) {
     const query = event.query?.toLowerCase() ?? '';
     if (!query || query.length < 2) { this.cotizacionSugerencias.set([]); return; }
@@ -189,7 +203,6 @@ export class GestionCotizacionesComponent implements OnInit {
     this.cargarCotizacion();
   }
 
-  // ── Estado tag ────────────────────────────────────────────────────────────
   mapEstadoTag(estado: string | null | undefined): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | null | undefined {
     switch (estado) {
       case 'APROBADA':  return 'success';
@@ -200,7 +213,6 @@ export class GestionCotizacionesComponent implements OnInit {
     }
   }
 
-  // ── Rechazar ──────────────────────────────────────────────────────────────
   rechazarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Estás seguro de rechazar esta cotización? El estado cambiará a <strong>RECHAZADA</strong>.',
@@ -217,7 +229,6 @@ export class GestionCotizacionesComponent implements OnInit {
     });
   }
 
-  // ── Reactivar ─────────────────────────────────────────────────────────────
   reactivarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Deseas reactivar esta cotización? El estado volverá a <strong>PENDIENTE</strong>.',
@@ -234,7 +245,6 @@ export class GestionCotizacionesComponent implements OnInit {
     });
   }
 
-  // ── Eliminar ──────────────────────────────────────────────────────────────
   eliminarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Estás seguro de <strong>eliminar permanentemente</strong> esta cotización? Esta acción no se puede deshacer.',
@@ -251,33 +261,90 @@ export class GestionCotizacionesComponent implements OnInit {
     });
   }
 
-  // ── Imprimir ──────────────────────────────────────────────────────────────
   imprimirCotizacion(c: QuoteListItem) {
     this.quoteService.exportPdf(c.id_cotizacion);
   }
 
-  // ── Enviar por email ──────────────────────────────────────────────────────
   enviarCotizacion(c: QuoteListItem) {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Enviando...',
-      detail: `Enviando cotización ${c.codigo} por email.`,
-    });
+    this.messageService.add({ severity: 'info', summary: 'Enviando...', detail: `Enviando cotización ${c.codigo} por email.` });
     this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
-      next: (res) => this.messageService.add({
-        severity: 'success',
-        summary: 'Email enviado',
-        detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`,
-      }),
+      next:  (res) => this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cotización ${c.codigo} enviada a ${res.sentTo}` }),
+      error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
+    });
+  }
+
+  // ── WhatsApp ──────────────────────────────────────────────────────────────
+
+  abrirDialogWsp(c: QuoteListItem): void {
+    this.cotizacionWsp    = c;
+    this.mostrarDialogWsp = true;
+    this.wspReady         = false;
+    this.wspQr            = null;
+    this.verificarEstadoWsp();
+  }
+
+  cerrarDialogWsp(): void {
+    this.mostrarDialogWsp = false;
+    this.cotizacionWsp    = null;
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  private verificarEstadoWsp(): void {
+    this.quoteService.getWhatsAppStatus().subscribe({
+      next: (res) => {
+        this.wspReady = res.ready;
+        this.wspQr    = res.qr ?? null;
+
+        if (!res.ready) {
+          // Polling cada 3s hasta que escaneen el QR
+          this.pollingInterval = setInterval(() => {
+            this.quoteService.getWhatsAppStatus().subscribe({
+              next: (r) => {
+                this.wspReady = r.ready;
+                this.wspQr    = r.qr ?? null;
+                if (r.ready) {
+                  clearInterval(this.pollingInterval);
+                  this.pollingInterval = null;
+                }
+              },
+            });
+          }, 3000);
+        }
+      },
       error: () => this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
+        severity: 'error', summary: 'Error',
+        detail: 'No se pudo conectar con el servicio de WhatsApp.', life: 4000,
       }),
     });
   }
 
-  // ── Helpers de fechas ─────────────────────────────────────────────────────
+  enviarPorWsp(): void {
+    if (!this.cotizacionWsp) return;
+
+    this.enviandoWsp = true;
+    this.quoteService.sendByWhatsApp(this.cotizacionWsp.id_cotizacion).subscribe({
+      next: (res) => {
+        this.enviandoWsp = false;
+        this.cerrarDialogWsp();
+        this.messageService.add({
+          severity: 'success', summary: '¡Enviado!',
+          detail: `Cotización ${this.cotizacionWsp?.codigo} enviada a ${res.sentTo}`,
+          life: 5000,
+        });
+      },
+      error: (err) => {
+        this.enviandoWsp = false;
+        const detalle = err?.error?.message ?? 'No se pudo enviar por WhatsApp.';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: detalle, life: 5000 });
+      },
+    });
+  }
+
+  // ── Helpers fechas ────────────────────────────────────────────────────────
+
   getDiasRestantes(fecVenc: string | Date | null): number {
     if (!fecVenc) return 0;
     const hoy  = new Date(); hoy.setHours(0, 0, 0, 0);
@@ -310,7 +377,6 @@ export class GestionCotizacionesComponent implements OnInit {
     return 'var(--text-muted)';
   }
 
-  // ── Navegación ────────────────────────────────────────────────────────────
   irCrear()             { this.router.navigate(['/admin/agregar-cotizaciones']); }
   irEditar(id: number)  { this.router.navigate(['/admin/editar-cotizacion', id]); }
   irDetalle(id: number) { this.router.navigate(['/admin/ver-detalle-cotizacion', id]); }

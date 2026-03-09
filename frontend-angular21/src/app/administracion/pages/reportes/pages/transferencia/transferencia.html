@@ -32,7 +32,6 @@
       <div>
         <span class="contador-label">Solicitudes Pendientes</span>
         <span class="contador-valor">{{ solicitadas }}</span>
-        <span class="contador-detalle"><i class="pi pi-info-circle"></i> Estado: SOLICITADA</span>
       </div>
     </div>
     <div class="contador-card">
@@ -40,7 +39,6 @@
       <div>
         <span class="contador-label">En Tránsito</span>
         <span class="contador-valor">{{ aprobadas }}</span>
-        <span class="contador-detalle"><i class="pi pi-map-marker"></i> Estado: APROBADA</span>
       </div>
     </div>
     <div class="contador-card">
@@ -48,7 +46,6 @@
       <div>
         <span class="contador-label">Recibidos Hoy</span>
         <span class="contador-valor">{{ completadas }}</span>
-        <span class="contador-detalle"><i class="pi pi-arrow-up"></i> Estado: COMPLETADA</span>
       </div>
     </div>
     <div class="contador-card">
@@ -56,7 +53,6 @@
       <div>
         <span class="contador-label">Incidencias</span>
         <span class="contador-valor">{{ rechazadas }}</span>
-        <span class="contador-detalle"><i class="pi pi-times-circle"></i> Estado: RECHAZADA</span>
       </div>
     </div>
   </div>
@@ -150,13 +146,7 @@
         <p-table
           [value]="filteredTransferencias"
           [loading]="false"
-          [paginator]="!hasActiveFilters"
-          [lazy]="!hasActiveFilters"
-          (onLazyLoad)="onTableLazyLoad($event)"
-          [totalRecords]="totalRecords"
-          [first]="firstRowIndex"
-          [rows]="rowsPerPage"
-          [rowsPerPageOptions]="[5, 10, 20, 50]"
+          [paginator]="false"
           styleClass="productos-table-nativa productos-table-hover">
 
           <ng-template pTemplate="header">
@@ -250,6 +240,18 @@
           </ng-template>
 
         </p-table>
+
+        @if (!hasActiveFilters) {
+          <app-paginador
+            [page]="currentPage"
+            [totalPages]="totalPagesComputed()"
+            [total]="totalRecords"
+            [limit]="rowsPerPage"
+            [limitOpciones]="[5, 10, 20, 50]"
+            (pageChange)="onPaginadorPageChange($event)"
+            (limitChange)="onPaginadorLimitChange($event)">
+          </app-paginador>
+        }
 
       </div>
     </div>

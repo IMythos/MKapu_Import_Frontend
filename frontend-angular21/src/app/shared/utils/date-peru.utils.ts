@@ -69,3 +69,34 @@ export function esHoyEnPeru(fecha: Date | string | null): boolean {
     d.getDate()     === hoy.getDate()
   );
 }
+
+
+/**
+ * Retorna el lunes de la semana actual a las 00:00:00 hora peruana.
+ * Cada lunes a las 00:00 se reinicia el rango semanal.
+ */
+export function getLunesSemanaActualPeru(): Date {
+  const ahora       = new Date();
+  const offsetLocal = ahora.getTimezoneOffset();
+  const diferencia  = (offsetLocal - OFFSET_PERU_MINUTOS) * 60 * 1000;
+
+  const ahoraPerú   = new Date(ahora.getTime() + diferencia);
+  const diaSemana   = ahoraPerú.getDay();                     // 0=Dom, 1=Lun ... 6=Sáb
+  const diffLunes   = diaSemana === 0 ? 6 : diaSemana - 1;   // días a retroceder al lunes
+
+  const lunes = new Date(ahoraPerú);
+  lunes.setDate(ahoraPerú.getDate() - diffLunes);
+  lunes.setHours(0, 0, 0, 0);
+  return lunes;
+}
+
+/**
+ * Retorna el domingo de la semana actual a las 23:59:59.999 hora peruana.
+ */
+export function getDomingoSemanaActualPeru(): Date {
+  const lunes   = getLunesSemanaActualPeru();
+  const domingo = new Date(lunes);
+  domingo.setDate(lunes.getDate() + 6);
+  domingo.setHours(23, 59, 59, 999);
+  return domingo;
+}

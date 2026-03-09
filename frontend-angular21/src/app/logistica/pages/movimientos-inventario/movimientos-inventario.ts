@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
@@ -14,7 +14,9 @@ import { MovimientoInventario } from '../../interfaces/movimiento-inventario.int
 import { TransferUserContextService } from '../../../administracion/services/transfer-user-context.service';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
+import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+
 @Component({
   selector: 'app-movimientos-inventario',
   standalone: true,
@@ -30,7 +32,8 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
     ButtonModule,
     DialogModule,
     CardModule,
-    LoadingOverlayComponent, // ← agregado
+    LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   templateUrl: './movimientos-inventario.html',
   styleUrl: './movimientos-inventario.css',
@@ -42,18 +45,21 @@ export class MovimientosInventario implements OnInit {
 
   movimientos = signal<MovimientoInventario[]>([]);
   cargando = signal<boolean>(false);
+  totalItems = signal<number>(0);
+  paginaActual = signal<number>(1);
+  limitePagina = signal<number>(10);
+
+  totalPaginas = computed(() => Math.ceil(this.totalItems() / this.limitePagina()));
 
   filtroEstado = signal<number>(0);
   filtroTexto = signal<string>('');
   filtroFechas = signal<Date[] | undefined>(undefined);
-
   sedeId = signal<string>('');
-  private readonly currentSedeId: string | null = localStorage.getItem('current_sede_id');
 
   opcionesEstado = [
-    { label: 'Todos',          value: 0 },
-    { label: 'Ingresos',       value: 1 },
-    { label: 'Salidas',        value: 2 },
+    { label: 'Todos', value: 0 },
+    { label: 'Ingresos', value: 1 },
+    { label: 'Salidas', value: 2 },
     { label: 'Transferencias', value: 3 },
   ];
 
@@ -67,16 +73,19 @@ export class MovimientosInventario implements OnInit {
 
     const fechas = this.filtroFechas();
     const filtros = {
-      texto:       this.filtroTexto(),
-      estado:      this.filtroEstado(),
+      texto: this.filtroTexto(),
+      estado: this.filtroEstado(),
       fechaInicio: fechas?.[0] ? new Date(fechas[0]).toISOString() : null,
-      fechaFin:    fechas?.[1] ? new Date(fechas[1]).toISOString() : null,
-      sedeId:      this.sedeId(),
+      fechaFin: fechas?.[1] ? new Date(fechas[1]).toISOString() : null,
+      sedeId: this.sedeId(),
+      page: this.paginaActual(),
+      limit: this.limitePagina(),
     };
 
     this.movimientosService.getMovimientos(filtros).subscribe({
       next: (res) => {
         this.movimientos.set(res.data || res);
+        this.totalItems.set(res.total ?? res.data?.length ?? 0);
         this.cargando.set(false);
       },
       error: (err) => {
@@ -91,12 +100,27 @@ export class MovimientosInventario implements OnInit {
     if (id) this.sedeId.set(id);
   }
 
-  aplicarFiltros() { this.cargarMovimientos(); }
+  aplicarFiltros() {
+    this.paginaActual.set(1);
+    this.cargarMovimientos();
+  }
 
   limpiarFiltros() {
     this.filtroEstado.set(0);
     this.filtroTexto.set('');
     this.filtroFechas.set(undefined);
+    this.paginaActual.set(1);
+    this.cargarMovimientos();
+  }
+
+  onPageChange(page: number) {
+    this.paginaActual.set(page);
+    this.cargarMovimientos();
+  }
+
+  onLimitChange(limit: number) {
+    this.limitePagina.set(limit);
+    this.paginaActual.set(1);
     this.cargarMovimientos();
   }
 
@@ -106,10 +130,14 @@ export class MovimientosInventario implements OnInit {
 
   getSeverity(tipo: string): 'success' | 'danger' | 'info' | 'warn' {
     switch (tipo?.toUpperCase()) {
-      case 'INGRESO':       return 'success';
-      case 'SALIDA':        return 'danger';
-      case 'TRANSFERENCIA': return 'info';
-      default:              return 'warn';
+      case 'INGRESO':
+        return 'success';
+      case 'SALIDA':
+        return 'danger';
+      case 'TRANSFERENCIA':
+        return 'info';
+      default:
+        return 'warn';
     }
   }
 }

@@ -63,7 +63,6 @@ export class Administracion implements AfterViewInit {
 
   activeStepUsuario = 0;
 
-  // ✅ Roles cargados dinámicamente desde la BD
   roles: { label: string; value: number; icon: string; description: string }[] = [];
   rolCuentaSeleccionado: number | null = null;
 
@@ -112,7 +111,7 @@ export class Administracion implements AfterViewInit {
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.cargarSedes();
-      this.cargarRoles(); // ✅ Carga roles desde BD
+      this.cargarRoles(); 
     }, 0);
   }
 
@@ -200,7 +199,6 @@ export class Administracion implements AfterViewInit {
       return;
     }
 
-    // ✅ Captura la sede ANTES de cualquier envío para evitar que se pierda
     const sedeIdCapturada     = this.usuarioRequestForm.id_sede;
     const sedeNombreCapturada = this.getSedeNombre();
 
@@ -221,7 +219,6 @@ export class Administracion implements AfterViewInit {
     this.usuarioService.postUsuarios(payload).subscribe({
       next: (usuarioCreado: any) => {
 
-        // ✅ roleId viene directo de la BD, sin mapeo hardcodeado
         const cuentaPayload = {
           userId:   usuarioCreado.id_usuario,
           username: this.cuentaForm.username,
@@ -289,7 +286,6 @@ export class Administracion implements AfterViewInit {
       usu_nom: '', ape_mat: '', ape_pat: '', dni: '', email: '',
       celular: 0, direccion: '', genero: '', fec_nac: '',
       activo: true,
-      // ✅ Ya no hardcodea id_sede: 1, usa la primera sede cargada
       id_sede:        this.sedes[0]?.value ?? 0,
       sedeNombre:     this.sedes[0]?.label ?? '',
       nombreCompleto: '',

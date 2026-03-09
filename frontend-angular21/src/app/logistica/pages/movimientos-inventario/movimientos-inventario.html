@@ -14,25 +14,18 @@
   </p-card>
 
   <!-- Tabla con overlay -->
-  <div style="position: relative;">
-
-    <app-loading-overlay
-      [visible]="cargando()"
-      mensaje="Cargando movimientos..."
-      modo="inline">
+  <div style="position: relative">
+    <app-loading-overlay [visible]="cargando()" mensaje="Cargando movimientos..." modo="inline">
     </app-loading-overlay>
 
-    <div [style.opacity]="cargando() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
-
+    <div [style.opacity]="cargando() ? '0.3' : '1'" style="transition: opacity 0.2s ease">
       <p-table
         [value]="movimientos()"
-        [paginator]="true"
-        [rows]="10"
+        [paginator]="false"
         [loading]="false"
         responsiveLayout="scroll"
         styleClass="p-datatable-striped"
-        [rowsPerPageOptions]="[10, 25, 50]">
-
+      >
         <ng-template pTemplate="header">
           <tr>
             <th>Fecha</th>
@@ -49,10 +42,15 @@
           <tr>
             <td>{{ mov.fechaMovimiento | date: 'dd/MM/yyyy HH:mm' }}</td>
             <td>
-              <span class="font-semibold text-blue-600 dark:text-blue-400">{{ mov.sedeNombre }}</span>
+              <span class="font-semibold text-blue-600 dark:text-blue-400">{{
+                mov.sedeNombre
+              }}</span>
             </td>
             <td>
-              <p-tag [value]="mov.tipoMovimiento" [severity]="getSeverity(mov.tipoMovimiento)"></p-tag>
+              <p-tag
+                [value]="mov.tipoMovimiento"
+                [severity]="getSeverity(mov.tipoMovimiento)"
+              ></p-tag>
             </td>
             <td>{{ mov.documentoReferencia || 'N/A' }}</td>
             <td>{{ mov.motivo }}</td>
@@ -64,7 +62,8 @@
                 [text]="true"
                 severity="info"
                 (onClick)="verDetalles(mov)"
-                pTooltip="Ver Detalles">
+                pTooltip="Ver Detalles"
+              >
               </p-button>
             </td>
           </tr>
@@ -75,10 +74,19 @@
             <td colspan="7" class="text-center p-4">No se encontraron movimientos registrados.</td>
           </tr>
         </ng-template>
-
       </p-table>
 
+      <!-- Paginador custom -->
+      <app-paginador
+        [page]="paginaActual()"
+        [totalPages]="totalPaginas()"
+        [total]="totalItems()"
+        [limit]="limitePagina()"
+        [limitOpciones]="[10, 25, 50]"
+        (pageChange)="onPageChange($event)"
+        (limitChange)="onLimitChange($event)"
+      >
+      </app-paginador>
     </div>
   </div>
-
 </div>

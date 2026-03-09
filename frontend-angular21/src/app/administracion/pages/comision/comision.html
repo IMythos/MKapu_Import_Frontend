@@ -34,7 +34,7 @@
   <div class="contadores-productos mb-4">
 
     <div class="contador-card" [class.contador-activo]="filtroActivo() === true"
-      style="cursor:pointer" (click)="filtroActivo.set(true)">
+      style="cursor:pointer" (click)="filtroActivo.set(true); paginaActual.set(1)">
       <i class="pi pi-check-circle"></i>
       <div>
         <span class="contador-label">Activas</span>
@@ -44,7 +44,7 @@
     </div>
 
     <div class="contador-card" [class.contador-inactivo]="filtroActivo() === false"
-      style="cursor:pointer" (click)="filtroActivo.set(false)">
+      style="cursor:pointer" (click)="filtroActivo.set(false); paginaActual.set(1)">
       <i class="pi pi-ban"></i>
       <div>
         <span class="contador-label">Inactivas</span>
@@ -82,7 +82,7 @@
           <label class="font-medium mb-2 block">Buscar Regla</label>
           <input pInputText
             [ngModel]="filtroBusqueda()"
-            (ngModelChange)="filtroBusqueda.set($event)"
+            (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
             placeholder="Nombre de la regla..."
             class="w-full" />
         </div>
@@ -92,7 +92,7 @@
           <p-select
             [options]="estadosFiltro"
             [ngModel]="filtroActivo()"
-            (ngModelChange)="filtroActivo.set($event)"
+            (ngModelChange)="filtroActivo.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
             class="w-full" />
@@ -103,7 +103,7 @@
           <p-select
             [options]="tiposObjetivo"
             [ngModel]="filtroTipo()"
-            (ngModelChange)="filtroTipo.set($event)"
+            (ngModelChange)="filtroTipo.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
             placeholder="Todos"
@@ -116,7 +116,7 @@
           <p-select
             [options]="tiposRecompensa"
             [ngModel]="filtroRecompensa()"
-            (ngModelChange)="filtroRecompensa.set($event)"
+            (ngModelChange)="filtroRecompensa.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
             placeholder="Todos"
@@ -136,12 +136,9 @@
 
   <!-- TABLA -->
   <div class="mb-6">
-
-    <!-- wrapper position:relative para que el overlay se ancle aquí -->
     <div style="position: relative">
       <div class="surface-card border-round-xl shadow-1 overflow-hidden">
 
-        <!-- Loading overlay compartido (igual que historial-ventas) -->
         <app-loading-overlay
           [visible]="loading()"
           mensaje="Cargando reglas de comisión..."
@@ -153,11 +150,9 @@
           style="transition: opacity 0.2s ease;">
 
           <p-table
-            [value]="reglasFiltradas()"
+            [value]="reglasPaginadas()"
             [loading]="false"
-            [paginator]="true"
-            [rows]="5"
-            [rowsPerPageOptions]="[5, 10, 25]"
+            [paginator]="false"
             styleClass="productos-table-nativa productos-table-hover">
 
             <ng-template pTemplate="header">
@@ -235,10 +230,20 @@
 
           </p-table>
 
+          <app-paginador
+            *ngIf="reglasFiltradas().length > 0"
+            [page]="paginaActual()"
+            [totalPages]="totalPaginas()"
+            [total]="reglasFiltradas().length"
+            [limit]="limitePagina()"
+            [limitOpciones]="[5, 10, 25, 50]"
+            (pageChange)="onPageChange($event)"
+            (limitChange)="onLimitChange($event)">
+          </app-paginador>
+
         </div>
       </div>
     </div>
-
   </div>
 
 </div>

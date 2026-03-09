@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { Button } from 'primeng/button';
 import { Tag } from 'primeng/tag';
 import { TableModule } from 'primeng/table';
@@ -19,6 +19,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
 
 @Component({
   selector: 'app-remision',
@@ -35,7 +36,8 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
     InputTextModule,
     ToastModule,
     ConfirmDialogModule,
-    LoadingOverlayComponent, // ← agregado
+    LoadingOverlayComponent,
+    PaginadorComponent,  
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './remision.html',
@@ -52,13 +54,17 @@ export class Remision implements OnInit {
     { label: 'Anulado',   value: 'ANULADO'   },
   ];
 
-  remisiones    = signal<RemissionResponse[]>([]);
-  totalRecords  = signal<number>(0);
-  loading       = signal<boolean>(false);
+  remisiones   = signal<RemissionResponse[]>([]);
+  totalRecords = signal<number>(0);
+  loading      = signal<boolean>(false);
 
-  filtroTexto   = signal<string>('');
-  filtroEstado  = signal<string | null>(null);
-  filtroFechas  = signal<Date[] | null>(null);
+  paginaActual = signal<number>(1);
+  limitePagina = signal<number>(10);
+  totalPaginas = computed(() => Math.ceil(this.totalRecords() / this.limitePagina()));
+
+  filtroTexto  = signal<string>('');
+  filtroEstado = signal<string | null>(null);
+  filtroFechas = signal<Date[] | null>(null);
 
   resumen = signal<RemissionSummaryResponse>({
     totalMes: 0, enTransito: 0, entregadas: 0, observadas: 0,
@@ -69,7 +75,7 @@ export class Remision implements OnInit {
     this.cargarResumen();
   }
 
-  cargarDatos(page: number = 1, limit: number = 10): void {
+  cargarDatos(): void {
     this.loading.set(true);
 
     let startDate = '';
@@ -85,7 +91,8 @@ export class Remision implements OnInit {
 
     this.remissionService
       .getRemisiones(
-        page, limit,
+        this.paginaActual(),
+        this.limitePagina(),
         this.filtroTexto()  || undefined,
         this.filtroEstado() as any,
         startDate || undefined,
@@ -104,18 +111,28 @@ export class Remision implements OnInit {
       });
   }
 
-  onPageChange(event: any) {
-    const page = event.first / event.rows + 1;
-    this.cargarDatos(page, event.rows);
+  onPageChange(page: number) {
+    this.paginaActual.set(page);
+    this.cargarDatos();
   }
 
-  aplicarFiltros() { this.cargarDatos(1, 10); }
+  onLimitChange(limit: number) {
+    this.limitePagina.set(limit);
+    this.paginaActual.set(1);
+    this.cargarDatos();
+  }
+
+  aplicarFiltros() {
+    this.paginaActual.set(1);
+    this.cargarDatos();
+  }
 
   limpiarFiltros() {
     this.filtroTexto.set('');
     this.filtroEstado.set(null);
     this.filtroFechas.set(null);
-    this.cargarDatos(1, 10);
+    this.paginaActual.set(1);
+    this.cargarDatos();
   }
 
   cargarResumen() {
@@ -127,7 +144,8 @@ export class Remision implements OnInit {
 
   onSearch(term: string) {
     this.filtroTexto.set(term);
-    this.cargarDatos(1, 10);
+    this.paginaActual.set(1);
+    this.cargarDatos();
   }
 
   abrirFormulario(): void { this.router.navigate(['/logistica/remision/nueva']); }

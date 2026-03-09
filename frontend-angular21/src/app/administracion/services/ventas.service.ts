@@ -1,3 +1,5 @@
+/* sales/src/app/services/ventas-admin.service.ts */
+
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
@@ -14,9 +16,7 @@ import {
   AnularVentaAdminResponse,
   SedeAdmin,
   ProductoStockAdminResponse,
-  ProductoStockAdmin,
   ProductoAutocompleteAdminResponse,
-  ProductoAutocompleteAdmin,
   ProductoUIAdmin,
   CategoriaConStockAdmin,
   ClienteBusquedaAdminResponse,
@@ -28,12 +28,12 @@ import {
   MetodoPagoAdmin,
   TipoVentaAdmin,
   TipoComprobanteAdmin,
+  SalesReceiptDetalleCompletoDto,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
 export class VentasAdminService {
   private readonly http = inject(HttpClient);
-
   private readonly url = environment.apiUrl;
   private readonly salesUrl = `${environment.apiUrl}/sales`;
   private readonly adminUrl = `${environment.apiUrl}/admin`;
@@ -42,6 +42,8 @@ export class VentasAdminService {
   private get headers(): HttpHeaders {
     return new HttpHeaders({ 'x-role': 'Administrador' });
   }
+
+  // ─── COMPROBANTES ──────────────────────────────────────────────────────────
 
   listarHistorialVentas(
     query: SalesReceiptsQueryAdmin = {},
@@ -67,6 +69,51 @@ export class VentasAdminService {
     );
   }
 
+  registrarVenta(request: RegistroVentaAdminRequest): Observable<RegistroVentaAdminResponse> {
+    return this.http
+      .post<RegistroVentaAdminResponse>(`${this.salesUrl}/receipts`, request, {
+        headers: this.headers,
+      })
+      .pipe(
+        map(
+          (res: any) =>
+            ({
+              idComprobante: res.idComprobante ?? res.id_comprobante ?? 0,
+              idCliente: res.idCliente ?? res.id_cliente ?? '',
+              numeroCompleto:
+                res.numeroCompleto ??
+                res.numero_completo ??
+                `${res.serie}-${String(res.numero ?? 0).padStart(8, '0')}`,
+              serie: res.serie ?? '',
+              numero: res.numero ?? 0,
+              fecEmision: res.fecEmision ?? res.fec_emision ?? new Date().toISOString(),
+              fecVenc: res.fecVenc ?? res.fec_venc ?? undefined,
+              tipoOperacion: res.tipoOperacion ?? res.tipo_operacion ?? '',
+              subtotal: res.subtotal ?? 0,
+              igv: res.igv ?? 0,
+              isc: res.isc ?? 0,
+              total: res.total ?? 0,
+              estado: res.estado ?? 'EMITIDO',
+              codMoneda: res.codMoneda ?? res.cod_moneda ?? 'PEN',
+              idTipoComprobante: res.idTipoComprobante ?? res.id_tipo_comprobante ?? 0,
+              idTipoVenta: res.idTipoVenta ?? res.id_tipo_venta ?? 0,
+              idSedeRef: res.idSedeRef ?? res.id_sede_ref ?? 0,
+              idResponsableRef: res.idResponsableRef ?? res.id_responsable_ref ?? '',
+              items: res.items ?? [],
+            }) as RegistroVentaAdminResponse,
+        ),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  anularVenta(id: number, reason: string): Observable<AnularVentaAdminResponse> {
+    return this.http.put<AnularVentaAdminResponse>(
+      `${this.salesUrl}/receipts/${id}/annul`,
+      { reason },
+      { headers: this.headers },
+    );
+  }
+
   emitirComprobante(id: number, paymentTypeId?: number): Observable<any> {
     return this.http.put<any>(
       `${this.salesUrl}/receipts/${id}/emit`,
@@ -86,6 +133,12 @@ export class VentasAdminService {
     );
   }
 
+  getDetalleComprobante(receiptId: number): Observable<any> {
+    return this.http.get<any>(`${this.salesUrl}/receipts/${receiptId}/detalle`, {
+      headers: this.headers,
+    });
+  }
+
   getKpiSemanal(sedeId?: number): Observable<SalesReceiptKpiDto> {
     let params = new HttpParams();
     if (sedeId != null) params = params.set('sedeId', String(sedeId));
@@ -95,26 +148,49 @@ export class VentasAdminService {
     });
   }
 
-  registrarVenta(request: RegistroVentaAdminRequest): Observable<RegistroVentaAdminResponse> {
-    return this.http.post<RegistroVentaAdminResponse>(`${this.salesUrl}/receipts`, request, {
-      headers: this.headers,
-    });
+  obtenerTiposVenta(): Observable<TipoVentaAdmin[]> {
+    return this.http
+      .get<TipoVentaAdmin[]>(`${this.salesUrl}/receipts/sale-types`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
   }
 
-  anularVenta(id: number, reason: string): Observable<AnularVentaAdminResponse> {
-    return this.http.put<AnularVentaAdminResponse>(
-      `${this.salesUrl}/receipts/${id}/annul`,
-      { reason },
-      { headers: this.headers },
-    );
+  obtenerTiposComprobante(): Observable<TipoComprobanteAdmin[]> {
+    return this.http
+      .get<TipoComprobanteAdmin[]>(`${this.salesUrl}/receipts/receipt-types`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
   }
 
+  obtenerMetodosPago(): Observable<MetodoPagoAdmin[]> {
+    return this.http
+      .get<MetodoPagoAdmin[]>(`${this.salesUrl}/receipts/payment-types`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
+  // ─── PROMOCIONES ───────────────────────────────────────────────────────────
+
+  obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
+    return this.http
+      .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
+  // ─── SEDES ─────────────────────────────────────────────────────────────────
 
   obtenerSedes(): Observable<SedeAdmin[]> {
     return this.http
       .get<any>(`${this.adminUrl}/headquarters`, { headers: this.headers })
       .pipe(map((res) => res.data ?? res.headquarters ?? res ?? []));
   }
+
+  // ─── PRODUCTOS ─────────────────────────────────────────────────────────────
 
   obtenerProductosConStock(
     idSede?: number,
@@ -130,13 +206,6 @@ export class VentasAdminService {
       headers: this.headers,
       params,
     });
-  }
-
-  getDetalleComprobante(receiptId: number): Observable<any> {
-    return this.http.get<any>(
-      `${this.salesUrl}/receipts/${receiptId}/detalle`, 
-      { headers: this.headers }
-    );
   }
 
   buscarProductosVentas(
@@ -162,12 +231,62 @@ export class VentasAdminService {
       { headers: this.headers, params },
     );
   }
-  buscarCliente(
-    documentValue: string,
-    receiptTypeId: number,
-  ): Observable<ClienteBusquedaAdminResponse> {
+
+  mapearProductoConStock(p: any): ProductoUIAdmin {
+  // ← tipo explícito aquí
+  const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
+    ? p.almacenes.map((a: any) => ({
+        nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
+        stock:  Number(a.stock ?? a.cantidad ?? 0),
+      }))
+    : [{ nombre: p.nombre_almacen ?? 'Almacén', stock: Number(p.stock ?? 0) }];
+
+  return {
+    id:              Number(p.id ?? p.id_producto),
+    codigo:          p.codigo          ?? p.cod_prod ?? '',
+    nombre:          p.nombre          ?? p.descripcion ?? '',
+    familia:         p.familia         ?? p.categoria  ?? '',
+    categoriaId:     Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
+    precioUnidad:    Number(p.precioUnidad  ?? p.precio_unitario ?? 0),
+    precioCaja:      Number(p.precioCaja    ?? p.precio_caja     ?? 0),
+    precioMayorista: Number(p.precioMayorista ?? p.precio_mayor  ?? 0),
+    stock:           almacenes.reduce((s, a) => s + a.stock, 0),  // ← s ya tiene tipo number
+    sede:            p.sede ?? '',
+    almacenes,
+  };
+}
+
+mapearAutocompleteVentas(p: any): ProductoUIAdmin {
+  // ← tipo explícito aquí
+  const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
+    ? p.almacenes.map((a: any) => ({
+        nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
+        stock:  Number(a.stock ?? a.cantidad ?? 0),
+      }))
+    : [{ nombre: p.nombre_almacen ?? 'Almacén', stock: Number(p.stock ?? 0) }];
+
+  return {
+    id:              p.id ?? p.id_producto,
+    codigo:          p.codigo          ?? p.cod_prod ?? '',
+    nombre:          p.nombre          ?? p.descripcion ?? '',
+    familia:         p.familia         ?? p.categoria  ?? '',
+    categoriaId:     Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
+    precioUnidad:    Number(p.precioUnidad  ?? p.precio_unitario ?? 0),
+    precioCaja:      Number(p.precioCaja    ?? p.precio_caja     ?? 0),
+    precioMayorista: Number(p.precioMayorista ?? p.precio_mayor  ?? 0),
+    stock:           almacenes.reduce((s, a) => s + a.stock, 0),
+    sede:            p.sede ?? '',
+    almacenes,
+  };
+}
+
+  // ─── CLIENTES ──────────────────────────────────────────────────────────────
+
+  buscarCliente(documentValue: string): Observable<ClienteBusquedaAdminResponse> {
     return this.http
-      .get<any>(`${this.salesUrl}/customers/document/${documentValue}`, { headers: this.headers })
+      .get<any>(`${this.salesUrl}/customers/document/${documentValue}`, {
+        headers: this.headers,
+      })
       .pipe(
         map((cliente) => {
           if (!cliente) throw { error: { message: 'Cliente no encontrado' } };
@@ -177,7 +296,7 @@ export class VentasAdminService {
             documentValue: cliente.documentValue ?? cliente.valor_doc,
             documentTypeDescription: cliente.documentTypeDescription ?? '',
             documentTypeSunatCode: cliente.documentTypeSunatCode ?? '',
-            invoiceType: (receiptTypeId === 1 ? 'FACTURA' : 'BOLETA') as 'BOLETA' | 'FACTURA',
+            invoiceType: cliente.invoiceType ?? cliente.invoice_type ?? '',
             status: cliente.status ?? cliente.estado,
             address: cliente.address ?? cliente.direccion ?? null,
             email: cliente.email ?? null,
@@ -189,22 +308,10 @@ export class VentasAdminService {
       );
   }
 
-  obtenerTiposDocumento(): Observable<TipoDocumentoAdmin[]> {
-    return this.http.get<TipoDocumentoAdmin[]>(`${this.url}/sales/customers/document-types`, {
-      headers: this.headers,
-    });
-  }
-
   crearCliente(request: CrearClienteAdminRequest): Observable<ClienteAdminResponse> {
     return this.http.post<ClienteAdminResponse>(`${this.salesUrl}/customers`, request, {
       headers: this.headers,
     });
-  }
-
-  obtenerKpiSemanal(sedeId?: number): Observable<SalesReceiptKpiDto> {
-    let params = new HttpParams();
-    if (sedeId) params = params.set('sedeId', String(sedeId));
-    return this.http.get<SalesReceiptKpiDto>(`${this.salesUrl}/receipts/kpi/semanal`, { params });
   }
 
   actualizarCliente(
@@ -216,56 +323,18 @@ export class VentasAdminService {
     });
   }
 
-  mapearProductoConStock(prod: ProductoStockAdmin): ProductoUIAdmin {
-    return {
-      id: prod.id_producto,
-      codigo: prod.codigo,
-      nombre: prod.nombre,
-      familia: prod.familia,
-      id_categoria: prod.id_categoria,
-      stock: prod.stock,
-      precioUnidad: prod.precio_unitario,
-      precioCaja: prod.precio_caja,
-      precioMayorista: prod.precio_mayor,
-      sede: prod.sede,
-      id_sede: prod.id_sede,
-    };
+  obtenerTiposDocumento(): Observable<TipoDocumentoAdmin[]> {
+    return this.http.get<TipoDocumentoAdmin[]>(`${this.url}/sales/customers/document-types`, {
+      headers: this.headers,
+    });
   }
-
-  mapearAutocompleteVentas(prod: ProductoAutocompleteAdmin): ProductoUIAdmin {
-    return {
-      id: prod.id_producto,
-      codigo: prod.codigo,
-      nombre: prod.nombre,
-      familia: prod.familia,
-      id_categoria: prod.id_categoria,
-      stock: prod.stock,
-      precioUnidad: prod.precio_unitario,
-      precioCaja: prod.precio_caja,
-      precioMayorista: prod.precio_mayor,
-      sede: prod.sede,
-      id_sede: prod.id_sede,
-    };
-  }
-
-  // ventas.service.ts
-
-  obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
-    return this.http
-      .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
-        headers: this.headers,
-      })
-      .pipe(catchError(() => of([])));
-  }
-
-  // En ventas.service.ts — reemplaza consultarDniReniec por esto:
 
   consultarDocumentoIdentidad(numero: string): Observable<{
     nombres: string;
     apellidoPaterno: string;
     apellidoMaterno: string;
     nombreCompleto: string;
-    tipoDocumento: 'DNI' | 'RUC';
+    tipoDocumento: string;
     razonSocial?: string;
     direccion?: string;
   }> {
@@ -280,33 +349,19 @@ export class VentasAdminService {
             apellidoPaterno: '',
             apellidoMaterno: '',
             nombreCompleto: '',
-            tipoDocumento: 'DNI' as const,
+            tipoDocumento: '',
           }),
         ),
       );
   }
 
-  obtenerMetodosPago(): Observable<MetodoPagoAdmin[]> {
-    return this.http
-      .get<MetodoPagoAdmin[]>(`${this.salesUrl}/receipts/payment-types`, {
-        headers: this.headers,
-      })
-      .pipe(catchError(() => of([])));
-  }
+  // ─── DETALLE COMPLETO ──────────────────────────────────────────────────────
 
-  obtenerTiposVenta(): Observable<TipoVentaAdmin[]> {
-    return this.http
-      .get<TipoVentaAdmin[]>(`${this.salesUrl}/receipts/sale-types`, {
-        headers: this.headers,
-      })
-      .pipe(catchError(() => of([])));
-  }
-
-  obtenerTiposComprobante(): Observable<TipoComprobanteAdmin[]> {
-    return this.http
-      .get<TipoComprobanteAdmin[]>(`${this.salesUrl}/receipts/receipt-types`, {
-        headers: this.headers,
-      })
-      .pipe(catchError(() => of([])));
+  getDetalleCompleto(id: number, historialPage = 1): Observable<SalesReceiptDetalleCompletoDto> {
+    const params = new HttpParams().set('historialPage', String(historialPage));
+    return this.http.get<SalesReceiptDetalleCompletoDto>(
+      `${this.salesUrl}/receipts/${id}/detalle`,
+      { headers: this.headers, params },
+    );
   }
 }

@@ -1893,3 +1893,41 @@
     border-color: #52525b !important;
   }
 }
+
+/* ═══════════════════════════════════════════
+   Tags de almacén — Lista de productos
+   ═══════════════════════════════════════════ */
+.producto-stock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.almacen-tag .p-tag {
+  font-size: 0.70rem;
+  padding: 2px 6px;
+}
+
+/* ═══════════════════════════════════════════
+   Tags de almacén — Autocomplete sugerencias
+   ═══════════════════════════════════════════ */
+.suggestion-row-3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.suggestion-almacenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
+}
+
+.suggestion-alm-tag .p-tag {
+  font-size: 0.68rem;
+  padding: 2px 5px;
+}

@@ -8,13 +8,19 @@
           <h2 class="clientes-title">REMATES</h2>
         </div>
       </div>
+
       <div class="flex align-items-center gap-2">
-        <p-button (onClick)="abrirRegistro()" label="Registrar Remate" icon="pi pi-plus" styleClass="clientes-pill"></p-button>
+        <p-button
+          (onClick)="abrirRegistro()"
+          label="Registrar Remate"
+          icon="pi pi-plus"
+          styleClass="clientes-pill">
+        </p-button>
       </div>
     </div>
   </p-card>
 
-  <!-- Métricas -->
+  <!-- MÉTRICAS -->
   <div class="grid mb-4 mermas-metrics">
     <div class="col-12 md:col-6">
       <p-card styleClass="stat-card">
@@ -35,7 +41,9 @@
           <i class="pi pi-chart-line stat-icon"></i>
           <div>
             <p class="stat-label">VALOR TOTAL</p>
-            <h3 class="stat-value">S/ {{ valorTotalRemates() | number:'1.2-2' }}</h3>
+            <h3 class="stat-value">
+              S/ {{ valorTotalRemates() | number:'1.2-2' }}
+            </h3>
             <p class="stat-change">Precio de remate acumulado</p>
           </div>
         </div>
@@ -43,39 +51,52 @@
     </div>
   </div>
 
-  <!-- Filtros -->
+  <!-- FILTROS -->
   <p-card styleClass="filtros-card">
     <div class="grid">
       <div class="col-12 md:col-8">
         <label class="filter-label">Buscar Remate</label>
         <span class="p-input-icon-left">
-          <input pInputText type="text" placeholder="Buscar por código o producto..." class="w-full"
-            [ngModel]="busqueda()" (ngModelChange)="busqueda.set($event)" />
+          <input
+            pInputText
+            type="text"
+            placeholder="Buscar por código o producto..."
+            class="w-full"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event)" />
         </span>
       </div>
 
       <div class="col-12 md:col-4">
         <label class="filter-label" style="visibility: hidden;">Acción</label>
-        <p-button label="Limpiar Filtros" icon="pi pi-filter-slash" [outlined]="true" severity="danger"
-          styleClass="w-full" (onClick)="busqueda.set('')">
+        <p-button
+          label="Limpiar Filtros"
+          icon="pi pi-filter-slash"
+          [outlined]="true"
+          severity="danger"
+          styleClass="w-full"
+          (onClick)="busqueda.set('')">
         </p-button>
       </div>
     </div>
   </p-card>
 
-  <!-- Tabla -->
+  <!-- TABLA -->
   <p-card styleClass="tabla-card">
+
     <div class="flex align-items-center justify-content-between mb-3">
       <div class="flex align-items-center gap-2">
         <span class="tabla-icon"><i class="pi pi-table"></i></span>
         <h3 class="tabla-title mb-0">REMATES REGISTRADOS</h3>
-        <p-tag *ngIf="productosFiltrados().length > 0"
-               [value]="productosFiltrados().length + ' remates'" severity="info">
+
+        <p-tag
+          *ngIf="productosFiltrados().length > 0"
+          [value]="productosFiltrados().length + ' remates'"
+          severity="info">
         </p-tag>
       </div>
     </div>
 
-    <!-- wrapper para anclar el overlay -->
     <div style="position: relative">
 
       <app-loading-overlay
@@ -89,25 +110,19 @@
         style="transition: opacity 0.2s ease;">
 
         <p-table
-          [value]="productosFiltrados()"
+          [value]="rematesPaginados()"
           [tableStyle]="{ 'min-width': '100%' }"
-          styleClass="mermas-table"
-          [paginator]="true"
-          [rows]="5"
-          [rowsPerPageOptions]="[5,10,20,50]"
-          [showCurrentPageReport]="true"
-          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} remates"
-          [loading]="false">
+          styleClass="mermas-table">
 
           <ng-template pTemplate="header">
             <tr>
-              <th style="width: 12%">CÓDIGO</th>
-              <th style="width: 35%">PRODUCTO</th>
-              <th style="width: 10%">CANTIDAD</th>
-              <th style="width: 15%">PRECIO REMATE</th>
-              <th style="width: 10%">DESCUENTO</th>
-              <th style="width: 10%">ESTADO</th>
-              <th style="width: 8%" class="text-center">ACCIONES</th>
+              <th style="width:12%">CÓDIGO</th>
+              <th style="width:35%">PRODUCTO</th>
+              <th style="width:10%">CANTIDAD</th>
+              <th style="width:15%">PRECIO REMATE</th>
+              <th style="width:10%">DESCUENTO</th>
+              <th style="width:10%">ESTADO</th>
+              <th style="width:8%" class="text-center">ACCIONES</th>
             </tr>
           </ng-template>
 
@@ -115,29 +130,50 @@
             <tr>
               <td>
                 <span class="codigo-producto">{{ remate.codigo }}</span>
-                <div class="fecha-producto text-sm text-500">{{ remate.fechaRegistro | date:'dd/MM/yyyy' }}</div>
+                <div class="fecha-producto text-sm text-500">
+                  {{ remate.fechaRegistro | date:'dd/MM/yyyy' }}
+                </div>
               </td>
+
               <td>
                 <div class="producto-info">
                   <div class="producto-nombre">{{ remate.nombre }}</div>
-                  <div class="producto-responsable text-sm text-500">Responsable: {{ remate.responsable }}</div>
+                  <div class="producto-responsable text-sm text-500">
+                    Responsable: {{ remate.responsable }}
+                  </div>
                 </div>
               </td>
+
               <td>
-                <span class="cantidad-badge">{{ remate.cantidad }} unid.</span>
+                <span class="cantidad-badge">
+                  {{ remate.cantidad }} unid.
+                </span>
               </td>
+
               <td>
                 <div class="flex flex-column gap-1">
-                  <span class="precio-remate font-bold">S/ {{ remate.precioRemate | number:'1.2-2' }}</span>
-                  <small class="text-500">Original: S/ {{ remate.precioOriginal | number:'1.2-2' }}</small>
+                  <span class="precio-remate font-bold">
+                    S/ {{ remate.precioRemate | number:'1.2-2' }}
+                  </span>
+                  <small class="text-500">
+                    Original: S/ {{ remate.precioOriginal | number:'1.2-2' }}
+                  </small>
                 </div>
               </td>
+
               <td>
-                <span class="text-green-600 font-semibold">-{{ remate.descuento }}%</span>
+                <span class="text-green-600 font-semibold">
+                  -{{ remate.descuento }}%
+                </span>
               </td>
+
               <td>
-                <p-tag [value]="remate.estado" [severity]="getEstadoSeverity(remate.estado)"></p-tag>
+                <p-tag
+                  [value]="remate.estado"
+                  [severity]="getEstadoSeverity(remate.estado)">
+                </p-tag>
               </td>
+
               <td class="text-center">
                 <p-button
                   icon="pi pi-eye"
@@ -160,145 +196,23 @@
               </td>
             </tr>
           </ng-template>
+
         </p-table>
 
       </div>
     </div>
+
+    <!-- PAGINADOR SHARED -->
+    <app-paginador
+      [page]="page()"
+      [totalPages]="totalPages()"
+      [total]="productosFiltrados().length"
+      [limit]="limit()"
+      (pageChange)="onPageChange($event)"
+      (limitChange)="onLimitChange($event)">
+    </app-paginador>
+
   </p-card>
-
-  <p-dialog
-    [visible]="mostrarModalDetalle()"
-    (onHide)="cerrarModalDetalle()"
-    header="Detalle del Remate"
-    [modal]="true"
-    [style]="{ width: '700px' }"
-    [draggable]="false"
-    [resizable]="false"
-    styleClass="mermas-dialog">
-
-    <ng-container *ngIf="remateSeleccionado() as remate">
-      <div class="grid form-grid">
-
-        <div class="col-12">
-          <div class="mb-3">
-            <label class="field-label">CÓDIGO DE REMATE</label>
-            <p class="text-lg font-semibold">{{ remate.codigo }}</p>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="mb-3">
-            <label class="field-label">PRODUCTO</label>
-            <p class="text-base">{{ remate.nombre }}</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">ESTADO</label>
-            <p-tag [value]="remate.estado" [severity]="getEstadoSeverity(remate.estado)"></p-tag>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">CANTIDAD</label>
-            <p class="text-base font-semibold">{{ remate.cantidad }} unidades</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">PRECIO ORIGINAL</label>
-            <p class="text-base">S/ {{ remate.precioOriginal | number:'1.2-2' }}</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">PRECIO DE REMATE</label>
-            <p class="text-base font-bold text-green-600">S/ {{ remate.precioRemate | number:'1.2-2' }}</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">DESCUENTO</label>
-            <p class="text-base font-bold text-green-600">{{ remate.descuento }}% de descuento</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">VALOR TOTAL</label>
-            <p class="text-base font-bold">S/ {{ (remate.precioRemate * remate.cantidad) | number:'1.2-2' }}</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">FECHA DE INICIO</label>
-            <p class="text-base">{{ remate.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</p>
-          </div>
-        </div>
-
-        <div class="col-6">
-          <div class="mb-3">
-            <label class="field-label">FECHA DE FIN</label>
-            <p class="text-base">{{ remate.fechaFin | date:'dd/MM/yyyy HH:mm' }}</p>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="mb-3">
-            <label class="field-label">RESPONSABLE</label>
-            <p class="text-base">{{ remate.responsable }}</p>
-          </div>
-        </div>
-
-        <div class="col-12" *ngIf="remate.observacion">
-          <div class="mb-3">
-            <label class="field-label">OBSERVACIONES</label>
-            <p class="text-base">{{ remate.observacion }}</p>
-          </div>
-        </div>
-
-        <div class="col-12">
-          <div class="p-3 bg-green-50 border-round">
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-info-circle text-green-600"></i>
-              <div>
-                <strong class="text-green-800">Ahorro total:</strong>
-                <span class="text-green-600 font-bold ml-2">
-                  S/ {{ ((remate.precioOriginal - remate.precioRemate) * remate.cantidad) | number:'1.2-2' }}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </ng-container>
-
-    <ng-template pTemplate="footer">
-      <div class="flex justify-content-between gap-2 mt-3">
-        <p-button
-          *ngIf="remateSeleccionado()?.estado === 'ACTIVO'"
-          label="Finalizar Remate"
-          icon="pi pi-check-circle"
-          severity="success"
-          (onClick)="finalizarRemate(remateSeleccionado()!.id_remate)">
-        </p-button>
-        <p-button
-          label="Cerrar"
-          icon="pi pi-times"
-          [outlined]="true"
-          severity="secondary"
-          (onClick)="cerrarModalDetalle()">
-        </p-button>
-      </div>
-    </ng-template>
-  </p-dialog>
 
   <p-toast></p-toast>
 </div>

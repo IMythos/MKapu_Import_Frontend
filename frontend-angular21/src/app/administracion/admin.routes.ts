@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
-import { CashboxGuard } from '../ventas/guards/cashbox.guard';
+import { CashboxAdminGuard, CashboxGuard } from '../ventas/guards/cashbox.guard';
 
 
 export const ADMIN_ROUTES: Routes = [
@@ -167,6 +167,15 @@ export const ADMIN_ROUTES: Routes = [
     redirectTo: 'transferencia/notificacion',
     pathMatch: 'full',
   },
+
+
+  {
+    path: 'caja',
+    loadComponent: () => import('../ventas/pages/caja/caja.page').then((m) => m.CajaPage),
+  },
+
+
+
 
   /* =======================
     GESTIÓN DE PRODUCTOS
@@ -379,7 +388,9 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'generar-ventas-administracion',
     loadComponent: () =>
-      import('./pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
+      import('./pages/generar-ventas-administracion/generar-ventas-administracion')
+        .then((m) => m.GenerarVentasAdministracion),
+    canActivate: [CashboxAdminGuard], 
   },
   {
     path: 'historial-ventas-administracion',
@@ -389,8 +400,8 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'detalles-ventas-administracion/:id',
     loadComponent: () =>
-      import('../ventas/shared/detalles-venta/detalle-venta').then(
-        (m) => m.DetalleVenta,
+      import('./shared/detalles-ventas-administracion/detalles-ventas-administracion').then(
+        (m) => m.DetallesVentasAdministracion,
       ),
   },
   {

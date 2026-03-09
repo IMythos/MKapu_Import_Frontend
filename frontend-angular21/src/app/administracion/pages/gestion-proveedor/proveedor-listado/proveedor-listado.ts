@@ -1,5 +1,3 @@
-// src/app/administracion/pages/gestion-proveedor/proveedor-listado/proveedor-listado.ts
-
 import { Component, OnInit, OnDestroy, AfterViewInit, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd, RouterModule, RouterOutlet } from '@angular/router';
@@ -15,7 +13,6 @@ import { SelectModule } from 'primeng/select';
 import { ToggleButtonModule } from 'primeng/togglebutton';
 import { InputTextModule } from 'primeng/inputtext';
 import { TooltipModule } from 'primeng/tooltip';
-import { PaginatorModule } from 'primeng/paginator';
 import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { ToastModule } from 'primeng/toast';
@@ -24,6 +21,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProveedorService } from '../../../services/proveedor.service';
 import { SupplierResponse } from '../../../interfaces/supplier.interface';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 
 @Component({
   selector: 'app-proveedor-listado',
@@ -42,11 +40,11 @@ import { LoadingOverlayComponent } from '../../../../shared/components/loading-o
     ToggleButtonModule,
     InputTextModule,
     TooltipModule,
-    PaginatorModule,
     ConfirmDialog,
     DialogModule,
     ToastModule,
-    LoadingOverlayComponent, // ← agregado
+    LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   templateUrl: './proveedor-listado.html',
   styleUrl: './proveedor-listado.css',
@@ -58,7 +56,7 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   readonly pageSizeOptions = [10, 20, 50, 100];
 
   private currentUrl = signal<string>('');
-  esVistaEliminados = signal(false);
+  esVistaEliminados  = signal(false);
 
   proveedores          = signal<SupplierResponse[]>([]);
   proveedoresFiltrados = signal<SupplierResponse[]>([]);
@@ -70,10 +68,13 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   buscarValue = signal<string | null>(null);
   items       = signal<SupplierResponse[]>([]);
 
-  rows         = signal(10);
-  first        = signal(0);
-  totalRecords = signal(0);
+  paginaActual = signal<number>(1);
+  rows         = signal<number>(10);
+  totalRecords = signal<number>(0);
 
+  totalPaginas = computed(() => Math.ceil(this.totalRecords() / this.rows()));
+
+  // ── Computed cabecera ──────────────────────────────────────────────────────
   tituloKicker = computed(() => {
     if (this.esVistaEliminados()) return 'ADMINISTRADOR - ADMINISTRACIÓN - PROVEEDORES ELIMINADOS';
     const url = this.currentUrl();
@@ -110,7 +111,6 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     this.cargarProveedores();
-
     this.router.events
       .pipe(filter(event => event instanceof NavigationEnd), takeUntil(this.destroy$))
       .subscribe(() => this.currentUrl.set(this.router.url));
@@ -124,13 +124,10 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
     this.confirmationService.close();
   }
 
-  private getEstadoFiltro(): boolean {
-    return !this.esVistaEliminados();
-  }
+  private getEstadoFiltro(): boolean { return !this.esVistaEliminados(); }
 
   cargarProveedores(): void {
     this.loading.set(true);
-
     this.proveedorService
       .listSuppliers({ estado: this.getEstadoFiltro(), search: this.buscarValue() || undefined })
       .subscribe({
@@ -154,14 +151,13 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     this.proveedoresFiltrados.set(proveedoresActuales);
-    this.first.set(0);
+    this.paginaActual.set(1);
     this.aplicarPaginacion();
   }
 
   searchBuscar(event: any): void {
     const query = event.query || '';
     this.buscarValue.set(query);
-
     this.proveedorService.listSuppliers({ estado: this.getEstadoFiltro(), search: query }).subscribe({
       next:  response => this.items.set(response.suppliers.slice(0, 10)),
       error: ()       => this.items.set([]),
@@ -178,7 +174,6 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   toggleStatus(proveedor: SupplierResponse): void {
     const nuevoEstado = !proveedor.estado;
     const destino     = nuevoEstado ? 'activos' : 'eliminados';
-
     this.confirmationService.confirm({
       message: `¿Está seguro de ${nuevoEstado ? 'activar' : 'enviar a eliminados'} el proveedor "${proveedor.razon_social}"?`,
       header: 'Confirmar acción',
@@ -205,20 +200,24 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
 
   private aplicarPaginacion(): void {
     const filtrados = this.proveedoresFiltrados();
-    if (filtrados.length === 0) { this.proveedoresPaginados.set([]); this.totalRecords.set(0); return; }
+    if (filtrados.length === 0) {
+      this.proveedoresPaginados.set([]);
+      this.totalRecords.set(0);
+      return;
+    }
     this.totalRecords.set(filtrados.length);
-    this.proveedoresPaginados.set(filtrados.slice(this.first(), this.first() + this.rows()));
+    const inicio = (this.paginaActual() - 1) * this.rows();
+    this.proveedoresPaginados.set(filtrados.slice(inicio, inicio + this.rows()));
   }
 
-  onPageChange(event: any): void {
-    this.first.set(event.first);
-    this.rows.set(event.rows || 10);
+  onPageChange(page: number): void {
+    this.paginaActual.set(page);
     this.aplicarPaginacion();
   }
 
-  cambiarFilas(rowsNumber: number): void {
-    this.rows.set(rowsNumber);
-    this.first.set(0);
+  onLimitChange(limit: number): void {
+    this.rows.set(limit);
+    this.paginaActual.set(1);
     this.aplicarPaginacion();
   }
 
@@ -228,13 +227,11 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   irCrear():             void { this.router.navigate(['/admin/proveedores/crear']); }
   irEditar(id: number):  void { this.router.navigate(['/admin/proveedores/editar']); }
 
-  irEliminados(): void { this.esVistaEliminados.set(true);  this.first.set(0); this.cargarProveedores(); }
-  irActivos():    void { this.esVistaEliminados.set(false); this.first.set(0); this.cargarProveedores(); }
+  irEliminados(): void { this.esVistaEliminados.set(true);  this.paginaActual.set(1); this.cargarProveedores(); }
+  irActivos():    void { this.esVistaEliminados.set(false); this.paginaActual.set(1); this.cargarProveedores(); }
 
   isRutaHija(): boolean {
     const url = this.currentUrl();
     return url.includes('crear') || url.includes('editar') || url.includes('ver-detalle');
   }
-
-  getLast(): number { return Math.min(this.first() + this.rows(), this.totalRecords()); }
 }

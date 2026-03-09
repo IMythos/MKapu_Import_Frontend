@@ -63,14 +63,14 @@ export class AccountReceivableService {
   private readonly http    = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/sales/account-receivables`;
 
-  readonly list       = signal<AccountReceivableResponse[]>([]);
-  readonly selected   = signal<AccountReceivableResponse | null>(null);
-  readonly total      = signal<number>(0);
-  readonly page       = signal<number>(1);
-  readonly totalPages = signal<number>(1);
-  readonly loading    = signal<boolean>(false);
-  readonly error      = signal<string | null>(null);
-  readonly accounts   = this.list.asReadonly();
+  readonly list         = signal<AccountReceivableResponse[]>([]);
+  readonly selected     = signal<AccountReceivableResponse | null>(null);
+  readonly total        = signal<number>(0);
+  readonly page         = signal<number>(1);
+  readonly totalPages   = signal<number>(1);
+  readonly loading      = signal<boolean>(false);
+  readonly error        = signal<string | null>(null);
+  readonly accounts     = this.list.asReadonly();
   readonly totalRecords = this.total.asReadonly();
 
   private _lastSedeId?: number;
@@ -92,7 +92,10 @@ export class AccountReceivableService {
     status? : AccountReceivableStatus | null,
   ): Promise<void> {
     this._lastSedeId = sedeId;
-    this._lastStatus = status ?? undefined;
+    // null = limpiar filtro de estado | undefined = conservar | valor = aplicar
+    this._lastStatus = (status === null || status === undefined) ? undefined : status;
+    // Si se pasó null explícitamente, forzamos undefined para no enviar el param
+    const statusParaQuery = status === null ? undefined : status;
     this._lastLimit  = limit;
 
     this.loading.set(true);
@@ -102,8 +105,8 @@ export class AccountReceivableService {
         .set('page',  String(page))
         .set('limit', String(limit));
 
-      if (sedeId != null)           httpParams = httpParams.set('sedeId', String(sedeId));
-      if (this._lastStatus != null) httpParams = httpParams.set('status', this._lastStatus);
+      if (sedeId != null)          httpParams = httpParams.set('sedeId', String(sedeId));
+      if (statusParaQuery != null) httpParams = httpParams.set('status', statusParaQuery);
 
       const res = await firstValueFrom(
         this.http.get<AccountReceivablePaginatedResponse>(this.baseUrl, { params: httpParams }),
@@ -203,12 +206,10 @@ export class AccountReceivableService {
     }
   }
 
-  // ── Exportar PDF (abre en nueva pestaña) ──────────────────────────
   exportPdf(id: number): void {
     window.open(`${this.baseUrl}/${id}/export/pdf`, '_blank');
   }
 
-  // ── Enviar por email al cliente ───────────────────────────────────
   sendByEmail(id: number): Observable<{ message: string; sentTo: string }> {
     return this.http.post<{ message: string; sentTo: string }>(
       `${this.baseUrl}/${id}/send-email`, {}

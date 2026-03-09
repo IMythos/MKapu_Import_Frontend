@@ -81,7 +81,6 @@ export class Login {
   });
 
   /*
-  // ✅ SIMULACIÓN temporal para desarrollo
   setTimeout(() => {
     this.isLoading = false;
     

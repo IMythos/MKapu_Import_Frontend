@@ -48,6 +48,7 @@ export class Sidebar implements OnInit {
     { path: '/admin/dashboard-admin',                 allowedRoles: [UserRole.ADMIN],   label: 'Dashboard',                         icon: 'pi pi-home' },
 
     { path: '',                                       allowedRoles: [UserRole.ADMIN],   label: 'VENTAS',                            isSection: true },
+    { path: '/admin/caja',                            allowedRoles: [UserRole.ADMIN],   label: 'Estado Caja Sede',   icon: 'pi pi-wallet'},
     { path: '/admin/generar-ventas-administracion',   allowedRoles: [UserRole.ADMIN],   label: 'Crear Venta Administración',        icon: 'pi pi-plus-circle' },
     { path: '/admin/historial-ventas-administracion', allowedRoles: [UserRole.ADMIN],   label: 'Historial Ventas Administración',   icon: 'pi pi-list' },
     { path: '/admin/ventas-por-cobrar',               allowedRoles: [UserRole.ADMIN],   label: 'Ventas por Cobrar',                 icon: 'pi pi-wallet' },
@@ -156,19 +157,33 @@ export class Sidebar implements OnInit {
 
   navigateTo(event: Event, path: string): void {
     const currentRole = this.roleService.getCurrentUserRole();
-    const esRutaVentas = path.startsWith('/ventas');
-    const esCaja = path === '/ventas/caja';
+    const caja = this.cashboxSocket.caja();
+    const cajaAbierta = caja?.estado === 'ABIERTA';
 
-    if (currentRole === UserRole.VENTAS && esRutaVentas && !esCaja) {
-      const caja = this.cashboxSocket.caja();
-      if (!caja || caja.estado !== 'ABIERTA') {
+    // VENTAS: bloquear todo excepto /ventas/caja
+    if (currentRole === UserRole.VENTAS && path !== '/ventas/caja') {
+      if (!cajaAbierta) {
         event.preventDefault();
         event.stopPropagation();
-
         this.messageService.add({
           severity: 'warn',
           summary: 'Caja Cerrada',
           detail: 'Debes abrir caja para operar',
+          life: 3500,
+        });
+        return;
+      }
+    }
+
+    // ADMIN: bloquear solo generar-ventas-administracion
+    if (currentRole === UserRole.ADMIN && path === '/admin/generar-ventas-administracion') {
+      if (!cajaAbierta) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Caja Cerrada',
+          detail: 'Debes abrir caja para generar ventas',
           life: 3500,
         });
         return;

@@ -20,6 +20,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { SedeService } from '../../../../services/sede.service';
 import { Headquarter } from '../../../../interfaces/sedes.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';
 
@@ -33,6 +34,7 @@ type ViewMode = 'todas' | 'activas' | 'inactivas';
     ToastModule, ConfirmDialogModule, MessageModule,
     SelectModule, TooltipModule,
     LoadingOverlayComponent,
+    PaginadorComponent,  
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './sedes.html',
@@ -47,12 +49,15 @@ export class Sedes implements OnInit {
   readonly loading          = this.sedeService.loading;
   readonly error            = this.sedeService.error;
 
-  dialogVisible     = false;
+  dialogVisible         = false;
   readonly sedeSeleccionada = signal<Headquarter | null>(null);
 
   readonly searchTerm = signal<string>('');
   readonly sedes      = computed(() => this.sedeService.sedes());
   readonly viewMode   = signal<ViewMode>('activas');
+
+  readonly paginaActual = signal<number>(1);
+  readonly limitePagina = signal<number>(5);
 
   readonly viewOptions: { label: string; value: ViewMode }[] = [
     { label: 'Todos',     value: 'todas'     },
@@ -78,6 +83,15 @@ export class Sedes implements OnInit {
       )
     );
   });
+
+  readonly sedesPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.filteredSedes().slice(inicio, inicio + this.limitePagina());
+  });
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.filteredSedes().length / this.limitePagina())
+  );
 
   readonly sedeSuggestions = computed(() => this.filteredSedes());
 
@@ -108,17 +122,24 @@ export class Sedes implements OnInit {
     this.dialogVisible = true;
   }
 
-  onViewModeChange(mode: ViewMode): void { this.viewMode.set(mode); }
-  onSearch(event: { query: string }):    void { this.searchTerm.set(event.query); }
+  onViewModeChange(mode: ViewMode): void { this.viewMode.set(mode); this.paginaActual.set(1); }
+
+  onSearch(event: { query: string }): void { this.searchTerm.set(event.query); this.paginaActual.set(1); }
+
   onSearchChange(term: unknown): void {
-    if (typeof term === 'string') { this.searchTerm.set(term); return; }
+    if (typeof term === 'string') { this.searchTerm.set(term); this.paginaActual.set(1); return; }
     if (term && typeof term === 'object' && 'nombre' in (term as any)) {
-      this.searchTerm.set(String((term as any).nombre ?? '')); return;
+      this.searchTerm.set(String((term as any).nombre ?? '')); this.paginaActual.set(1); return;
     }
     this.searchTerm.set('');
   }
-  onSelectSede(event: any): void { this.searchTerm.set(String(event?.value?.nombre ?? '')); }
-  clearSearch():             void { this.searchTerm.set(''); }
+
+  onSelectSede(event: any): void { this.searchTerm.set(String(event?.value?.nombre ?? '')); this.paginaActual.set(1); }
+
+  clearSearch(): void { this.searchTerm.set(''); this.paginaActual.set(1); }
+
+  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 
   confirmToggleStatus(sede: Headquarter): void {
     const nextStatus = !sede.activo;

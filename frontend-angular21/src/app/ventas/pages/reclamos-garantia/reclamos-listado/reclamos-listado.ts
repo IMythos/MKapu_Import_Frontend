@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -21,6 +21,7 @@ import {
   ClaimStatus,
 } from '../../../../core/services/claim.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 import { AuthService } from '../../../../auth/services/auth.service';
 
@@ -40,6 +41,7 @@ import { AuthService } from '../../../../auth/services/auth.service';
     Toast,
     DatePicker,
     LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   providers: [MessageService],
   templateUrl: './reclamos-listado.html',
@@ -71,6 +73,9 @@ export class ReclamosListado implements OnInit, OnDestroy {
     { label: 'Rechazado', value: ClaimStatus.RECHAZADO },
   ];
 
+  paginaActual = signal<number>(1);
+  limitePagina = signal<number>(5);
+
   get reclamosFiltrados(): ClaimResponseDto[] {
     const q = this.filtroBusqueda.toLowerCase().trim();
     const est = this.filtroEstado;
@@ -99,6 +104,20 @@ export class ReclamosListado implements OnInit, OnDestroy {
     });
   }
 
+  get reclamosPaginados(): ClaimResponseDto[] {
+    const desde = (this.paginaActual() - 1) * this.limitePagina();
+    return this.reclamosFiltrados.slice(desde, desde + this.limitePagina());
+  }
+
+  get totalFiltrados(): number {
+    return this.reclamosFiltrados.length;
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.totalFiltrados / this.limitePagina()) || 1;
+  }
+
+  // ── Lifecycle ────────────────────────────────────────────────────────────────
   async ngOnInit(): Promise<void> {
     try {
       const currentUser = this.authService.getCurrentUser(); 
@@ -128,15 +147,18 @@ export class ReclamosListado implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  nuevoReclamo(): void {
-    this.router.navigate([`${this.routeBase}/crear`]);
+  onPageChange(page: number): void {
+    this.paginaActual.set(page);
   }
-  verDetalle(id: string): void {
-    this.router.navigate([`${this.routeBase}/detalle`, id]);
+
+  onLimitChange(limit: number): void {
+    this.limitePagina.set(limit);
+    this.paginaActual.set(1);
   }
-  editarReclamo(id: string): void {
-    this.router.navigate([`${this.routeBase}/editar`, id]);
-  }
+
+  nuevoReclamo(): void          { this.router.navigate([`${this.routeBase}/crear`]);          }
+  verDetalle(id: string): void  { this.router.navigate([`${this.routeBase}/detalle`, id]);    }
+  editarReclamo(id: string): void { this.router.navigate([`${this.routeBase}/editar`, id]);   }
 
   imprimirReclamo(_reclamo: ClaimResponseDto): void {
     this.messageService.add({
