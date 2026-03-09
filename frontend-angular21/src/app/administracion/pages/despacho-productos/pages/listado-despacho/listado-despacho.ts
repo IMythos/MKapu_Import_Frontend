@@ -24,6 +24,7 @@ import { DispatchService } from '../../../../services/dispatch.service';
 import { Dispatch, DispatchStatus } from '../../../../interfaces/dispatch.interfaces';
 import { EmpleadosService, Empleado } from '../../../../../core/services/empleados.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 @Component({
   selector: 'app-listado-despacho',
@@ -41,7 +42,8 @@ import { LoadingOverlayComponent } from '../../../../../shared/components/loadin
     ToastModule,
     ConfirmDialog,
     TooltipModule,
-    LoadingOverlayComponent, // ← agregado
+    LoadingOverlayComponent,
+    PaginadorComponent,  
   ],
   templateUrl: './listado-despacho.html',
   styleUrl: './listado-despacho.css',
@@ -49,27 +51,21 @@ import { LoadingOverlayComponent } from '../../../../../shared/components/loadin
 })
 export class ListadoDespacho {
 
-  // ================================
-  // 🔥 INYECCIÓN
-  // ================================
   readonly dispatchService         = inject(DispatchService);
   private readonly empleadosService    = inject(EmpleadosService);
   private readonly messageService      = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
 
-  // ================================
-  // 🏷️ CABECERA
-  // ================================
   tituloKicker    = 'ADMINISTRADOR - LOGISTICA - DESPACHO';
   subtituloKicker = 'LISTADO DE DESPACHO';
   iconoCabecera   = 'pi pi-truck';
 
-  // ================================
-  // 🔥 SIGNALS BASE
-  // ================================
   searchTerm   = signal<string | null>(null);
   estadoFiltro = signal<string>('TODOS');
   empleados    = signal<Empleado[]>([]);
+
+  paginaActual = signal<number>(1);
+  limitePagina = signal<number>(10);
 
   estadoOptions = [
     { label: 'Todos',          value: 'TODOS'          },
@@ -80,16 +76,10 @@ export class ListadoDespacho {
     { label: 'Cancelado',      value: 'CANCELADO'      },
   ];
 
-  // ================================
-  // 🔗 SIGNALS DEL SERVICIO
-  // ================================
   dispatches = this.dispatchService.dispatches;
   loading    = this.dispatchService.loading;
   error      = this.dispatchService.error;
 
-  // ================================
-  // 🏗️ CONSTRUCTOR
-  // ================================
   constructor() {
     this.dispatchService.loadDispatches().subscribe({
       error: () => {
@@ -115,9 +105,6 @@ export class ListadoDespacho {
     });
   }
 
-  // ================================
-  // 🔥 COMPUTED
-  // ================================
   despachador = computed(() => this.obtenerNombreEmpleado('ALMACENERO'));
   asesor      = computed(() => this.obtenerNombreEmpleado('VENTAS'));
 
@@ -139,8 +126,8 @@ export class ListadoDespacho {
     const term = this.searchTerm()?.trim().toLowerCase();
     if (term) {
       data = data.filter(d =>
-        d.id_despacho?.toString().includes(term)   ||
-        d.id_venta_ref?.toString().includes(term)  ||
+        d.id_despacho?.toString().includes(term)  ||
+        d.id_venta_ref?.toString().includes(term) ||
         d.direccion_entrega?.toLowerCase().includes(term)
       );
     }
@@ -148,9 +135,21 @@ export class ListadoDespacho {
     return data;
   });
 
-  // ================================
-  // 🔥 ACCIONES
-  // ================================
+  filasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.filasFiltradas().slice(inicio, inicio + this.limitePagina());
+  });
+
+  totalPaginas = computed(() =>
+    Math.ceil(this.filasFiltradas().length / this.limitePagina())
+  );
+
+  onPageChange(page: number): void  { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void {
+    this.limitePagina.set(limit);
+    this.paginaActual.set(1);
+  }
+
   cancelar(despacho: Dispatch): void {
     this.confirmationService.confirm({
       header: 'Confirmar cancelación',
@@ -185,6 +184,7 @@ export class ListadoDespacho {
   limpiarFiltros(): void {
     this.searchTerm.set(null);
     this.estadoFiltro.set('TODOS');
+    this.paginaActual.set(1); 
   }
 
   getEstadoSeverity(estado: DispatchStatus): 'success' | 'warn' | 'danger' | 'secondary' | 'info' {
@@ -209,9 +209,6 @@ export class ListadoDespacho {
     return labels[estado] ?? estado;
   }
 
-  // ================================
-  // 🔒 PRIVADOS
-  // ================================
   private obtenerNombreEmpleado(cargo: Empleado['cargo']): string {
     const emp = this.empleados().find(e => e.cargo === cargo && e.estado);
     return emp ? `${emp.nombres} ${emp.apellidos}` : 'Sin asignar';

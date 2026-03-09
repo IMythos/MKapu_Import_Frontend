@@ -17,6 +17,7 @@ import { VentasAdminService } from '../../../services/ventas.service';
 import { TooltipModule } from 'primeng/tooltip';
 import { SedeService } from '../../../services/sede.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { ExcelUtils } from '../../../utils/excel.utils';
 import {
   AccountReceivableService,
@@ -32,7 +33,8 @@ import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
   imports: [
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
-    RouterModule, AutoComplete, TooltipModule, LoadingOverlayComponent, DatePickerModule,
+    RouterModule, AutoComplete, TooltipModule, LoadingOverlayComponent,
+    DatePickerModule, PaginadorComponent,
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
   styleUrl: './ventas-por-cobrar-listado.css',
@@ -58,23 +60,27 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   fechaInicio        = signal<Date | null>(getHoyPeru());
   fechaFin           = signal<Date | null>(null);
 
+  // Página actual y total de páginas derivadas del servicio
+  paginaActual = signal<number>(1);
+  totalPaginas = computed(() => {
+    const total = this.arService.totalRecords();
+    const limit = this.rows();
+    return limit > 0 ? Math.ceil(total / limit) : 1;
+  });
+
   sedesOptions = computed(() =>
     this.sedeService.sedes().map(s => ({ label: s.nombre, value: s.id_sede }))
   );
 
-  // El filtro de estado se hace en el backend (query param).
-  // Texto y fechas se filtran en el cliente sobre la página actual.
   ventasFiltradas = computed(() => {
     const q      = this.buscarValue().toLowerCase();
     const inicio = this.fechaInicio();
     const fin    = this.fechaFin();
 
     return this.arService.accounts().filter(a => {
-      // filtro texto
       if (q && !a.userRef.toLowerCase().includes(q) && !String(a.salesReceiptId).includes(q))
         return false;
 
-      // filtro fecha emisión
       const fec = new Date(a.issueDate);
       if (inicio) { const d = new Date(inicio); d.setHours(0,0,0,0); if (fec < d) return false; }
       if (fin)    { const d = new Date(fin);    d.setHours(23,59,59,999); if (fec > d) return false; }
@@ -104,7 +110,6 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     this.sedeService.loadSedes().subscribe();
     const sedeDefault = this.getSedeUsuarioActual();
     if (sedeDefault) this.sedeSeleccionada.set(sedeDefault);
-    // Inicia mostrando solo PENDIENTES
     await this.arService.getAll(1, this.rows(), sedeDefault ?? undefined, 'PENDIENTE');
   }
 
@@ -115,46 +120,40 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     } catch { return null; }
   }
 
-
   imprimirCuenta(id: number): void {
     this.arService.exportPdf(id);
   }
 
   enviarCuenta(id: number): void {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Enviando...',
-      detail: 'Generando y enviando cuenta por cobrar por email.',
-    });
-
+    this.messageService.add({ severity: 'info', summary: 'Enviando...', detail: 'Generando y enviando cuenta por cobrar por email.' });
     this.arService.sendByEmail(id).subscribe({
-      next: (res) => this.messageService.add({
-        severity: 'success',
-        summary: 'Email enviado',
-        detail: `Cuenta enviada a ${res.sentTo}`,
-      }),
-      error: () => this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
-      }),
+      next:  (res) => this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cuenta enviada a ${res.sentTo}` }),
+      error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
     });
   }
 
   async onEstadoChange(v: AccountReceivableStatus | null) {
     this.estadoSeleccionado.set(v);
-    // null = "Todos" → sin filtro de estado (backend muestra PENDIENTE+PARCIAL+VENCIDO por defecto)
+    this.paginaActual.set(1);
     await this.arService.getAll(1, this.rows(), this.sedeSeleccionada() ?? undefined, v ?? undefined);
   }
 
   async onSedeChange(sedeId: number | null) {
     this.sedeSeleccionada.set(sedeId);
+    this.paginaActual.set(1);
     await this.arService.getAll(1, this.rows(), sedeId ?? undefined, this.estadoSeleccionado());
   }
 
-  onPageChange(e: any) {
-    this.rows.set(e.rows);
-    this.arService.goToPage(e.page + 1);
+  // ── Paginador nuevo ───────────────────────────────────────────────
+  async onPageChange(page: number) {
+    this.paginaActual.set(page);
+    await this.arService.getAll(page, this.rows(), this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado() ?? undefined);
+  }
+
+  async onLimitChange(limit: number) {
+    this.rows.set(limit);
+    this.paginaActual.set(1);
+    await this.arService.getAll(1, limit, this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado() ?? undefined);
   }
 
   searchCuenta(event: any) {
@@ -172,18 +171,15 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     if (a) this.buscarValue.set(a.userRef);
   }
 
-  onFechaChange() {
-    // Filtro de fechas es local — filtra sobre la página actual
-    // Para filtro server-side de fechas, extender getAll() en el futuro
-  }
+  onFechaChange() { /* filtro local */ }
 
   limpiarFiltros() {
     this.buscarValue.set('');
     this.sugerencias.set([]);
-    this.fechaInicio.set(getHoyPeru());
+    this.fechaInicio.set(null);
     this.fechaFin.set(null);
     this.sedeSeleccionada.set(null);
-    this.estadoSeleccionado.set('PENDIENTE');
+    this.estadoSeleccionado.set(null);
     this.arService.getAll(1, this.rows(), undefined, 'PENDIENTE');
   }
 
@@ -192,15 +188,12 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     this.sugerencias.set([]);
   }
 
-  // ── Excel ─────────────────────────────────────────────────────────
   exportarExcel(): void {
     const datos = this.ventasFiltradas();
-
     if (datos.length === 0) {
       this.messageService.add({ severity: 'warn', summary: 'Sin datos', detail: 'No hay registros para exportar', life: 3000 });
       return;
     }
-
     const datosExcel = datos.map(a => ({
       'N° Comprobante':  `#${a.salesReceiptId}`,
       'Cliente':         a.userRef,
@@ -213,10 +206,8 @@ export class VentasPorCobrarListadoComponent implements OnInit {
       'Saldo Pendiente': a.pendingBalance,
       'Estado':          a.status,
     }));
-
     const nombreArchivo = ExcelUtils.generarNombreConFecha('ventas-por-cobrar');
     ExcelUtils.exportarAExcel(datosExcel, nombreArchivo, 'Cuentas por Cobrar');
-
     this.messageService.add({ severity: 'success', summary: 'Exportación exitosa', detail: `Archivo ${nombreArchivo}.xlsx descargado`, life: 3000 });
   }
 

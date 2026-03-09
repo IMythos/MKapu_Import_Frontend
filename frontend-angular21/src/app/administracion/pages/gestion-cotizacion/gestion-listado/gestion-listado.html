@@ -181,15 +181,10 @@
         <div class="seccion-tabla" [style.opacity]="loading() ? '0.3' : '1'"
              style="transition: opacity 0.2s ease;">
 
+          <!-- Tabla SIN paginator propio -->
           <p-table
             [value]="cotizacionesFiltradas()"
-            [paginator]="true"
-            [rows]="rows()"
-            [totalRecords]="totalRecords()"
-            [loading]="false"
-            [rowsPerPageOptions]="[5,10,25,50]"
-            [lazy]="true"
-            (onPage)="onPageChange($event)"
+            [paginator]="false"
             styleClass="cotizaciones-table-hover">
 
             <ng-template pTemplate="header">
@@ -235,28 +230,33 @@
                 <td style="vertical-align:middle;">
                   <div class="acciones-grupo">
 
-                    <!-- Ver detalle -->
                     <p-button icon="pi pi-eye"
                       [rounded]="true" [text]="true" severity="secondary"
                       pTooltip="Ver Detalles" tooltipPosition="top"
                       (onClick)="irDetalle(c.id_cotizacion)">
                     </p-button>
 
-                    <!-- Imprimir -->
                     <p-button icon="pi pi-print"
                       [rounded]="true" [text]="true" severity="secondary"
                       pTooltip="Imprimir" tooltipPosition="top"
                       (onClick)="imprimirCotizacion(c)">
                     </p-button>
 
-                    <!-- Enviar correo -->
                     <p-button icon="pi pi-send"
                       [rounded]="true" [text]="true" severity="secondary"
                       pTooltip="Enviar a Correo" tooltipPosition="top"
                       (onClick)="enviarCotizacion(c)">
                     </p-button>
 
-                    <!-- Botones exclusivos PENDIENTE -->
+                    <p-button
+                    icon="pi pi-whatsapp"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    pTooltip="Enviar a Wsp"
+                    tooltipPosition="top">
+                  </p-button>
+                  
                     <ng-container *ngIf="c.estado === 'PENDIENTE'">
                       <span class="accion-separador"></span>
 
@@ -279,7 +279,6 @@
                       </p-button>
                     </ng-container>
 
-                    <!-- Botones exclusivos RECHAZADA -->
                     <ng-container *ngIf="c.estado === 'RECHAZADA'">
                       <span class="accion-separador"></span>
                       <p-button icon="pi pi-refresh" text
@@ -310,6 +309,17 @@
             </ng-template>
 
           </p-table>
+
+          <!-- Paginador reutilizable -->
+          <app-paginador
+            [page]="currentPage()"
+            [totalPages]="totalPages()"
+            [total]="totalRecords()"
+            [limit]="rows()"
+            (pageChange)="onPageChange($event)"
+            (limitChange)="onLimitChange($event)">
+          </app-paginador>
+
         </div>
       </p-card>
     </div>

@@ -27,7 +27,6 @@
         <div>
           <span class="estadistica-label">Total Ventas</span>
           <span class="estadistica-valor">S/. {{ totalVentas | number:'1.2-2' }}</span>
-        
         </div>
       </div>
 
@@ -181,12 +180,9 @@
 
 <!-- TABLA -->
 <div class="p-2">
-
-  <!-- Se mueve el style al div wrapper externo                              -->
   <div style="position: relative">
     <p-card class="tarjeta-principal">
 
-      <!-- Loading superpuesto solo sobre la tabla -->
       <app-loading-overlay
         [visible]="loading"
         mensaje="Cargando ventas..."
@@ -210,20 +206,13 @@
           </p-button>
         </div>
 
+        <!-- Tabla SIN paginator propio -->
         <p-table
           [value]="comprobantesFiltrados"
-          [paginator]="true"
-          [rows]="limitePorPagina"
-          [totalRecords]="totalRegistros"
-          [lazy]="true"
-          (onLazyLoad)="onPageChange($event)"
-          [first]="firstRow"
-          [rowsPerPageOptions]="[5,10,20,50]"
+          [paginator]="false"
           [loading]="false"
           [tableStyle]="{ 'min-width': '75rem' }"
-          styleClass="p-datatable-striped"
-          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-          [showCurrentPageReport]="true">
+          styleClass="p-datatable-striped">
 
           <ng-template pTemplate="header">
             <tr>
@@ -262,8 +251,7 @@
               <td>
                 <p-tag
                   [value]="getTipoComprobanteLabel(comprobante.tipoComprobante)"
-                  [severity]="getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta'
-                                ? 'info' : 'warn'">
+                  [severity]="getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta' ? 'info' : 'warn'">
                 </p-tag>
               </td>
               <td>{{ comprobante.fecEmision | date:'dd/MM/yyyy HH:mm' }}</td>
@@ -307,6 +295,15 @@
                     pTooltip="Enviar a Correo" tooltipPosition="top">
                   </p-button>
 
+                  <p-button
+                    icon="pi pi-whatsapp"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    pTooltip="Enviar a Wsp"
+                    tooltipPosition="top">
+                  </p-button>
+
                   <p-button icon="pi pi-truck"
                     (onClick)="crearGuiaRemision(comprobante)"
                     [rounded]="true" [text]="true" severity="info"
@@ -338,6 +335,17 @@
           </ng-template>
 
         </p-table>
+
+        <!-- Paginador reutilizable -->
+        <app-paginador
+          [page]="paginaActual"
+          [totalPages]="totalPaginas"
+          [total]="totalRegistros"
+          [limit]="limitePorPagina"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
+
       </div>
 
     </p-card>

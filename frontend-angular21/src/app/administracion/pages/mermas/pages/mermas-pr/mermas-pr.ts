@@ -1,5 +1,3 @@
-// mermas-pr.ts
-
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -22,6 +20,7 @@ import { CommonModule } from '@angular/common';
 
 import { WastageService, WastageResponseDto } from '../../../../services/wastage.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 interface WastageDetail {
   id_detalle: number;
@@ -59,6 +58,7 @@ type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast
     TooltipModule, TagModule, DialogModule, InputNumberModule, SelectButtonModule,
     CommonModule,
     LoadingOverlayComponent,
+    PaginadorComponent, 
   ],
   templateUrl: './mermas-pr.html',
   styleUrl: './mermas-pr.css',
@@ -71,8 +71,7 @@ export class MermasPr implements OnInit {
   private readonly router              = inject(Router);
 
   mesActual = signal(this.obtenerMesActual());
-
-  cargando = this.wastageService.loading;
+  cargando  = this.wastageService.loading;
 
   tiposMerma = [
     { label: 'Por Defecto', value: 'POR_DEFECTO' },
@@ -85,6 +84,9 @@ export class MermasPr implements OnInit {
   // Filtros
   busqueda        = signal('');
   tipoMermaFiltro = signal('');
+
+  readonly paginaActual = signal<number>(1);
+  readonly limitePagina = signal<number>(5);
 
   // Modal
   mermaSeleccionada   = signal<MermaUI | null>(null);
@@ -112,6 +114,15 @@ export class MermasPr implements OnInit {
 
     return resultados;
   });
+
+  readonly mermasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.mermasFiltradas().slice(inicio, inicio + this.limitePagina());
+  });
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.mermasFiltradas().length / this.limitePagina())
+  );
 
   totalMermas    = computed(() => this.mermas().length);
   totalProductos = computed(() => this.mermas().reduce((sum, m) => sum + m.cantidad, 0));
@@ -145,13 +156,13 @@ export class MermasPr implements OnInit {
       fechaRegistro: new Date(merma.fec_merma),
       observacion:   merma.detalles?.[0]?.observacion || '',
       detalles:      merma.detalles?.map(d => ({
-        id_detalle:   d.id_detalle ?? 0,
-        id_producto:  d.id_producto,
-        cod_prod:     d.cod_prod,
-        desc_prod:    d.desc_prod,
-        cantidad:     d.cantidad,
-        pre_unit:     d.pre_unit,
-        observacion:  d.observacion,
+        id_detalle:    d.id_detalle ?? 0,
+        id_producto:   d.id_producto,
+        cod_prod:      d.cod_prod,
+        desc_prod:     d.desc_prod,
+        cantidad:      d.cantidad,
+        pre_unit:      d.pre_unit,
+        observacion:   d.observacion,
         id_tipo_merma: d.id_tipo_merma,
       })) ?? [],
       valorTotal,
@@ -187,6 +198,7 @@ export class MermasPr implements OnInit {
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.tipoMermaFiltro.set('');
+    this.paginaActual.set(1);
     this.messageService.add({
       severity: 'info',
       summary:  'Filtros limpiados',
@@ -205,23 +217,22 @@ export class MermasPr implements OnInit {
     this.mermaSeleccionada.set(null);
   }
 
-  getTipoMermaLabel(tipo: string): string {
-    return tipo.toUpperCase();
-  }
+  getTipoMermaLabel(tipo: string): string { return tipo.toUpperCase(); }
 
   getTipoMermaSeverity(tipo: string): Severity {
     const map: { [key: string]: Severity } = {
-      'POR_DEFECTO':   'secondary',
-      'DAÑO':          'danger',
-      'GARANTIA':      'warn',
-      'MERMA':         'info',
-      'OFERTA':        'success',
-      'SIN CLASIFICAR':'secondary',
+      'POR_DEFECTO':    'secondary',
+      'DAÑO':           'danger',
+      'GARANTIA':       'warn',
+      'MERMA':          'info',
+      'OFERTA':         'success',
+      'SIN CLASIFICAR': 'secondary',
     };
     return map[tipo] || 'info';
   }
 
-  refrescarLista(): void {
-    this.cargarMermas();
-  }
+  refrescarLista(): void { this.cargarMermas(); }
+
+  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 }

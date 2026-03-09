@@ -197,18 +197,13 @@
           </p-button>
         </div>
 
+        <!-- Tabla SIN paginator propio -->
         <p-table
           [value]="ventasFiltradas()"
-          [paginator]="true"
-          [rows]="rows()"
-          [rowsPerPageOptions]="[5,10,25,50]"
-          [totalRecords]="arService.totalRecords()"
+          [paginator]="false"
           [loading]="false"
           [tableStyle]="{ 'min-width': '75rem' }"
-          styleClass="p-datatable-striped"
-          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-          [showCurrentPageReport]="true"
-          (onPage)="onPageChange($event)">
+          styleClass="p-datatable-striped">
 
           <ng-template pTemplate="header">
             <tr>
@@ -260,37 +255,46 @@
                   <p-button
                     icon="pi pi-eye"
                     styleClass="accion-btn accion-btn--ver p-button-text p-button-rounded"
-                    pTooltip="Ver detalle"
-                    tooltipPosition="top"
+                    pTooltip="Ver detalle" tooltipPosition="top"
                     severity="secondary"
                     (onClick)="verDetalle(a.id)">
                   </p-button>
 
-                <p-button icon="pi pi-print"
-                  [rounded]="true" [text]="true" severity="secondary"
-                  pTooltip="Imprimir" tooltipPosition="top"
-                  (onClick)="imprimirCuenta(a.id)">
-                </p-button>
+                  <p-button icon="pi pi-print"
+                    [rounded]="true" [text]="true" severity="secondary"
+                    pTooltip="Imprimir" tooltipPosition="top"
+                    (onClick)="imprimirCuenta(a.id)">
+                  </p-button>
 
-                <p-button icon="pi pi-send"
-                  [rounded]="true" [text]="true" severity="secondary"
-                  pTooltip="Enviar a Correo" tooltipPosition="top"
-                  (onClick)="enviarCuenta(a.id)">
-                </p-button>
+                  <p-button icon="pi pi-send"
+                    [rounded]="true" [text]="true" severity="secondary"
+                    pTooltip="Enviar a Correo" tooltipPosition="top"
+                    (onClick)="enviarCuenta(a.id)">
+                  </p-button>
+
+                  <p-button
+                    icon="pi pi-whatsapp"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    pTooltip="Enviar a Wsp"
+                    tooltipPosition="top">
+                  </p-button>
+
+                  
                   <span class="accion-separador"></span>
+
                   <p-button
                     icon="pi pi-shopping-cart"
                     styleClass="accion-btn accion-btn--venta p-button-text p-button-rounded"
-                    pTooltip="Registrar Pago"
-                    tooltipPosition="top"
+                    pTooltip="Registrar Pago" tooltipPosition="top"
                     (onClick)="irAgregarVentaPorCobrar(a.id)">
                   </p-button>
 
                   <p-button
                     icon="pi pi-times"
                     styleClass="accion-btn accion-btn--eliminar p-button-text p-button-rounded"
-                    pTooltip="Cancelar"
-                    tooltipPosition="top"
+                    pTooltip="Cancelar" tooltipPosition="top"
                     [disabled]="a.status === 'CANCELADO' || a.status === 'PAGADO'"
                     (onClick)="rechazarCotizacion(a.id)">
                   </p-button>
@@ -309,6 +313,16 @@
           </ng-template>
 
         </p-table>
+
+        <!-- Paginador reutilizable -->
+        <app-paginador
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="arService.totalRecords()"
+          [limit]="rows()"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
 
         <small class="text-500 block text-center py-2">
           El botón <i class="pi pi-shopping-cart"></i> permite registrar un pago sobre la cuenta.

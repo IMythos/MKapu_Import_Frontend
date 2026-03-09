@@ -65,7 +65,6 @@
     <div class="seccion-filtros">
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
 
-      <!-- Línea 1: Búsqueda + Rango de fechas -->
       <div class="filtros-linea-1">
 
         <div class="filtro-item filtro-busqueda-65">
@@ -74,6 +73,7 @@
             pInputText
             type="text"
             [(ngModel)]="filtroBusqueda"
+            (ngModelChange)="paginaActual.set(1)"
             placeholder="Escriba aquí para buscar..."
             class="w-full"
           />
@@ -102,7 +102,6 @@
 
       </div>
 
-      <!-- Línea 2: Estado + Limpiar -->
       <div class="filtros-linea-2">
 
         <div class="filtro-item filtro-compacto">
@@ -113,6 +112,7 @@
             placeholder="Todos"
             optionLabel="label"
             optionValue="value"
+            (ngModelChange)="paginaActual.set(1)"
             styleClass="w-full"
           />
         </div>
@@ -138,7 +138,6 @@
   <div style="position: relative">
     <p-card class="tarjeta-principal">
 
-      <!-- Loading overlay compartido -->
       <app-loading-overlay
         [visible]="claimService.loading()"
         mensaje="Cargando reclamos..."
@@ -154,18 +153,14 @@
           <h3><i class="pi pi-shield"></i> Listado de Reclamos</h3>
         </div>
 
+        <!-- Tabla SIN paginator propio — usa reclamosPaginados -->
         <p-table
-          [value]="reclamosFiltrados"
-          [paginator]="true"
-          [rows]="5"
-          [rowsPerPageOptions]="[5,10, 25, 50]"
+          [value]="reclamosPaginados"
+          [paginator]="false"
           [loading]="false"
           [tableStyle]="{ 'min-width': '60rem' }"
-          styleClass="p-datatable-striped"
-          currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-          [showCurrentPageReport]="true"
-          paginatorTemplate="CurrentPageReport FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink RowsPerPageDropdown"
-        >
+          styleClass="p-datatable-striped">
+
           <ng-template pTemplate="header">
             <tr>
               <th style="width:8%"># Reclamo</th>
@@ -182,10 +177,8 @@
 
           <ng-template pTemplate="body" let-reclamo>
             <tr>
-              <!-- id interno del reclamo — ajusta al campo real de tu DTO -->
               <td class="font-semibold">#{{ reclamo.id }}</td>
 
-              <!-- campo real del DTO: saleReceiptId -->
               <td>
                 <span class="codigo-comprobante">
                   Comp. #{{ reclamo.saleReceiptId }}
@@ -207,7 +200,6 @@
                 />
               </td>
 
-              <!-- campo real del DTO: registerDate -->
               <td>{{ formatDate(reclamo.registerDate) }}</td>
 
               <td>
@@ -228,7 +220,6 @@
                 </ng-template>
               </td>
 
-              <!-- Acciones: Ver | Editar | Imprimir | Correo -->
               <td class="text-center">
                 <div class="acciones-tabla">
 
@@ -250,7 +241,6 @@
                     tooltipPosition="top"
                   />
 
-                  <!-- IMPRIMIR — pendiente backend -->
                   <p-button
                     icon="pi pi-print"
                     (onClick)="imprimirReclamo(reclamo)"
@@ -260,7 +250,6 @@
                     tooltipPosition="top"
                   />
 
-                  <!-- ENVIAR CORREO — pendiente backend -->
                   <p-button
                     icon="pi pi-send"
                     (onClick)="enviarCorreo(reclamo)"
@@ -270,6 +259,16 @@
                     tooltipPosition="top"
                   />
 
+
+                  <p-button
+                    icon="pi pi-whatsapp"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="success"
+                    pTooltip="Enviar a Wsp"
+                    tooltipPosition="top">
+                  </p-button>
+                  
                 </div>
               </td>
             </tr>
@@ -285,7 +284,19 @@
               </td>
             </tr>
           </ng-template>
+
         </p-table>
+
+        <!-- Paginador reutilizable -->
+        <app-paginador
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas"
+          [total]="totalFiltrados"
+          [limit]="limitePagina()"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
+
       </div>
 
     </p-card>

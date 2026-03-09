@@ -11,6 +11,7 @@ import { RouterModule } from '@angular/router';
 import { CommissionService, CommissionRule } from '../../services/commission.service';
 import { CategoriaService } from '../../services/categoria.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
 
 @Component({
   selector: 'app-comision',
@@ -20,6 +21,7 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
     InputTextModule, TableModule, TagModule,
     SelectModule, CardModule, RouterModule,
     LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   templateUrl: './comision.html',
   styleUrls: ['./comision.css'],
@@ -32,11 +34,14 @@ export class Comision implements OnInit {
   readonly error      = this.commissionService.error;
   readonly categorias = this.categoriaService.categorias;
 
-  // ── Filtros como signals ───────────────────────────────────────────────────
+  // ── Filtros ────────────────────────────────────────────────────────────────
   readonly filtroBusqueda   = signal('');
   readonly filtroTipo       = signal<string | null>(null);
   readonly filtroRecompensa = signal<string | null>(null);
   readonly filtroActivo     = signal<boolean | null>(true);
+
+  readonly paginaActual = signal<number>(1);
+  readonly limitePagina = signal<number>(5);
 
   tiposObjetivo = [
     { label: 'Categoría', value: 'CATEGORIA' },
@@ -59,6 +64,7 @@ export class Comision implements OnInit {
     this.filtroTipo.set(null);
     this.filtroRecompensa.set(null);
     this.filtroActivo.set(true);
+    this.paginaActual.set(1);
   }
 
   // ── Computed rows ──────────────────────────────────────────────────────────
@@ -96,6 +102,15 @@ export class Comision implements OnInit {
     return data;
   });
 
+  readonly reglasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.reglasFiltradas().slice(inicio, inicio + this.limitePagina());
+  });
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.reglasFiltradas().length / this.limitePagina())
+  );
+
   // ── KPIs ───────────────────────────────────────────────────────────────────
   readonly totalReglasActivas = computed(() =>
     this.commissionService.rules().filter(r => r.activo).length
@@ -124,4 +139,7 @@ export class Comision implements OnInit {
   onToggleStatus(rule: CommissionRule) {
     this.commissionService.toggleRuleStatus(rule.id_regla, !rule.activo).subscribe();
   }
+
+  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 }

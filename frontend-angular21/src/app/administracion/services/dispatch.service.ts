@@ -22,16 +22,11 @@ export class DispatchService {
    */
   private readonly baseUrl = `${environment.apiUrl}/logistics/despachos`;
 
-  // -------------------------------------------------------------------------
-  // 🔥 STATE (SIGNALS)
-  // -------------------------------------------------------------------------
+
   private readonly _dispatchResponse = signal<DispatchListResponse | null>(null);
   private readonly _loading          = signal<boolean>(false);
   private readonly _error            = signal<string | null>(null);
 
-  // -------------------------------------------------------------------------
-  // ✅ PUBLIC API (READ-ONLY)
-  // -------------------------------------------------------------------------
   readonly dispatchResponse = computed(() => this._dispatchResponse());
   readonly dispatches       = computed(() => this._dispatchResponse()?.dispatches ?? []);
   readonly loading          = computed(() => this._loading());

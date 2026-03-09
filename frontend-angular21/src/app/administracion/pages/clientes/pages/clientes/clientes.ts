@@ -14,11 +14,11 @@ import { ToastModule } from 'primeng/toast';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
-
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ClienteService, Customer } from '../../../../services/cliente.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 type ViewMode = 'todas' | 'juridica' | 'natural';
 
@@ -41,6 +41,7 @@ type ViewMode = 'todas' | 'juridica' | 'natural';
     TooltipModule,
     DialogModule,
     LoadingOverlayComponent,
+    PaginadorComponent, 
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './clientes.html',
@@ -97,6 +98,15 @@ export class Clientes implements OnInit {
   displayedClients = signal<Customer[] | null>(null);
   readonly displayedList = computed(() => this.displayedClients() ?? this.filteredClients());
 
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.displayedList().length / this.rows())
+  );
+
+  readonly clientesPaginados = computed(() => {
+    const inicio = (this.page() - 1) * this.rows();
+    return this.displayedList().slice(inicio, inicio + this.rows());
+  });
+
   selectedClient = signal<Customer | null>(null);
   showDetails    = signal<boolean>(false);
 
@@ -107,11 +117,14 @@ export class Clientes implements OnInit {
   private readonly docTypeMap: Record<string, string> = {
     '00': 'OTROS', '01': 'DNI', '04': 'C.E.', '06': 'RUC', '07': 'PASAPORTE'
   };
+
   getDocTypeLabel(code: string): string { return this.docTypeMap[code] ?? 'DOC'; }
+
   isCompany(code?: string, businessName?: string | null): boolean {
     if (businessName && String(businessName).trim().length > 0) return true;
     return code === '06';
   }
+
   getDisplayName(c: Customer): string {
     const bn = c.businessName ?? (c as any).razon_social ?? null;
     if (bn && String(bn).trim().length > 0) return String(bn).trim();
@@ -120,7 +133,9 @@ export class Clientes implements OnInit {
     const full = [name, last].filter(Boolean).join(' ').trim();
     return full || c.documentValue || '—';
   }
+
   getPhoneDisplay(c: Customer): string { return c.phone ?? '---'; }
+
   getCustomerTypeLabel(c: Customer): string {
     return this.isCompany(c.documentTypeSunatCode, c.businessName) ? 'JURÍDICA' : 'NATURAL';
   }
@@ -144,7 +159,11 @@ export class Clientes implements OnInit {
     if (!selected) return;
     if (selected.customerId) {
       this.clienteService.getCustomerById(selected.customerId).subscribe({
-        next: (full) => { this.displayedClients.set([full]); this.autoTerm.set(''); this.page.set(1); },
+        next: (full) => {
+          this.displayedClients.set([full]);
+          this.autoTerm.set('');
+          this.page.set(1);
+        },
         error: () => {
           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener los datos del cliente.' });
           this.displayedClients.set(null);
@@ -173,10 +192,8 @@ export class Clientes implements OnInit {
     this.displayedClients.set(null);
   }
 
-  onPageChange(event: any): void {
-    this.rows.set(event.rows);
-    this.page.set((event.first / event.rows) + 1);
-  }
+  onPageChange(page: number): void   { this.page.set(page); }
+  onLimitChange(limit: number): void { this.rows.set(limit); this.page.set(1); }
 
   openDetails(c: Customer)  { this.selectedClient.set(c); this.showDetails.set(true); }
   closeDetails()             { this.selectedClient.set(null); this.showDetails.set(false); }

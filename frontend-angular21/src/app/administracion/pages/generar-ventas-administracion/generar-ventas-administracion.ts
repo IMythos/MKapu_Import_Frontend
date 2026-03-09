@@ -681,7 +681,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     if (!this.botonClienteHabilitado() || this.clienteEncontrado()) return;
     this.clienteLoading.set(true);
     this.busquedaRealizada.set(false);
-    // ✅ Sin receiptTypeId — el backend determina el invoiceType
     this.ventasService.buscarCliente(this.clienteDocumento()).subscribe({
       next: (res) => {
         this.clienteEncontrado.set(res);
@@ -928,7 +927,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   }
 
   private prefillDesdeCotizacion(cotizacion: Quote): void {
-    // ✅ onSedeChange ya auto-selecciona el primer almacén internamente
     if (cotizacion.id_sede) {
       this.onSedeChange(cotizacion.id_sede);
     }
@@ -1381,7 +1379,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.direccionDelivery.set('');
     this.costoDelivery.set(0);
     this.activeStep.set(0);
-    // ✅ Solo reset interno — sin almacenesOptions
     this.almacenSeleccionado.set(null);
     this.cargarProductos(true);
     this.cargarFamilias();

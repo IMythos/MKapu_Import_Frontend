@@ -18,6 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { CategoriaService } from '../../../../services/categoria.service';
 import { Categoria } from '../../../../interfaces/categoria.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';
 
@@ -31,13 +32,14 @@ type ViewMode = 'todas' | 'activas' | 'inactivas';
     ToastModule, ConfirmDialogModule, MessageModule,
     SelectModule,
     LoadingOverlayComponent,
+    PaginadorComponent,  
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './categoria.html',
   styleUrl: './categoria.css',
 })
 export class CategoriaListado implements OnInit {
-  private readonly categoriaService   = inject(CategoriaService);
+  private readonly categoriaService    = inject(CategoriaService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService      = inject(MessageService);
 
@@ -50,6 +52,9 @@ export class CategoriaListado implements OnInit {
   readonly searchTerm = signal<string>('');
   readonly categorias = computed(() => this.categoriaService.categorias());
   readonly viewMode   = signal<ViewMode>('activas');
+
+  readonly paginaActual = signal<number>(1);
+  readonly limitePagina = signal<number>(5);
 
   readonly viewOptions: { label: string; value: ViewMode }[] = [
     { label: 'Todos',     value: 'todas'     },
@@ -74,6 +79,15 @@ export class CategoriaListado implements OnInit {
     );
   });
 
+  readonly categoriasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.filteredCategorias().slice(inicio, inicio + this.limitePagina());
+  });
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.filteredCategorias().length / this.limitePagina())
+  );
+
   readonly categoriaSuggestions = computed(() => this.filteredCategorias());
 
   ngOnInit(): void {
@@ -81,19 +95,23 @@ export class CategoriaListado implements OnInit {
   }
 
   verDetalle(cat: Categoria): void { this.categoriaSeleccionada.set(cat); this.dialogVisible = true; }
-  onViewModeChange(mode: ViewMode): void { this.viewMode.set(mode); }
-  onSearch(event: { query: string }): void { this.searchTerm.set(event.query); }
+
+  onViewModeChange(mode: ViewMode): void { this.viewMode.set(mode); this.paginaActual.set(1); }
+  onSearch(event: { query: string }): void { this.searchTerm.set(event.query); this.paginaActual.set(1); }
 
   onSearchChange(term: unknown): void {
-    if (typeof term === 'string') { this.searchTerm.set(term); return; }
+    if (typeof term === 'string') { this.searchTerm.set(term); this.paginaActual.set(1); return; }
     if (term && typeof term === 'object' && 'nombre' in (term as any)) {
-      this.searchTerm.set(String((term as any).nombre ?? '')); return;
+      this.searchTerm.set(String((term as any).nombre ?? '')); this.paginaActual.set(1); return;
     }
     this.searchTerm.set('');
   }
 
-  onSelectCategoria(event: any): void { this.searchTerm.set(String(event?.value?.nombre ?? '')); }
-  clearSearch(): void { this.searchTerm.set(''); }
+  onSelectCategoria(event: any): void { this.searchTerm.set(String(event?.value?.nombre ?? '')); this.paginaActual.set(1); }
+  clearSearch(): void { this.searchTerm.set(''); this.paginaActual.set(1); }
+
+  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 
   confirmToggleStatus(cat: Categoria): void {
     const nextStatus = !cat.activo;

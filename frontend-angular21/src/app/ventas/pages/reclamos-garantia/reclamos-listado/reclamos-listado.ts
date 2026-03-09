@@ -1,5 +1,5 @@
 // ventas/pages/reclamos-garantia/reclamos-listado/reclamos-listado.ts
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, signal, computed } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -22,6 +22,7 @@ import {
   ClaimStatus,
 } from '../../../../core/services/claim.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 
 @Component({
@@ -40,6 +41,7 @@ import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
     Toast,
     DatePicker,
     LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   providers: [MessageService],
   templateUrl: './reclamos-listado.html',
@@ -63,7 +65,7 @@ export class ReclamosListado implements OnInit, OnDestroy {
   // ── Filtros ─────────────────────────────────────────────────────────────────
   filtroEstado:      ClaimStatus | null = null;
   filtroBusqueda     = '';
-  filtroFechaInicio: Date | null = getHoyPeru();   // inicia con hoy (hora Perú)
+  filtroFechaInicio: Date | null = getHoyPeru();
   filtroFechaFin:    Date | null = null;
 
   estadosOptions = [
@@ -74,7 +76,11 @@ export class ReclamosListado implements OnInit, OnDestroy {
     { label: 'Rechazado',  value: ClaimStatus.RECHAZADO  },
   ];
 
-  // ── Lista filtrada ───────────────────────────────────────────────────────────
+  // ── Paginación local ─────────────────────────────────────────────────────────
+  paginaActual = signal<number>(1);
+  limitePagina = signal<number>(10);
+
+  // Todos los reclamos filtrados (sin paginar)
   get reclamosFiltrados(): ClaimResponseDto[] {
     const q   = this.filtroBusqueda.toLowerCase().trim();
     const est = this.filtroEstado;
@@ -87,23 +93,34 @@ export class ReclamosListado implements OnInit, OnDestroy {
       : null;
 
     return this.claimService.claims().filter((c) => {
-      // Búsqueda texto — usa campos reales del DTO
       const matchQ =
         !q ||
         (c.saleReceiptId && c.saleReceiptId.toLowerCase().includes(q)) ||
         (c.reason        && c.reason.toLowerCase().includes(q))        ||
         (c.description   && c.description.toLowerCase().includes(q));
 
-      // Estado
       const matchEst = !est || c.status === est;
 
-      // Rango de fechas — campo real del DTO: registerDate
       const fechaReg   = c.registerDate ? new Date(c.registerDate).getTime() : null;
       const matchDesde = !desde || (fechaReg !== null && fechaReg >= desde);
       const matchHasta = !hasta || (fechaReg !== null && fechaReg <= hasta);
 
       return matchQ && matchEst && matchDesde && matchHasta;
     });
+  }
+
+  // Página actual de reclamos para mostrar en la tabla
+  get reclamosPaginados(): ClaimResponseDto[] {
+    const desde = (this.paginaActual() - 1) * this.limitePagina();
+    return this.reclamosFiltrados.slice(desde, desde + this.limitePagina());
+  }
+
+  get totalFiltrados(): number {
+    return this.reclamosFiltrados.length;
+  }
+
+  get totalPaginas(): number {
+    return Math.ceil(this.totalFiltrados / this.limitePagina()) || 1;
   }
 
   // ── Lifecycle ────────────────────────────────────────────────────────────────
@@ -124,40 +141,28 @@ export class ReclamosListado implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
+  // ── Paginador ────────────────────────────────────────────────────────────────
+  onPageChange(page: number): void {
+    this.paginaActual.set(page);
+  }
+
+  onLimitChange(limit: number): void {
+    this.limitePagina.set(limit);
+    this.paginaActual.set(1);
+  }
+
   // ── Navegación ───────────────────────────────────────────────────────────────
-  nuevoReclamo(): void  { this.router.navigate([`${this.routeBase}/crear`]);         }
-  verDetalle(id: string): void { this.router.navigate([`${this.routeBase}/detalle`, id]); }
-  editarReclamo(id: string): void { this.router.navigate([`${this.routeBase}/editar`, id]);  }
+  nuevoReclamo(): void          { this.router.navigate([`${this.routeBase}/crear`]);          }
+  verDetalle(id: string): void  { this.router.navigate([`${this.routeBase}/detalle`, id]);    }
+  editarReclamo(id: string): void { this.router.navigate([`${this.routeBase}/editar`, id]);   }
 
   // ── Acciones pendientes de backend ───────────────────────────────────────────
   imprimirReclamo(_reclamo: ClaimResponseDto): void {
-    this.messageService.add({
-      severity: 'info',
-      summary:  'Imprimir',
-      detail:   'Generando PDF del reclamo...',
-      life:     3000,
-    });
-    // TODO backend — descomentar cuando esté listo:
-    // const sub = this.claimService.imprimirReclamo(_reclamo.id).subscribe({
-    //   next: (blob) => { /* abrir PDF */ },
-    //   error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo generar el PDF', life: 3000 }),
-    // });
-    // this.subscriptions.add(sub);
+    this.messageService.add({ severity: 'info', summary: 'Imprimir', detail: 'Generando PDF del reclamo...', life: 3000 });
   }
 
   enviarCorreo(_reclamo: ClaimResponseDto): void {
-    this.messageService.add({
-      severity: 'info',
-      summary:  'Correo',
-      detail:   'Enviando correo del reclamo...',
-      life:     3000,
-    });
-    // TODO backend — descomentar cuando esté listo:
-    // const sub = this.claimService.enviarCorreoReclamo(_reclamo.id).subscribe({
-    //   next: () => this.messageService.add({ severity: 'success', summary: 'Enviado', detail: 'Correo enviado correctamente', life: 3000 }),
-    //   error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar el correo', life: 3000 }),
-    // });
-    // this.subscriptions.add(sub);
+    this.messageService.add({ severity: 'info', summary: 'Correo', detail: 'Enviando correo del reclamo...', life: 3000 });
   }
 
   // ── Filtros ──────────────────────────────────────────────────────────────────
@@ -166,6 +171,7 @@ export class ReclamosListado implements OnInit, OnDestroy {
     this.filtroBusqueda    = '';
     this.filtroFechaInicio = null;
     this.filtroFechaFin    = null;
+    this.paginaActual.set(1);
   }
 
   // ── Helpers públicos ─────────────────────────────────────────────────────────

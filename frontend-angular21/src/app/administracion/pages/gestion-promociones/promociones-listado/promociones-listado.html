@@ -3,12 +3,14 @@
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
         <span class="ventas-title-icon">
-          <i class="pi pi-tags"></i></span>
+          <i class="pi pi-tags"></i>
+        </span>
         <div>
-          <p class="ventas-kicker">ADMINISTRADOR · ADMINISTRACIÓN ·  PROMOCIONES</p>
+          <p class="ventas-kicker">ADMINISTRADOR · ADMINISTRACIÓN · PROMOCIONES</p>
           <h2 class="ventas-title">PROMOCIONES Y OFERTAS</h2>
         </div>
       </div>
+
       <p-button
         label="Nueva Promoción"
         icon="pi pi-plus"
@@ -83,6 +85,7 @@
       </div>
 
       <div class="filtros-linea-2">
+
         <div class="filtro-item filtro-compacto">
           <label>Tipo</label>
           <p-select
@@ -135,6 +138,7 @@
             styleClass="btn-limpiar-filtros"
           />
         </div>
+
       </div>
     </div>
   </div>
@@ -143,12 +147,12 @@
 <!-- TABLA -->
 <div class="p-2">
   <p-card class="tarjeta-principal">
+
     <div class="seccion-tabla">
       <div class="tabla-header">
         <h3><i class="pi pi-list"></i> Listado de Promociones</h3>
       </div>
 
-      <!-- wrapper para anclar el overlay -->
       <div style="position: relative">
 
         <app-loading-overlay
@@ -162,17 +166,11 @@
           style="transition: opacity 0.2s ease;">
 
           <p-table
-            [value]="filteredPromociones()"
-            [loading]="false"
-            [lazy]="false"
-            [paginator]="true"
-            [rows]="itemsPorPagina()"
-            [totalRecords]="totalItems()"
-            [first]="paginaActual() * itemsPorPagina()"
-            (onPageChange)="onPageChange($event)"
+            [value]="promocionesPaginadas()"
             styleClass="p-datatable-striped"
             [tableStyle]="{ 'min-width': '55rem' }"
           >
+
             <ng-template pTemplate="header">
               <tr>
                 <th>Codigo</th>
@@ -187,6 +185,7 @@
 
             <ng-template pTemplate="body" let-promo>
               <tr>
+
                 <td><strong>COD{{ promo.idPromocion }}</strong></td>
 
                 <td>{{ promo.concepto }}</td>
@@ -211,7 +210,10 @@
                   <span *ngIf="promo.reglas.length; else sinReglas">
                     {{ promo.reglas.length }} regla(s)
                   </span>
-                  <ng-template #sinReglas><span class="text-400">—</span></ng-template>
+
+                  <ng-template #sinReglas>
+                    <span class="text-400">—</span>
+                  </ng-template>
                 </td>
 
                 <td>
@@ -223,47 +225,71 @@
 
                 <td class="text-center">
                   <div class="acciones-tabla">
+
                     <p-button
                       icon="pi pi-eye"
                       (onClick)="verPromocion(promo.idPromocion)"
-                      [rounded]="true" [text]="true" severity="secondary"
-                      pTooltip="Ver Detalles" tooltipPosition="top"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      pTooltip="Ver Detalles"
+                      tooltipPosition="top"
                       styleClass="ventas-icon-btn ventas-icon-soft"
                     />
+
                     <p-button
                       icon="pi pi-pencil"
                       (onClick)="editarPromocion(promo.idPromocion)"
-                      [rounded]="true" [text]="true" severity="secondary"
-                      pTooltip="Editar" tooltipPosition="top"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="secondary"
+                      pTooltip="Editar"
+                      tooltipPosition="top"
                       styleClass="ventas-icon-btn ventas-icon-soft"
                     />
 
                     @if (promo.activo) {
+
                       <p-button
                         icon="pi pi-times"
                         (onClick)="toggleEstado(promo)"
-                        [rounded]="true" [text]="true" severity="warn"
-                        pTooltip="Desactivar" tooltipPosition="top"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="warn"
+                        pTooltip="Desactivar"
+                        tooltipPosition="top"
                         styleClass="ventas-icon-btn"
                       />
+
                     } @else {
+
                       <p-button
                         icon="pi pi-check"
                         (onClick)="toggleEstado(promo)"
-                        [rounded]="true" [text]="true" severity="success"
-                        pTooltip="Activar" tooltipPosition="top"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="success"
+                        pTooltip="Activar"
+                        tooltipPosition="top"
                         styleClass="ventas-icon-btn"
                       />
+
                       <p-button
                         icon="pi pi-trash"
                         (onClick)="eliminarPromocion(promo.idPromocion, promo.concepto)"
-                        [rounded]="true" [text]="true" severity="danger"
-                        pTooltip="Eliminar" tooltipPosition="top"
+                        [rounded]="true"
+                        [text]="true"
+                        severity="danger"
+                        pTooltip="Eliminar"
+                        tooltipPosition="top"
                         styleClass="ventas-icon-btn ventas-icon-danger"
                       />
+
                     }
+
                   </div>
                 </td>
+
               </tr>
             </ng-template>
 
@@ -278,18 +304,25 @@
               </tr>
             </ng-template>
 
-            <ng-template pTemplate="paginatorleft">
-              <span class="p-paginator-current">
-                Mostrando {{ getFirstRecord() }} a {{ getLastRecord() }} de {{ totalItems() }} registros
-              </span>
-            </ng-template>
           </p-table>
+
+          <!-- PAGINADOR PERSONALIZADO -->
+          <app-paginador
+            [page]="paginaActual()"
+            [totalPages]="totalPages()"
+            [total]="filteredPromociones().length"
+            [limit]="itemsPorPagina()"
+            (pageChange)="onPageChange($event)"
+            (limitChange)="onLimitChange($event)">
+          </app-paginador>
 
         </div>
       </div>
     </div>
+
   </p-card>
 
-  <p-toast />
-  <p-confirmDialog />
+  <p-toast></p-toast>
+  <p-confirmDialog></p-confirmDialog>
+
 </div>

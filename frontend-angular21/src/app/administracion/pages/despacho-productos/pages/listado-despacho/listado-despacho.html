@@ -89,7 +89,7 @@
             pInputText
             type="text"
             [ngModel]="searchTerm()"
-            (ngModelChange)="searchTerm.set($event)"
+            (ngModelChange)="searchTerm.set($event); paginaActual.set(1)"
             placeholder="ID despacho, venta o dirección de entrega..."
             class="w-full"
           />
@@ -100,7 +100,7 @@
           <p-select
             [options]="estadoOptions"
             [ngModel]="estadoFiltro()"
-            (ngModelChange)="estadoFiltro.set($event)"
+            (ngModelChange)="estadoFiltro.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
             placeholder="Seleccione estado"
@@ -146,11 +146,9 @@
       <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
 
         <p-table
-          [value]="filasFiltradas()"
+          [value]="filasPaginadas()"
           [loading]="false"
-          [paginator]="true"
-          [rows]="10"
-          [rowsPerPageOptions]="[5, 10, 25, 50]"
+          [paginator]="false"
           styleClass="despacho-table-nativa despacho-table-hover"
           [rowHover]="true">
 
@@ -196,6 +194,18 @@
                     pTooltip="Editar Despacho">
                   </p-button>
                   <p-button
+                    icon="pi pi-print"
+                    text severity="secondary"
+                    styleClass="despacho-icon-btn despacho-icon-warn"
+                    pTooltip="Generar pdf">
+                  </p-button>
+                  <p-button
+                    icon="pi pi-send"
+                    text severity="secondary"
+                    styleClass="despacho-icon-btn despacho-icon-warn"
+                    pTooltip="Enviar a correo">
+                  </p-button>
+                  <p-button
                     icon="pi pi-ban"
                     text severity="danger"
                     styleClass="despacho-icon-btn despacho-icon-danger"
@@ -222,6 +232,16 @@
           </ng-template>
 
         </p-table>
+
+        <app-paginador
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="filasFiltradas().length"
+          [limit]="limitePagina()"
+          [limitOpciones]="[5, 10, 25, 50]"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
 
       </div>
     </div>

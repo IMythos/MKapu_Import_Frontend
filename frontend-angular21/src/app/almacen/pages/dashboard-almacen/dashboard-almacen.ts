@@ -99,14 +99,12 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
     this.subs.add(sub);
   }
 
-  // ✅ Convierte siempre a string para mantener consistencia con id_sede VARCHAR
   onSedeGlobalChange(sedeId: number | string | null): void {
     this.idSede.set(sedeId != null ? String(sedeId) : '');
     this.cargarTodo();
   }
 
-  // ── Helpers de sede ───────────────────────────────────────────────
-  // ✅ Usa !== '' en vez de || null para no confundir '0' con vacío
+
   private getSedeParam(): string | null {
     return this.idSede() !== '' ? this.idSede() : null;
   }

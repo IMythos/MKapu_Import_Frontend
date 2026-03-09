@@ -70,7 +70,6 @@
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Vista</label>
           <p-select
@@ -94,7 +93,6 @@
             (click)="clearSearch()">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
@@ -149,11 +147,9 @@
 
         <p-table
           *ngIf="filteredRoles().length > 0"
-          [value]="filteredRoles()"
+          [value]="rolesPaginados()"
           styleClass="sedes-table"
-          [paginator]="true"
-          [rows]="10"
-          [rowsPerPageOptions]="[5,10,20,50]"
+          [paginator]="false"
           [tableStyle]="{ 'min-width': '100%' }">
 
           <ng-template pTemplate="header">
@@ -198,6 +194,18 @@
           </ng-template>
 
         </p-table>
+
+        <app-paginador
+          *ngIf="filteredRoles().length > 0"
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="filteredRoles().length"
+          [limit]="limitePagina()"
+          [limitOpciones]="[5, 10, 20, 50]"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
+
         <p-confirmdialog />
 
       </div>

@@ -16,7 +16,8 @@
           label="Nueva Guía"
           icon="pi pi-plus"
           styleClass="productos-pill productos-pill-warning"
-          (onClick)="abrirFormulario()">
+          (onClick)="abrirFormulario()"
+        >
         </p-button>
       </div>
     </div>
@@ -24,7 +25,6 @@
 </div>
 
 <div class="p-2">
-
   <!-- CONTADORES -->
   <div class="contadores-productos mb-4">
     <div class="contador-card">
@@ -65,7 +65,6 @@
   <div class="surface-card border-round-xl shadow-1 mb-4">
     <div class="p-3">
       <div class="flex flex-wrap gap-6 align-items-end h-full">
-
         <div class="flex-1 p-fluid h-full">
           <label class="font-medium mb-2 block">Buscar Guía</label>
           <input
@@ -89,7 +88,8 @@
             [showClear]="true"
             class="w-full"
             [ngModel]="filtroEstado()"
-            (ngModelChange)="filtroEstado.set($event); aplicarFiltros()">
+            (ngModelChange)="filtroEstado.set($event); aplicarFiltros()"
+          >
           </p-select>
         </div>
 
@@ -101,7 +101,8 @@
             placeholder="Seleccionar fechas"
             styleClass="w-full"
             [ngModel]="filtroFechas()"
-            (ngModelChange)="filtroFechas.set($event); aplicarFiltros()">
+            (ngModelChange)="filtroFechas.set($event); aplicarFiltros()"
+          >
           </p-datepicker>
         </div>
 
@@ -112,7 +113,8 @@
             severity="success"
             [outlined]="true"
             size="small"
-            styleClass="productos-pill">
+            styleClass="productos-pill"
+          >
           </p-button>
           <p-button
             icon="pi pi-filter-slash"
@@ -120,37 +122,30 @@
             severity="danger"
             size="small"
             styleClass="productos-pill"
-            (onClick)="limpiarFiltros()">
+            (onClick)="limpiarFiltros()"
+          >
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
-
   <!-- TABLA con overlay -->
   <div class="mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative;">
-
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative">
       <app-loading-overlay
         [visible]="loading()"
         mensaje="Cargando guías de remisión..."
-        modo="inline">
+        modo="inline"
+      >
       </app-loading-overlay>
 
-      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
-
+      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease">
         <p-table
           [value]="remisiones()"
-          [lazy]="true"
-          (onLazyLoad)="onPageChange($event)"
-          [rows]="10"
-          [totalRecords]="totalRecords()"
           [loading]="false"
-          [paginator]="true"
-          [rowsPerPageOptions]="[5, 10, 25, 50]"
-          styleClass="productos-table-nativa productos-table-hover">
-
+          [paginator]="false"
+          styleClass="productos-table-nativa productos-table-hover"
+        >
           <ng-template pTemplate="header">
             <tr>
               <th style="width: 12%">Ref. Comprobante</th>
@@ -171,7 +166,8 @@
                 <p-tag
                   [severity]="remision.tipo_guia === 0 ? 'success' : 'warn'"
                   [value]="remision.tipo_guia === 0 ? 'REMITENTE' : 'TRANSPORTISTA'"
-                  styleClass="font-bold">
+                  styleClass="font-bold"
+                >
                 </p-tag>
               </td>
               <td>{{ remision.fecha_inicio | date: 'dd/MM/yyyy' }}</td>
@@ -180,7 +176,8 @@
                 <p-tag
                   [severity]="remision.modalidad === 0 ? 'success' : 'secondary'"
                   [value]="remision.modalidad === 0 ? 'PÚBLICO' : 'PRIVADO'"
-                  styleClass="font-bold">
+                  styleClass="font-bold"
+                >
                 </p-tag>
               </td>
               <td>{{ remision.peso_total }} {{ remision.unidad_peso }}</td>
@@ -195,7 +192,8 @@
                     severity="secondary"
                     styleClass="productos-icon-btn productos-icon-soft"
                     pTooltip="Ver Detalles"
-                    (onClick)="verDetalles(remision.id_guia)">
+                    (onClick)="verDetalles(remision.id_guia)"
+                  >
                   </p-button>
                 </div>
               </td>
@@ -211,13 +209,21 @@
               </td>
             </tr>
           </ng-template>
-
         </p-table>
 
+        <app-paginador
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="totalRecords()"
+          [limit]="limitePagina()"
+          [limitOpciones]="[10, 25, 50]"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)"
+        >
+        </app-paginador>
       </div>
     </div>
   </div>
-
 </div>
 
 <p-toast></p-toast>

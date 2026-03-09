@@ -1,5 +1,3 @@
-<!-- src/app/administracion/pages/gestion-proveedor/proveedor-listado/proveedor-listado.html -->
-
 <div class="p-2">
   <p-card styleClass="proveedores-header-card mb-4 proveedores-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
@@ -171,9 +169,6 @@
           *ngIf="proveedoresPaginados().length > 0"
           [value]="proveedoresPaginados()"
           dataKey="id_proveedor"
-          [rows]="rows()"
-          [first]="first()"
-          [totalRecords]="totalRecords()"
           [loading]="false"
           [paginator]="false"
           styleClass="proveedores-table-nativa proveedores-table-hover">
@@ -237,41 +232,25 @@
 
         </p-table>
 
-      </div>
-    </div>
+        <app-paginador
+          *ngIf="proveedoresPaginados().length > 0"
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="totalRecords()"
+          [limit]="rows()"
+          [limitOpciones]="pageSizeOptions"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
 
-    <!-- Paginador vista tabla -->
-    <div
-      *ngIf="proveedoresPaginados().length > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl">
-      <div class="text-600 font-medium">
-        Mostrando {{ first() + 1 }}-{{ getLast() }} de {{ totalRecords() }} proveedores
-      </div>
-      <p-paginator
-        [rows]="rows()"
-        [first]="first()"
-        [totalRecords]="totalRecords()"
-        (onPageChange)="onPageChange($event)"
-        styleClass="flex-1 justify-content-center">
-      </p-paginator>
-      <div class="flex align-items-center gap-2">
-        <span class="text-600 mr-2">Filas:</span>
-        <p-select
-          [ngModel]="rows()"
-          (ngModelChange)="cambiarFilas($event)"
-          name="rowsSelectProveedores"
-          [options]="pageSizeOptions"
-          class="w-6rem">
-        </p-select>
       </div>
     </div>
   </div>
 
   <!-- Vista tarjetas -->
   <div *ngIf="!vistaLista()" class="mb-6">
-
-    <!-- Overlay también en tarjetas -->
     <div style="position: relative;">
+
       <app-loading-overlay
         [visible]="loading()"
         mensaje="Cargando proveedores..."
@@ -331,31 +310,16 @@
       </div>
     </div>
 
-    <!-- Paginador vista tarjetas -->
-    <div
+    <app-paginador
       *ngIf="proveedoresPaginados().length > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl">
-      <div class="text-600 font-medium">
-        Mostrando {{ first() + 1 }}-{{ getLast() }} de {{ totalRecords() }} proveedores
-      </div>
-      <p-paginator
-        [rows]="rows()"
-        [first]="first()"
-        [totalRecords]="totalRecords()"
-        (onPageChange)="onPageChange($event)"
-        styleClass="flex-1 justify-content-center">
-      </p-paginator>
-      <div class="flex align-items-center gap-2">
-        <span class="text-600 mr-2">Filas:</span>
-        <p-select
-          [ngModel]="rows()"
-          (ngModelChange)="cambiarFilas($event)"
-          name="rowsSelectProveedores2"
-          [options]="pageSizeOptions"
-          class="w-6rem">
-        </p-select>
-      </div>
-    </div>
+      [page]="paginaActual()"
+      [totalPages]="totalPaginas()"
+      [total]="totalRecords()"
+      [limit]="rows()"
+      [limitOpciones]="pageSizeOptions"
+      (pageChange)="onPageChange($event)"
+      (limitChange)="onLimitChange($event)">
+    </app-paginador>
   </div>
 
   <!-- Estado vacío -->

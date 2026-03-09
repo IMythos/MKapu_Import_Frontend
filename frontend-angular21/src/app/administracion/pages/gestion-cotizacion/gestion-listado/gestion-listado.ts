@@ -17,6 +17,9 @@ import { SedeService } from '../../../services/sede.service';
 import { QuoteListItem } from '../../../interfaces/quote.interface';
 import { QuoteService } from '../../../services/quote.service';
 import { SedeAlmacenService } from '../../../services/sede-almacen.service';
+
+//shared
+import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 
@@ -27,7 +30,7 @@ import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
     RouterModule, AutoComplete, TooltipModule, DatePickerModule,
-    LoadingOverlayComponent,
+    LoadingOverlayComponent, PaginadorComponent
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
@@ -38,20 +41,18 @@ export class GestionCotizacionesComponent implements OnInit {
   public tituloKicker    = 'ADMINISTRACIÓN';
   public subtituloKicker = 'GESTIÓN DE COTIZACIONES';
 
-  // ── Servicios ─────────────────────────────────────────────────────────────
   private sedeService         = inject(SedeService);
   private quoteService        = inject(QuoteService);
   private readonly sedeAlmacenService = inject(SedeAlmacenService);
   private confirmationService = inject(ConfirmationService);
   private messageService      = inject(MessageService);
 
-  // ── Signals ───────────────────────────────────────────────────────────────
   buscarValue           = signal<string>('');
   cotizacionSugerencias = signal<QuoteListItem[]>([]);
   estadoSeleccionado    = signal<string | null>('PENDIENTE');
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
-  rows                  = signal<number>(10);
+  rows                  = signal<number>(5);
   fechaFin              = signal<Date | null>(null);
   fechaInicio           = signal<Date | null>(getHoyPeru());
 
@@ -63,7 +64,6 @@ export class GestionCotizacionesComponent implements OnInit {
     { label: 'Vencida',   value: 'VENCIDA'   },
   ];
 
-  // ── Computed ──────────────────────────────────────────────────────────────
   sedesOptions = computed(() => this.sedeService.sedes().map(sede => ({
     label: sede.nombre,
     value: sede.id_sede,
@@ -102,7 +102,6 @@ export class GestionCotizacionesComponent implements OnInit {
   totalAprobadas  = computed(() => this.cotizaciones().filter(c => c.estado === 'APROBADA').length);
   totalPendientes = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
 
-  // ── Lifecycle ─────────────────────────────────────────────────────────────
   constructor(private router: Router) {}
 
   ngOnInit() {
@@ -125,7 +124,6 @@ export class GestionCotizacionesComponent implements OnInit {
     return null;
   }
 
-  // ── Carga ─────────────────────────────────────────────────────────────────
   cargarCotizacion() {
     this.quoteService.loadQuotes({
       estado:  this.estadoSeleccionado(),
@@ -136,7 +134,6 @@ export class GestionCotizacionesComponent implements OnInit {
     }).subscribe();
   }
 
-  // ── Filtros / paginación ──────────────────────────────────────────────────
   onSedeChange(nuevaSedeId: number | null) {
     this.sedeSeleccionada.set(nuevaSedeId);
     this.currentPage.set(1);
@@ -154,17 +151,23 @@ export class GestionCotizacionesComponent implements OnInit {
   limpiarFiltros() {
     this.buscarValue.set('');
     this.cotizacionSugerencias.set([]);
-    this.fechaInicio.set(getHoyPeru());
+    this.fechaInicio.set(null);
     this.fechaFin.set(null);
     this.sedeSeleccionada.set(null);
-    this.estadoSeleccionado.set('PENDIENTE');
+    this.estadoSeleccionado.set(null);
     this.currentPage.set(1);
     this.cargarCotizacion();
   }
 
-  onPageChange(event: any) {
-    this.currentPage.set(event.page + 1);
-    this.rows.set(event.rows);
+  // ── Paginador nuevo ───────────────────────────────────────────────────────
+  onPageChange(page: number) {
+    this.currentPage.set(page);
+    this.cargarCotizacion();
+  }
+
+  onLimitChange(limit: number) {
+    this.rows.set(limit);
+    this.currentPage.set(1);
     this.cargarCotizacion();
   }
 
@@ -189,7 +192,6 @@ export class GestionCotizacionesComponent implements OnInit {
     this.cargarCotizacion();
   }
 
-  // ── Estado tag ────────────────────────────────────────────────────────────
   mapEstadoTag(estado: string | null | undefined): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' | null | undefined {
     switch (estado) {
       case 'APROBADA':  return 'success';
@@ -200,7 +202,6 @@ export class GestionCotizacionesComponent implements OnInit {
     }
   }
 
-  // ── Rechazar ──────────────────────────────────────────────────────────────
   rechazarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Estás seguro de rechazar esta cotización? El estado cambiará a <strong>RECHAZADA</strong>.',
@@ -217,7 +218,6 @@ export class GestionCotizacionesComponent implements OnInit {
     });
   }
 
-  // ── Reactivar ─────────────────────────────────────────────────────────────
   reactivarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Deseas reactivar esta cotización? El estado volverá a <strong>PENDIENTE</strong>.',
@@ -234,7 +234,6 @@ export class GestionCotizacionesComponent implements OnInit {
     });
   }
 
-  // ── Eliminar ──────────────────────────────────────────────────────────────
   eliminarCotizacion(id: number) {
     this.confirmationService.confirm({
       message: '¿Estás seguro de <strong>eliminar permanentemente</strong> esta cotización? Esta acción no se puede deshacer.',
@@ -251,33 +250,18 @@ export class GestionCotizacionesComponent implements OnInit {
     });
   }
 
-  // ── Imprimir ──────────────────────────────────────────────────────────────
   imprimirCotizacion(c: QuoteListItem) {
     this.quoteService.exportPdf(c.id_cotizacion);
   }
 
-  // ── Enviar por email ──────────────────────────────────────────────────────
   enviarCotizacion(c: QuoteListItem) {
-    this.messageService.add({
-      severity: 'info',
-      summary: 'Enviando...',
-      detail: `Enviando cotización ${c.codigo} por email.`,
-    });
+    this.messageService.add({ severity: 'info', summary: 'Enviando...', detail: `Enviando cotización ${c.codigo} por email.` });
     this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
-      next: (res) => this.messageService.add({
-        severity: 'success',
-        summary: 'Email enviado',
-        detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`,
-      }),
-      error: () => this.messageService.add({
-        severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
-      }),
+      next:  (res) => this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cotización ${c.codigo} enviada a ${res.sentTo}` }),
+      error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
     });
   }
 
-  // ── Helpers de fechas ─────────────────────────────────────────────────────
   getDiasRestantes(fecVenc: string | Date | null): number {
     if (!fecVenc) return 0;
     const hoy  = new Date(); hoy.setHours(0, 0, 0, 0);
@@ -310,7 +294,6 @@ export class GestionCotizacionesComponent implements OnInit {
     return 'var(--text-muted)';
   }
 
-  // ── Navegación ────────────────────────────────────────────────────────────
   irCrear()             { this.router.navigate(['/admin/agregar-cotizaciones']); }
   irEditar(id: number)  { this.router.navigate(['/admin/editar-cotizacion', id]); }
   irDetalle(id: number) { this.router.navigate(['/admin/ver-detalle-cotizacion', id]); }

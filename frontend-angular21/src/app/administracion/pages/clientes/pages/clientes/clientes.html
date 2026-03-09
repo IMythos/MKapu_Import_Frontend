@@ -128,10 +128,8 @@
 
         <p-table
           *ngIf="displayedList().length > 0"
-          [value]="displayedList()"
-          [paginator]="true"
-          [rows]="rows()"
-          [rowsPerPageOptions]="[5,10,20]"
+          [value]="clientesPaginados()"
+          [paginator]="false"
           [tableStyle]="{ 'min-width': '60rem' }"
           styleClass="p-datatable-sm p-datatable-striped clientes-table">
 
@@ -185,6 +183,17 @@
           </ng-template>
 
         </p-table>
+
+        <app-paginador
+          *ngIf="displayedList().length > 0"
+          [page]="page()"
+          [totalPages]="totalPaginas()"
+          [total]="displayedList().length"
+          [limit]="rows()"
+          [limitOpciones]="[5, 10, 20, 50]"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
 
         <!-- DIALOG detalle -->
         <p-dialog

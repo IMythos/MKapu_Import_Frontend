@@ -126,11 +126,9 @@
 
         <p-table
           *ngIf="filteredCategorias().length > 0"
-          [value]="filteredCategorias()"
+          [value]="categoriasPaginadas()"
           styleClass="sedes-table"
-          [paginator]="true"
-          [rows]="5"
-          [rowsPerPageOptions]="[5,10,20,50]"
+          [paginator]="false"
           [tableStyle]="{ 'min-width': '100%' }">
 
           <ng-template pTemplate="header">
@@ -172,6 +170,18 @@
           </ng-template>
 
         </p-table>
+
+        <app-paginador
+          *ngIf="filteredCategorias().length > 0"
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="filteredCategorias().length"
+          [limit]="limitePagina()"
+          [limitOpciones]="[5, 10, 20, 50]"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
+
         <p-confirmdialog />
 
       </div>

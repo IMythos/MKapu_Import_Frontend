@@ -39,13 +39,13 @@
           type="text"
           placeholder="Buscar por detalle..."
           [ngModel]="filtroBusqueda()"
-          (ngModelChange)="filtroBusqueda.set($event)"
+          (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
         />
       </span>
 
       <p-autoComplete
         [ngModel]="estadoSeleccionado()"
-        (ngModelChange)="estadoSeleccionado.set($event)"
+        (ngModelChange)="estadoSeleccionado.set($event); paginaActual.set(1)"
         [suggestions]="estadosFiltrados()"
         (completeMethod)="filtrarEstados($event)"
         optionLabel="nombre"
@@ -55,7 +55,7 @@
 
       <p-autoComplete
         [ngModel]="familiaSeleccionada()"
-        (ngModelChange)="familiaSeleccionada.set($event)"
+        (ngModelChange)="familiaSeleccionada.set($event); paginaActual.set(1)"
         [suggestions]="familiasFiltradas()"
         (completeMethod)="filtrarFamilias($event)"
         optionLabel="nombre"
@@ -67,7 +67,6 @@
 
   <p-card class="mt-3 tabla-card">
 
-    <!-- Loading overlay + tabla con opacidad -->
     <div style="position: relative;">
 
       <app-loading-overlay
@@ -79,7 +78,7 @@
       <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
 
         <p-table
-          [value]="conteosFiltrados()"
+          [value]="conteosPaginados()"
           [loading]="false"
           responsiveLayout="scroll"
           styleClass="p-datatable-striped"
@@ -107,7 +106,7 @@
               </td>
               <td>
                 <div class="flex flex-column">
-                  <span class="font-semibold text-700"> Conteo en {{ row.nomSede }} </span>
+                  <span class="font-semibold text-700">Conteo en {{ row.nomSede }}</span>
                   <small class="text-500">
                     {{ row.totalItems }} ítems
                     <ng-container *ngIf="row.detalles && row.detalles.length > 0">
@@ -171,31 +170,16 @@
 
         </p-table>
 
-      </div>
-    </div>
+        <!-- Paginador reutilizable -->
+        <app-paginador
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="totalRegistros() || conteosFiltrados().length"
+          [limit]="rows()"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
 
-    <div
-      *ngIf="totalRegistros() > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl">
-      <div class="text-600 font-medium">
-        Mostrando {{ conteosFiltrados().length > 0 ? first() + 1 : 0 }}-{{ getLast() }} de {{ totalRegistros() }} conteos
-      </div>
-      <p-paginator
-        [rows]="rows()"
-        [first]="first()"
-        [totalRecords]="totalRegistros()"
-        (onPageChange)="onPageChange($event)"
-        styleClass="flex-1 justify-content-center">
-      </p-paginator>
-      <div class="flex align-items-center gap-2">
-        <span class="text-600 mr-2">Filas:</span>
-        <p-select
-          [ngModel]="rows()"
-          name="rowsSelectActivos"
-          [options]="[5, 10, 25, 50]"
-          class="w-6rem"
-          (onChange)="cambiarFilas($event.value)">
-        </p-select>
       </div>
     </div>
 

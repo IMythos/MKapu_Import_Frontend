@@ -20,10 +20,8 @@
     />
   </div>
 
-  <!-- ✅ VISTA PREVIA DEL COMPROBANTE -->
   <div *ngIf="!cargando && comprobante && sede" class="vista-previa-comprobante">
     
-    <!-- 🏢 HEADER -->
     <div class="comprobante-header">
       <h2>{{ sede.nombre }}</h2>
       <p class="razon-social">{{ sede.razon_social }}</p>

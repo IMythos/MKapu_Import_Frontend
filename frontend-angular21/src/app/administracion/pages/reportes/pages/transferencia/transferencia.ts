@@ -15,7 +15,6 @@ import { ButtonModule } from 'primeng/button';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
-import { TableLazyLoadEvent } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToastModule } from 'primeng/toast';
@@ -31,6 +30,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TransferUserContextService } from '../../../../services/transfer-user-context.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 interface TransferenciaRow {
   id: number;
@@ -66,25 +66,26 @@ interface TransferenciaRow {
     ConfirmDialogModule,
     ToastModule,
     LoadingOverlayComponent,
+    PaginadorComponent, 
   ],
   templateUrl: './transferencia.html',
   styleUrl: './transferencia.css',
   providers: [MessageService, ConfirmationService],
 })
 export class Transferencia {
-  private readonly transferStore      = inject(TransferStore);
-  private readonly messageService     = inject(MessageService);
-  private readonly destroyRef         = inject(DestroyRef);
+  private readonly transferStore       = inject(TransferStore);
+  private readonly messageService      = inject(MessageService);
+  private readonly destroyRef          = inject(DestroyRef);
   private readonly transferUserContext = inject(TransferUserContextService);
 
-  private readonly searchTermSig     = signal('');
-  private readonly estadoFilterSig   = signal<TransferStatus | null>(null);
+  private readonly searchTermSig      = signal('');
+  private readonly estadoFilterSig    = signal<TransferStatus | null>(null);
   private readonly solicitudFilterSig = signal<string | null>(null);
-  private readonly lastErrorShown    = signal<string | null>(null);
-  private readonly paginationSig     = this.transferStore.pagination;
+  private readonly lastErrorShown     = signal<string | null>(null);
+  private readonly paginationSig      = this.transferStore.pagination;
 
   readonly transferenciasSig = computed(() =>
-    this.transferStore.transfers().map((transferencia) => this.mapTransferencia(transferencia)),
+    this.transferStore.transfers().map((t) => this.mapTransferencia(t)),
   );
 
   readonly filteredTransferenciasSig = computed(() => {
@@ -92,21 +93,11 @@ export class Transferencia {
     const estado    = this.estadoFilterSig();
     const solicitud = this.solicitudFilterSig();
 
-    return this.transferenciasSig().filter((transferencia) => {
-      const textMatch = [
-        transferencia.codigo,
-        transferencia.producto,
-        transferencia.origen,
-        transferencia.destino,
-        transferencia.responsable,
-        transferencia.solicitud,
-      ].some((value) => value.toLowerCase().includes(search));
-
-      const estadoMatch    = estado    ? transferencia.estado === estado : true;
-      const solicitudMatch = solicitud
-        ? transferencia.solicitud.toLowerCase().startsWith(solicitud.toLowerCase())
-        : true;
-
+    return this.transferenciasSig().filter((t) => {
+      const textMatch = [t.codigo, t.producto, t.origen, t.destino, t.responsable, t.solicitud]
+        .some((v) => v.toLowerCase().includes(search));
+      const estadoMatch    = estado    ? t.estado === estado : true;
+      const solicitudMatch = solicitud ? t.solicitud.toLowerCase().startsWith(solicitud.toLowerCase()) : true;
       return textMatch && estadoMatch && solicitudMatch;
     });
   });
@@ -119,18 +110,22 @@ export class Transferencia {
     this.hasActiveFilters ? this.filteredTransferenciasSig().length : this.paginationSig().totalRecords,
   );
 
+  readonly totalPagesComputed = computed(() =>
+    Math.ceil(this.paginationSig().totalRecords / this.paginationSig().pageSize),
+  );
+
   readonly estadoOptions = [
-    { label: 'Todos',       value: null                  },
-    { label: 'SOLICITADA',  value: 'SOLICITADA'  as const },
-    { label: 'APROBADA',    value: 'APROBADA'    as const },
-    { label: 'RECHAZADA',   value: 'RECHAZADA'   as const },
-    { label: 'COMPLETADA',  value: 'COMPLETADA'  as const },
+    { label: 'Todos',      value: null                   },
+    { label: 'SOLICITADA', value: 'SOLICITADA' as const  },
+    { label: 'APROBADA',   value: 'APROBADA'   as const  },
+    { label: 'RECHAZADA',  value: 'RECHAZADA'  as const  },
+    { label: 'COMPLETADA', value: 'COMPLETADA' as const  },
   ];
 
   readonly solicitudOptions = [
-    { label: 'Todas',            value: null               },
-    { label: 'Con observacion',  value: 'Con observacion'  },
-    { label: 'Sin observacion',  value: 'Sin observacion'  },
+    { label: 'Todas',           value: null              },
+    { label: 'Con observacion', value: 'Con observacion' },
+    { label: 'Sin observacion', value: 'Sin observacion' },
   ];
 
   constructor() {
@@ -150,45 +145,50 @@ export class Transferencia {
   }
 
   // ── Getters / setters ─────────────────────────────────────────────────────
-  get transferencias():         TransferenciaRow[]      { return this.transferenciasSig(); }
-  get filteredTransferencias(): TransferenciaRow[]      { return this.filteredTransferenciasSig(); }
-  get transferenciaSuggestions(): TransferenciaRow[]    { return this.filteredTransferenciasSig(); }
-  get loading():      boolean                           { return this.transferStore.loading(); }
-  get hasActiveFilters(): boolean                       { return !!(this.searchTermSig() || this.estadoFilterSig() || this.solicitudFilterSig()); }
-  get solicitadas():  number                            { return this.solicitadasSig(); }
-  get aprobadas():    number                            { return this.aprobadasSig(); }
-  get completadas():  number                            { return this.completadasSig(); }
-  get rechazadas():   number                            { return this.rechazadasSig(); }
-  get totalRecords(): number                            { return this.displayCountSig(); }
-  get firstRowIndex(): number                           { const p = this.paginationSig(); return Math.max(0, (p.page - 1) * p.pageSize); }
-  get rowsPerPage():  number                            { return this.paginationSig().pageSize; }
+  get transferencias():           TransferenciaRow[]   { return this.transferenciasSig(); }
+  get filteredTransferencias():   TransferenciaRow[]   { return this.filteredTransferenciasSig(); }
+  get transferenciaSuggestions(): TransferenciaRow[]   { return this.filteredTransferenciasSig(); }
+  get loading():        boolean                        { return this.transferStore.loading(); }
+  get hasActiveFilters(): boolean                      { return !!(this.searchTermSig() || this.estadoFilterSig() || this.solicitudFilterSig()); }
+  get solicitadas():    number                         { return this.solicitadasSig(); }
+  get aprobadas():      number                         { return this.aprobadasSig(); }
+  get completadas():    number                         { return this.completadasSig(); }
+  get rechazadas():     number                         { return this.rechazadasSig(); }
+  get totalRecords():   number                         { return this.displayCountSig(); }
+  get rowsPerPage():    number                         { return this.paginationSig().pageSize; }
+  get currentPage():    number                         { return this.paginationSig().page; }
 
-  get searchTerm(): string           { return this.searchTermSig(); }
-  set searchTerm(v: string)          { this.searchTermSig.set(v ?? ''); }
-  get estadoFilter(): TransferStatus | null  { return this.estadoFilterSig(); }
-  set estadoFilter(v: TransferStatus | null) { this.estadoFilterSig.set(v ?? null); }
-  get solicitudFilter(): string | null  { return this.solicitudFilterSig(); }
-  set solicitudFilter(v: string | null) { this.solicitudFilterSig.set(v ?? null); }
+  get searchTerm(): string                    { return this.searchTermSig(); }
+  set searchTerm(v: string)                   { this.searchTermSig.set(v ?? ''); }
+  get estadoFilter(): TransferStatus | null   { return this.estadoFilterSig(); }
+  set estadoFilter(v: TransferStatus | null)  { this.estadoFilterSig.set(v ?? null); }
+  get solicitudFilter(): string | null        { return this.solicitudFilterSig(); }
+  set solicitudFilter(v: string | null)       { this.solicitudFilterSig.set(v ?? null); }
 
   // ── Eventos ───────────────────────────────────────────────────────────────
   trackByTransferId = (_: number, item: TransferenciaRow): number => item.id;
 
-  onSearch(event: { query: string }): void              { this.searchTerm = event.query ?? ''; }
-  onSearchChange(term: string | { producto?: string } | null): void { this.searchTerm = this.obtenerValor(term); }
+  onSearch(event: { query: string }): void { this.searchTerm = event.query ?? ''; }
+
+  onSearchChange(term: string | { producto?: string } | null): void {
+    this.searchTerm = this.obtenerValor(term);
+  }
+
   onSelectTransferencia(event: { value?: string | { producto?: string } } | null): void {
     this.searchTerm = this.obtenerValor(event?.value ?? this.searchTerm);
   }
 
-  onTableLazyLoad(event: TableLazyLoadEvent): void {
-    if (this.hasActiveFilters) return;
-    const rows  = Math.max(1, Number(event.rows  ?? this.rowsPerPage));
-    const first = Math.max(0, Number(event.first ?? 0));
-    this.transferStore.loadAll({ page: Math.floor(first / rows) + 1, pageSize: rows });
+  onPaginadorPageChange(page: number): void {
+    this.transferStore.loadAll({ page, pageSize: this.paginationSig().pageSize });
+  }
+
+  onPaginadorLimitChange(limit: number): void {
+    this.transferStore.loadAll({ page: 1, pageSize: limit });
   }
 
   clearSearch(): void {
-    this.searchTerm    = '';
-    this.estadoFilter  = null;
+    this.searchTerm      = '';
+    this.estadoFilter    = null;
     this.solicitudFilter = null;
   }
 
@@ -242,7 +242,8 @@ export class Transferencia {
     const dto: ApproveTransferDto = { userId: this.transferUserContext.getCurrentUserId() };
     this.transferStore.approve(row.id, dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (!response) return;
-      this.messageService.add({ severity: 'success', summary: 'Transferencia aprobada', detail: `Se aprobó la transferencia #${row.codigo}` });
+      this.messageService.add({ severity: 'success', summary: 'Transferencia aprobada',
+        detail: `Se aprobó la transferencia #${row.codigo}` });
     });
   }
 
@@ -261,36 +262,36 @@ export class Transferencia {
     const dto: ConfirmReceiptTransferDto = { userId: this.transferUserContext.getCurrentUserId() };
     this.transferStore.confirmReceipt(row.id, dto).pipe(takeUntilDestroyed(this.destroyRef)).subscribe((response) => {
       if (!response) return;
-      this.messageService.add({ severity: 'success', summary: 'Recepción confirmada', detail: `La transferencia #${row.codigo} pasó a COMPLETADA` });
+      this.messageService.add({ severity: 'success', summary: 'Recepción confirmada',
+        detail: `La transferencia #${row.codigo} pasó a COMPLETADA` });
     });
   }
 
   // ── Mapeo ─────────────────────────────────────────────────────────────────
   private mapTransferencia(transferencia: TransferListResponseDto): TransferenciaRow {
-    const estado       = this.normalizeStatus(transferencia.status);
+    const estado        = this.normalizeStatus(transferencia.status);
     const solicitudTipo = transferencia.observation?.trim() ? 'Con observacion' : 'Sin observacion';
     return {
-      id:                       transferencia.id,
-      codigo:                   String(transferencia.id),
-      originHeadquartersId:     String(transferencia.originHeadquartersId ?? transferencia.origin?.id_sede ?? transferencia.origin?.id ?? ''),
+      id:                        transferencia.id,
+      codigo:                    String(transferencia.id),
+      originHeadquartersId:      String(transferencia.originHeadquartersId ?? transferencia.origin?.id_sede ?? transferencia.origin?.id ?? ''),
       destinationHeadquartersId: String(transferencia.destinationHeadquartersId ?? transferencia.destination?.id_sede ?? transferencia.destination?.id ?? ''),
-      approveUserId:            this.getApproveUserId(transferencia),
-      producto:                 this.getProductName(transferencia),
-      origen:                   transferencia.origin?.nomSede || this.normalizeId(transferencia.originHeadquartersId) || '-',
-      destino:                  transferencia.destination?.nomSede || this.normalizeId(transferencia.destinationHeadquartersId) || '-',
-      cantidad:                 transferencia.totalQuantity ?? this.getTotalQuantityFromItems(transferencia),
-      solicitud:                `${solicitudTipo}: ${transferencia.observation?.trim() || '-'}`,
-      responsable:              this.getFullUserName(transferencia.creatorUser),
+      approveUserId:             this.getApproveUserId(transferencia),
+      producto:                  this.getProductName(transferencia),
+      origen:                    transferencia.origin?.nomSede || this.normalizeId(transferencia.originHeadquartersId) || '-',
+      destino:                   transferencia.destination?.nomSede || this.normalizeId(transferencia.destinationHeadquartersId) || '-',
+      cantidad:                  transferencia.totalQuantity ?? this.getTotalQuantityFromItems(transferencia),
+      solicitud:                 `${solicitudTipo}: ${transferencia.observation?.trim() || '-'}`,
+      responsable:               this.getFullUserName(transferencia.creatorUser),
       estado,
-      fechaEnvio:               this.formatDate(transferencia.requestDate),
-      fechaLlegada:             '-',
+      fechaEnvio:                this.formatDate(transferencia.requestDate),
+      fechaLlegada:              '-',
     };
   }
 
   private getProductName(transferencia: TransferListResponseDto): string {
     const rootProductName = String(transferencia.nomProducto ?? '').trim();
     if (rootProductName) return rootProductName;
-
     const firstItem = transferencia.items?.[0];
     const producto  = firstItem?.producto;
     const parsed    = Array.isArray(producto) ? producto[0] : producto;
@@ -299,7 +300,6 @@ export class Transferencia {
       const resolvedName = String(r['nomProducto'] ?? r['nombre'] ?? r['anexo'] ?? r['descripcion'] ?? r['codigo'] ?? '').trim();
       if (resolvedName) return resolvedName;
     }
-
     const productId = this.extractProductId(firstItem, parsed);
     return productId !== null ? `Producto #${productId}` : '-';
   }
@@ -307,8 +307,10 @@ export class Transferencia {
   private extractProductId(item: unknown, parsedProducto: unknown): number | null {
     const itemRecord   = (item ?? {}) as Record<string, unknown>;
     const parsedRecord = parsedProducto && typeof parsedProducto === 'object' ? (parsedProducto as Record<string, unknown>) : null;
-    for (const candidate of [itemRecord['productId'], itemRecord['id_producto'], itemRecord['idProducto'], itemRecord['productoId'],
-      parsedRecord?.['id_producto'], parsedRecord?.['idProducto'], parsedRecord?.['productId'], parsedRecord?.['id']]) {
+    for (const candidate of [
+      itemRecord['productId'], itemRecord['id_producto'], itemRecord['idProducto'], itemRecord['productoId'],
+      parsedRecord?.['id_producto'], parsedRecord?.['idProducto'], parsedRecord?.['productId'], parsedRecord?.['id'],
+    ]) {
       const n = Number(candidate);
       if (Number.isFinite(n) && n > 0) return n;
     }

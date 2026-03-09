@@ -23,6 +23,7 @@ import {
   PermissionInRoleDto,
 }                                         from '../../../../interfaces/role-permission.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 type ViewMode = 'todos' | 'activos' | 'inactivos';
 
@@ -36,6 +37,7 @@ type ViewMode = 'todos' | 'activos' | 'inactivos';
     ToastModule, ConfirmDialogModule, MessageModule,
     SelectModule, CheckboxModule,
     LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './role-permission-listado.html',
@@ -65,6 +67,9 @@ export class RolePermissionListadoComponent implements OnInit {
   readonly searchTerm = signal('');
   readonly viewMode   = signal<ViewMode>('activos');
 
+  readonly paginaActual = signal<number>(1);
+  readonly limitePagina = signal<number>(10);
+
   readonly viewOptions: { label: string; value: ViewMode }[] = [
     { label: 'Todos',     value: 'todos'     },
     { label: 'Activos',   value: 'activos'   },
@@ -92,6 +97,15 @@ export class RolePermissionListadoComponent implements OnInit {
     );
   });
 
+  readonly rolesPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.filteredRoles().slice(inicio, inicio + this.limitePagina());
+  });
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.filteredRoles().length / this.limitePagina())
+  );
+
   readonly suggestions = computed(() => this.filteredRoles());
 
   ngOnInit() {
@@ -101,21 +115,25 @@ export class RolePermissionListadoComponent implements OnInit {
   }
 
   // ── Búsqueda ──────────────────────────────────────────────────────
-  onSearch(event: { query: string })  { this.searchTerm.set(event.query); }
-  onViewModeChange(mode: ViewMode)    { this.viewMode.set(mode); }
-  clearSearch()                       { this.searchTerm.set(''); }
+  onSearch(event: { query: string })  { this.searchTerm.set(event.query); this.paginaActual.set(1); }
+  onViewModeChange(mode: ViewMode)    { this.viewMode.set(mode); this.paginaActual.set(1); }
+  clearSearch()                       { this.searchTerm.set(''); this.paginaActual.set(1); }
 
   onSearchChange(term: unknown) {
-    if (typeof term === 'string') { this.searchTerm.set(term); return; }
+    if (typeof term === 'string') { this.searchTerm.set(term); this.paginaActual.set(1); return; }
     if (term && typeof term === 'object' && 'nombre' in (term as any)) {
-      this.searchTerm.set(String((term as any).nombre ?? '')); return;
+      this.searchTerm.set(String((term as any).nombre ?? '')); this.paginaActual.set(1); return;
     }
     this.searchTerm.set('');
   }
 
   onSelectRol(event: any) {
     this.searchTerm.set(String(event?.value?.nombre ?? ''));
+    this.paginaActual.set(1);
   }
+
+  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 
   // ── Detalle ───────────────────────────────────────────────────────
   verDetalle(rol: RoleWithPermissionsResponseDto) {
