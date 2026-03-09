@@ -1,4 +1,12 @@
-import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef, computed } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  inject,
+  ChangeDetectorRef,
+  computed,
+  signal,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -34,6 +42,7 @@ import {
   SalesReceiptKpiDto,
   MetodoPagoAdmin,
   TipoComprobanteAdmin,
+  ProductoDetalleAdmin,
 } from '../../interfaces/ventas.interface';
 
 interface FiltroVentasAdmin {
@@ -70,63 +79,65 @@ interface FiltroVentasAdmin {
   styleUrl: './historial-ventas-administracion.css',
 })
 export class HistorialVentasAdministracion implements OnInit, OnDestroy {
-  private readonly router              = inject(Router);
-  private readonly ventasService       = inject(VentasAdminService);
-  private readonly authService         = inject(AuthService);
-  private readonly messageService      = inject(MessageService);
+  private readonly router = inject(Router);
+  private readonly ventasService = inject(VentasAdminService);
+  private readonly authService = inject(AuthService);
+  private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly cdr                 = inject(ChangeDetectorRef);
+  private readonly cdr = inject(ChangeDetectorRef);
 
-  readonly tituloKicker    = 'VENTAS - HISTORIAL DE VENTAS';
+  readonly tituloKicker = 'VENTAS - HISTORIAL DE VENTAS';
   readonly subtituloKicker = 'CONSULTA Y GESTIÓN DE VENTAS';
-  readonly iconoCabecera   = 'pi pi-list';
+  readonly iconoCabecera = 'pi pi-list';
 
-  private subscriptions  = new Subscription();
+  private subscriptions = new Subscription();
   private busquedaSubject = new Subject<string>();
 
-  comprobantes:          SalesReceiptSummaryAdmin[] = [];
+  comprobantes: SalesReceiptSummaryAdmin[] = [];
   comprobantesFiltrados: SalesReceiptSummaryAdmin[] = [];
 
-  sedes:       SedeAdmin[] = [];
+  sedes: SedeAdmin[] = [];
   sedesOptions: { label: string; value: number | null }[] = [];
 
   tiposComprobante: { label: string; value: number | null }[] = [{ label: 'Todos', value: null }];
-  metodosPago:      { label: string; value: number | null }[] = [{ label: 'Todos', value: null }];
+  metodosPago: { label: string; value: number | null }[] = [{ label: 'Todos', value: null }];
+
+  pdfCargando = signal<number | null>(null);
 
   readonly estadosComprobante = [
-    { label: 'Todos',     value: null         },
-    { label: 'Emitido',   value: 'EMITIDO'    },
-    { label: 'Anulado',   value: 'ANULADO'    },
-    { label: 'Rechazado', value: 'RECHAZADO'  },
-    { label: 'Pendiente', value: 'PENDIENTE'  },
+    { label: 'Todos', value: null },
+    { label: 'Emitido', value: 'EMITIDO' },
+    { label: 'Anulado', value: 'ANULADO' },
+    { label: 'Rechazado', value: 'RECHAZADO' },
+    { label: 'Pendiente', value: 'PENDIENTE' },
   ];
 
   filtros: FiltroVentasAdmin = {
     sedeSeleccionada: null,
-    tipoComprobante:  null,
-    estado:           'EMITIDO',
-    fechaInicio:      getLunesSemanaActualPeru(),
-    fechaFin:         getDomingoSemanaActualPeru(),
-    busqueda:         '',
-    tipoPago:         null,
+    tipoComprobante: null,
+    estado: 'EMITIDO',
+    fechaInicio: getLunesSemanaActualPeru(),
+    fechaFin: getDomingoSemanaActualPeru(),
+    busqueda: '',
+    tipoPago: null,
   };
 
-  readonly rangoSemanaLabel = computed(
-    () => `Semana: ${formatFechaPeru(getLunesSemanaActualPeru())} - ${formatFechaPeru(getDomingoSemanaActualPeru())}`,
-  );
+  GenerarVenta() {
+    this.router.navigate(['./admin/generar-ventas-administracion']);
+  }
 
-  sugerenciasBusqueda:  string[] = [];
-  todasLasSugerencias:  string[] = [];
+  sugerenciasBusqueda: string[] = [];
+  todasLasSugerencias: string[] = [];
 
-  loading         = false;
-  paginaActual    = 1;
+  loading = false;
+  paginaActual = 1;
   limitePorPagina = 5;
-  totalRegistros  = 0;
-  totalPaginas    = 0;
+  totalRegistros = 0;
+  totalPaginas = 0;
 
-  totalVentas   = 0;
-  numeroVentas  = 0;
-  totalBoletas  = 0;
+  totalVentas = 0;
+  numeroVentas = 0;
+  totalBoletas = 0;
   totalFacturas = 0;
 
   // ── Lifecycle ─────────────────────────────────────────────────────
@@ -140,32 +151,36 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
     this.cargarComprobantes();
     this.cargarKpis();
 
-    const subBusqueda = this.busquedaSubject.pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap((query) => {
-        if (query.length < 3) return [];
-        return this.ventasService.listarHistorialVentas({
-          page: 1, limit: 10, search: query,
-          sedeId: this.filtros.sedeSeleccionada ?? undefined,
-        });
-      }),
-    ).subscribe({
-      next: (res: any) => {
-        const data: SalesReceiptSummaryAdmin[] = res?.receipts ?? res?.data ?? res?.items ?? [];
-        const set = new Set<string>();
-        data.forEach((c) => {
-          const nombre = c.clienteNombre?.trim();
-          const doc    = c.clienteDocumento?.trim();
-          if (nombre && doc) set.add(`${nombre} - ${doc}`);
-          else if (nombre)   set.add(nombre);
-          else if (doc)      set.add(doc);
-        });
-        this.sugerenciasBusqueda = Array.from(set).slice(0, 15);
-        this.cdr.markForCheck();
-      },
-      error: () => (this.sugerenciasBusqueda = []),
-    });
+    const subBusqueda = this.busquedaSubject
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((query) => {
+          if (query.length < 3) return [];
+          return this.ventasService.listarHistorialVentas({
+            page: 1,
+            limit: 10,
+            search: query,
+            sedeId: this.filtros.sedeSeleccionada ?? undefined,
+          });
+        }),
+      )
+      .subscribe({
+        next: (res: any) => {
+          const data: SalesReceiptSummaryAdmin[] = res?.receipts ?? res?.data ?? res?.items ?? [];
+          const set = new Set<string>();
+          data.forEach((c) => {
+            const nombre = c.clienteNombre?.trim();
+            const doc = c.clienteDocumento?.trim();
+            if (nombre && doc) set.add(`${nombre} - ${doc}`);
+            else if (nombre) set.add(nombre);
+            else if (doc) set.add(doc);
+          });
+          this.sugerenciasBusqueda = Array.from(set).slice(0, 15);
+          this.cdr.markForCheck();
+        },
+        error: () => (this.sugerenciasBusqueda = []),
+      });
     this.subscriptions.add(subBusqueda);
 
     this.messageService.add({
@@ -189,7 +204,7 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
 
   onLimitChange(nuevoLimite: number): void {
     this.limitePorPagina = nuevoLimite;
-    this.paginaActual    = 1;
+    this.paginaActual = 1;
     this.cargarComprobantes();
   }
 
@@ -203,12 +218,12 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
   limpiarFiltros(): void {
     this.filtros = {
       sedeSeleccionada: null,
-      tipoComprobante:  null,
-      estado:           null,
-      fechaInicio:      null,
-      fechaFin:         null,
-      busqueda:         '',
-      tipoPago:         null,
+      tipoComprobante: null,
+      estado: null,
+      fechaInicio: null,
+      fechaFin: null,
+      busqueda: '',
+      tipoPago: null,
     };
     this.aplicarFiltros();
     this.messageService.add({
@@ -244,29 +259,31 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
     this.loading = true;
 
     const query: SalesReceiptsQueryAdmin = {
-      page:            this.paginaActual,
-      limit:           this.limitePorPagina,
-      sedeId:          this.filtros.sedeSeleccionada ?? undefined,
-      receiptTypeId:   this.filtros.tipoComprobante  ?? undefined,
-      status:          (this.filtros.estado as any)  ?? undefined,
-      paymentMethodId: this.filtros.tipoPago         ?? undefined,
-      dateFrom:        this.filtros.fechaInicio ? this.filtros.fechaInicio.toISOString().split('T')[0] : undefined,
-      dateTo:          this.filtros.fechaFin    ? this.filtros.fechaFin.toISOString().split('T')[0]    : undefined,
-      search:          this.filtros.busqueda.trim() || undefined,
-      _t:              Date.now(),
+      page: this.paginaActual,
+      limit: this.limitePorPagina,
+      sedeId: this.filtros.sedeSeleccionada ?? undefined,
+      receiptTypeId: this.filtros.tipoComprobante ?? undefined,
+      status: (this.filtros.estado as any) ?? undefined,
+      paymentMethodId: this.filtros.tipoPago ?? undefined,
+      dateFrom: this.filtros.fechaInicio
+        ? this.filtros.fechaInicio.toISOString().split('T')[0]
+        : undefined,
+      dateTo: this.filtros.fechaFin ? this.filtros.fechaFin.toISOString().split('T')[0] : undefined,
+      search: this.filtros.busqueda.trim() || undefined,
+      _t: Date.now(),
     };
 
     const sub = this.ventasService.listarHistorialVentas(query).subscribe({
       next: (res: any) => {
         const data = res?.receipts ?? res?.data ?? res?.items ?? [];
-        this.comprobantes          = Array.isArray(data) ? data : [];
+        this.comprobantes = Array.isArray(data) ? data : [];
         this.comprobantesFiltrados = [...this.comprobantes];
         this.cargarSugerenciasBusqueda();
         this.loading = false;
 
         setTimeout(() => {
-          this.totalRegistros = res?.total        ?? this.comprobantes.length;
-          this.totalPaginas   = res?.total_pages  ?? 1;
+          this.totalRegistros = res?.total ?? this.comprobantes.length;
+          this.totalPaginas = res?.total_pages ?? 1;
           this.cdr.markForCheck();
         });
       },
@@ -275,8 +292,10 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
         this.comprobantes = [];
         this.comprobantesFiltrados = [];
         this.messageService.add({
-          severity: 'error', summary: 'Error',
-          detail: 'No se pudo cargar el historial de ventas', life: 3000,
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo cargar el historial de ventas',
+          life: 3000,
         });
       },
     });
@@ -284,16 +303,18 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
   }
 
   cargarKpis(): void {
-    const sub = this.ventasService.getKpiSemanal(this.filtros.sedeSeleccionada ?? undefined).subscribe({
-      next: (kpi: SalesReceiptKpiDto) => {
-        this.totalVentas   = kpi.total_ventas      ?? 0;
-        this.numeroVentas  = kpi.cantidad_ventas   ?? 0;
-        this.totalBoletas  = kpi.cantidad_boletas  ?? 0;
-        this.totalFacturas = kpi.cantidad_facturas ?? 0;
-        this.cdr.markForCheck();
-      },
-      error: () => console.warn('No se pudieron cargar KPIs'),
-    });
+    const sub = this.ventasService
+      .getKpiSemanal(this.filtros.sedeSeleccionada ?? undefined)
+      .subscribe({
+        next: (kpi: SalesReceiptKpiDto) => {
+          this.totalVentas = kpi.total_ventas ?? 0;
+          this.numeroVentas = kpi.cantidad_ventas ?? 0;
+          this.totalBoletas = kpi.cantidad_boletas ?? 0;
+          this.totalFacturas = kpi.cantidad_facturas ?? 0;
+          this.cdr.markForCheck();
+        },
+        error: () => console.warn('No se pudieron cargar KPIs'),
+      });
     this.subscriptions.add(sub);
   }
 
@@ -307,10 +328,13 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
         ];
         this.cdr.markForCheck();
       },
-      error: () => this.messageService.add({
-        severity: 'error', summary: 'Error',
-        detail: 'No se pudieron cargar las sedes', life: 3000,
-      }),
+      error: () =>
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudieron cargar las sedes',
+          life: 3000,
+        }),
     });
     this.subscriptions.add(sub);
   }
@@ -347,10 +371,10 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
     const set = new Set<string>();
     this.comprobantes.forEach((c) => {
       const nombre = c.clienteNombre?.trim();
-      const doc    = c.clienteDocumento?.trim();
+      const doc = c.clienteDocumento?.trim();
       if (nombre && doc) set.add(`${nombre} - ${doc}`);
-      else if (nombre)   set.add(nombre);
-      else if (doc)      set.add(doc);
+      else if (nombre) set.add(nombre);
+      else if (doc) set.add(doc);
     });
     this.todasLasSugerencias = Array.from(set).sort();
   }
@@ -361,39 +385,54 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
   }
 
   verDetalleVenta(comprobante: SalesReceiptSummaryAdmin): void {
-    this.router.navigate(
-      ['/admin/detalles-ventas-administracion', comprobante.idComprobante],
-      { state: { rutaRetorno: '/admin/historial-ventas-administracion' } },
-    );
+    this.router.navigate(['/admin/detalles-ventas-administracion', comprobante.idComprobante], {
+      state: { rutaRetorno: '/admin/historial-ventas-administracion' },
+    });
   }
 
   imprimirComprobante(comprobante: SalesReceiptSummaryAdmin): void {
-    this.router.navigate(
-      ['/admin/imprimir-comprobante-administracion'],
-      { state: { comprobante, rutaRetorno: '/admin/historial-ventas-administracion' } },
-    );
+    this.pdfCargando.set(comprobante.idComprobante);
+
+    const nombre = `comprobante-${comprobante.serie}-${String(comprobante.numero).padStart(8, '0')}.pdf`;
+
+    this.ventasService.descargarComprobantePdf(comprobante.idComprobante, nombre).subscribe({
+      next: () => this.pdfCargando.set(null),
+      error: () => {
+        this.pdfCargando.set(null);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo descargar el PDF del comprobante',
+        });
+      },
+    });
   }
 
   crearGuiaRemision(comprobante: any): void {
     this.router.navigate(['/logistica/remision/nueva'], {
-      queryParams: { ventaId: comprobante.id, comprobanteRef: this.getNumeroFormateado(comprobante) },
+      queryParams: {
+        ventaId: comprobante.id,
+        comprobanteRef: this.getNumeroFormateado(comprobante),
+      },
     });
   }
 
   anularComprobante(comprobante: SalesReceiptSummaryAdmin): void {
     if (comprobante.estado !== 'EMITIDO') return;
     this.confirmationService.confirm({
-      message:                `¿Está seguro de anular el comprobante ${this.getNumeroFormateado(comprobante)}?`,
-      header:                 'Confirmar Anulación',
-      icon:                   'pi pi-exclamation-triangle',
-      acceptLabel:            'Sí, anular',
-      rejectLabel:            'Cancelar',
+      message: `¿Está seguro de anular el comprobante ${this.getNumeroFormateado(comprobante)}?`,
+      header: 'Confirmar Anulación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, anular',
+      rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
       accept: () => {
         comprobante.estado = 'ANULADO';
         this.messageService.add({
-          severity: 'success', summary: 'Comprobante anulado',
-          detail: `${this.getNumeroFormateado(comprobante)} fue anulado`, life: 3000,
+          severity: 'success',
+          summary: 'Comprobante anulado',
+          detail: `${this.getNumeroFormateado(comprobante)} fue anulado`,
+          life: 3000,
         });
         this.aplicarFiltros();
       },
@@ -402,44 +441,55 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
 
   exportarExcel(): void {
     if (this.comprobantesFiltrados.length === 0) {
-      this.messageService.add({ severity: 'warn', summary: 'Sin datos', detail: 'No hay registros para exportar', life: 3000 });
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sin datos',
+        detail: 'No hay registros para exportar',
+        life: 3000,
+      });
       return;
     }
 
     const datosExcel = this.comprobantesFiltrados.map((c) => ({
       'N° Comprobante': this.getNumeroFormateado(c),
-      Tipo:             this.getTipoComprobanteLabel(c.tipoComprobante),
-      'Fecha Emisión':  new Date(c.fecEmision).toLocaleString('es-PE'),
-      Cliente:          c.clienteNombre,
-      Documento:        c.clienteDocumento,
-      'Tipo Pago':      this.getTipoPagoLabel(c.metodoPago),
-      Sede:             c.sedeNombre,
-      Total:            c.total,
-      Estado:           c.estado,
+      Tipo: this.getTipoComprobanteLabel(c.tipoComprobante),
+      'Fecha Emisión': new Date(c.fecEmision).toLocaleString('es-PE'),
+      Cliente: c.clienteNombre,
+      Documento: c.clienteDocumento,
+      'Tipo Pago': this.getTipoPagoLabel(c.metodoPago),
+      Sede: c.sedeNombre,
+      Total: c.total,
+      Estado: c.estado,
     }));
 
     const nombreArchivo = ExcelUtils.generarNombreConFecha('ventas');
     ExcelUtils.exportarAExcel(datosExcel, nombreArchivo, 'Comprobantes');
     this.messageService.add({
-      severity: 'success', summary: 'Exportación exitosa',
-      detail: `Archivo ${nombreArchivo}.xlsx descargado`, life: 3000,
+      severity: 'success',
+      summary: 'Exportación exitosa',
+      detail: `Archivo ${nombreArchivo}.xlsx descargado`,
+      life: 3000,
     });
   }
 
   // ── Helpers ───────────────────────────────────────────────────────
   getSeverityEstado(estado: string): 'success' | 'danger' | 'warn' | 'info' {
     switch (estado) {
-      case 'EMITIDO':   return 'success';
-      case 'ANULADO':   return 'danger';
-      case 'RECHAZADO': return 'warn';
-      default:          return 'info';
+      case 'EMITIDO':
+        return 'success';
+      case 'ANULADO':
+        return 'danger';
+      case 'RECHAZADO':
+        return 'warn';
+      default:
+        return 'info';
     }
   }
 
   getTipoComprobanteLabel(tipo: string): string {
     if (!tipo) return 'N/A';
     const t = tipo.toUpperCase();
-    if (t.includes('BOLETA')  || tipo === '03') return 'Boleta';
+    if (t.includes('BOLETA') || tipo === '03') return 'Boleta';
     if (t.includes('FACTURA') || tipo === '01') return 'Factura';
     return tipo;
   }
@@ -455,9 +505,9 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
   getSeverityTipoPago(metodo: string): 'success' | 'info' | 'warn' | 'secondary' {
     if (!metodo) return 'secondary';
     const m = metodo.toLowerCase();
-    if (m.includes('efectivo'))                    return 'success';
+    if (m.includes('efectivo')) return 'success';
     if (m.includes('yape') || m.includes('plin')) return 'info';
-    if (m.includes('tarjeta'))                     return 'warn';
+    if (m.includes('tarjeta')) return 'warn';
     return 'secondary';
   }
 }

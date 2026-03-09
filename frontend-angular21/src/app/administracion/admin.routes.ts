@@ -405,13 +405,6 @@ export const ADMIN_ROUTES: Routes = [
       ),
   },
   {
-    path: 'imprimir-comprobante-administracion',
-    loadComponent: () =>
-      import('./shared/imprimir-comprobante-administracion/imprimir-comprobante-administracion').then(
-        (m) => m.ImprimirComprobanteAdministracion,
-      ),
-  },
-  {
     path: '',
     redirectTo: 'dashboard',
     pathMatch: 'full',

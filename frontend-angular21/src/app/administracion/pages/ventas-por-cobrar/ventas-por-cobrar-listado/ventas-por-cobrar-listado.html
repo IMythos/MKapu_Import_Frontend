@@ -193,7 +193,6 @@
           </p-button>
         </div>
 
-        <!-- Tabla SIN paginator propio -->
         <p-table
           [value]="ventasFiltradas()"
           [paginator]="false"
@@ -268,16 +267,17 @@
                     (onClick)="enviarCuenta(a.id)">
                   </p-button>
 
+                  <!-- ✅ WhatsApp — con acción -->
                   <p-button
                     icon="pi pi-whatsapp"
                     [rounded]="true"
                     [text]="true"
                     severity="success"
-                    pTooltip="Enviar a Wsp"
-                    tooltipPosition="top">
+                    pTooltip="Enviar por WhatsApp"
+                    tooltipPosition="top"
+                    (onClick)="abrirDialogWsp(a)">
                   </p-button>
 
-                  
                   <span class="accion-separador"></span>
 
                   <p-button
@@ -310,7 +310,6 @@
 
         </p-table>
 
-        <!-- Paginador reutilizable -->
         <app-paginador
           [page]="paginaActual()"
           [totalPages]="totalPaginas()"
@@ -329,6 +328,75 @@
   </div>
 
 </div>
+
+<!-- ══ DIALOG WHATSAPP ═══════════════════════════════════════════════════════ -->
+<p-dialog
+  [(visible)]="mostrarDialogWsp"
+  [modal]="true"
+  [closable]="!enviandoWsp"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+  (onHide)="cerrarDialogWsp()"
+  header="Enviar Cuenta por Cobrar por WhatsApp">
+
+  <div class="flex flex-column align-items-center gap-4 py-3">
+
+    <!-- Iniciando conexión -->
+    <ng-container *ngIf="!wspReady && !wspQr">
+      <i class="pi pi-spin pi-spinner" style="font-size:2.5rem; color:var(--gold)"></i>
+      <p style="color:var(--text-muted); font-size:0.9rem">Iniciando WhatsApp...</p>
+    </ng-container>
+
+    <!-- QR -->
+    <ng-container *ngIf="!wspReady && wspQr">
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; line-height:1.6">
+        Escanea este QR con WhatsApp en tu teléfono.<br>
+        <strong>Solo una vez</strong> — la sesión queda guardada.
+      </p>
+      <img [src]="wspQr" alt="QR WhatsApp"
+           style="width:200px; height:200px; border-radius:8px; border:2px solid var(--gold)" />
+      <div style="display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.8rem">
+        <i class="pi pi-spin pi-spinner"></i>
+        Esperando que escanees...
+      </div>
+    </ng-container>
+
+    <!-- Listo -->
+    <ng-container *ngIf="wspReady">
+      <i class="pi pi-check-circle" style="font-size:3rem; color:#25D366"></i>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; line-height:1.6">
+        WhatsApp conectado ✅<br>
+        <ng-container *ngIf="cuentaWsp">
+          Se enviará la cuenta por cobrar del comprobante
+          <strong>#{{ cuentaWsp.salesReceiptId }}</strong><br>
+          con el PDF adjunto al número del cliente.
+        </ng-container>
+      </p>
+    </ng-container>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="enviandoWsp"
+        (onClick)="cerrarDialogWsp()">
+      </p-button>
+      <p-button
+        [label]="enviandoWsp ? 'Enviando...' : 'Enviar por WhatsApp'"
+        [icon]="enviandoWsp ? 'pi pi-spin pi-spinner' : 'pi pi-send'"
+        severity="success"
+        [disabled]="!wspReady || enviandoWsp"
+        (onClick)="enviarPorWsp()">
+      </p-button>
+    </div>
+  </ng-template>
+
+</p-dialog>
 
 <p-toast></p-toast>
 <p-confirmdialog></p-confirmdialog>
