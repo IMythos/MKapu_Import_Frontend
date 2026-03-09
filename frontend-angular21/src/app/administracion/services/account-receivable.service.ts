@@ -92,9 +92,7 @@ export class AccountReceivableService {
     status? : AccountReceivableStatus | null,
   ): Promise<void> {
     this._lastSedeId = sedeId;
-    // null = limpiar filtro de estado | undefined = conservar | valor = aplicar
     this._lastStatus = (status === null || status === undefined) ? undefined : status;
-    // Si se pasó null explícitamente, forzamos undefined para no enviar el param
     const statusParaQuery = status === null ? undefined : status;
     this._lastLimit  = limit;
 
@@ -213,6 +211,20 @@ export class AccountReceivableService {
   sendByEmail(id: number): Observable<{ message: string; sentTo: string }> {
     return this.http.post<{ message: string; sentTo: string }>(
       `${this.baseUrl}/${id}/send-email`, {}
+    );
+  }
+
+  // ── WhatsApp ──────────────────────────────────────────────────────
+
+  getWhatsAppStatus(): Observable<{ ready: boolean; qr: string | null }> {
+    return this.http.get<{ ready: boolean; qr: string | null }>(
+      `${this.baseUrl}/whatsapp/status`
+    );
+  }
+
+  sendByWhatsApp(id: number): Observable<{ message: string; sentTo: string }> {
+    return this.http.post<{ message: string; sentTo: string }>(
+      `${this.baseUrl}/${id}/send-whatsapp`, {}
     );
   }
 }
