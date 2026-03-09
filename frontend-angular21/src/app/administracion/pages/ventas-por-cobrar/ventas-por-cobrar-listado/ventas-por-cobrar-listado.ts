@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -9,6 +9,7 @@ import { TagModule } from 'primeng/tag';
 import { firstValueFrom } from 'rxjs';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoComplete } from 'primeng/autocomplete';
@@ -26,7 +27,6 @@ import {
 } from '../../../services/account-receivable.service';
 import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 
-
 @Component({
   selector: 'app-ventas-por-cobrar-listado',
   standalone: true,
@@ -35,12 +35,13 @@ import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
     RouterModule, AutoComplete, TooltipModule, LoadingOverlayComponent,
     DatePickerModule, PaginadorComponent,
+    DialogModule, // ← nuevo
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
   styleUrl: './ventas-por-cobrar-listado.css',
   providers: [MessageService, ConfirmationService],
 })
-export class VentasPorCobrarListadoComponent implements OnInit {
+export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
 
   private messageService      = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
@@ -56,11 +57,10 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   sugerencias        = signal<AccountReceivableResponse[]>([]);
   estadoSeleccionado = signal<AccountReceivableStatus | null>('PENDIENTE');
   sedeSeleccionada   = signal<number | null>(null);
-  rows               = signal<number>(10);
+  rows               = signal<number>(5);
   fechaInicio        = signal<Date | null>(getHoyPeru());
   fechaFin           = signal<Date | null>(null);
 
-  // Página actual y total de páginas derivadas del servicio
   paginaActual = signal<number>(1);
   totalPaginas = computed(() => {
     const total = this.arService.totalRecords();
@@ -76,15 +76,12 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     const q      = this.buscarValue().toLowerCase();
     const inicio = this.fechaInicio();
     const fin    = this.fechaFin();
-
     return this.arService.accounts().filter(a => {
       if (q && !a.userRef.toLowerCase().includes(q) && !String(a.salesReceiptId).includes(q))
         return false;
-
       const fec = new Date(a.issueDate);
       if (inicio) { const d = new Date(inicio); d.setHours(0,0,0,0); if (fec < d) return false; }
       if (fin)    { const d = new Date(fin);    d.setHours(23,59,59,999); if (fec > d) return false; }
-
       return true;
     });
   });
@@ -106,11 +103,23 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     { label: 'Cancelado', value: 'CANCELADO' },
   ];
 
+  // ── WhatsApp ──────────────────────────────────────────────────────
+  mostrarDialogWsp                           = false;
+  enviandoWsp                                = false;
+  wspReady                                   = false;
+  wspQr: string | null                       = null;
+  cuentaWsp: AccountReceivableResponse | null = null;
+  private pollingInterval: any               = null;
+
   async ngOnInit() {
     this.sedeService.loadSedes().subscribe();
     const sedeDefault = this.getSedeUsuarioActual();
     if (sedeDefault) this.sedeSeleccionada.set(sedeDefault);
     await this.arService.getAll(1, this.rows(), sedeDefault ?? undefined, 'PENDIENTE');
+  }
+
+  ngOnDestroy() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
   }
 
   private getSedeUsuarioActual(): number | null {
@@ -132,10 +141,77 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     });
   }
 
+  // ── WhatsApp ──────────────────────────────────────────────────────
+
+  abrirDialogWsp(a: AccountReceivableResponse): void {
+    this.cuentaWsp        = a;
+    this.mostrarDialogWsp = true;
+    this.wspReady         = false;
+    this.wspQr            = null;
+    this.verificarEstadoWsp();
+  }
+
+  cerrarDialogWsp(): void {
+    this.mostrarDialogWsp = false;
+    this.cuentaWsp        = null;
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  private verificarEstadoWsp(): void {
+    this.arService.getWhatsAppStatus().subscribe({
+      next: (res) => {
+        this.wspReady = res.ready;
+        this.wspQr    = res.qr ?? null;
+        if (!res.ready) {
+          this.pollingInterval = setInterval(() => {
+            this.arService.getWhatsAppStatus().subscribe({
+              next: (r) => {
+                this.wspReady = r.ready;
+                this.wspQr    = r.qr ?? null;
+                if (r.ready) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+              },
+            });
+          }, 3000);
+        }
+      },
+      error: () => this.messageService.add({
+        severity: 'error', summary: 'Error',
+        detail: 'No se pudo conectar con el servicio de WhatsApp.', life: 4000,
+      }),
+    });
+  }
+
+  enviarPorWsp(): void {
+    if (!this.cuentaWsp) return;
+    this.enviandoWsp = true;
+    this.arService.sendByWhatsApp(this.cuentaWsp.id).subscribe({
+      next: (res) => {
+        this.enviandoWsp = false;
+        this.cerrarDialogWsp();
+        this.messageService.add({
+          severity: 'success', summary: '¡Enviado!',
+          detail: `Cuenta #${this.cuentaWsp?.salesReceiptId} enviada a ${res.sentTo}`, life: 5000,
+        });
+      },
+      error: (err) => {
+        this.enviandoWsp = false;
+        this.messageService.add({
+          severity: 'error', summary: 'Error',
+          detail: err?.error?.message ?? 'No se pudo enviar por WhatsApp.', life: 5000,
+        });
+      },
+    });
+  }
+
+  // ── Filtros y paginación ──────────────────────────────────────────
+
   async onEstadoChange(v: AccountReceivableStatus | null) {
     this.estadoSeleccionado.set(v);
     this.paginaActual.set(1);
-    await this.arService.getAll(1, this.rows(), this.sedeSeleccionada() ?? undefined, v ?? undefined);
+    await this.arService.getAll(1, this.rows(), this.sedeSeleccionada() ?? undefined, v);
   }
 
   async onSedeChange(sedeId: number | null) {
@@ -144,16 +220,26 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     await this.arService.getAll(1, this.rows(), sedeId ?? undefined, this.estadoSeleccionado());
   }
 
-  // ── Paginador nuevo ───────────────────────────────────────────────
   async onPageChange(page: number) {
     this.paginaActual.set(page);
-    await this.arService.getAll(page, this.rows(), this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado() ?? undefined);
+    await this.arService.getAll(page, this.rows(), this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado());
   }
 
   async onLimitChange(limit: number) {
     this.rows.set(limit);
     this.paginaActual.set(1);
-    await this.arService.getAll(1, limit, this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado() ?? undefined);
+    await this.arService.getAll(1, limit, this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado());
+  }
+
+  limpiarFiltros() {
+    this.buscarValue.set('');
+    this.sugerencias.set([]);
+    this.fechaInicio.set(null);
+    this.fechaFin.set(null);
+    this.sedeSeleccionada.set(null);
+    this.estadoSeleccionado.set(null);
+    this.paginaActual.set(1);
+    this.arService.getAll(1, this.rows(), undefined, null);
   }
 
   searchCuenta(event: any) {
@@ -172,16 +258,6 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   }
 
   onFechaChange() { /* filtro local */ }
-
-  limpiarFiltros() {
-    this.buscarValue.set('');
-    this.sugerencias.set([]);
-    this.fechaInicio.set(null);
-    this.fechaFin.set(null);
-    this.sedeSeleccionada.set(null);
-    this.estadoSeleccionado.set(null);
-    this.arService.getAll(1, this.rows(), undefined, 'PENDIENTE');
-  }
 
   limpiarBusqueda() {
     this.buscarValue.set('');
@@ -212,6 +288,7 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   }
 
   // ── Helpers visuales ──────────────────────────────────────────────
+
   getTagClass(status: AccountReceivableStatus): string {
     switch (status) {
       case 'PENDIENTE': return 'cotizaciones-tag-amarillo';

@@ -27,7 +27,6 @@
       <div>
         <span class="contador-label">Total Cotizaciones</span>
         <span class="contador-valor">{{ totalRecords() }}</span>
-        <span class="contador-detalle"><i class="pi pi-bars"></i> En el sistema</span>
       </div>
     </div>
     <div class="contador-card">
@@ -35,7 +34,6 @@
       <div>
         <span class="contador-label">Aprobadas</span>
         <span class="contador-valor">{{ totalAprobadas() }}</span>
-        <span class="contador-detalle"><i class="pi pi-check-circle"></i> Cotizaciones</span>
       </div>
     </div>
     <div class="contador-card">
@@ -43,7 +41,6 @@
       <div>
         <span class="contador-label">Pendientes</span>
         <span class="contador-valor">{{ totalPendientes() }}</span>
-        <span class="contador-detalle"><i class="pi pi-clock"></i> Por aprobar</span>
       </div>
     </div>
     <div class="contador-card">
@@ -51,7 +48,6 @@
       <div>
         <span class="contador-label">Sedes</span>
         <span class="contador-valor">{{ sedesOptions().length }}</span>
-        <span class="contador-detalle"><i class="pi pi-map-marker"></i> Registradas</span>
       </div>
     </div>
   </div>
@@ -181,7 +177,6 @@
         <div class="seccion-tabla" [style.opacity]="loading() ? '0.3' : '1'"
              style="transition: opacity 0.2s ease;">
 
-          <!-- Tabla SIN paginator propio -->
           <p-table
             [value]="cotizacionesFiltradas()"
             [paginator]="false"
@@ -244,19 +239,21 @@
 
                     <p-button icon="pi pi-send"
                       [rounded]="true" [text]="true" severity="secondary"
-                      pTooltip="Enviar a Correo" tooltipPosition="top"
+                      pTooltip="Enviar por Email" tooltipPosition="top"
                       (onClick)="enviarCotizacion(c)">
                     </p-button>
 
+                    <!-- ✅ WhatsApp — ahora con acción -->
                     <p-button
-                    icon="pi pi-whatsapp"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="success"
-                    pTooltip="Enviar a Wsp"
-                    tooltipPosition="top">
-                  </p-button>
-                  
+                      icon="pi pi-whatsapp"
+                      [rounded]="true"
+                      [text]="true"
+                      severity="success"
+                      pTooltip="Enviar por WhatsApp"
+                      tooltipPosition="top"
+                      (onClick)="abrirDialogWsp(c)">
+                    </p-button>
+
                     <ng-container *ngIf="c.estado === 'PENDIENTE'">
                       <span class="accion-separador"></span>
 
@@ -310,7 +307,6 @@
 
           </p-table>
 
-          <!-- Paginador reutilizable -->
           <app-paginador
             [page]="currentPage()"
             [totalPages]="totalPages()"
@@ -326,6 +322,74 @@
   </div>
 
 </div>
+
+<!-- ══ DIALOG WHATSAPP ═══════════════════════════════════════════════════════ -->
+<p-dialog
+  [(visible)]="mostrarDialogWsp"
+  [modal]="true"
+  [closable]="!enviandoWsp"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+  (onHide)="cerrarDialogWsp()"
+  header="Enviar Cotización por WhatsApp">
+
+  <div class="flex flex-column align-items-center gap-4 py-3">
+
+    <!-- Iniciando conexión -->
+    <ng-container *ngIf="!wspReady && !wspQr">
+      <i class="pi pi-spin pi-spinner" style="font-size:2.5rem; color:var(--gold)"></i>
+      <p style="color:var(--text-muted); font-size:0.9rem">Iniciando WhatsApp...</p>
+    </ng-container>
+
+    <!-- Mostrar QR para escanear -->
+    <ng-container *ngIf="!wspReady && wspQr">
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; line-height:1.6">
+        Escanea este QR con WhatsApp en tu teléfono.<br>
+        <strong>Solo una vez</strong> — la sesión queda guardada.
+      </p>
+      <img [src]="wspQr" alt="QR WhatsApp"
+           style="width:200px; height:200px; border-radius:8px; border:2px solid var(--gold)" />
+      <div style="display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.8rem">
+        <i class="pi pi-spin pi-spinner"></i>
+        Esperando que escanees...
+      </div>
+    </ng-container>
+
+    <!-- Listo para enviar -->
+    <ng-container *ngIf="wspReady">
+      <i class="pi pi-check-circle" style="font-size:3rem; color:#25D366"></i>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; line-height:1.6">
+        WhatsApp conectado ✅<br>
+        <ng-container *ngIf="cotizacionWsp">
+          Se enviará la cotización <strong>{{ cotizacionWsp.codigo }}</strong><br>
+          con el PDF adjunto al número del cliente.
+        </ng-container>
+      </p>
+    </ng-container>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="enviandoWsp"
+        (onClick)="cerrarDialogWsp()">
+      </p-button>
+      <p-button
+        [label]="enviandoWsp ? 'Enviando...' : 'Enviar por WhatsApp'"
+        [icon]="enviandoWsp ? 'pi pi-spin pi-spinner' : 'pi pi-send'"
+        severity="success"
+        [disabled]="!wspReady || enviandoWsp"
+        (onClick)="enviarPorWsp()">
+      </p-button>
+    </div>
+  </ng-template>
+
+</p-dialog>
 
 <p-toast></p-toast>
 <p-confirmdialog></p-confirmdialog>

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, computed, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
@@ -8,6 +8,7 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { ToastModule } from 'primeng/toast';
 import { ConfirmDialog, ConfirmDialogModule } from 'primeng/confirmdialog';
+import { DialogModule } from 'primeng/dialog';
 import { Router, RouterModule } from '@angular/router';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { AutoComplete } from 'primeng/autocomplete';
@@ -18,7 +19,6 @@ import { QuoteListItem } from '../../../interfaces/quote.interface';
 import { QuoteService } from '../../../services/quote.service';
 import { SedeAlmacenService } from '../../../services/sede-almacen.service';
 
-//shared
 import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
@@ -30,22 +30,23 @@ import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
     RouterModule, AutoComplete, TooltipModule, DatePickerModule,
-    LoadingOverlayComponent, PaginadorComponent
+    LoadingOverlayComponent, PaginadorComponent,
+    DialogModule, // ← nuevo
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
   providers: [MessageService, ConfirmationService]
 })
-export class GestionCotizacionesComponent implements OnInit {
+export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   public iconoCabecera   = 'pi pi-wallet';
   public tituloKicker    = 'ADMINISTRACIÓN';
   public subtituloKicker = 'GESTIÓN DE COTIZACIONES';
 
-  private sedeService         = inject(SedeService);
-  private quoteService        = inject(QuoteService);
+  private sedeService               = inject(SedeService);
+  private quoteService              = inject(QuoteService);
   private readonly sedeAlmacenService = inject(SedeAlmacenService);
-  private confirmationService = inject(ConfirmationService);
-  private messageService      = inject(MessageService);
+  private confirmationService       = inject(ConfirmationService);
+  private messageService            = inject(MessageService);
 
   buscarValue           = signal<string>('');
   cotizacionSugerencias = signal<QuoteListItem[]>([]);
@@ -70,7 +71,7 @@ export class GestionCotizacionesComponent implements OnInit {
   })));
 
   private getHoyPeru(): Date {
-    const ahora = new Date();
+    const ahora       = new Date();
     const offsetPeru  = -5 * 60;
     const offsetLocal = ahora.getTimezoneOffset();
     const diferencia  = (offsetLocal - offsetPeru) * 60 * 1000;
@@ -102,6 +103,14 @@ export class GestionCotizacionesComponent implements OnInit {
   totalAprobadas  = computed(() => this.cotizaciones().filter(c => c.estado === 'APROBADA').length);
   totalPendientes = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
 
+  // ── WhatsApp dialog ───────────────────────────────────────────────────────
+  mostrarDialogWsp                   = false;
+  enviandoWsp                        = false;
+  wspReady                           = false;
+  wspQr: string | null               = null;
+  cotizacionWsp: QuoteListItem | null = null;
+  private pollingInterval: any       = null;
+
   constructor(private router: Router) {}
 
   ngOnInit() {
@@ -111,6 +120,10 @@ export class GestionCotizacionesComponent implements OnInit {
     this.sedeService.loadSedes().subscribe({
       error: (err) => console.error('Error cargando sedes', err),
     });
+  }
+
+  ngOnDestroy() {
+    if (this.pollingInterval) clearInterval(this.pollingInterval);
   }
 
   private getSedeUsuarioActual(): number | null {
@@ -159,7 +172,6 @@ export class GestionCotizacionesComponent implements OnInit {
     this.cargarCotizacion();
   }
 
-  // ── Paginador nuevo ───────────────────────────────────────────────────────
   onPageChange(page: number) {
     this.currentPage.set(page);
     this.cargarCotizacion();
@@ -171,7 +183,6 @@ export class GestionCotizacionesComponent implements OnInit {
     this.cargarCotizacion();
   }
 
-  // ── Búsqueda autocomplete ─────────────────────────────────────────────────
   searchCotizacion(event: any) {
     const query = event.query?.toLowerCase() ?? '';
     if (!query || query.length < 2) { this.cotizacionSugerencias.set([]); return; }
@@ -261,6 +272,78 @@ export class GestionCotizacionesComponent implements OnInit {
       error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
     });
   }
+
+  // ── WhatsApp ──────────────────────────────────────────────────────────────
+
+  abrirDialogWsp(c: QuoteListItem): void {
+    this.cotizacionWsp    = c;
+    this.mostrarDialogWsp = true;
+    this.wspReady         = false;
+    this.wspQr            = null;
+    this.verificarEstadoWsp();
+  }
+
+  cerrarDialogWsp(): void {
+    this.mostrarDialogWsp = false;
+    this.cotizacionWsp    = null;
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
+    }
+  }
+
+  private verificarEstadoWsp(): void {
+    this.quoteService.getWhatsAppStatus().subscribe({
+      next: (res) => {
+        this.wspReady = res.ready;
+        this.wspQr    = res.qr ?? null;
+
+        if (!res.ready) {
+          // Polling cada 3s hasta que escaneen el QR
+          this.pollingInterval = setInterval(() => {
+            this.quoteService.getWhatsAppStatus().subscribe({
+              next: (r) => {
+                this.wspReady = r.ready;
+                this.wspQr    = r.qr ?? null;
+                if (r.ready) {
+                  clearInterval(this.pollingInterval);
+                  this.pollingInterval = null;
+                }
+              },
+            });
+          }, 3000);
+        }
+      },
+      error: () => this.messageService.add({
+        severity: 'error', summary: 'Error',
+        detail: 'No se pudo conectar con el servicio de WhatsApp.', life: 4000,
+      }),
+    });
+  }
+
+  enviarPorWsp(): void {
+    if (!this.cotizacionWsp) return;
+
+    this.enviandoWsp = true;
+    this.quoteService.sendByWhatsApp(this.cotizacionWsp.id_cotizacion).subscribe({
+      next: (res) => {
+        this.enviandoWsp = false;
+        this.cerrarDialogWsp();
+        this.messageService.add({
+          severity: 'success', summary: '¡Enviado!',
+          detail: `Cotización ${this.cotizacionWsp?.codigo} enviada a ${res.sentTo}`,
+          life: 5000,
+        });
+      },
+      error: (err) => {
+        this.enviandoWsp = false;
+        const detalle = err?.error?.message ?? 'No se pudo enviar por WhatsApp.';
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: detalle, life: 5000 });
+      },
+    });
+  }
+
+  // ── Helpers fechas ────────────────────────────────────────────────────────
 
   getDiasRestantes(fecVenc: string | Date | null): number {
     if (!fecVenc) return 0;

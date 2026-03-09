@@ -34,7 +34,8 @@ export interface RegisterClaimPayload {
   id_comprobante: number;
   id_vendedor_ref: string;
   motivo: string;
-  descripcion: string; 
+  descripcion: string;
+  id_sede?: number;
   detalles?: ClaimDetailDto[];
 }
 export interface ClaimDetailDto {
@@ -97,12 +98,29 @@ export class ClaimService {
           params = params.set(key, filters[key]);
         }
       });
+      
       const url = `${this.baseUrl}/sede/${sedeId}`;
-      const res = await firstValueFrom(
-        this.http.get<ClaimListResponse | ClaimResponseDto[]>(url, { params })
-      );
-      const claimsData = (res as ClaimListResponse).data || (res as ClaimResponseDto[]);
-      this.claims.set(claimsData);
+      const res: any = await firstValueFrom(this.http.get(url, { params }));
+      
+      const rawData = res.data || res;
+
+      const mappedClaims: ClaimResponseDto[] = rawData.map((c: any) => ({
+        id: c.claimId ? c.claimId.toString() : '',
+        saleReceiptId: c.receiptId ? c.receiptId.toString() : '',
+        customerId: c.sellerId || '',
+        reason: c.reason,
+        description: c.description,
+        status: c.status,
+        createdAt: c.registeredAt ? new Date(c.registeredAt).toISOString() : '',
+        updatedAt: c.resolvedAt ? new Date(c.resolvedAt).toISOString() : undefined,
+        registerDate: c.registeredAt ? new Date(c.registeredAt) : new Date(),
+        customerName: 'Cliente Generico',
+        productDescription: 'Artículos de venta'
+      }));
+
+      // Guardamos la data ya traducida en la señal
+      this.claims.set(mappedClaims);
+      
     } catch (err: any) {
       console.error('Error fetching claims:', err);
       this.error.set(err?.error?.message ?? 'Error al cargar los reclamos de la sede');

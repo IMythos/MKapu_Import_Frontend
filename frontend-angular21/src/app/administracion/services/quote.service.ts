@@ -151,7 +151,7 @@ export class QuoteService {
     window.open(`${this.api}/${id}/export/pdf`, '_blank');
   }
 
-  // ── Enviar cotización por email al cliente ────────────────────────────────
+  // ── Enviar por email ──────────────────────────────────────────────────────
   sendByEmail(id: number): Observable<{ message: string; sentTo: string }> {
     this._loading.set(true);
     this._error.set(null);
@@ -163,6 +163,20 @@ export class QuoteService {
         return throwError(() => err);
       }),
       finalize(() => this._loading.set(false))
+    );
+  }
+
+  // ── Estado WhatsApp (QR o conectado) ─────────────────────────────────────
+  getWhatsAppStatus(): Observable<{ ready: boolean; qr: string | null }> {
+    return this.http.get<{ ready: boolean; qr: string | null }>(
+      `${this.api}/whatsapp/status`
+    );
+  }
+
+  // ── Enviar por WhatsApp ───────────────────────────────────────────────────
+  sendByWhatsApp(id: number): Observable<{ message: string; sentTo: string }> {
+    return this.http.post<{ message: string; sentTo: string }>(
+      `${this.api}/${id}/send-whatsapp`, {}
     );
   }
 
