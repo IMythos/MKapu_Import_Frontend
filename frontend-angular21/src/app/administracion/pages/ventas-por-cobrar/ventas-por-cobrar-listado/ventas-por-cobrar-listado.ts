@@ -56,11 +56,10 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   sugerencias        = signal<AccountReceivableResponse[]>([]);
   estadoSeleccionado = signal<AccountReceivableStatus | null>('PENDIENTE');
   sedeSeleccionada   = signal<number | null>(null);
-  rows               = signal<number>(10);
+  rows               = signal<number>(5);
   fechaInicio        = signal<Date | null>(getHoyPeru());
   fechaFin           = signal<Date | null>(null);
 
-  // Página actual y total de páginas derivadas del servicio
   paginaActual = signal<number>(1);
   totalPaginas = computed(() => {
     const total = this.arService.totalRecords();
@@ -135,7 +134,8 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   async onEstadoChange(v: AccountReceivableStatus | null) {
     this.estadoSeleccionado.set(v);
     this.paginaActual.set(1);
-    await this.arService.getAll(1, this.rows(), this.sedeSeleccionada() ?? undefined, v ?? undefined);
+    // null = sin filtro de estado (todos), valor = filtrar por ese estado
+    await this.arService.getAll(1, this.rows(), this.sedeSeleccionada() ?? undefined, v);
   }
 
   async onSedeChange(sedeId: number | null) {
@@ -144,16 +144,28 @@ export class VentasPorCobrarListadoComponent implements OnInit {
     await this.arService.getAll(1, this.rows(), sedeId ?? undefined, this.estadoSeleccionado());
   }
 
-  // ── Paginador nuevo ───────────────────────────────────────────────
+  // ── Paginador ─────────────────────────────────────────────────────
   async onPageChange(page: number) {
     this.paginaActual.set(page);
-    await this.arService.getAll(page, this.rows(), this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado() ?? undefined);
+    await this.arService.getAll(page, this.rows(), this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado());
   }
 
   async onLimitChange(limit: number) {
     this.rows.set(limit);
     this.paginaActual.set(1);
-    await this.arService.getAll(1, limit, this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado() ?? undefined);
+    await this.arService.getAll(1, limit, this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado());
+  }
+
+  limpiarFiltros() {
+    this.buscarValue.set('');
+    this.sugerencias.set([]);
+    this.fechaInicio.set(null);
+    this.fechaFin.set(null);
+    this.sedeSeleccionada.set(null);
+    this.estadoSeleccionado.set(null);
+    this.paginaActual.set(1);
+    // null explícito → el servicio NO enviará el param status al backend
+    this.arService.getAll(1, this.rows(), undefined, null);
   }
 
   searchCuenta(event: any) {
@@ -172,16 +184,6 @@ export class VentasPorCobrarListadoComponent implements OnInit {
   }
 
   onFechaChange() { /* filtro local */ }
-
-  limpiarFiltros() {
-    this.buscarValue.set('');
-    this.sugerencias.set([]);
-    this.fechaInicio.set(null);
-    this.fechaFin.set(null);
-    this.sedeSeleccionada.set(null);
-    this.estadoSeleccionado.set(null);
-    this.arService.getAll(1, this.rows(), undefined, 'PENDIENTE');
-  }
 
   limpiarBusqueda() {
     this.buscarValue.set('');

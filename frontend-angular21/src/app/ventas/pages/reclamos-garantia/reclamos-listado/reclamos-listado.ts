@@ -78,7 +78,7 @@ export class ReclamosListado implements OnInit, OnDestroy {
 
   // ── Paginación local ─────────────────────────────────────────────────────────
   paginaActual = signal<number>(1);
-  limitePagina = signal<number>(10);
+  limitePagina = signal<number>(5);
 
   // Todos los reclamos filtrados (sin paginar)
   get reclamosFiltrados(): ClaimResponseDto[] {

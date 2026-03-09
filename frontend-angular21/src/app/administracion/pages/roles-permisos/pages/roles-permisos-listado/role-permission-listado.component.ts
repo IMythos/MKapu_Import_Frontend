@@ -68,7 +68,7 @@ export class RolePermissionListadoComponent implements OnInit {
   readonly viewMode   = signal<ViewMode>('activos');
 
   readonly paginaActual = signal<number>(1);
-  readonly limitePagina = signal<number>(10);
+  readonly limitePagina = signal<number>(5);
 
   readonly viewOptions: { label: string; value: ViewMode }[] = [
     { label: 'Todos',     value: 'todos'     },
