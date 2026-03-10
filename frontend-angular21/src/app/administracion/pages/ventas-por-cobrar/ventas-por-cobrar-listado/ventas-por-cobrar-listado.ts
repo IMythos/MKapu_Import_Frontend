@@ -32,10 +32,22 @@ import {   getLunesSemanaActualPeru,
   selector: 'app-ventas-por-cobrar-listado',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, TableModule, SelectModule, CardModule,
-    ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
-    RouterModule, AutoComplete, TooltipModule, LoadingOverlayComponent,
-    DatePickerModule, PaginadorComponent,
+    CommonModule,
+    FormsModule,
+    TableModule,
+    SelectModule,
+    CardModule,
+    ButtonModule,
+    TagModule,
+    ToastModule,
+    ConfirmDialog,
+    ConfirmDialogModule,
+    RouterModule,
+    AutoComplete,
+    TooltipModule,
+    LoadingOverlayComponent,
+    DatePickerModule,
+    PaginadorComponent,
     DialogModule, // ← nuevo
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
@@ -43,24 +55,23 @@ import {   getLunesSemanaActualPeru,
   providers: [MessageService, ConfirmationService],
 })
 export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
-
-  private messageService      = inject(MessageService);
+  private messageService = inject(MessageService);
   private confirmationService = inject(ConfirmationService);
-  private router              = inject(Router);
-  private sedeService         = inject(SedeService);
-  readonly arService          = inject(AccountReceivableService);
-  private ventasService       = inject(VentasAdminService);
+  private router = inject(Router);
+  private sedeService = inject(SedeService);
+  readonly arService = inject(AccountReceivableService);
+  private ventasService = inject(VentasAdminService);
 
-  public tituloKicker    = 'ADMINISTRACIÓN';
+  public tituloKicker = 'ADMINISTRACIÓN';
   public subtituloKicker = 'VENTAS POR COBRAR';
 
-  buscarValue        = signal<string>('');
-  sugerencias        = signal<AccountReceivableResponse[]>([]);
+  buscarValue = signal<string>('');
+  sugerencias = signal<AccountReceivableResponse[]>([]);
   estadoSeleccionado = signal<AccountReceivableStatus | null>('PENDIENTE');
-  sedeSeleccionada   = signal<number | null>(null);
-  rows               = signal<number>(5);
-  fechaInicio        = signal<Date | null>(getLunesSemanaActualPeru());
-  fechaFin           = signal<Date | null>(getDomingoSemanaActualPeru());
+  sedeSeleccionada = signal<number | null>(null);
+  rows = signal<number>(5);
+  fechaInicio = signal<Date | null>(getHoyPeru());
+  fechaFin = signal<Date | null>(null);
 
   paginaActual = signal<number>(1);
   totalPaginas = computed(() => {
@@ -70,47 +81,56 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
   });
 
   sedesOptions = computed(() =>
-    this.sedeService.sedes().map(s => ({ label: s.nombre, value: s.id_sede }))
+    this.sedeService.sedes().map((s) => ({ label: s.nombre, value: s.id_sede })),
   );
 
   ventasFiltradas = computed(() => {
-    const q      = this.buscarValue().toLowerCase();
+    const q = this.buscarValue().toLowerCase();
     const inicio = this.fechaInicio();
-    const fin    = this.fechaFin();
-    return this.arService.accounts().filter(a => {
+    const fin = this.fechaFin();
+    return this.arService.accounts().filter((a) => {
       if (q && !a.userRef.toLowerCase().includes(q) && !String(a.salesReceiptId).includes(q))
         return false;
       const fec = new Date(a.issueDate);
-      if (inicio) { const d = new Date(inicio); d.setHours(0,0,0,0); if (fec < d) return false; }
-      if (fin)    { const d = new Date(fin);    d.setHours(23,59,59,999); if (fec > d) return false; }
+      if (inicio) {
+        const d = new Date(inicio);
+        d.setHours(0, 0, 0, 0);
+        if (fec < d) return false;
+      }
+      if (fin) {
+        const d = new Date(fin);
+        d.setHours(23, 59, 59, 999);
+        if (fec > d) return false;
+      }
       return true;
     });
   });
 
-  totalPorCobrar     = computed(() => this.arService.totalRecords());
-  totalPendientes    = computed(() => this.arService.pendientes().length);
-  totalVencidos      = computed(() => this.arService.vencidos().length);
+  totalPorCobrar = computed(() => this.arService.totalRecords());
+  totalPendientes = computed(() => this.arService.pendientes().length);
+  totalVencidos = computed(() => this.arService.vencidos().length);
   totalProcesadasHoy = computed(() => {
     const hoy = new Date().toDateString();
-    return this.arService.accounts().filter(a => new Date(a.issueDate).toDateString() === hoy).length;
+    return this.arService.accounts().filter((a) => new Date(a.issueDate).toDateString() === hoy)
+      .length;
   });
 
   estadosOptions = [
-    { label: 'Todos',     value: null        },
+    { label: 'Todos', value: null },
     { label: 'Pendiente', value: 'PENDIENTE' },
-    { label: 'Parcial',   value: 'PARCIAL'   },
-    { label: 'Pagado',    value: 'PAGADO'    },
-    { label: 'Vencido',   value: 'VENCIDO'   },
+    { label: 'Parcial', value: 'PARCIAL' },
+    { label: 'Pagado', value: 'PAGADO' },
+    { label: 'Vencido', value: 'VENCIDO' },
     { label: 'Cancelado', value: 'CANCELADO' },
   ];
 
   // ── WhatsApp ──────────────────────────────────────────────────────
-  mostrarDialogWsp                           = false;
-  enviandoWsp                                = false;
-  wspReady                                   = false;
-  wspQr: string | null                       = null;
+  mostrarDialogWsp = false;
+  enviandoWsp = false;
+  wspReady = false;
+  wspQr: string | null = null;
   cuentaWsp: AccountReceivableResponse | null = null;
-  private pollingInterval: any               = null;
+  private pollingInterval: any = null;
 
   async ngOnInit() {
     this.sedeService.loadSedes().subscribe();
@@ -127,7 +147,9 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
     try {
       const user = JSON.parse(localStorage.getItem('user') ?? '{}');
       return user.idSede ?? null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
 
   imprimirCuenta(id: number): void {
@@ -135,26 +157,40 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
   }
 
   enviarCuenta(id: number): void {
-    this.messageService.add({ severity: 'info', summary: 'Enviando...', detail: 'Generando y enviando cuenta por cobrar por email.' });
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Enviando...',
+      detail: 'Generando y enviando cuenta por cobrar por email.',
+    });
     this.arService.sendByEmail(id).subscribe({
-      next:  (res) => this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cuenta enviada a ${res.sentTo}` }),
-      error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
+      next: (res) =>
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Email enviado',
+          detail: `Cuenta enviada a ${res.sentTo}`,
+        }),
+      error: () =>
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
+        }),
     });
   }
 
   // ── WhatsApp ──────────────────────────────────────────────────────
 
   abrirDialogWsp(a: AccountReceivableResponse): void {
-    this.cuentaWsp        = a;
+    this.cuentaWsp = a;
     this.mostrarDialogWsp = true;
-    this.wspReady         = false;
-    this.wspQr            = null;
+    this.wspReady = false;
+    this.wspQr = null;
     this.verificarEstadoWsp();
   }
 
   cerrarDialogWsp(): void {
     this.mostrarDialogWsp = false;
-    this.cuentaWsp        = null;
+    this.cuentaWsp = null;
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
@@ -165,23 +201,29 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
     this.arService.getWhatsAppStatus().subscribe({
       next: (res) => {
         this.wspReady = res.ready;
-        this.wspQr    = res.qr ?? null;
+        this.wspQr = res.qr ?? null;
         if (!res.ready) {
           this.pollingInterval = setInterval(() => {
             this.arService.getWhatsAppStatus().subscribe({
               next: (r) => {
                 this.wspReady = r.ready;
-                this.wspQr    = r.qr ?? null;
-                if (r.ready) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
+                this.wspQr = r.qr ?? null;
+                if (r.ready) {
+                  clearInterval(this.pollingInterval);
+                  this.pollingInterval = null;
+                }
               },
             });
           }, 3000);
         }
       },
-      error: () => this.messageService.add({
-        severity: 'error', summary: 'Error',
-        detail: 'No se pudo conectar con el servicio de WhatsApp.', life: 4000,
-      }),
+      error: () =>
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo conectar con el servicio de WhatsApp.',
+          life: 4000,
+        }),
     });
   }
 
@@ -193,15 +235,19 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
         this.enviandoWsp = false;
         this.cerrarDialogWsp();
         this.messageService.add({
-          severity: 'success', summary: '¡Enviado!',
-          detail: `Cuenta #${this.cuentaWsp?.salesReceiptId} enviada a ${res.sentTo}`, life: 5000,
+          severity: 'success',
+          summary: '¡Enviado!',
+          detail: `Cuenta #${this.cuentaWsp?.salesReceiptId} enviada a ${res.sentTo}`,
+          life: 5000,
         });
       },
       error: (err) => {
         this.enviandoWsp = false;
         this.messageService.add({
-          severity: 'error', summary: 'Error',
-          detail: err?.error?.message ?? 'No se pudo enviar por WhatsApp.', life: 5000,
+          severity: 'error',
+          summary: 'Error',
+          detail: err?.error?.message ?? 'No se pudo enviar por WhatsApp.',
+          life: 5000,
         });
       },
     });
@@ -223,13 +269,23 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
 
   async onPageChange(page: number) {
     this.paginaActual.set(page);
-    await this.arService.getAll(page, this.rows(), this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado());
+    await this.arService.getAll(
+      page,
+      this.rows(),
+      this.sedeSeleccionada() ?? undefined,
+      this.estadoSeleccionado(),
+    );
   }
 
   async onLimitChange(limit: number) {
     this.rows.set(limit);
     this.paginaActual.set(1);
-    await this.arService.getAll(1, limit, this.sedeSeleccionada() ?? undefined, this.estadoSeleccionado());
+    await this.arService.getAll(
+      1,
+      limit,
+      this.sedeSeleccionada() ?? undefined,
+      this.estadoSeleccionado(),
+    );
   }
 
   limpiarFiltros() {
@@ -245,11 +301,14 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
 
   searchCuenta(event: any) {
     const q = event.query?.toLowerCase() ?? '';
-    if (!q || q.length < 2) { this.sugerencias.set([]); return; }
+    if (!q || q.length < 2) {
+      this.sugerencias.set([]);
+      return;
+    }
     this.sugerencias.set(
-      this.arService.accounts().filter(a =>
-        a.userRef.toLowerCase().includes(q) || String(a.salesReceiptId).includes(q)
-      )
+      this.arService
+        .accounts()
+        .filter((a) => a.userRef.toLowerCase().includes(q) || String(a.salesReceiptId).includes(q)),
     );
   }
 
@@ -258,7 +317,9 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
     if (a) this.buscarValue.set(a.userRef);
   }
 
-  onFechaChange() { /* filtro local */ }
+  onFechaChange() {
+    /* filtro local */
+  }
 
   limpiarBusqueda() {
     this.buscarValue.set('');
@@ -268,58 +329,76 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
   exportarExcel(): void {
     const datos = this.ventasFiltradas();
     if (datos.length === 0) {
-      this.messageService.add({ severity: 'warn', summary: 'Sin datos', detail: 'No hay registros para exportar', life: 3000 });
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Sin datos',
+        detail: 'No hay registros para exportar',
+        life: 3000,
+      });
       return;
     }
-    const datosExcel = datos.map(a => ({
-      'N° Comprobante':  `#${a.salesReceiptId}`,
-      'Cliente':         a.userRef,
-      'Observación':     a.observation ?? '',
-      'Fecha Emisión':   this.formatDate(a.issueDate),
-      'Fecha Vencim.':   this.formatDate(a.dueDate),
-      'Días':            this.getDiasBadgeLabel(a.dueDate),
-      'Moneda':          a.currencyCode,
-      'Monto Total':     a.totalAmount,
+    const datosExcel = datos.map((a) => ({
+      'N° Comprobante': `#${a.salesReceiptId}`,
+      Cliente: a.userRef,
+      Observación: a.observation ?? '',
+      'Fecha Emisión': this.formatDate(a.issueDate),
+      'Fecha Vencim.': this.formatDate(a.dueDate),
+      Días: this.getDiasBadgeLabel(a.dueDate),
+      Moneda: a.currencyCode,
+      'Monto Total': a.totalAmount,
       'Saldo Pendiente': a.pendingBalance,
-      'Estado':          a.status,
+      Estado: a.status,
     }));
     const nombreArchivo = ExcelUtils.generarNombreConFecha('ventas-por-cobrar');
     ExcelUtils.exportarAExcel(datosExcel, nombreArchivo, 'Cuentas por Cobrar');
-    this.messageService.add({ severity: 'success', summary: 'Exportación exitosa', detail: `Archivo ${nombreArchivo}.xlsx descargado`, life: 3000 });
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Exportación exitosa',
+      detail: `Archivo ${nombreArchivo}.xlsx descargado`,
+      life: 3000,
+    });
   }
 
   // ── Helpers visuales ──────────────────────────────────────────────
 
   getTagClass(status: AccountReceivableStatus): string {
     switch (status) {
-      case 'PENDIENTE': return 'cotizaciones-tag-amarillo';
-      case 'PARCIAL':   return 'cotizaciones-tag-parcial';
-      case 'PAGADO':    return 'cotizaciones-tag-aprobada';
-      case 'VENCIDO':   return 'cotizaciones-tag-vencido';
-      case 'CANCELADO': return 'cotizaciones-tag-rechazada';
-      default:          return 'cotizaciones-tag-amarillo';
+      case 'PENDIENTE':
+        return 'cotizaciones-tag-amarillo';
+      case 'PARCIAL':
+        return 'cotizaciones-tag-parcial';
+      case 'PAGADO':
+        return 'cotizaciones-tag-aprobada';
+      case 'VENCIDO':
+        return 'cotizaciones-tag-vencido';
+      case 'CANCELADO':
+        return 'cotizaciones-tag-rechazada';
+      default:
+        return 'cotizaciones-tag-amarillo';
     }
   }
 
   getDiasBadgeClass(dueDate: string): string {
     const dias = this.calcDias(dueDate);
-    if (dias < 0)   return 'dias-badge dias-badge--vencido';
+    if (dias < 0) return 'dias-badge dias-badge--vencido';
     if (dias === 0) return 'dias-badge dias-badge--hoy';
-    if (dias <= 3)  return 'dias-badge dias-badge--urgente';
-    if (dias <= 7)  return 'dias-badge dias-badge--proximo';
+    if (dias <= 3) return 'dias-badge dias-badge--urgente';
+    if (dias <= 7) return 'dias-badge dias-badge--proximo';
     return 'dias-badge dias-badge--ok';
   }
 
   getDiasBadgeLabel(dueDate: string): string {
     const dias = this.calcDias(dueDate);
-    if (dias < 0)   return `Vencido ${Math.abs(dias)}d`;
+    if (dias < 0) return `Vencido ${Math.abs(dias)}d`;
     if (dias === 0) return 'Hoy';
     return `${dias}d`;
   }
 
   private calcDias(dueDate: string): number {
-    const hoy  = new Date(); hoy.setHours(0, 0, 0, 0);
-    const venc = new Date(dueDate); venc.setHours(0, 0, 0, 0);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const venc = new Date(dueDate);
+    venc.setHours(0, 0, 0, 0);
     return Math.round((venc.getTime() - hoy.getTime()) / 86_400_000);
   }
 
@@ -327,30 +406,56 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
     return new Date(iso).toLocaleDateString('es-PE');
   }
 
-  irAgregarVentaPorCobrar(id: number) { this.router.navigate(['/admin/pagar-ventas-por-cobrar', id]); }
-  verDetalle(id: number)              { this.router.navigate(['/admin/detalles-ventas-por-cobrar', id]); }
+  irAgregarVentaPorCobrar(id: number) {
+    this.router.navigate(['/admin/pagar-ventas-por-cobrar', id]);
+  }
+  verDetalle(id: number) {
+    this.router.navigate(['/admin/detalles-ventas-por-cobrar', id]);
+  }
 
   rechazarCotizacion(id: number) {
-    const cuenta = this.arService.accounts().find(a => a.id === id);
+    const cuenta = this.arService.accounts().find((a) => a.id === id);
     this.confirmationService.confirm({
       message: `¿Cancelar esta venta por cobrar? <br><small class="text-400">También se anulará el comprobante de venta #${cuenta?.salesReceiptId ?? ''}.</small>`,
-      header: 'Confirmar Cancelación', icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, cancelar todo', rejectLabel: 'No',
+      header: 'Confirmar Cancelación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, cancelar todo',
+      rejectLabel: 'No',
       accept: async () => {
-        const res = await this.arService.cancel({ accountReceivableId: id, reason: 'Cancelado desde listado' });
+        const res = await this.arService.cancel({
+          accountReceivableId: id,
+          reason: 'Cancelado desde listado',
+        });
         if (!res) {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: this.arService.error() ?? 'No se pudo cancelar la cuenta.' });
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error',
+            detail: this.arService.error() ?? 'No se pudo cancelar la cuenta.',
+          });
           return;
         }
         if (cuenta?.salesReceiptId) {
           try {
-            await firstValueFrom(this.ventasService.anularVenta(cuenta.salesReceiptId, 'Cancelado desde ventas por cobrar'));
+            await firstValueFrom(
+              this.ventasService.anularVenta(
+                cuenta.salesReceiptId,
+                'Cancelado desde ventas por cobrar',
+              ),
+            );
           } catch {
-            this.messageService.add({ severity: 'warn', summary: 'Cuenta cancelada', detail: `La cuenta fue cancelada pero no se pudo anular el comprobante #${cuenta.salesReceiptId}.` });
+            this.messageService.add({
+              severity: 'warn',
+              summary: 'Cuenta cancelada',
+              detail: `La cuenta fue cancelada pero no se pudo anular el comprobante #${cuenta.salesReceiptId}.`,
+            });
             return;
           }
         }
-        this.messageService.add({ severity: 'info', summary: 'Cancelada', detail: `Cuenta cancelada y comprobante #${cuenta?.salesReceiptId ?? ''} marcado como ANULADO.` });
+        this.messageService.add({
+          severity: 'info',
+          summary: 'Cancelada',
+          detail: `Cuenta cancelada y comprobante #${cuenta?.salesReceiptId ?? ''} marcado como ANULADO.`,
+        });
       },
     });
   }
