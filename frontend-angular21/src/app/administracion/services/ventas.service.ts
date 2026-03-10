@@ -29,6 +29,8 @@ import {
   TipoVentaAdmin,
   TipoComprobanteAdmin,
   SalesReceiptDetalleCompletoDto,
+  WhatsAppStatusResponse,
+  SendNotificationResponse,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -174,23 +176,17 @@ export class VentasAdminService {
 
   // ─── PDF DEL COMPROBANTE ───────────────────────────────────────────────────
 
-  /**
-   * Descarga el PDF del comprobante directamente desde el navegador.
-   * Llama a GET /sales/receipts/:id/pdf → blob → dispara la descarga.
-   * @param id          ID del comprobante
-   * @param nombreArchivo  Nombre opcional del archivo (default: comprobante-{id}.pdf)
-   */
   descargarComprobantePdf(id: number, nombreArchivo?: string): Observable<void> {
     return this.http
       .get(`${this.salesUrl}/receipts/${id}/pdf`, {
-        headers:      this.headers,
+        headers: this.headers,
         responseType: 'blob',
       })
       .pipe(
         map((blob: Blob) => {
-          const url      = URL.createObjectURL(blob);
-          const anchor   = document.createElement('a');
-          anchor.href    = url;
+          const url = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href = url;
           anchor.download = nombreArchivo ?? `comprobante-${id}.pdf`;
           anchor.click();
           URL.revokeObjectURL(url);
@@ -199,26 +195,53 @@ export class VentasAdminService {
       );
   }
 
-  /**
-   * Abre el PDF en una pestaña nueva del navegador (para previsualizar).
-   * @param id  ID del comprobante
-   */
   verComprobantePdfEnPestana(id: number): Observable<void> {
     return this.http
       .get(`${this.salesUrl}/receipts/${id}/pdf`, {
-        headers:      this.headers,
+        headers: this.headers,
         responseType: 'blob',
       })
       .pipe(
         map((blob: Blob) => {
           const pdfBlob = new Blob([blob], { type: 'application/pdf' });
-          const url     = URL.createObjectURL(pdfBlob);
+          const url = URL.createObjectURL(pdfBlob);
           window.open(url, '_blank');
-          // Liberar el object URL después de que el navegador lo cargue
           setTimeout(() => URL.revokeObjectURL(url), 10_000);
         }),
         catchError((err) => throwError(() => err)),
       );
+  }
+
+  // ─── EMAIL ─────────────────────────────────────────────────────────────────
+
+  enviarComprobantePorEmail(id: number): Observable<SendNotificationResponse> {
+    return this.http
+      .post<SendNotificationResponse>(
+        `${this.salesUrl}/receipts/${id}/send-email`,
+        {},
+        { headers: this.headers },
+      )
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  // ─── WHATSAPP ──────────────────────────────────────────────────────────────
+
+  obtenerEstadoWhatsApp(): Observable<WhatsAppStatusResponse> {
+    return this.http
+      .get<WhatsAppStatusResponse>(`${this.salesUrl}/receipts/whatsapp/status`, {
+        headers: this.headers,
+      })
+      .pipe(catchError((err) => throwError(() => err)));
+  }
+
+  enviarComprobantePorWhatsApp(id: number): Observable<SendNotificationResponse> {
+    return this.http
+      .post<SendNotificationResponse>(
+        `${this.salesUrl}/receipts/${id}/send-whatsapp`,
+        {},
+        { headers: this.headers },
+      )
+      .pipe(catchError((err) => throwError(() => err)));
   }
 
   // ─── PROMOCIONES ───────────────────────────────────────────────────────────
@@ -251,10 +274,10 @@ export class VentasAdminService {
     if (idSede != null) params = params.set('id_sede', String(idSede));
     if (idCategoria != null) params = params.set('id_categoria', String(idCategoria));
 
-    return this.http.get<ProductoStockAdminResponse>(`${this.logisticsUrl}/products/ventas/stock`, {
-      headers: this.headers,
-      params,
-    });
+    return this.http.get<ProductoStockAdminResponse>(
+      `${this.logisticsUrl}/products/ventas/stock`,
+      { headers: this.headers, params },
+    );
   }
 
   buscarProductosVentas(
@@ -285,21 +308,21 @@ export class VentasAdminService {
     const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
       ? p.almacenes.map((a: any) => ({
           nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
-          stock:  Number(a.stock ?? a.cantidad ?? 0),
+          stock: Number(a.stock ?? a.cantidad ?? 0),
         }))
       : [{ nombre: p.nombre_almacen ?? 'Almacén', stock: Number(p.stock ?? 0) }];
 
     return {
-      id:              Number(p.id ?? p.id_producto),
-      codigo:          p.codigo          ?? p.cod_prod ?? '',
-      nombre:          p.nombre          ?? p.descripcion ?? '',
-      familia:         p.familia         ?? p.categoria  ?? '',
-      categoriaId:     Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
-      precioUnidad:    Number(p.precioUnidad  ?? p.precio_unitario ?? 0),
-      precioCaja:      Number(p.precioCaja    ?? p.precio_caja     ?? 0),
-      precioMayorista: Number(p.precioMayorista ?? p.precio_mayor  ?? 0),
-      stock:           almacenes.reduce((s, a) => s + a.stock, 0),
-      sede:            p.sede ?? '',
+      id: Number(p.id ?? p.id_producto),
+      codigo: p.codigo ?? p.cod_prod ?? '',
+      nombre: p.nombre ?? p.descripcion ?? '',
+      familia: p.familia ?? p.categoria ?? '',
+      categoriaId: Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
+      precioUnidad: Number(p.precioUnidad ?? p.precio_unitario ?? 0),
+      precioCaja: Number(p.precioCaja ?? p.precio_caja ?? 0),
+      precioMayorista: Number(p.precioMayorista ?? p.precio_mayor ?? 0),
+      stock: almacenes.reduce((s, a) => s + a.stock, 0),
+      sede: p.sede ?? '',
       almacenes,
     };
   }
@@ -308,21 +331,21 @@ export class VentasAdminService {
     const almacenes: Array<{ nombre: string; stock: number }> = Array.isArray(p.almacenes)
       ? p.almacenes.map((a: any) => ({
           nombre: a.nombre ?? a.nombre_almacen ?? 'Almacén',
-          stock:  Number(a.stock ?? a.cantidad ?? 0),
+          stock: Number(a.stock ?? a.cantidad ?? 0),
         }))
       : [{ nombre: p.nombre_almacen ?? 'Almacén', stock: Number(p.stock ?? 0) }];
 
     return {
-      id:              p.id ?? p.id_producto,
-      codigo:          p.codigo          ?? p.cod_prod ?? '',
-      nombre:          p.nombre          ?? p.descripcion ?? '',
-      familia:         p.familia         ?? p.categoria  ?? '',
-      categoriaId:     Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
-      precioUnidad:    Number(p.precioUnidad  ?? p.precio_unitario ?? 0),
-      precioCaja:      Number(p.precioCaja    ?? p.precio_caja     ?? 0),
-      precioMayorista: Number(p.precioMayorista ?? p.precio_mayor  ?? 0),
-      stock:           almacenes.reduce((s, a) => s + a.stock, 0),
-      sede:            p.sede ?? '',
+      id: p.id ?? p.id_producto,
+      codigo: p.codigo ?? p.cod_prod ?? '',
+      nombre: p.nombre ?? p.descripcion ?? '',
+      familia: p.familia ?? p.categoria ?? '',
+      categoriaId: Number(p.id_categoria ?? p.categoriaId ?? 0) || undefined,
+      precioUnidad: Number(p.precioUnidad ?? p.precio_unitario ?? 0),
+      precioCaja: Number(p.precioCaja ?? p.precio_caja ?? 0),
+      precioMayorista: Number(p.precioMayorista ?? p.precio_mayor ?? 0),
+      stock: almacenes.reduce((s, a) => s + a.stock, 0),
+      sede: p.sede ?? '',
       almacenes,
     };
   }
@@ -338,17 +361,17 @@ export class VentasAdminService {
         map((cliente) => {
           if (!cliente) throw { error: { message: 'Cliente no encontrado' } };
           return {
-            customerId:              cliente.customerId ?? cliente.id_cliente,
-            name:                    cliente.name ?? cliente.nombres ?? cliente.displayName ?? '',
-            documentValue:           cliente.documentValue ?? cliente.valor_doc,
+            customerId: cliente.customerId ?? cliente.id_cliente,
+            name: cliente.name ?? cliente.nombres ?? cliente.displayName ?? '',
+            documentValue: cliente.documentValue ?? cliente.valor_doc,
             documentTypeDescription: cliente.documentTypeDescription ?? '',
-            documentTypeSunatCode:   cliente.documentTypeSunatCode ?? '',
-            invoiceType:             cliente.invoiceType ?? cliente.invoice_type ?? '',
-            status:                  cliente.status ?? cliente.estado,
-            address:                 cliente.address ?? cliente.direccion ?? null,
-            email:                   cliente.email ?? null,
-            phone:                   cliente.phone ?? cliente.telefono ?? null,
-            displayName:             cliente.displayName ?? cliente.name ?? '',
+            documentTypeSunatCode: cliente.documentTypeSunatCode ?? '',
+            invoiceType: cliente.invoiceType ?? cliente.invoice_type ?? '',
+            status: cliente.status ?? cliente.estado,
+            address: cliente.address ?? cliente.direccion ?? null,
+            email: cliente.email ?? null,
+            phone: cliente.phone ?? cliente.telefono ?? null,
+            displayName: cliente.displayName ?? cliente.name ?? '',
           } as ClienteBusquedaAdminResponse;
         }),
         catchError((err) => throwError(() => err)),

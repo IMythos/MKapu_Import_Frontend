@@ -410,3 +410,14 @@ export interface Quote {
   cliente?: QuoteCliente;
   detalles?: QuoteDetalleItem[];
 }
+
+
+export interface WhatsAppStatusResponse {
+  ready: boolean;
+  qr: string | null;
+}
+
+export interface SendNotificationResponse {
+  message: string;
+  sentTo: string;
+}
