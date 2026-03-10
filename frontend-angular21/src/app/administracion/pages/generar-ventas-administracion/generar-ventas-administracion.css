@@ -2576,109 +2576,42 @@
     background: #27272a !important;
     border-color: #52525b !important;
   }
-
-  .tabla-carrito-productos .p-datatable-tbody>tr,
-  .tabla-carrito-productos .p-datatable-tbody>tr.p-row-odd,
-  .tabla-carrito-productos .p-datatable-tbody>tr.p-row-even,
-  .tabla-carrito-productos .p-datatable-tbody>tr.p-selectable-row {
-    background: #27272a !important;
-    color: #f1f5f9 !important;
-  }
-
-  .tabla-carrito-productos .p-datatable-tbody>tr>td,
-  .tabla-carrito-productos .p-datatable-tbody>tr.p-row-odd>td,
-  .tabla-carrito-productos .p-datatable-tbody>tr.p-row-even>td {
-    background: #27272a !important;
-    color: #f1f5f9 !important;
-    border-bottom: 1px solid #3f3f46 !important;
-  }
-
-  .tabla-carrito-productos .p-datatable-tbody>tr:hover>td,
-  .tabla-carrito-productos .p-datatable-tbody>tr.p-selectable-row:hover>td {
-    background: rgba(240, 208, 103, 0.08) !important;
-  }
 }
 
-/* ===== DARK MODE - TABLA CARRITO ===== */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos {
-  border-color: #52525b !important;
+/* ═══════════════════════════════════════════
+   Tags de almacén — Lista de productos
+   ═══════════════════════════════════════════ */
+.producto-stock {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
 }
 
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos.p-datatable,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-table-container,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-table {
-  background: #27272a !important;
-  color: #f1f5f9 !important;
+.almacen-tag .p-tag {
+  font-size: 0.70rem;
+  padding: 2px 6px;
 }
 
-/* Header */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-thead > tr > th {
-  background: #2d2d30 !important;
-  color: #f1f5f9 !important;
-  border-color: #52525b !important;
-  border-bottom: 2px solid #52525b !important;
+/* ═══════════════════════════════════════════
+   Tags de almacén — Autocomplete sugerencias
+   ═══════════════════════════════════════════ */
+.suggestion-row-3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
 }
 
-/* Todas las variantes de filas que PrimeNG puede generar */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-row-odd,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-row-even,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-selectable-row,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-datatable-row {
-  background: #27272a !important;
-  color: #f1f5f9 !important;
+.suggestion-almacenes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  flex: 1;
 }
 
-/* Todas las variantes de celdas */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr > td,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-row-odd > td,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-row-even > td,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-selectable-row > td {
-  background: #27272a !important;
-  color: #f1f5f9 !important;
-  border-bottom: 1px solid #3f3f46 !important;
-  border-color: #3f3f46 !important;
-}
-
-/* Hover filas */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr:hover > td,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-row-odd:hover > td,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-row-even:hover > td,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr.p-selectable-row:hover > td {
-  background: rgba(240, 208, 103, 0.08) !important;
-}
-
-/* Contenido interno de celdas */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr > td strong,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr > td .producto-nombre-tabla {
-  color: #f1f5f9 !important;
-}
-
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr > td .codigo-tabla {
-  background: #3f3f46 !important;
-  color: #f1f5f9 !important;
-}
-
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr > td .subtotal-item {
-  color: #4ade80 !important;
-}
-
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr > td .cantidad-badge {
-  background: rgba(74, 222, 128, 0.2) !important;
-  color: #4ade80 !important;
-}
-
-/* Footer si existe */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-tfoot > tr > td {
-  background: #2d2d30 !important;
-  color: #f1f5f9 !important;
-  border-color: #52525b !important;
-}
-
-/* Scrollable wrapper interno que PrimeNG añade */
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-wrapper,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-scroller,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-scrollable-wrapper,
-:host-context(.app-dark) ::ng-deep .tabla-carrito-productos .p-datatable-scrollable-view {
-  background: #27272a !important;
+.suggestion-alm-tag .p-tag {
+  font-size: 0.68rem;
+  padding: 2px 5px;
 }

@@ -18,28 +18,41 @@ import { CommonModule } from '@angular/common';
   standalone: true,
 })
 export class Header implements OnInit {
-  private router          = inject(Router);
-  private roleService     = inject(RoleService);
+  private router        = inject(Router);
+  private roleService   = inject(RoleService);
   protected cashboxSocket = inject(CashboxSocketService);
   protected themeService  = inject(ThemeService);
 
   @Output() toggleSidebar = new EventEmitter<void>();
 
-  readonly isVentas = this.roleService.getCurrentUserRole() === UserRole.VENTAS;
-  notifCount = this.loadNotifCount();
-  readonly caja = this.cashboxSocket.caja;
+  private readonly currentRole = this.roleService.getCurrentUserRole();
 
-  sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';
+  readonly isVentas   = this.currentRole === UserRole.VENTAS;
+  readonly isAdmin    = this.currentRole === UserRole.ADMIN;
+  readonly showCaja   = this.isVentas || this.isAdmin; 
+
+  notifCount          = this.loadNotifCount();
+  readonly caja       = this.cashboxSocket.caja;
+  sedeNombre: string  = this.roleService.getCurrentUser()?.sedeNombre ?? '';
 
   ngOnInit(): void {
     this.router.events
       .pipe(filter((e) => e instanceof NavigationEnd))
       .subscribe(() => (this.notifCount = this.loadNotifCount()));
 
-    if (this.isVentas) {
-      const id_sede = this.roleService.getCurrentUser()?.idSede;
+    if (this.showCaja) {
+      const user = this.roleService.getCurrentUser();
+      console.log('🔍 showCaja user:', user);          // 👈 ver qué trae
+      console.log('🔍 idSede:', user?.idSede);          // 👈 ¿es undefined?
+      console.log('🔍 caja signal:', this.caja());      // 👈 estado actual
+
+      const id_sede = user?.idSede;
       if (id_sede) {
-        this.cashboxSocket.checkActiveSession(id_sede);
+        this.cashboxSocket.checkActiveSession(id_sede).then(data => {
+          console.log('✅ checkActiveSession response:', data); // 👈 respuesta del socket
+        });
+      } else {
+        console.warn('⚠️ Admin no tiene idSede asignado');
       }
     }
   }

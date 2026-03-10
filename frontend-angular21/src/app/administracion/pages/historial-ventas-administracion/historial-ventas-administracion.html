@@ -10,7 +10,11 @@
           <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
         </div>
       </div>
-
+      <p-button
+        label="Generar venta"
+        icon="pi pi-arrow-right"
+        (onClick)="GenerarVenta()"
+      ></p-button>
     </div>
   </p-card>
 </div>
@@ -25,7 +29,6 @@
           <span class="estadistica-valor">S/. {{ totalVentas | number: '1.2-2' }}</span>
         </div>
       </div>
-
       <div class="estadistica-card">
         <i class="pi pi-shopping-cart"></i>
         <div>
@@ -33,7 +36,6 @@
           <span class="estadistica-valor">{{ numeroVentas }}</span>
         </div>
       </div>
-
       <div class="estadistica-card">
         <i class="pi pi-file"></i>
         <div>
@@ -41,7 +43,6 @@
           <span class="estadistica-valor">{{ totalBoletas }}</span>
         </div>
       </div>
-
       <div class="estadistica-card">
         <i class="pi pi-file-edit"></i>
         <div>
@@ -57,24 +58,23 @@
   <div class="filtros-container mb-4">
     <div class="seccion-filtros">
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
-
       <div class="filtros-linea-1">
         <div class="filtro-item filtro-cliente-50">
-          <label>Cliente (DNI/RUC)</label>
+          <label>Cliente (Nombre / DNI / RUC)</label>
           <p-autocomplete
             [(ngModel)]="filtros.busqueda"
             [suggestions]="sugerenciasBusqueda"
             (completeMethod)="buscarSugerencias($event)"
-            (onSelect)="aplicarFiltros()"
+            (onSelect)="onSeleccionarSugerencia($event)"
             (onClear)="aplicarFiltros()"
-            placeholder="Buscar por DNI o RUC"
+            (onKeyUp)="onBusquedaKeyUp($event)"
+            placeholder="Buscar por nombre, DNI o RUC..."
             [dropdown]="true"
             [showClear]="true"
+            [minLength]="0"
             styleClass="w-full"
-          >
-          </p-autocomplete>
+          ></p-autocomplete>
         </div>
-
         <div class="filtro-item filtro-grupo-fechas">
           <label>Rango de Fechas</label>
           <div class="fechas-con-guion">
@@ -86,11 +86,8 @@
               (onClear)="aplicarFiltros()"
               [showClear]="true"
               [showIcon]="true"
-            >
-            </p-datepicker>
-
+            ></p-datepicker>
             <span class="fecha-separador">-</span>
-
             <p-datepicker
               [(ngModel)]="filtros.fechaFin"
               dateFormat="dd/mm/yy"
@@ -99,12 +96,10 @@
               (onClear)="aplicarFiltros()"
               [showClear]="true"
               [showIcon]="true"
-            >
-            </p-datepicker>
+            ></p-datepicker>
           </div>
         </div>
       </div>
-
       <div class="filtros-linea-2">
         <div class="filtro-item filtro-compacto">
           <label>Sede</label>
@@ -116,10 +111,8 @@
             optionValue="value"
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
-          >
-          </p-select>
+          ></p-select>
         </div>
-
         <div class="filtro-item filtro-compacto">
           <label>Tipo</label>
           <p-select
@@ -130,24 +123,20 @@
             optionValue="value"
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
-          >
-          </p-select>
+          ></p-select>
         </div>
-
         <div class="filtro-item filtro-compacto">
           <label>Tipo de Pago</label>
           <p-select
             [(ngModel)]="filtros.tipoPago"
-            [options]="tiposPago"
+            [options]="metodosPago"
             placeholder="Todos"
             optionLabel="label"
             optionValue="value"
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
-          >
-          </p-select>
+          ></p-select>
         </div>
-
         <div class="filtro-item filtro-compacto">
           <label>Estado</label>
           <p-select
@@ -158,10 +147,8 @@
             optionValue="value"
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
-          >
-          </p-select>
+          ></p-select>
         </div>
-
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button
@@ -170,8 +157,7 @@
             (onClick)="limpiarFiltros()"
             severity="danger"
             styleClass="btn-limpiar-filtros"
-          >
-          </p-button>
+          ></p-button>
         </div>
       </div>
     </div>
@@ -179,169 +165,309 @@
 </div>
 
 <div class="p-2">
-  <p-card class="tarjeta-principal">
-    <div class="seccion-tabla">
-      <div class="tabla-header">
-        <h3><i class="pi pi-list"></i> Listado de comprobantes</h3>
+  <div style="position: relative">
+    <p-card class="tarjeta-principal">
+      <app-loading-overlay
+        [visible]="loading"
+        mensaje="Cargando ventas..."
+        modo="inline"
+      ></app-loading-overlay>
 
-        <p-button
-          label="Exportar Excel"
-          icon="pi pi-download"
-          (onClick)="exportarExcel()"
-          severity="success"
-          [outlined]="true"
-          tooltipPosition="bottom"
-          pTooltip="Descargar reporte en Excel"
-          size="small"
-        />
-      </div>
-
-      <p-table
-        [value]="comprobantesFiltrados"
-        [paginator]="true"
-        [rows]="limitePorPagina"
-        [totalRecords]="totalRegistros"
-        [lazy]="true"
-        (onLazyLoad)="onPageChange($event)"
-        [first]="firstRow"
-        [rowsPerPageOptions]="[5, 10, 20, 50]"
-        [loading]="loading"
-        [tableStyle]="{ 'min-width': '75rem' }"
-        styleClass="p-datatablea-striped"
-        currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
-        [showCurrentPageReport]="true"
+      <div
+        class="seccion-tabla"
+        [style.opacity]="loading ? '0.3' : '1'"
+        style="transition: opacity 0.2s ease"
       >
-        <ng-template pTemplate="header">
-          <tr>
-            <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
-            <th pSortableColumn="tipoComprobante">Tipo <p-sortIcon field="tipoComprobante" /></th>
-            <th pSortableColumn="fecEmision">Fecha Emisión <p-sortIcon field="fecEmision" /></th>
-            <th pSortableColumn="clienteNombre">Cliente</th>
-            <th pSortableColumn="clienteDocumento">Documento</th>
+        <div class="tabla-header">
+          <h3><i class="pi pi-list"></i> Listado de comprobantes</h3>
+          <p-button
+            label="Exportar Excel"
+            icon="pi pi-download"
+            (onClick)="exportarExcel()"
+            severity="success"
+            [outlined]="true"
+            pTooltip="Descargar reporte en Excel"
+            tooltipPosition="bottom"
+            size="small"
+          ></p-button>
+        </div>
 
-            <th pSortableColumn="sedeNombre">Sede <p-sortIcon field="sedeNombre" /></th>
-            <th pSortableColumn="metodoPago">Tipo Pago <p-sortIcon field="metodoPago" /></th>
-            <th pSortableColumn="responsableNombre">
-              Responsable <p-sortIcon field="responsableNombre" />
-            </th>
-            <th pSortableColumn="total" class="text-right" style="min-width: 125px; width: 125px">
-              Total <p-sortIcon field="total" />
-            </th>
-            <th pSortableColumn="estado">Estado</th>
-            <th class="text-center">Acciones</th>
-          </tr>
-        </ng-template>
+        <p-table
+          [value]="comprobantesFiltrados"
+          [paginator]="false"
+          [loading]="false"
+          [tableStyle]="{ 'min-width': '75rem' }"
+          styleClass="p-datatable-striped"
+        >
+          <ng-template pTemplate="header">
+            <tr>
+              <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
+              <th pSortableColumn="tipoComprobante">Tipo <p-sortIcon field="tipoComprobante" /></th>
+              <th pSortableColumn="fecEmision">Fecha Emisión <p-sortIcon field="fecEmision" /></th>
+              <th>Cliente</th>
+              <th>Documento</th>
+              <th pSortableColumn="sedeNombre">Sede <p-sortIcon field="sedeNombre" /></th>
+              <th pSortableColumn="metodoPago">Tipo Pago <p-sortIcon field="metodoPago" /></th>
+              <th pSortableColumn="responsableNombre">
+                Responsable <p-sortIcon field="responsableNombre" />
+              </th>
+              <th pSortableColumn="total" class="text-right" style="min-width: 125px; width: 125px">
+                Total <p-sortIcon field="total" />
+              </th>
+              <th pSortableColumn="estado">Estado</th>
+              <th class="text-center">Acciones</th>
+            </tr>
+          </ng-template>
 
-        <ng-template pTemplate="body" let-comprobante>
-          <tr>
-            <td>
-              <strong>{{ getNumeroFormateado(comprobante) }}</strong>
-              <!-- si prefieres usar numeroCompleto:
-              <strong>{{ comprobante.numeroCompleto }}</strong> -->
-            </td>
-            <td>
-              <p-tag
-                [value]="getTipoComprobanteLabel(comprobante.tipoComprobante)"
-                [severity]="
-                  getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta'
-                    ? 'info'
-                    : 'warn'
-                "
-              ></p-tag>
-            </td>
-            <td>{{ comprobante.fecEmision | date: 'dd/MM/yyyy HH:mm' }}</td>
-            <td>{{ comprobante.clienteNombre }}</td>
-            <td>{{ comprobante.clienteDocumento }}</td>
-
-            <td>{{ comprobante.sedeNombre }}</td>
-
-            <td>
-              <div class="tipo-pago-cell">
+          <ng-template pTemplate="body" let-comprobante>
+            <tr>
+              <td>
+                <strong>{{ getNumeroFormateado(comprobante) }}</strong>
+              </td>
+              <td>
+                <p-tag
+                  [value]="getTipoComprobanteLabel(comprobante.tipoComprobante)"
+                  [severity]="
+                    getTipoComprobanteLabel(comprobante.tipoComprobante) === 'Boleta'
+                      ? 'info'
+                      : 'warn'
+                  "
+                ></p-tag>
+              </td>
+              <td>{{ comprobante.fecEmision | date: 'dd/MM/yyyy HH:mm' }}</td>
+              <td>{{ comprobante.clienteNombre }}</td>
+              <td>{{ comprobante.clienteDocumento }}</td>
+              <td>{{ comprobante.sedeNombre }}</td>
+              <td>
                 <p-tag
                   [value]="getTipoPagoLabel(comprobante.metodoPago)"
                   [severity]="getSeverityTipoPago(comprobante.metodoPago)"
                   styleClass="tipo-pago-tag"
                 ></p-tag>
-              </div>
-            </td>
+              </td>
+              <td>{{ comprobante.responsableNombre }}</td>
+              <td class="text-right">
+                <strong>S/. {{ comprobante.total | number: '1.2-2' }}</strong>
+              </td>
+              <td>
+                <p-tag
+                  [value]="comprobante.estado"
+                  [severity]="getSeverityEstado(comprobante.estado)"
+                ></p-tag>
+              </td>
+              <td class="text-center">
+                <div class="acciones-tabla">
+                  <p-button
+                    icon="pi pi-eye"
+                    (onClick)="verDetalleVenta(comprobante)"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    pTooltip="Ver detalle"
+                    tooltipPosition="top"
+                  />
+                  <p-button
+                    icon="pi pi-file-pdf"
+                    [loading]="accionesCargando() === comprobante.idComprobante"
+                    (onClick)="abrirDialogAcciones(comprobante)"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="secondary"
+                    pTooltip="Acciones del comprobante"
+                    tooltipPosition="top"
+                  />
+                  <p-button
+                    icon="pi pi-truck"
+                    (onClick)="crearGuiaRemision(comprobante)"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="info"
+                    [disabled]="comprobante.estado !== 'EMITIDO'"
+                    pTooltip="Generar Guía de Remisión"
+                    tooltipPosition="top"
+                  />
+                  <p-button
+                    icon="pi pi-trash"
+                    (onClick)="anularComprobante(comprobante)"
+                    [rounded]="true"
+                    [text]="true"
+                    severity="danger"
+                    [disabled]="comprobante.estado !== 'EMITIDO'"
+                    pTooltip="Generar Nota de Crédito"
+                    tooltipPosition="top"
+                  />
+                </div>
+              </td>
+            </tr>
+          </ng-template>
 
-            <td>
-              <span class="responsable-text">{{ comprobante.responsableNombre }}</span>
-            </td>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="11" class="text-center">
+                <div class="mensaje-vacio">
+                  <i class="pi pi-inbox"></i>
+                  <p>No se encontraron comprobantes</p>
+                </div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
 
-            <td class="text-right">
-              <strong>S/. {{ comprobante.total | number: '1.2-2' }}</strong>
-            </td>
-
-            <td>
-              <p-tag
-                [value]="getEstadoComprobante(comprobante)"
-                [severity]="getSeverityEstado(getEstadoComprobante(comprobante))"
-              ></p-tag>
-            </td>
-
-            <td class="text-center">
-              <div class="acciones-tabla">
-                <p-button
-                  icon="pi pi-eye"
-                  (onClick)="verDetalleVenta(comprobante)"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="secondary"
-                  pTooltip="Ver detalle"
-                  tooltipPosition="top"
-                ></p-button>
-
-                <p-button
-                  icon="pi pi-print"
-                  (onClick)="imprimirComprobante(comprobante)"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="secondary"
-                  pTooltip="Imprimir"
-                  tooltipPosition="top"
-                ></p-button>
-
-                <p-button
-                  icon="pi pi-truck"
-                  (onClick)="crearGuiaRemision(comprobante)"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="info"
-                  [disabled]="comprobante.estado !== 'EMITIDO'"
-                  pTooltip="Generar Guía de Remisión"
-                  tooltipPosition="top"
-                ></p-button>
-
-                <p-button
-                  icon="pi pi-trash"
-                  (onClick)="anularComprobante(comprobante)"
-                  [rounded]="true"
-                  [text]="true"
-                  severity="danger"
-                  [disabled]="comprobante.estado !== 'EMITIDO'"
-                  pTooltip="Generar Nota de Crédito"
-                  tooltipPosition="top"
-                ></p-button>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="emptymessage">
-          <tr>
-            <td colspan="11" class="text-center">
-              <div class="mensaje-vacio">
-                <i class="pi pi-inbox"></i>
-                <p>No se encontraron comprobantes</p>
-              </div>
-            </td>
-          </tr>
-        </ng-template>
-      </p-table>
-    </div>
-  </p-card>
+        <app-paginador
+          [page]="paginaActual"
+          [totalPages]="totalPaginas"
+          [total]="totalRegistros"
+          [limit]="limitePorPagina"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)"
+        ></app-paginador>
+      </div>
+    </p-card>
+  </div>
 
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
 </div>
+
+<p-dialog
+  header="Opciones del comprobante"
+  [(visible)]="accionesDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '500px' }"
+  (onHide)="cerrarDialogAcciones()"
+>
+  <div *ngIf="accionesComprobante" class="py-2">
+    <div class="text-center mb-4">
+      <span class="font-bold text-base">{{ getNumeroFormateado(accionesComprobante) }}</span>
+      <p class="text-color-secondary text-sm mt-1 mb-0">{{ accionesComprobante.clienteNombre }}</p>
+    </div>
+
+    <p class="acciones-seccion-label">Envíos</p>
+    <div class="acciones-grid mb-4">
+      <div class="accion-item">
+        <button
+          class="accion-icono-btn"
+          [class.loading]="wspCargando() === accionesComprobante.idComprobante"
+          (click)="abrirDialogWspDesdeAcciones(accionesComprobante)"
+        >
+          <i class="pi pi-whatsapp" *ngIf="wspCargando() !== accionesComprobante.idComprobante"></i>
+          <i
+            class="pi pi-spin pi-spinner"
+            *ngIf="wspCargando() === accionesComprobante.idComprobante"
+          ></i>
+        </button>
+        <span>WhatsApp</span>
+      </div>
+      <div class="accion-item">
+        <button
+          class="accion-icono-btn"
+          [class.loading]="emailCargando() === accionesComprobante.idComprobante"
+          (click)="enviarCotizacionDesdeDialog(accionesComprobante)"
+        >
+          <i
+            class="pi pi-envelope"
+            *ngIf="emailCargando() !== accionesComprobante.idComprobante"
+          ></i>
+          <i
+            class="pi pi-spin pi-spinner"
+            *ngIf="emailCargando() === accionesComprobante.idComprobante"
+          ></i>
+        </button>
+        <span>Correo</span>
+      </div>
+    </div>
+
+    <p class="acciones-seccion-label">Descargas</p>
+    <div class="acciones-grid">
+      <div class="accion-item">
+        <button
+          class="accion-icono-btn"
+          [class.loading]="verPdfCargando"
+          (click)="verPdfEnPestana(accionesComprobante)"
+        >
+          <i class="pi pi-print" *ngIf="!verPdfCargando"></i>
+          <i class="pi pi-spin pi-spinner" *ngIf="verPdfCargando"></i>
+        </button>
+        <span>Imprimir</span>
+      </div>
+      <div class="accion-item">
+        <button
+          class="accion-icono-btn"
+          [class.loading]="pdfCargando() === accionesComprobante.idComprobante"
+          (click)="imprimirComprobante(accionesComprobante)"
+        >
+          <i class="pi pi-download" *ngIf="pdfCargando() !== accionesComprobante.idComprobante"></i>
+          <i
+            class="pi pi-spin pi-spinner"
+            *ngIf="pdfCargando() === accionesComprobante.idComprobante"
+          ></i>
+        </button>
+        <span>Descargar PDF</span>
+      </div>
+    </div>
+  </div>
+</p-dialog>
+
+<p-dialog
+  header="Enviar por WhatsApp"
+  [(visible)]="wspDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '380px' }"
+  (onHide)="cerrarDialogWsp()"
+>
+  <ng-container *ngIf="wspConsultando">
+    <div class="flex flex-column align-items-center gap-3 py-4">
+      <i class="pi pi-spin pi-spinner text-4xl text-green-500"></i>
+      <span class="font-semibold text-sm">Conectando con WhatsApp...</span>
+      <span class="text-color-secondary text-xs text-center">
+        Esto puede tardar hasta 2 minutos la primera vez
+      </span>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!wspConsultando && !wspReady && !wspQr">
+    <div class="flex flex-column align-items-center gap-3 py-4">
+      <i class="pi pi-spin pi-spinner text-4xl text-green-500"></i>
+      <span class="text-color-secondary text-sm">Iniciando sesión de WhatsApp...</span>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!wspConsultando && !wspReady && wspQr">
+    <div class="flex flex-column align-items-center gap-3 py-3">
+      <span class="font-semibold text-sm">Escanea el código QR con tu WhatsApp</span>
+      <img [src]="wspQr" alt="WhatsApp QR" style="width: 220px; height: 220px" />
+      <span class="text-color-secondary text-xs text-center">
+        Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo
+      </span>
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-spin pi-spinner text-green-500"></i>
+        <span class="text-xs text-color-secondary">Esperando conexión...</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!wspConsultando && wspReady">
+    <div class="flex flex-column align-items-center gap-3 py-3">
+      <i class="pi pi-check-circle text-5xl text-green-500"></i>
+      <span class="font-semibold">WhatsApp conectado</span>
+      <span class="text-color-secondary text-sm text-center">
+        Se enviará el comprobante
+        <strong>{{ wspComprobanteActual ? getNumeroFormateado(wspComprobanteActual) : '' }}</strong>
+        al número registrado del cliente.
+      </span>
+    </div>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="cerrarDialogWsp()" />
+    <p-button
+      label="Enviar"
+      icon="pi pi-whatsapp"
+      severity="success"
+      [disabled]="!wspReady || wspConsultando"
+      (onClick)="confirmarEnvioWsp()"
+    />
+  </ng-template>
+</p-dialog>

@@ -9,6 +9,7 @@ import { forkJoin, Subscription } from 'rxjs';
 
 import { SedeService } from '../../../administracion/services/sede.service';
 import { AlmacenDashboardService, MovimientoRecienteDto, ProductoCriticoDto } from '../../../administracion/services/almacen dashboard.service';
+import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 
 interface KpiCard {
   label:  string;
@@ -23,9 +24,18 @@ type TagSeverity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contr
 @Component({
   selector: 'app-dashboard-almacen',
   standalone: true,
-  imports: [CommonModule, CardModule, ChartModule, TagModule, SelectModule, FormsModule],
+  imports: [
+    CommonModule,
+    CardModule,
+    ChartModule,
+    TagModule,
+    SelectModule,
+    FormsModule,
+    LoadingOverlayComponent,
+  ],
   templateUrl: './dashboard-almacen.html',
   styleUrl: './dashboard-almacen.css',
+  
 })
 export class DashboardAlmacen implements OnInit, OnDestroy {
 
@@ -89,14 +99,12 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
     this.subs.add(sub);
   }
 
-  // ✅ Convierte siempre a string para mantener consistencia con id_sede VARCHAR
   onSedeGlobalChange(sedeId: number | string | null): void {
     this.idSede.set(sedeId != null ? String(sedeId) : '');
     this.cargarTodo();
   }
 
-  // ── Helpers de sede ───────────────────────────────────────────────
-  // ✅ Usa !== '' en vez de || null para no confundir '0' con vacío
+
   private getSedeParam(): string | null {
     return this.idSede() !== '' ? this.idSede() : null;
   }
@@ -237,8 +245,12 @@ export class DashboardAlmacen implements OnInit, OnDestroy {
 
   private getUserSede(): string {
     try {
-      const user = JSON.parse(localStorage.getItem('user') ?? '{}');
+      const raw = localStorage.getItem('user');
+      console.log('🔍 localStorage user RAW:', raw); 
+      const user = JSON.parse(raw ?? '{}');
+      console.log('🔍 user parseado:', user);         
       const sede = user.id_sede ?? user.idSede ?? user.sede_id ?? user.sedeId ?? null;
+      console.log('🔍 sede detectada:', sede);        
       return sede ? String(sede) : '';
     } catch { return ''; }
   }

@@ -75,7 +75,6 @@ html.p-dark :host ::ng-deep .app-toolbar {
   color: #aaa;
 }
 
-/* ✅ ----------- SEDE BADGE ----------- */
 .header-sede-badge {
   display: inline-flex;
   align-items: center;

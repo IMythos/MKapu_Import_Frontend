@@ -140,12 +140,10 @@ export class PromocionesService {
     this.promocionesSubject.next(promocionesIniciales);
   }
 
-  // ✅ OBTENER TODAS LAS PROMOCIONES
   getPromociones(): Promocion[] {
     return this.promocionesSubject.value;
   }
 
-  // ✅ OBTENER PROMOCIONES ACTIVAS
   getPromocionesActivas(): Promocion[] {
     const ahora = new Date();
     return this.promocionesSubject.value.filter(
@@ -157,13 +155,11 @@ export class PromocionesService {
     );
   }
 
-  // ✅ BUSCAR PROMOCIÓN POR CÓDIGO
   buscarPorCodigo(codigo: string): Promocion | null {
     const codigoUpper = codigo.trim().toUpperCase();
     return this.promocionesSubject.value.find((p) => p.codigo.toUpperCase() === codigoUpper) || null;
   }
 
-  // ✅ VALIDAR PROMOCIÓN
   validarPromocion(
     codigo: string,
     opciones: {
@@ -245,7 +241,6 @@ export class PromocionesService {
     return { valida: true, mensaje: 'Promoción válida', promocion };
   }
 
-  // ✅ CALCULAR DESCUENTO
   calcularDescuento(promocion: Promocion, subtotal: number): number {
     if (promocion.tipo_descuento === 'PORCENTAJE') {
       return Number(((subtotal * promocion.valor_descuento) / 100).toFixed(2));
@@ -255,7 +250,6 @@ export class PromocionesService {
     }
   }
 
-  // ✅ APLICAR PROMOCIÓN
   aplicarPromocion(
     codigo: string,
     opciones: {
@@ -281,7 +275,6 @@ export class PromocionesService {
     };
   }
 
-  // ✅ REGISTRAR USO DE PROMOCIÓN
   registrarUsoPromocion(codigo: string, idComprobante: string): void {
     const promociones = [...this.promocionesSubject.value];
     const index = promociones.findIndex((p) => p.codigo.toUpperCase() === codigo.toUpperCase());
@@ -305,12 +298,10 @@ export class PromocionesService {
     }
   }
 
-  // ✅ OBTENER PROMOCIÓN POR ID
   getPromocionPorId(id: string): Promocion | null {
     return this.promocionesSubject.value.find((p) => p.id_promocion === id) || null;
   }
 
-  // ✅ CREAR NUEVA PROMOCIÓN
   crearPromocion(promocion: Omit<Promocion, 'id_promocion' | 'usos_actuales'>): Promocion {
     const promociones = this.promocionesSubject.value;
     const nuevoId = `PROMO-${String(promociones.length + 1).padStart(3, '0')}`;
@@ -325,7 +316,6 @@ export class PromocionesService {
     return nuevaPromocion;
   }
 
-  // ✅ ACTUALIZAR PROMOCIÓN
   actualizarPromocion(id: string, cambios: Partial<Promocion>): boolean {
     const promociones = [...this.promocionesSubject.value];
     const index = promociones.findIndex((p) => p.id_promocion === id);
@@ -338,17 +328,14 @@ export class PromocionesService {
     return false;
   }
 
-  // ✅ DESACTIVAR PROMOCIÓN
   desactivarPromocion(id: string): boolean {
     return this.actualizarPromocion(id, { estado: false });
   }
 
-  // ✅ OBTENER HISTORIAL DE PROMOCIONES APLICADAS
   getHistorialPromociones(): PromocionAplicada[] {
     return this.promocionesAplicadasSubject.value;
   }
 
-  // ✅ OBTENER ESTADÍSTICAS DE PROMOCIONES
   getEstadisticasPromociones() {
     const promociones = this.promocionesSubject.value;
     const activas = this.getPromocionesActivas().length;

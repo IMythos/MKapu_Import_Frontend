@@ -14,10 +14,11 @@ import { ToastModule } from 'primeng/toast';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
 import { DialogModule } from 'primeng/dialog';
-
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ClienteService, Customer } from '../../../../services/cliente.service';
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 type ViewMode = 'todas' | 'juridica' | 'natural';
 
@@ -38,54 +39,49 @@ type ViewMode = 'todas' | 'juridica' | 'natural';
     MessageModule,
     SelectModule,
     TooltipModule,
-    DialogModule
+    DialogModule,
+    LoadingOverlayComponent,
+    PaginadorComponent, 
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './clientes.html',
   styleUrl: './clientes.css',
 })
 export class Clientes implements OnInit {
-  private readonly clienteService = inject(ClienteService);
+  private readonly clienteService      = inject(ClienteService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly messageService = inject(MessageService);
+  private readonly messageService      = inject(MessageService);
 
   readonly loading = this.clienteService.loading;
-  readonly error = this.clienteService.error;
+  readonly error   = this.clienteService.error;
 
-  // estados
   readonly searchTerm = signal<string>('');
-  readonly page = signal<number>(1);
-  readonly rows = signal<number>(5);
+  readonly page       = signal<number>(1);
+  readonly rows       = signal<number>(5);
+  readonly autoTerm   = signal<string>('');
+  readonly customers  = computed(() => this.clienteService.customers());
 
-  readonly autoTerm = signal<string>(''); // texto del autocomplete (siempre string)
-  readonly customers = computed(() => this.clienteService.customers());
-
-  // suggestions: convierto a string por seguridad y regreso hasta 5 elementos
   readonly suggestions = computed(() => {
-    const raw = this.autoTerm();
-    const q = String(raw ?? '').trim().toLowerCase();
+    const q = String(this.autoTerm() ?? '').trim().toLowerCase();
     if (!q) return [];
-    const all = this.customers();
-    const matches = all.filter(c =>
-      (String(c.displayName ?? '')).toLowerCase().includes(q) ||
-      (String(c.documentValue ?? '')).toLowerCase().includes(q)
-    );
-    return matches.slice(0, 5);
+    return this.customers().filter(c =>
+      String(c.displayName ?? '').toLowerCase().includes(q) ||
+      String(c.documentValue ?? '').toLowerCase().includes(q)
+    ).slice(0, 5);
   });
 
-  // filtros / vista
-  readonly viewMode = signal<ViewMode>('todas');
+  readonly viewMode    = signal<ViewMode>('todas');
   readonly viewOptions: { label: string; value: ViewMode }[] = [
-    { label: 'Todos', value: 'todas' },
+    { label: 'Todos',    value: 'todas'    },
     { label: 'Jurídica', value: 'juridica' },
-    { label: 'Natural', value: 'natural' },
+    { label: 'Natural',  value: 'natural'  },
   ];
 
   readonly visibleClients = computed(() => {
     const mode = this.viewMode();
-    const all = this.customers();
-    if (mode === 'juridica') return all.filter((c) => this.isCompany(c.documentTypeSunatCode, c.businessName));
-    if (mode === 'natural') return all.filter((c) => !this.isCompany(c.documentTypeSunatCode, c.businessName));
+    const all  = this.customers();
+    if (mode === 'juridica') return all.filter(c =>  this.isCompany(c.documentTypeSunatCode, c.businessName));
+    if (mode === 'natural')  return all.filter(c => !this.isCompany(c.documentTypeSunatCode, c.businessName));
     return all;
   });
 
@@ -93,35 +89,42 @@ export class Clientes implements OnInit {
     const term = this.searchTerm().trim().toLowerCase();
     const base = this.visibleClients();
     if (!term) return base;
-    return base.filter((c) =>
+    return base.filter(c =>
       [c.documentValue, c.businessName ?? '', c.name ?? '', c.lastName ?? '']
-        .some((f) => String(f ?? '').toLowerCase().includes(term))
+        .some(f => String(f ?? '').toLowerCase().includes(term))
     );
   });
 
-  // displayedClients: cuando se setea, la tabla muestra únicamente estos
   displayedClients = signal<Customer[] | null>(null);
-
-  // lista final que usa la tabla: displayedClients (si existe) o filteredClients
   readonly displayedList = computed(() => this.displayedClients() ?? this.filteredClients());
 
-  // diálogo
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.displayedList().length / this.rows())
+  );
+
+  readonly clientesPaginados = computed(() => {
+    const inicio = (this.page() - 1) * this.rows();
+    return this.displayedList().slice(inicio, inicio + this.rows());
+  });
+
   selectedClient = signal<Customer | null>(null);
-  showDetails = signal<boolean>(false);
+  showDetails    = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.clienteService.loadCustomers(undefined, 'Administrador').subscribe();
+    this.clienteService.loadCustomers({ limit: 1000 }, 'Administrador').subscribe();
   }
 
-  // utilidades
   private readonly docTypeMap: Record<string, string> = {
     '00': 'OTROS', '01': 'DNI', '04': 'C.E.', '06': 'RUC', '07': 'PASAPORTE'
   };
+
   getDocTypeLabel(code: string): string { return this.docTypeMap[code] ?? 'DOC'; }
+
   isCompany(code?: string, businessName?: string | null): boolean {
     if (businessName && String(businessName).trim().length > 0) return true;
     return code === '06';
   }
+
   getDisplayName(c: Customer): string {
     const bn = c.businessName ?? (c as any).razon_social ?? null;
     if (bn && String(bn).trim().length > 0) return String(bn).trim();
@@ -130,71 +133,57 @@ export class Clientes implements OnInit {
     const full = [name, last].filter(Boolean).join(' ').trim();
     return full || c.documentValue || '—';
   }
+
   getPhoneDisplay(c: Customer): string { return c.phone ?? '---'; }
-  getCustomerTypeLabel(c: Customer): string { return this.isCompany(c.documentTypeSunatCode, c.businessName) ? 'JURÍDICA' : 'NATURAL'; }
 
-  // ---------- Autocomplete handlers ----------
+  getCustomerTypeLabel(c: Customer): string {
+    return this.isCompany(c.documentTypeSunatCode, c.businessName) ? 'JURÍDICA' : 'NATURAL';
+  }
 
-  // ngModelChange: puede recibir string (typing) o objeto (selection).
-  // Extraigo displayName/documentValue si es objeto, y siempre guardo string en autoTerm.
   onAutoChange(value: unknown): void {
-    if (typeof value === 'string') {
-      this.autoTerm.set(value);
-      return;
-    }
+    if (typeof value === 'string') { this.autoTerm.set(value); return; }
     if (value && typeof value === 'object') {
       const v = value as any;
-      const text = String(v.displayName ?? v.documentValue ?? '');
-      this.autoTerm.set(text);
+      this.autoTerm.set(String(v.displayName ?? v.documentValue ?? ''));
       return;
     }
     this.autoTerm.set('');
   }
 
-  // completeMethod: PrimeNG lo usa al tipear; mantenemos autoTerm actualizado
   onAutoComplete(event: { query: string } | any): void {
     this.autoTerm.set(String(event?.query ?? ''));
   }
 
-  // selección de sugerencia: pedimos detalle por id y mostramos en la tabla
   onSelectCliente(event: any): void {
     const selected: Customer | undefined = event?.value;
     if (!selected) return;
-
-    // Si el objeto tiene customerId pedimos detalle al backend y lo mostramos
     if (selected.customerId) {
       this.clienteService.getCustomerById(selected.customerId).subscribe({
         next: (full) => {
           this.displayedClients.set([full]);
-          // opcional: limpiar input visual
           this.autoTerm.set('');
           this.page.set(1);
         },
         error: () => {
           this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener los datos del cliente.' });
           this.displayedClients.set(null);
-        }
+        },
       });
       return;
     }
-
-    // fallback (si no hay id): filtrar por display/document localmente
-    const display = selected.displayName ?? selected.documentValue ?? '';
-    this.searchTerm.set(display);
+    this.searchTerm.set(selected.displayName ?? selected.documentValue ?? '');
     this.page.set(1);
     this.autoTerm.set('');
   }
 
-  // Enter -> confirmar búsqueda (copia autoTerm -> searchTerm)
   confirmAutoSearch(): void {
     this.searchTerm.set(String(this.autoTerm()).trim());
     this.page.set(1);
     this.displayedClients.set(null);
   }
 
-  // ---------- Otros handlers ----------
-
   onViewModeChange(mode: ViewMode): void { this.viewMode.set(mode); this.page.set(1); }
+
   clearSearch(): void {
     this.searchTerm.set('');
     this.autoTerm.set('');
@@ -202,18 +191,17 @@ export class Clientes implements OnInit {
     this.page.set(1);
     this.displayedClients.set(null);
   }
-  onPageChange(event: any): void { const newPage = (event.first / event.rows) + 1; this.rows.set(event.rows); this.page.set(newPage); }
 
-  // acciones
-  openDetails(c: Customer) { this.selectedClient.set(c); this.showDetails.set(true); }
-  closeDetails() { this.selectedClient.set(null); this.showDetails.set(false); }
+  onPageChange(page: number): void   { this.page.set(page); }
+  onLimitChange(limit: number): void { this.rows.set(limit); this.page.set(1); }
 
-  // Confirmar activar/desactivar cliente (usa endpoint PUT /customers/:id/status)
+  openDetails(c: Customer)  { this.selectedClient.set(c); this.showDetails.set(true); }
+  closeDetails()             { this.selectedClient.set(null); this.showDetails.set(false); }
+
   confirmToggleStatus(c: Customer): void {
-    const nextStatus = !c.status;
-    const verb = nextStatus ? 'activar' : 'desactivar';
+    const nextStatus  = !c.status;
+    const verb        = nextStatus ? 'activar' : 'desactivar';
     const acceptLabel = nextStatus ? 'Activar' : 'Desactivar';
-    const acceptSeverity = nextStatus ? 'success' : 'danger';
 
     this.confirmationService.confirm({
       header: 'Confirmación',
@@ -221,41 +209,33 @@ export class Clientes implements OnInit {
       icon: 'pi pi-exclamation-triangle',
       acceptLabel,
       rejectLabel: 'Cancelar',
-      acceptButtonProps: { severity: acceptSeverity as any },
+      acceptButtonProps: { severity: (nextStatus ? 'success' : 'danger') as any },
       rejectButtonProps: { severity: 'secondary', outlined: true },
       accept: () => {
         this.clienteService.updateCustomerStatus(c.customerId, nextStatus).subscribe({
           next: (updated) => {
-            // Actualizar displayedClients si está mostrando el cliente seleccionado
             const current = this.displayedClients();
             if (current) {
               const idx = current.findIndex(x => x.customerId === updated.customerId);
-              if (idx >= 0) {
-                const copy = [...current];
-                copy[idx] = updated;
-                this.displayedClients.set(copy);
-              }
+              if (idx >= 0) { const copy = [...current]; copy[idx] = updated; this.displayedClients.set(copy); }
             }
-            // mensaje
             this.messageService.add({
               severity: 'success',
               summary: nextStatus ? 'Cliente activado' : 'Cliente desactivado',
               detail: nextStatus
                 ? `Se activó el cliente ${this.getDisplayName(updated)}.`
-                : `Se desactivó el cliente ${this.getDisplayName(updated)}.`, 
-              life: 3000
+                : `Se desactivó el cliente ${this.getDisplayName(updated)}.`,
+              life: 3000,
             });
           },
           error: (err) => {
-            console.error(err);
             this.messageService.add({
-              severity: 'error',
-              summary: 'Error',
-              detail: err?.error?.message ?? 'No se pudo cambiar el estado del cliente.'
+              severity: 'error', summary: 'Error',
+              detail: err?.error?.message ?? 'No se pudo cambiar el estado del cliente.',
             });
-          }
+          },
         });
-      }
+      },
     });
   }
 }

@@ -105,8 +105,7 @@ export class QuoteService {
     );
   }
 
-  // ── Cambiar estado (RECHAZADA | APROBADA | PENDIENTE) ────────────────────
-  // Llama a: PATCH /sales/quote/:id/status  { estado: 'RECHAZADA' }
+  // ── Cambiar estado ────────────────────────────────────────────────────────
   updateQuoteStatus(id: number, estado: 'RECHAZADA' | 'APROBADA' | 'PENDIENTE'): Observable<Quote> {
     this._loading.set(true);
     this._error.set(null);
@@ -121,7 +120,6 @@ export class QuoteService {
   }
 
   // ── Eliminar permanentemente ──────────────────────────────────────────────
-  // Llama a: DELETE /sales/quote/:id
   deleteQuote(id: number): Observable<void> {
     this._loading.set(true);
     this._error.set(null);
@@ -145,6 +143,40 @@ export class QuoteService {
         return throwError(() => err);
       }),
       finalize(() => this._loading.set(false))
+    );
+  }
+
+  // ── Exportar PDF (abre en nueva pestaña) ──────────────────────────────────
+  exportPdf(id: number): void {
+    window.open(`${this.api}/${id}/export/pdf`, '_blank');
+  }
+
+  // ── Enviar por email ──────────────────────────────────────────────────────
+  sendByEmail(id: number): Observable<{ message: string; sentTo: string }> {
+    this._loading.set(true);
+    this._error.set(null);
+    return this.http.post<{ message: string; sentTo: string }>(
+      `${this.api}/${id}/send-email`, {}
+    ).pipe(
+      catchError((err) => {
+        this._error.set('No se pudo enviar el email.');
+        return throwError(() => err);
+      }),
+      finalize(() => this._loading.set(false))
+    );
+  }
+
+  // ── Estado WhatsApp (QR o conectado) ─────────────────────────────────────
+  getWhatsAppStatus(): Observable<{ ready: boolean; qr: string | null }> {
+    return this.http.get<{ ready: boolean; qr: string | null }>(
+      `${this.api}/whatsapp/status`
+    );
+  }
+
+  // ── Enviar por WhatsApp ───────────────────────────────────────────────────
+  sendByWhatsApp(id: number): Observable<{ message: string; sentTo: string }> {
+    return this.http.post<{ message: string; sentTo: string }>(
+      `${this.api}/${id}/send-whatsapp`, {}
     );
   }
 

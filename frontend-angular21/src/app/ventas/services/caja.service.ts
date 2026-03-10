@@ -13,10 +13,10 @@ export class CajaService {
     return this.http.get(`${this.apiUrl}/cashbox/active/${idSede}`);
   }
 
-  openCashbox(idSede: number, montoInicial: number): Observable<any> {
+  openCashbox(idSede: number, montoInicial?: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/cashbox/open`, {
       id_sede_ref: idSede,
-      monto_inicial: montoInicial,
+      ...(montoInicial != null && { monto_inicial: montoInicial }), 
     });
   }
 

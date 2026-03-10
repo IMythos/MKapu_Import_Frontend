@@ -209,7 +209,6 @@ export class Sidebar implements OnInit {
 
         event.preventDefault();
         event.stopPropagation();
-
         this.messageService.add({
           severity: 'warn',
           summary: 'Caja Cerrada',

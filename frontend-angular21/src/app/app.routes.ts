@@ -9,6 +9,8 @@ import { VENTAS_ROUTES } from './ventas/ventas.routes';
 import { ALMACEN_ROUTES } from './almacen/almacen.routes';
 import { LOGISTICA_ROUTES } from './logistica/logistica.routes';
 
+import { NotFoundComponent } from './shared/components/not-found/not-found.component';
+
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: Login },
@@ -38,10 +40,13 @@ export const routes: Routes = [
       },
       {
         path: 'logistica',
-        //canActivate: [roleGuard],
         data: { allowedRoles: [UserRole.LOGISTICA] },
         children: LOGISTICA_ROUTES,
-      }
+      },
+
+      { path: '**', component: NotFoundComponent },
     ]
-  }
+  },
+
+  { path: '**', component: Login }, 
 ];

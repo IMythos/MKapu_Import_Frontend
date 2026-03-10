@@ -37,7 +37,6 @@ export class ProveedorDetalles implements OnInit, OnDestroy {
   proveedorId = signal<number | null>(null);
   loading = signal(true);
   
-  // Computed signals (✅ CORREGIDOS - sin errores TS2532)
   estadoSeverity = computed(() => 
     this.proveedor()?.estado ? 'success' : 'danger'
   );

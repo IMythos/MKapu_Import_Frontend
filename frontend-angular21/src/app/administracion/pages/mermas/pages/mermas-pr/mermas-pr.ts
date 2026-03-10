@@ -1,5 +1,3 @@
-// mermas-pr.ts
-
 import { Component, signal, computed, inject, OnInit } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
@@ -21,6 +19,8 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { CommonModule } from '@angular/common';
 
 import { WastageService, WastageResponseDto } from '../../../../services/wastage.service';
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 interface WastageDetail {
   id_detalle: number;
@@ -44,7 +44,7 @@ interface MermaUI {
   fechaRegistro: Date;
   observacion?: string;
   detalles: WastageDetail[];
-  valorTotal: number; 
+  valorTotal: number;
 }
 
 type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
@@ -53,49 +53,53 @@ type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast
   selector: 'app-mermas-pr',
   standalone: true,
   imports: [
-    CardModule, ButtonModule, RouterModule, FormsModule, InputTextModule, 
-    AutoCompleteModule, Select, ConfirmDialogModule, ToastModule, TableModule, 
-    TooltipModule, TagModule, DialogModule, InputNumberModule, SelectButtonModule, 
-    CommonModule
+    CardModule, ButtonModule, RouterModule, FormsModule, InputTextModule,
+    AutoCompleteModule, Select, ConfirmDialogModule, ToastModule, TableModule,
+    TooltipModule, TagModule, DialogModule, InputNumberModule, SelectButtonModule,
+    CommonModule,
+    LoadingOverlayComponent,
+    PaginadorComponent, 
   ],
   templateUrl: './mermas-pr.html',
   styleUrl: './mermas-pr.css',
   providers: [ConfirmationService, MessageService],
 })
 export class MermasPr implements OnInit {
-  private readonly wastageService = inject(WastageService);
-  private readonly messageService = inject(MessageService);
+  private readonly wastageService      = inject(WastageService);
+  private readonly messageService      = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly router = inject(Router);
+  private readonly router              = inject(Router);
 
   mesActual = signal(this.obtenerMesActual());
-  
-  cargando = this.wastageService.loading;
-  
+  cargando  = this.wastageService.loading;
+
   tiposMerma = [
     { label: 'Por Defecto', value: 'POR_DEFECTO' },
-    { label: 'Daño', value: 'DAÑO' },
-    { label: 'Garantía', value: 'GARANTIA' },
-    { label: 'Merma', value: 'MERMA' },
-    { label: 'Oferta', value: 'OFERTA' }
+    { label: 'Daño',        value: 'DAÑO'        },
+    { label: 'Garantía',    value: 'GARANTIA'    },
+    { label: 'Merma',       value: 'MERMA'       },
+    { label: 'Oferta',      value: 'OFERTA'      },
   ];
 
   // Filtros
-  busqueda = signal('');
+  busqueda        = signal('');
   tipoMermaFiltro = signal('');
 
+  readonly paginaActual = signal<number>(1);
+  readonly limitePagina = signal<number>(5);
+
   // Modal
-  mermaSeleccionada = signal<MermaUI | null>(null);
+  mermaSeleccionada   = signal<MermaUI | null>(null);
   mostrarModalDetalle = signal(false);
 
-  mermas = computed(() => {
-    return this.wastageService.wastages().map(merma => this.mapToUI(merma));
-  });
+  mermas = computed(() =>
+    this.wastageService.wastages().map(merma => this.mapToUI(merma))
+  );
 
   mermasFiltradas = computed(() => {
-    let resultados = [...this.mermas()];
+    let resultados    = [...this.mermas()];
     const busquedaStr = this.busqueda().toLowerCase().trim();
-    
+
     if (busquedaStr) {
       resultados = resultados.filter(m =>
         m.codigo.toLowerCase().includes(busquedaStr) ||
@@ -103,22 +107,28 @@ export class MermasPr implements OnInit {
         m.responsable.toLowerCase().includes(busquedaStr)
       );
     }
-    
+
     if (this.tipoMermaFiltro()) {
       resultados = resultados.filter(m => m.tipoMerma === this.tipoMermaFiltro());
     }
-    
+
     return resultados;
   });
 
-  totalMermas = computed(() => this.mermas().length);
-  
-  totalProductos = computed(() => {
-    return this.mermas().reduce((sum, m) => sum + m.cantidad, 0);
+  readonly mermasPaginadas = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.mermasFiltradas().slice(inicio, inicio + this.limitePagina());
   });
-  
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.mermasFiltradas().length / this.limitePagina())
+  );
+
+  totalMermas    = computed(() => this.mermas().length);
+  totalProductos = computed(() => this.mermas().reduce((sum, m) => sum + m.cantidad, 0));
+
   mermasMesActual = computed(() => {
-    const mes = new Date().getMonth();
+    const mes  = new Date().getMonth();
     const year = new Date().getFullYear();
     return this.mermas().filter(m => {
       const fecha = new Date(m.fechaRegistro);
@@ -132,31 +142,30 @@ export class MermasPr implements OnInit {
 
   private mapToUI(merma: WastageResponseDto): MermaUI {
     const valorTotal = merma.detalles?.reduce(
-      (sum, d) => sum + (d.cantidad * d.pre_unit), 
-      0
+      (sum, d) => sum + (d.cantidad * d.pre_unit), 0
     ) ?? 0;
 
     return {
-      id_merma: merma.id_merma,
-      codigo: `MER-${merma.id_merma.toString().padStart(4, '0')}`,
-      motivo: merma.motivo,
-      tipoMerma: merma.tipo_merma_label || 'SIN CLASIFICAR',
-      tipoMermaId: merma.tipo_merma_id,
-      cantidad: merma.total_items,
-      responsable: merma.responsable || 'Sin asignar',
+      id_merma:      merma.id_merma,
+      codigo:        `MER-${merma.id_merma.toString().padStart(4, '0')}`,
+      motivo:        merma.motivo,
+      tipoMerma:     merma.tipo_merma_label || 'SIN CLASIFICAR',
+      tipoMermaId:   merma.tipo_merma_id,
+      cantidad:      merma.total_items,
+      responsable:   merma.responsable || 'Sin asignar',
       fechaRegistro: new Date(merma.fec_merma),
-      observacion: merma.detalles?.[0]?.observacion || '',
-      detalles: merma.detalles?.map(d => ({
-        id_detalle: d.id_detalle ?? 0,
-        id_producto: d.id_producto,
-        cod_prod: d.cod_prod,
-        desc_prod: d.desc_prod,
-        cantidad: d.cantidad,
-        pre_unit: d.pre_unit,
-        observacion: d.observacion,
-        id_tipo_merma: d.id_tipo_merma
+      observacion:   merma.detalles?.[0]?.observacion || '',
+      detalles:      merma.detalles?.map(d => ({
+        id_detalle:    d.id_detalle ?? 0,
+        id_producto:   d.id_producto,
+        cod_prod:      d.cod_prod,
+        desc_prod:     d.desc_prod,
+        cantidad:      d.cantidad,
+        pre_unit:      d.pre_unit,
+        observacion:   d.observacion,
+        id_tipo_merma: d.id_tipo_merma,
       })) ?? [],
-      valorTotal
+      valorTotal,
     };
   }
 
@@ -167,38 +176,34 @@ export class MermasPr implements OnInit {
   obtenerMesActual(): string {
     const meses = [
       'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
     ];
     return meses[new Date().getMonth()];
   }
 
   cargarMermas(): void {
     this.wastageService.loadWastages(1, 50).subscribe({
-      next: () => {
-        // Datos cargados exitosamente, los signals se actualizan automáticamente
-        console.log(`✅ ${this.mermas().length} mermas cargadas`);
-      },
-      error: (error) => {
-        console.error('Error al cargar mermas:', error);
+      next: () => console.log(`✅ ${this.mermas().length} mermas cargadas`),
+      error: () => {
         this.messageService.add({
           severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudieron cargar las mermas',
-          life: 3000
+          summary:  'Error',
+          detail:   'No se pudieron cargar las mermas',
+          life:     3000,
         });
-      }
+      },
     });
   }
 
   limpiarFiltros(): void {
     this.busqueda.set('');
     this.tipoMermaFiltro.set('');
-    
+    this.paginaActual.set(1);
     this.messageService.add({
       severity: 'info',
-      summary: 'Filtros limpiados',
-      detail: 'Se muestran todas las mermas',
-      life: 2000
+      summary:  'Filtros limpiados',
+      detail:   'Se muestran todas las mermas',
+      life:     2000,
     });
   }
 
@@ -212,23 +217,22 @@ export class MermasPr implements OnInit {
     this.mermaSeleccionada.set(null);
   }
 
-  getTipoMermaLabel(tipo: string): string {
-    return tipo.toUpperCase();
-  }
+  getTipoMermaLabel(tipo: string): string { return tipo.toUpperCase(); }
 
   getTipoMermaSeverity(tipo: string): Severity {
-    const severityMap: { [key: string]: Severity } = {
-      'POR_DEFECTO': 'secondary',
-      'DAÑO': 'danger',
-      'GARANTIA': 'warn',
-      'MERMA': 'info',
-      'OFERTA': 'success',
-      'SIN CLASIFICAR': 'secondary'
+    const map: { [key: string]: Severity } = {
+      'POR_DEFECTO':    'secondary',
+      'DAÑO':           'danger',
+      'GARANTIA':       'warn',
+      'MERMA':          'info',
+      'OFERTA':         'success',
+      'SIN CLASIFICAR': 'secondary',
     };
-    return severityMap[tipo] || 'info';
+    return map[tipo] || 'info';
   }
 
-  refrescarLista(): void {
-    this.cargarMermas();
-  }
+  refrescarLista(): void { this.cargarMermas(); }
+
+  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 }

@@ -9,7 +9,7 @@
         (onClick)="toggleSidebar.emit()"
       />
 
-      @if (isVentas) {
+      @if (showCaja) {
         <div class="caja-status-wrapper" [ngClass]="caja() ? 'abierta' : 'cerrada'">
           <span
             class="caja-status-dot"
@@ -20,10 +20,9 @@
           </span>
         </div>
       }
-    </ng-template>
+    </ng-template>  <!-- 👈 faltaba este cierre -->
 
     <ng-template pTemplate="end">
-
       @if (sedeNombre) {
         <div class="header-sede-badge">
           <i class="pi pi-map-marker"></i>

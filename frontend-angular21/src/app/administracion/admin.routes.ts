@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { pendingChangesGuard } from '../core/guards/pending-changes.guard';
-import { CashboxGuard } from '../ventas/guards/cashbox.guard';
+import { CashboxAdminGuard, CashboxGuard } from '../ventas/guards/cashbox.guard';
 
 
 export const ADMIN_ROUTES: Routes = [
@@ -167,6 +167,15 @@ export const ADMIN_ROUTES: Routes = [
     redirectTo: 'transferencia/notificacion',
     pathMatch: 'full',
   },
+
+
+  {
+    path: 'caja',
+    loadComponent: () => import('../ventas/pages/caja/caja.page').then((m) => m.CajaPage),
+  },
+
+
+
 
   /* =======================
     GESTIÓN DE PRODUCTOS
@@ -379,7 +388,9 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'generar-ventas-administracion',
     loadComponent: () =>
-      import('./pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
+      import('./pages/generar-ventas-administracion/generar-ventas-administracion')
+        .then((m) => m.GenerarVentasAdministracion),
+    canActivate: [CashboxAdminGuard], 
   },
   {
     path: 'historial-ventas-administracion',
@@ -389,15 +400,8 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'detalles-ventas-administracion/:id',
     loadComponent: () =>
-      import('../ventas/shared/detalles-venta/detalle-venta').then(
-        (m) => m.DetalleVenta,
-      ),
-  },
-  {
-    path: 'imprimir-comprobante-administracion',
-    loadComponent: () =>
-      import('./shared/imprimir-comprobante-administracion/imprimir-comprobante-administracion').then(
-        (m) => m.ImprimirComprobanteAdministracion,
+      import('./shared/detalles-ventas-administracion/detalles-ventas-administracion').then(
+        (m) => m.DetallesVentasAdministracion,
       ),
   },
   {
@@ -516,15 +520,15 @@ export const ADMIN_ROUTES: Routes = [
         (m) => m.CotizacionFormulario,
       ),
   },
+
+
   {
-    path: 'editar-cotizacion/:id',
+    path: 'ver-detalle-cotizacion/:id',
     loadComponent: () =>
-      import('./pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then(
-        (m) => m.CotizacionFormulario,
+      import('./pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then(
+        (m) => m.DetalleCotizacionComponent,
       ),
   },
-
-
 
 
 
@@ -544,10 +548,10 @@ export const ADMIN_ROUTES: Routes = [
     ),
 },
 {
-  path: 'editar-ventas-por-cobrar/:id',
+  path: 'detalles-ventas-por-cobrar/:id',
   loadComponent: () =>
-    import('./pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
-      (m) => m.VentasPorCobrarFormulario,
+    import('./pages/ventas-por-cobrar/detalle-ventas-por-cobrar-formulario/detalle-ventas-por-cobrar-formulario').then(
+      (m) => m.DetalleVentaPorCobrar,
     ),
 },
 // ── NUEVA RUTA ──────────────────────────────────────────────────────
@@ -576,8 +580,8 @@ export const ADMIN_ROUTES: Routes = [
         (m) => m.DetallesDespacho,
       ),
   },
-  {
-    path: 'despacho-productos/agregar-despacho/:id',
+{
+    path: 'despacho-productos/agregar-despacho',
     loadComponent: () =>
       import('./pages/despacho-productos/pages/agregar-despacho/agregar-despacho').then(
         (m) => m.AgregarDespacho,
@@ -723,7 +727,7 @@ export const ADMIN_ROUTES: Routes = [
         ),
     },
     {
-      path: 'detalle/:id',   // ← faltaba esta
+      path: 'detalle/:id',
       loadComponent: () =>
         import('../ventas/pages/reclamos-garantia/reclamos-detalles/reclamos-detalles').then(
           (m) => m.ReclamosDetalles,

@@ -18,7 +18,7 @@
           (click)="irHistorialVentas()"
           pTooltip="Ir al historial completo"
           tooltipPosition="bottom"
-        />
+        ></p-button>
         <p-button
           type="button"
           label="Imprimir"
@@ -27,31 +27,21 @@
           (click)="imprimirComprobante()"
           pTooltip="Imprimir comprobante"
           tooltipPosition="bottom"
-        />
+        ></p-button>
       </div>
     </div>
   </p-card>
 </div>
 
+<app-loading-overlay
+  [visible]="loading"
+  mensaje="Cargando detalle de venta..."
+  modo="page"
+></app-loading-overlay>
 
-<div *ngIf="loading" class="p-2">
-  <div class="loading-container">
-    <p-card>
-      <div class="skeleton-wrapper">
-        <p-skeleton width="100%" height="150px" styleClass="mb-3"></p-skeleton>
-        <p-skeleton width="100%" height="300px" styleClass="mb-3"></p-skeleton>
-        <p-skeleton width="100%" height="200px"></p-skeleton>
-      </div>
-    </p-card>
-  </div>
-</div>
-
-
-<div *ngIf="!loading && comprobante">
-  
+<div *ngIf="!loading && detalle">
   <div class="p-2">
     <p-card class="comprobante-card mb-4">
-      
       <div class="comprobante-header">
         <div class="comprobante-tipo">
           <span class="tipo-icon">
@@ -59,15 +49,13 @@
           </span>
           <div>
             <h2>{{ getTipoComprobanteLabel() }} ELECTRÓNICA</h2>
-            <p class="serie-numero">
-              {{ formatearSerieNumero(comprobante.serie, comprobante.numero) }}
-            </p>
+            <p class="serie-numero">{{ detalle.numero_completo }}</p>
           </div>
         </div>
         <div class="comprobante-estado">
           <p-tag
-            [value]="getEstadoLabel()"
-            [severity]="getEstadoSeverity()"
+            [value]="detalle.estado"
+            [severity]="getSeverityEstado(detalle.estado)"
             [rounded]="true"
           ></p-tag>
         </div>
@@ -75,32 +63,31 @@
 
       <div class="info-grid-wrapper">
         <div class="info-grid">
-          
           <div class="info-section">
             <h3><i class="pi pi-user"></i> Cliente</h3>
             <div class="info-row">
               <span class="label">Nombre completo:</span>
-              <span class="value">{{ comprobante.cliente_nombre }}</span>
+              <span class="value">{{ detalle.cliente.nombre }}</span>
             </div>
             <div class="info-row">
               <span class="label">Tipo documento:</span>
-              <span class="value">{{ getTipoDocumento() }}</span>
+              <span class="value">{{ getTipoDocumentoLabel() }}</span>
             </div>
             <div class="info-row">
               <span class="label">N° Documento:</span>
-              <span class="value">{{ comprobante.cliente_doc }}</span>
+              <span class="value">{{ detalle.cliente.documento }}</span>
             </div>
-            <div class="info-row" *ngIf="cliente?.direccion">
+            <div class="info-row" *ngIf="detalle.cliente.direccion">
               <span class="label">Dirección:</span>
-              <span class="value">{{ cliente?.direccion }}</span>
+              <span class="value">{{ detalle.cliente.direccion }}</span>
             </div>
-            <div class="info-row" *ngIf="cliente?.email">
+            <div class="info-row" *ngIf="detalle.cliente.email">
               <span class="label">Email:</span>
-              <span class="value">{{ cliente?.email }}</span>
+              <span class="value">{{ detalle.cliente.email }}</span>
             </div>
-            <div class="info-row" *ngIf="cliente?.telefono">
+            <div class="info-row" *ngIf="detalle.cliente.telefono">
               <span class="label">Teléfono:</span>
-              <span class="value">{{ cliente?.telefono }}</span>
+              <span class="value">{{ detalle.cliente.telefono }}</span>
             </div>
           </div>
 
@@ -108,87 +95,89 @@
             <h3><i class="pi pi-file-edit"></i> Comprobante</h3>
             <div class="info-row">
               <span class="label">Fecha emisión:</span>
-              <span class="value">{{ comprobante.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</span>
-            </div>
-            <div class="info-row" *ngIf="comprobante.fec_venc">
-              <span class="label">Fecha vencimiento:</span>
-              <span class="value">{{ comprobante.fec_venc | date: 'dd/MM/yyyy' }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">Moneda:</span>
               <span class="value">{{
-                comprobante.moneda === 'PEN' ? 'Soles (S/.)' : 'Dólares ($)'
+                detalle.fec_emision | date: 'dd/MM/yyyy HH:mm'
+              }}</span>
+            </div>
+            <div class="info-row" *ngIf="detalle.fec_venc">
+              <span class="label">Fecha vencimiento:</span>
+              <span class="value">{{
+                detalle.fec_venc | date: 'dd/MM/yyyy'
               }}</span>
             </div>
             <div class="info-row">
               <span class="label">Responsable:</span>
-              <span class="value">{{ comprobante.responsable }}</span>
+              <span class="value">{{ detalle.responsable.nombre }}</span>
             </div>
             <div class="info-row">
               <span class="label">Sede:</span>
-              <span class="value">{{ getSede(comprobante) }}</span>
-            </div>
-            <div class="info-row">
-              <span class="label">Estado SUNAT:</span>
-              <span class="value sunat-ok">{{ comprobante.cdr_cpe }}</span>
+              <span class="value">{{ detalle.responsable.nombreSede }}</span>
             </div>
           </div>
 
           <div class="info-section">
             <h3><i class="pi pi-wallet"></i> Información de Pago</h3>
-            
-            <div *ngIf="pagos.length > 0">
-              <div *ngFor="let pago of pagos" class="pago-item">
-                <div class="info-row">
-                  <span class="label">Medio de pago:</span>
-                  <span class="value">
-                    <i [class]="getIconoMedioPago(pago.med_pago)"></i>
-                    {{ pago.med_pago }}
-                  </span>
-                </div>
-                <div class="info-row">
-                  <span class="label">Monto pagado:</span>
-                  <span class="value amount">S/. {{ pago.monto | number: '1.2-2' }}</span>
-                </div>
-                <div class="info-row" *ngIf="pago.banco">
-                  <span class="label">Banco:</span>
-                  <span class="value">{{ pago.banco }}</span>
-                </div>
-                <div class="info-row" *ngIf="pago.num_operacion">
-                  <span class="label">N° Operación:</span>
-                  <span class="value">{{ pago.num_operacion }}</span>
-                </div>
+
+            <div class="pago-item">
+              <div class="info-row">
+                <span class="label">Medio de pago:</span>
+                <span class="value">
+                  <i [class]="getIconoMedioPago(detalle.metodo_pago)"></i>
+                  {{ detalle.metodo_pago }}
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="label">Total pagado:</span>
+                <span class="value amount">
+                  S/. {{ detalle.total | number: '1.2-2' }}
+                </span>
               </div>
             </div>
-            
-            <div *ngIf="pagos.length === 0" class="no-data">
-              <i class="pi pi-info-circle"></i>
-              <span>Sin información de pago</span>
-            </div>
 
-            <div class="promocion-integrada" *ngIf="tienePromocion()">
+            <div class="promocion-integrada" *ngIf="detalle.promocion">
               <div class="promocion-header">
-                <i class="pi pi-ticket"></i>
+                <i [class]="getTipoPromocionIcon(detalle.promocion.tipo)"></i>
                 <span>Promoción Aplicada</span>
               </div>
               <div class="promocion-body">
                 <div class="promocion-info-row">
-                  <span class="promocion-label">Código:</span>
-                  <span class="promocion-codigo-badge">{{ getCodigoPromocion() }}</span>
+                  <span class="promocion-label">Promoción:</span>
+                  <span class="promocion-codigo-badge">
+                    {{ detalle.promocion.nombre }}
+                  </span>
                 </div>
                 <div class="promocion-info-row">
-                  <span class="promocion-label">Descripción:</span>
-                  <span class="promocion-text">{{ getDescripcionPromocion() }}</span>
+                  <span class="promocion-label">Tipo:</span>
+                  <span class="promocion-text">
+                    {{ getTipoPromocionLabel(detalle.promocion.tipo) }}
+                  </span>
                 </div>
-                <div class="promocion-info-row">
+                <div
+                  class="promocion-info-row"
+                  *ngIf="
+                    tieneDescuentoReal(
+                      detalle.promocion.descuento_nombre,
+                      detalle.promocion.descuento_porcentaje
+                    )
+                  "
+                >
                   <span class="promocion-label">Descuento:</span>
-                  <span class="promocion-descuento">-S/. {{ getDescuentoPromocion() | number: '1.2-2' }}</span>
+                  <span class="promocion-text">
+                    {{ detalle.promocion.descuento_nombre }}
+                    ({{ detalle.promocion.descuento_porcentaje }}%)
+                  </span>
+                </div>
+                <div class="promocion-info-row">
+                  <span class="promocion-label">Monto descontado:</span>
+                  <span class="promocion-descuento">
+                    -S/. {{
+                      detalle.promocion.monto_descuento | number: '1.2-2'
+                    }}
+                  </span>
                 </div>
               </div>
             </div>
-
           </div>
-
         </div>
       </div>
     </p-card>
@@ -199,11 +188,13 @@
       <ng-template pTemplate="header">
         <div class="card-header">
           <h3>
-            <span class="icon-shopping"><i class="pi pi-shopping-cart"></i></span>
+            <span class="icon-shopping">
+              <i class="pi pi-shopping-cart"></i>
+            </span>
             Productos Vendidos
           </h3>
           <p-tag
-            [value]="comprobante.detalles.length + ' items'"
+            [value]="detalle.productos.length + ' items'"
             severity="success"
             [rounded]="true"
           ></p-tag>
@@ -211,7 +202,7 @@
       </ng-template>
 
       <p-table
-        [value]="comprobante.detalles"
+        [value]="detalle.productos"
         [paginator]="false"
         [tableStyle]="{ 'min-width': '50rem' }"
         styleClass="p-datatable-gridlines p-datatable-sm"
@@ -219,13 +210,14 @@
         <ng-template pTemplate="header">
           <tr>
             <th style="width: 10%">Código</th>
-            <th style="width: 40%">Descripción</th>
+            <th style="width: 35%">Descripción</th>
             <th style="width: 10%; text-align: center">Cantidad</th>
-            <th style="width: 13%; text-align: right">Valor Unit.</th>
-            <th style="width: 13%; text-align: right">P. Unit.</th>
-            <th style="width: 14%; text-align: right">Total</th>
+            <th style="width: 12%; text-align: right">P. Unit.</th>
+            <th style="width: 13%; text-align: center">Descuento</th>
+            <th style="width: 13%; text-align: right">Total</th>
           </tr>
         </ng-template>
+
         <ng-template pTemplate="body" let-item>
           <tr>
             <td>
@@ -234,11 +226,47 @@
             <td>
               <strong>{{ item.descripcion }}</strong>
             </td>
-            <td style="text-align: center">{{ item.cantidad }}</td>
-            <td style="text-align: right">S/. {{ item.valor_unit | number: '1.2-2' }}</td>
-            <td style="text-align: right">S/. {{ item.pre_uni | number: '1.2-2' }}</td>
+            <td style="text-align: center">
+              {{ item.cantidad }}
+            </td>
             <td style="text-align: right">
-              <strong>S/. {{ calcularTotalItem(item.cantidad, item.pre_uni) | number: '1.2-2' }}</strong>
+              S/. {{ item.precio_unit | number: '1.2-2' }}
+            </td>
+            <td style="text-align: center">
+              <ng-container [ngSwitch]="getDescuentoItemDisplay(item).tipo">
+                <div *ngSwitchCase="'item'">
+                  <p-tag
+                    [value]="getDescuentoItemDisplay(item).label"
+                    severity="warn"
+                    [rounded]="true"
+                  ></p-tag>
+                </div>
+
+                <div *ngSwitchCase="'promo'" class="promo-item-descuento">
+                  <p-tag
+                    [value]="getDescuentoItemDisplay(item).label"
+                    severity="success"
+                    [rounded]="true"
+                  ></p-tag>
+                  <span
+                    *ngIf="getDescuentoItemDisplay(item).monto > 0"
+                    class="promo-monto-item"
+                  >
+                    -S/. {{
+                      getDescuentoItemDisplay(item).monto | number: '1.2-2'
+                    }}
+                  </span>
+                </div>
+
+                <span *ngSwitchDefault class="text-color-secondary">
+                  —
+                </span>
+              </ng-container>
+            </td>
+            <td style="text-align: right">
+              <strong>
+                S/. {{ calcularTotalItem(item) | number: '1.2-2' }}
+              </strong>
             </td>
           </tr>
         </ng-template>
@@ -248,32 +276,38 @@
         <div class="totales-grid">
           <div class="total-row">
             <span class="label">Subtotal (Base imponible):</span>
-            <span class="value">S/. {{ comprobante.subtotal | number: '1.2-2' }}</span>
+            <span class="value">
+              S/.
+              {{
+                detalle.subtotal +
+                  (detalle.promocion?.monto_descuento ?? 0)
+                  | number: '1.2-2'
+              }}
+            </span>
           </div>
-          
-          <div class="total-row descuento-row" *ngIf="tienePromocion()">
+          <div class="total-row descuento-row" *ngIf="detalle.promocion">
             <span class="label">
-              <i class="pi pi-ticket"></i>
-              Descuento ({{ getCodigoPromocion() }}):
+              <i [class]="getTipoPromocionIcon(detalle.promocion.tipo)"></i>
+              Descuento ({{ detalle.promocion.nombre }}):
             </span>
             <span class="value descuento-valor">
-              -S/. {{ getDescuentoPromocion() | number: '1.2-2' }}
+              -S/.
+              {{
+                detalle.promocion.monto_descuento | number: '1.2-2'
+              }}
             </span>
           </div>
-          
           <div class="total-row">
             <span class="label">IGV (18%):</span>
-            <span class="value">S/. {{ comprobante.igv | number: '1.2-2' }}</span>
+            <span class="value">
+              S/. {{ detalle.igv | number: '1.2-2' }}
+            </span>
           </div>
-          
-          <div class="total-row" *ngIf="comprobante.isc > 0">
-            <span class="label">ISC:</span>
-            <span class="value">S/. {{ comprobante.isc | number: '1.2-2' }}</span>
-          </div>
-          
           <div class="total-row total-final">
             <span class="label">TOTAL A PAGAR:</span>
-            <span class="value">S/. {{ comprobante.total | number: '1.2-2' }}</span>
+            <span class="value">
+              S/. {{ detalle.total | number: '1.2-2' }}
+            </span>
           </div>
         </div>
       </div>
@@ -285,7 +319,9 @@
       <ng-template pTemplate="header">
         <div class="card-header">
           <h3>
-            <span class="icon-history"><i class="pi pi-history"></i></span>
+            <span class="icon-history">
+              <i class="pi pi-history"></i>
+            </span>
             Historial de Compras del Cliente
           </h3>
         </div>
@@ -295,130 +331,221 @@
         <div class="stat-card">
           <i class="pi pi-shopping-bag"></i>
           <div class="stat-content">
-            <span class="stat-value">{{ cantidadComprasCliente }}</span>
+            <span class="stat-value">
+              {{ detalle.cliente.cantidad_compras }}
+            </span>
             <span class="stat-label">Compras realizadas</span>
           </div>
         </div>
         <div class="stat-card">
           <i class="pi pi-dollar"></i>
           <div class="stat-content">
-            <span class="stat-value">S/. {{ totalComprasCliente | number: '1.2-2' }}</span>
+            <span class="stat-value">
+              S/.
+              {{
+                detalle.cliente.total_gastado_cliente
+                  | number: '1.2-2'
+              }}
+            </span>
             <span class="stat-label">Total gastado</span>
           </div>
         </div>
         <div class="stat-card">
           <i class="pi pi-map-marker"></i>
           <div class="stat-content">
-            <span class="stat-value">{{ sedesVisitadas.length }}</span>
-            <span class="stat-label">Sedes visitadas</span>
+            <span class="stat-value">
+              {{ detalle.historial_pagination.total }}
+            </span>
+            <span class="stat-label">Compras en historial</span>
           </div>
         </div>
       </div>
 
       <p-divider></p-divider>
 
-      <div *ngIf="historialCompras.length > 0">
-        <p-table
-          [value]="historialCompras"
-          [paginator]="true"
-          [rows]="5"
-          [tableStyle]="{ 'min-width': '50rem' }"
-          styleClass="p-datatable-gridlines p-datatable-sm"
-        >
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width: 15%">Comprobante</th>
-              <th style="width: 12%">Fecha</th>
-              <th style="width: 20%">Responsable</th>
-              <th style="width: 10%; text-align: center">Tipo</th>
-              <th style="width: 13%; text-align: right">Total</th>
-              <th style="width: 30%; text-align: center">Acciones</th>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-venta>
-            <tr>
-              <td>{{ formatearSerieNumero(venta.serie, venta.numero) }}</td>
-              <td>{{ venta.fec_emision | date: 'dd/MM/yyyy' }}</td>
-              <td>
-                <div class="responsable-cell">
-                  <i class="pi pi-user"></i>
-                  <span>{{ venta.responsable }}</span>
-                </div>
-              </td>
-              <td style="text-align: center">
-                <p-tag
-                  [value]="venta.tipo_comprobante === '03' ? 'BOLETA' : 'FACTURA'"
-                  [severity]="venta.tipo_comprobante === '03' ? 'info' : 'warn'"
-                ></p-tag>
-              </td>
-              <td style="text-align: right">
-                <strong>S/. {{ venta.total | number: '1.2-2' }}</strong>
-              </td>
-              <td style="text-align: center">
-                <div class="flex gap-1 justify-content-center align-items-center">
-                  <p-button
-                    type="button"
-                    icon="pi pi-eye"
-                    [text]="true"
-                    severity="secondary"
-                    (click)="verDetalleHistorial(venta.id)"
-                    pTooltip="Ver detalle"
-                    tooltipPosition="top"
-                    styleClass="icon-btn"
-                  />
-                  <p-button
-                    type="button"
-                    icon="pi pi-print"
-                    [text]="true"
-                    severity="secondary"
-                    (click)="imprimirComprobanteHistorial(venta)"
-                    pTooltip="Imprimir"
-                    tooltipPosition="top"
-                    styleClass="icon-btn"
-                  />
-                  <p-button
-                    type="button"
-                    icon="pi pi-file-pdf"
-                    [text]="true"
-                    severity="secondary"
-                    (click)="descargarPDFHistorial(venta)"
-                    pTooltip="Descargar PDF"
-                    tooltipPosition="top"
-                    styleClass="icon-btn"
-                  />
-                  <p-button
-                    type="button"
-                    icon="pi pi-send"
-                    [text]="true"
-                    severity="secondary"
-                    (click)="enviarEmailHistorial(venta)"
-                    pTooltip="Enviar por correo"
-                    tooltipPosition="top"
-                    [disabled]="!cliente?.email"
-                    styleClass="icon-btn"
-                  />
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="6" style="text-align: center">
-                <div class="no-data">
-                  <i class="pi pi-inbox"></i>
-                  <p>No hay historial de compras</p>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-        </p-table>
-      </div>
+      <div class="historial-table-wrapper">
+        <app-loading-overlay
+          [visible]="loadingHistorial"
+          mensaje="Cargando historial..."
+          modo="page"
+        ></app-loading-overlay>
 
-      <div *ngIf="historialCompras.length === 0" class="no-data">
-        <i class="pi pi-info-circle"></i>
-        <span>Este cliente no tiene compras anteriores</span>
+        <div *ngIf="detalle.historial_cliente.length > 0">
+          <p-table
+            [value]="detalle.historial_cliente"
+            [paginator]="false"
+            [tableStyle]="{ 'min-width': '50rem' }"
+            styleClass="p-datatable-gridlines p-datatable-sm"
+          >
+            <ng-template pTemplate="header">
+              <tr>
+                <th style="width: 18%">Comprobante</th>
+                <th style="width: 13%">Fecha</th>
+                <th style="width: 20%">Responsable</th>
+                <th style="width: 14%; text-align: center">
+                  Método Pago
+                </th>
+                <th style="width: 10%; text-align: center">Estado</th>
+                <th style="width: 12%; text-align: right">Total</th>
+                <th style="width: 13%; text-align: center">Acciones</th>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-venta>
+              <tr>
+                <td>
+                  <strong>{{ venta.numero_completo }}</strong>
+                </td>
+                <td>
+                  {{ venta.fec_emision | date: 'dd/MM/yyyy' }}
+                </td>
+                <td>
+                  <div class="responsable-cell">
+                    <i class="pi pi-user"></i>
+                    <span>{{ venta.responsable }}</span>
+                  </div>
+                </td>
+                <td style="text-align: center">
+                  <p-tag
+                    [value]="venta.metodo_pago"
+                    [severity]="getSeverityTipoPago(venta.metodo_pago)"
+                  ></p-tag>
+                </td>
+                <td style="text-align: center">
+                  <p-tag
+                    [value]="venta.estado"
+                    [severity]="getSeverityEstado(venta.estado)"
+                  ></p-tag>
+                </td>
+                <td style="text-align: right">
+                  <strong>
+                    S/. {{ venta.total | number: '1.2-2' }}
+                  </strong>
+                </td>
+                <td style="text-align: center">
+                  <div
+                    class="flex gap-1 justify-content-center align-items-center"
+                  >
+                    <p-button
+                      type="button"
+                      icon="pi pi-eye"
+                      [text]="true"
+                      severity="secondary"
+                      (click)="verDetalleHistorial(venta.id_comprobante)"
+                      pTooltip="Ver detalle"
+                      tooltipPosition="top"
+                      styleClass="icon-btn"
+                    ></p-button>
+                    <p-button
+                      type="button"
+                      icon="pi pi-print"
+                      [text]="true"
+                      severity="secondary"
+                      (click)="imprimirHistorial(venta)"
+                      pTooltip="Imprimir"
+                      tooltipPosition="top"
+                      styleClass="icon-btn"
+                    ></p-button>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+
+            <ng-template pTemplate="emptymessage">
+              <tr>
+                <td colspan="7" style="text-align: center">
+                  <div class="no-data">
+                    <i class="pi pi-inbox"></i>
+                    <p>No hay historial de compras</p>
+                  </div>
+                </td>
+              </tr>
+            </ng-template>
+          </p-table>
+
+          <div
+            class="historial-paginacion"
+            *ngIf="totalPaginasHistorial > 1"
+          >
+            <div
+              class="flex gap-2 justify-content-center align-items-center mt-3"
+            >
+              <p-button
+                icon="pi pi-angle-double-left"
+                [text]="true"
+                severity="secondary"
+                [disabled]="historialPage === 1"
+                (click)="cambiarPaginaHistorial(1)"
+                pTooltip="Primera página"
+                tooltipPosition="top"
+              ></p-button>
+
+              <p-button
+                icon="pi pi-chevron-left"
+                [text]="true"
+                severity="secondary"
+                [disabled]="historialPage === 1"
+                (click)="cambiarPaginaHistorial(historialPage - 1)"
+              ></p-button>
+
+              <span
+                *ngIf="paginasHistorialVisibles[0] > 1"
+                class="pagina-ellipsis"
+              >
+                ...
+              </span>
+
+              <span
+                *ngFor="let p of paginasHistorialVisibles"
+                class="pagina-btn"
+                [class.activa]="p === historialPage"
+                (click)="cambiarPaginaHistorial(p)"
+              >
+                {{ p }}
+              </span>
+
+              <span
+                *ngIf="
+                  paginasHistorialVisibles[
+                    paginasHistorialVisibles.length - 1
+                  ] < totalPaginasHistorial
+                "
+                class="pagina-ellipsis"
+              >
+                ...
+              </span>
+
+              <p-button
+                icon="pi pi-chevron-right"
+                [text]="true"
+                severity="secondary"
+                [disabled]="historialPage === totalPaginasHistorial"
+                (click)="cambiarPaginaHistorial(historialPage + 1)"
+              ></p-button>
+
+              <p-button
+                icon="pi pi-angle-double-right"
+                [text]="true"
+                severity="secondary"
+                [disabled]="historialPage === totalPaginasHistorial"
+                (click)="cambiarPaginaHistorial(totalPaginasHistorial)"
+                pTooltip="Última página"
+                tooltipPosition="top"
+              ></p-button>
+            </div>
+          </div>
+        </div>
+
+        <div
+          *ngIf="!loadingHistorial && detalle.historial_cliente.length === 0"
+          class="no-data"
+        >
+          <i class="pi pi-info-circle"></i>
+          <span>Este cliente no tiene compras anteriores</span>
+        </div>
       </div>
     </p-card>
   </div>
-
 </div>
+
+<p-toast></p-toast>

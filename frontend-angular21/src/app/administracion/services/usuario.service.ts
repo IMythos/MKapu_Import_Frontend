@@ -22,7 +22,7 @@ export class UsuarioService {
   constructor(private http: HttpClient) {}
 
   // Para AdministracionCrearUsuario (paginado)
-  getUsuarios(page: number = 1, pageSize: number = 20): Observable<UsuarioResponse> {
+  getUsuarios(page: number = 1, pageSize: number = 1000): Observable<UsuarioResponse> {
     const params = new HttpParams()
       .set('page', page)
       .set('pageSize', pageSize);
@@ -35,7 +35,9 @@ export class UsuarioService {
   }
 
   getUsuariosPorEstado(activo: boolean): Observable<UsuarioResponse> {
-    const params = new HttpParams().set('activo', String(activo));
+    const params = new HttpParams()
+      .set('activo', String(activo))
+      .set('pageSize', '1000');   
     return this.http.get<UsuarioResponse>(`${this.api}/admin/users`, { params });
   }
 

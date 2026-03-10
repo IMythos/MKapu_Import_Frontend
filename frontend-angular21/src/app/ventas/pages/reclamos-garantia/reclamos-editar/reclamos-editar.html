@@ -15,135 +15,75 @@
       </div>
       <div class="flex gap-2">
         <p-button
-          label="Ver Detalle"
-          icon="pi pi-eye"
+          label="Volver al Listado"
+          icon="pi pi-arrow-left"
           [outlined]="true"
           severity="secondary"
           styleClass="ventas-pill"
-          (onClick)="verDetalle()"
-          [disabled]="!reclamo"
-          pTooltip="Ver detalle completo del reclamo"
-          tooltipPosition="bottom"
-        />
-        <p-button
-          label="Volver"
-          icon="pi pi-arrow-left"
-          styleClass="ventas-pill"
           (onClick)="volver()"
-          pTooltip="Volver al listado"
-          tooltipPosition="bottom"
         />
       </div>
     </div>
   </p-card>
 </div>
 
-<div class="p-2" *ngIf="!reclamo">
+<div class="p-2" *ngIf="cargando()">
   <p-card class="section-card">
     <div class="flex flex-column align-items-center gap-3 py-5">
       <i class="pi pi-spin pi-spinner" style="font-size: 3rem; color: #f0d067"></i>
-      <p class="text-500 m-0">Cargando reclamo...</p>
+      <p class="text-500 m-0">Cargando detalle del reclamo...</p>
     </div>
   </p-card>
 </div>
 
-<ng-container *ngIf="reclamo">
-  <div class="p-2">
-    <p-card class="cliente-card mb-4">
-      <div class="card-header">
-        <h3>
-          <span class="icon-reclamo"><i class="pi pi-user"></i></span>
-          Información del Cliente
-        </h3>
-      </div>
-
-      <div class="grid">
-        <div class="col-12 md:col-6">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-id-card"></i>
-              Nombre Completo
-            </label>
-            <strong class="block mt-2">{{ reclamo.cliente_nombre }}</strong>
-          </div>
-        </div>
-
-        <div class="col-12 md:col-6">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-hashtag"></i>
-              Documento de Identidad
-            </label>
-            <strong class="block mt-2">{{ reclamo.cliente_dni }}</strong>
-          </div>
-        </div>
-
-        <div class="col-12 md:col-6" *ngIf="reclamo.cliente_telefono">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-phone"></i>
-              Teléfono
-            </label>
-            <strong class="block mt-2">{{ reclamo.cliente_telefono }}</strong>
-          </div>
-        </div>
-
-        <div class="col-12 md:col-6" *ngIf="reclamo.cliente_email">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-envelope"></i>
-              Correo Electrónico
-            </label>
-            <strong class="block mt-2">{{ reclamo.cliente_email }}</strong>
-          </div>
-        </div>
-      </div>
-    </p-card>
-  </div>
-
+<ng-container *ngIf="reclamoOriginal() as reclamo">
   <div class="p-2">
     <p-card class="producto-card mb-4">
       <div class="card-header">
         <h3>
-          <span class="icon-reclamo"><i class="pi pi-box"></i></span>
-          Datos del Producto Reclamado
+          <span class="icon-reclamo"><i class="pi pi-file-o"></i></span>
+          Información General (Reclamo #{{ reclamo.claimId || reclamo.id }})
         </h3>
       </div>
 
       <div class="grid">
+        <div class="col-12 md:col-6">
+          <div class="info-item">
+            <label class="info-label">
+              <i class="pi pi-user"></i>
+              Cliente
+            </label>
+            <strong class="block mt-2">{{ reclamo.customerName || 'No disponible' }}</strong>
+          </div>
+        </div>
+
+        <div class="col-12 md:col-6">
+          <div class="info-item">
+            <label class="info-label">
+              <i class="pi pi-receipt"></i>
+              ID de Comprobante
+            </label>
+            <strong class="block mt-2">Nº {{ reclamo.receiptId }}</strong>
+          </div>
+        </div>
+
         <div class="col-12 md:col-6">
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-shopping-bag"></i>
               Producto Reclamado
             </label>
-            <strong class="block mt-2">{{ reclamo.descripcion_producto }}</strong>
-            <small class="text-500">Código: {{ reclamo.cod_producto }}</small>
+            <strong class="block mt-2">{{ reclamo.productDescription || 'No disponible' }}</strong>
           </div>
         </div>
 
         <div class="col-12 md:col-6">
           <div class="info-item">
             <label class="info-label">
-              <i class="pi pi-file"></i>
-              Comprobante de Compra
+              <i class="pi pi-id-card"></i>
+              Vendedor (Seller ID)
             </label>
-            <strong class="block mt-2">
-              {{ reclamo.serie_comprobante }}-{{
-                reclamo.numero_comprobante.toString().padStart(8, '0')
-              }}
-            </strong>
-            <small class="text-500">{{ formatearFecha(reclamo.fecha_compra) }}</small>
-          </div>
-        </div>
-
-        <div class="col-12 md:col-6">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-calendar-plus"></i>
-              Fecha de Compra
-            </label>
-            <strong class="block mt-2">{{ formatearFecha(reclamo.fecha_compra) }}</strong>
+            <strong class="block mt-2">{{ reclamo.sellerId || 'SISTEMA' }}</strong>
           </div>
         </div>
 
@@ -151,29 +91,11 @@
           <div class="info-item">
             <label class="info-label">
               <i class="pi pi-calendar"></i>
-              Fecha de Registro del Reclamo
+              Fecha de Registro
             </label>
-            <strong class="block mt-2">{{ formatearFecha(reclamo.fecha_registro) }}</strong>
-          </div>
-        </div>
-
-        <div class="col-12 md:col-6">
-          <div class="info-item">
-            <label class="info-label">
-              <i class="pi pi-shield"></i>
-              Estado de Garantía
-            </label>
-            <div
-              class="garantia-badge mt-2"
-              [class.vigente]="garantiaVigente"
-              [class.vencida]="!garantiaVigente"
-            >
-              <i [class]="garantiaVigente ? 'pi pi-check-circle' : 'pi pi-times-circle'"></i>
-              <span *ngIf="garantiaVigente">Vigente ({{ diasRestantes }} días restantes)</span>
-              <span *ngIf="!garantiaVigente"
-                >Vencida (hace {{ Math.abs(diasRestantes) }} días)</span
-              >
-            </div>
+            <strong class="block mt-2">{{
+              reclamo.registeredAt || reclamo.registerDate | date: 'dd/MM/yyyy HH:mm'
+            }}</strong>
           </div>
         </div>
 
@@ -185,13 +107,36 @@
             </label>
             <div class="mt-2">
               <p-tag
-                [value]="reclamo.estado"
-                [severity]="getEstadoSeverity(reclamo.estado)"
-                [icon]="getEstadoIcon(reclamo.estado)"
+                [value]="reclamo.status"
+                [severity]="
+                  reclamo.status === 'RESUELTO'
+                    ? 'success'
+                    : reclamo.status === 'RECHAZADO'
+                      ? 'danger'
+                      : reclamo.status === 'EN_PROCESO'
+                        ? 'info'
+                        : 'warn'
+                "
                 styleClass="text-base px-3 py-2"
               />
             </div>
           </div>
+        </div>
+
+        <div class="col-12" *ngIf="reclamo.resolvedAt">
+          <div class="info-item">
+            <label class="info-label">
+              <i class="pi pi-calendar-plus"></i>
+              Fecha de Resolución
+            </label>
+            <strong class="block mt-2 text-green-600">{{
+              reclamo.resolvedAt | date: 'dd/MM/yyyy HH:mm'
+            }}</strong>
+          </div>
+        </div>
+
+        <div class="col-12">
+          <p-divider></p-divider>
         </div>
 
         <div class="col-12">
@@ -200,7 +145,7 @@
               <i class="pi pi-exclamation-triangle"></i>
               Motivo del Reclamo
             </label>
-            <strong class="block mt-2">{{ reclamo.motivo }}</strong>
+            <strong class="block mt-2 text-orange-500">{{ reclamo.reason }}</strong>
           </div>
         </div>
 
@@ -210,7 +155,9 @@
               <i class="pi pi-align-left"></i>
               Descripción Detallada del Problema
             </label>
-            <p class="descripcion-texto mt-2">{{ reclamo.descripcion_problema }}</p>
+            <p class="descripcion-texto mt-2 p-3 surface-100 border-round">
+              {{ reclamo.description }}
+            </p>
           </div>
         </div>
       </div>
@@ -229,108 +176,64 @@
       <div class="grid">
         <div class="col-12">
           <div class="form-field">
-            <label class="field-label mb-2 block">
+            <label class="field-label mb-2 block font-bold">
               <i class="pi pi-flag"></i>
-              Actualizar Estado del Reclamo
-              <span class="required">*</span>
+              Acción / Nuevo Estado
+              <span class="text-red-500">*</span>
             </label>
+
             <p-select
-              [(ngModel)]="estadoSeleccionado"
-              [options]="estadosOptions"
+              [ngModel]="estadoSeleccionado()"
+              (ngModelChange)="estadoSeleccionado.set($event); onEstadoChange($event)"
+              [options]="estadosOptions()"
               optionLabel="label"
               optionValue="value"
-              placeholder="Seleccione un estado"
+              placeholder="Seleccione la acción a realizar"
               styleClass="w-full"
-              (onChange)="onEstadoChange()"
+              [disabled]="reclamo.status === 'RESUELTO' || reclamo.status === 'RECHAZADO'"
             >
               <ng-template pTemplate="selectedItem" let-option>
                 <div class="flex align-items-center gap-2" *ngIf="option">
-                  <i
-                    [class]="option.icon"
-                    [style.color]="
-                      option.severity === 'success'
-                        ? '#10b981'
-                        : option.severity === 'info'
-                          ? '#3b82f6'
-                          : option.severity === 'warn'
-                            ? '#f59e0b'
-                            : '#ef4444'
-                    "
-                  ></i>
+                  <i [class]="option.icon"></i>
                   <span>{{ option.label }}</span>
                 </div>
               </ng-template>
               <ng-template pTemplate="item" let-option>
                 <div class="flex align-items-center gap-2">
-                  <i
-                    [class]="option.icon"
-                    [style.color]="
-                      option.severity === 'success'
-                        ? '#10b981'
-                        : option.severity === 'info'
-                          ? '#3b82f6'
-                          : option.severity === 'warn'
-                            ? '#f59e0b'
-                            : '#ef4444'
-                    "
-                  ></i>
+                  <i [class]="option.icon"></i>
                   <span>{{ option.label }}</span>
                 </div>
               </ng-template>
             </p-select>
-            <small class="text-500 block mt-1">
-              Seleccione el nuevo estado según el progreso del reclamo
-            </small>
           </div>
         </div>
 
         <div class="col-12">
-          <p-divider />
-        </div>
-
-        <div class="col-12">
           <div class="form-field">
-            <label class="field-label mb-2 block">
+            <label class="field-label mb-2 block font-bold">
               <i class="pi pi-comment"></i>
-              Agregar Nuevas Observaciones
+              Detalle de la Respuesta / Resolución
+              <span class="text-red-500">*</span>
             </label>
+
             <textarea
               pTextarea
-              [(ngModel)]="observacionesNuevas"
+              [ngModel]="respuesta()"
+              (ngModelChange)="respuesta.set($event)"
               rows="5"
-              placeholder="Escriba aquí las observaciones, comentarios o acciones realizadas sobre el reclamo..."
+              placeholder="Describa la resolución técnica, la respuesta al cliente o la acción de atención..."
               class="w-full"
-              [maxlength]="500"
+              [maxlength]="1000"
+              [disabled]="reclamo.status === 'RESUELTO' || reclamo.status === 'RECHAZADO'"
             ></textarea>
-            <small class="text-500 block mt-1">
-              {{ observacionesNuevas.length }}/500 caracteres
-            </small>
-          </div>
-        </div>
-
-        <div class="col-12" *ngIf="reclamo.observaciones">
-          <div class="form-field">
-            <label class="field-label mb-2 block">
-              <i class="pi pi-history"></i>
-              Historial de Seguimiento
-            </label>
-            <div class="observaciones-historial">
-              <pre>{{ reclamo.observaciones }}</pre>
-            </div>
-          </div>
-        </div>
-
-        <div class="col-12" *ngIf="!reclamo.observaciones">
-          <div class="info-box">
-            <i class="pi pi-info-circle"></i>
-            <span>Aún no hay observaciones registradas para este reclamo</span>
+            <small class="text-500 block mt-1"> Obligatorio para guardar los cambios. </small>
           </div>
         </div>
       </div>
     </p-card>
   </div>
 
-  <div class="p-2">
+  <div class="p-2" *ngIf="reclamo.status !== 'RESUELTO' && reclamo.status !== 'RECHAZADO'">
     <p-card class="actions-card">
       <div class="flex justify-content-between gap-2 flex-wrap">
         <p-button
@@ -338,16 +241,17 @@
           icon="pi pi-times"
           styleClass="ventas-pill btn-cancelar"
           (onClick)="cancelarEdicion()"
-          [disabled]="guardando"
+          [disabled]="guardando()"
+          [outlined]="true"
         />
         <p-button
-          label="Guardar Cambios"
+          label="Procesar Reclamo"
           icon="pi pi-save"
           styleClass="btn-guardar-cambios"
-          [loading]="guardando"
+          [loading]="guardando()"
           loadingIcon="pi pi-spin pi-spinner"
           (onClick)="confirmarGuardar()"
-          [disabled]="!hayCambios() || guardando"
+          [disabled]="!hayCambios() || guardando()"
         />
       </div>
     </p-card>

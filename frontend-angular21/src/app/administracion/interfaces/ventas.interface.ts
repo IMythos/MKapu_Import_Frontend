@@ -1,6 +1,13 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// COMPROBANTES
-// ─────────────────────────────────────────────────────────────────────────────
+export const IGV_RATE_ADMIN = 0.18;
+export const IGVRATEADMIN = IGV_RATE_ADMIN;
+
+export interface SedeAdmin {
+  id_sede: number;
+  idsede?: number;
+  nombre: string;
+  direccion?: string;
+  activo: boolean;
+}
 
 export interface SalesReceiptSummaryAdmin {
   idComprobante: number;
@@ -21,7 +28,7 @@ export interface SalesReceiptSummaryAdmin {
 }
 
 export interface SalesReceiptSummaryListResponseAdmin {
-  receipts: SalesReceiptSummaryAdmin[]; // ← era 'data', ahora es 'receipts'
+  receipts: SalesReceiptSummaryAdmin[];
   total: number;
   page: number;
   limit: number;
@@ -39,13 +46,8 @@ export interface SalesReceiptsQueryAdmin {
   sedeId?: number;
   page?: number;
   limit?: number;
-  _t?: number; // ← anti-caché
+  _t?: number;
 }
-
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DETALLE COMPROBANTE
-// ─────────────────────────────────────────────────────────────────────────────
 
 export interface ProductoDetalleAdmin {
   id_prod_ref: string;
@@ -55,6 +57,27 @@ export interface ProductoDetalleAdmin {
   precio_unit: number;
   igv: number;
   total: number;
+  descuento_nombre: string | null;
+  descuento_porcentaje: number | null;
+  promocion_aplicada: boolean;
+  descuento_promo_monto: number | null;
+  descuento_promo_porcentaje: number | null;
+}
+
+export interface PromocionDetalleAdmin {
+  id: number;
+  codigo: string;
+  nombre: string;
+  tipo: string;
+  monto_descuento: number;
+  descuento_nombre: string;
+  descuento_porcentaje: number;
+  productosIds?: (number | string)[];
+  reglas?: {
+    idRegla: number;
+    tipoCondicion: string;
+    valorCondicion: string;
+  }[];
 }
 
 export interface ClienteDetalleAdmin {
@@ -78,16 +101,15 @@ export interface ResponsableDetalleAdmin {
 
 export interface HistorialItemAdmin {
   id_comprobante: number;
-  serie: string;
-  numero: number;
+  numero_completo: string;
   fec_emision: string;
   total: number;
   estado: string;
-  id_responsable: string;
   metodo_pago: string;
+  responsable: string;
 }
 
-export interface SalesReceiptWithHistoryDtoAdmin {
+export interface SalesReceiptDetalleCompletoDto {
   id_comprobante: number;
   numero_completo: string;
   serie: string;
@@ -95,13 +117,14 @@ export interface SalesReceiptWithHistoryDtoAdmin {
   tipo_comprobante: string;
   fec_emision: string;
   fec_venc: string | null;
+  estado: string;
   subtotal: number;
   igv: number;
   total: number;
-  estado: string;
   metodo_pago: string;
   cliente: ClienteDetalleAdmin;
   productos: ProductoDetalleAdmin[];
+  promocion: PromocionDetalleAdmin | null;
   responsable: ResponsableDetalleAdmin;
   historial_cliente: HistorialItemAdmin[];
   historial_pagination: {
@@ -112,74 +135,83 @@ export interface SalesReceiptWithHistoryDtoAdmin {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// KPI
-// ─────────────────────────────────────────────────────────────────────────────
+export interface SalesReceiptWithHistoryDtoAdmin extends SalesReceiptDetalleCompletoDto {}
 
 export interface SalesReceiptKpiDto {
   total_ventas: number;
   cantidad_ventas: number;
   total_boletas: number;
   total_facturas: number;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// REGISTRO DE VENTA — Body y Response alineados con backend real
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface ItemVentaAdminRequest {
-  id_prod_ref: number;
-  cod_prod: string;
-  descripcion: string;
-  cantidad: number;
-  pre_uni: number;
-  igv: number;
+  cantidad_boletas: number;
+  cantidad_facturas: number;
+  semana_desde?: string;
+  semana_hasta?: string;
 }
 
 export interface RegistroVentaAdminRequest {
   customerId: string;
+  receiptTypeId: number;
   saleTypeId: number;
   serie: string;
-  receiptTypeId: number;
-  dueDate: string;
-  operationType: string;
   subtotal: number;
   igv: number;
-  isc: number;
+  isc?: number;
   total: number;
-  descuento: number;
+  descuento?: number;
   promotionId?: number | null;
-  deliveryType?: 'recojo' | 'delivery';       // ✅ nuevo
-  deliveryAddress?: string | null;            // ✅ nuevo
-  currencyCode: string;
   responsibleId: string;
   branchId: number;
-  warehouseId: number;
-  paymentMethodId: number;
-  operationNumber: string | null;
+  warehouseId?: number;
+  paymentMethodId?: number;
+  operationNumber?: string | null;
   esCreditoPendiente?: boolean;
+  dueDate?: string;
+  operationType?: string;
+  currencyCode?: string;
   items: {
     productId: string;
     quantity: number;
     unitPrice: number;
     description: string;
     total: number;
+    codigo?: string;
+    categoriaId?: number;
   }[];
 }
 
-
-export interface RegistroVentaAdminResponse {
-  numero_completo: string;
-  fec_emision: string;
+export interface RegistroVentaItemResponseAdmin {
+  productId: string;
+  productName: string;
+  codigoProducto: string;
+  quantity: number;
+  unitPrice: number;
+  unitValue: number;
+  igv: number;
+  tipoAfectacionIgv: number;
   total: number;
-  serie: string;
-  numero: number;
-  id_comprobante: number;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ANULAR VENTA
-// ─────────────────────────────────────────────────────────────────────────────
+export interface RegistroVentaAdminResponse {
+  idComprobante: number;
+  idCliente: string;
+  numeroCompleto: string;
+  serie: string;
+  numero: number;
+  fecEmision: string;
+  fecVenc?: string;
+  tipoOperacion: string;
+  subtotal: number;
+  igv: number;
+  isc: number;
+  total: number;
+  estado: string;
+  codMoneda: string;
+  idTipoComprobante: number;
+  idTipoVenta: number;
+  idSedeRef: number;
+  idResponsableRef: string;
+  items: RegistroVentaItemResponseAdmin[];
+}
 
 export interface AnularVentaAdminRequest {
   receiptId: number;
@@ -192,20 +224,24 @@ export interface AnularVentaAdminResponse {
   mensaje: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SEDES
-// ─────────────────────────────────────────────────────────────────────────────
-
-export interface SedeAdmin {
-  id_sede: number;
-  nombre: string;
-  direccion?: string;
-  activo: boolean;
+export interface TipoVentaAdmin {
+  id: number;
+  tipo: string;
+  descripcion: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PRODUCTOS CON STOCK
-// ─────────────────────────────────────────────────────────────────────────────
+export interface TipoComprobanteAdmin {
+  id: number;
+  codSunat: string;
+  descripcion: string;
+  estado: boolean;
+}
+
+export interface MetodoPagoAdmin {
+  id: number;
+  codSunat: string;
+  descripcion: string;
+}
 
 export interface ProductoStockAdmin {
   id_producto: number;
@@ -254,13 +290,13 @@ export interface ProductoUIAdmin {
   codigo: string;
   nombre: string;
   familia: string;
-  id_categoria: number;
-  stock: number;
+  categoriaId?: number;
   precioUnidad: number;
   precioCaja: number;
   precioMayorista: number;
+  stock: number;
   sede: string;
-  id_sede: number;
+  almacenes: Array<{ nombre: string; stock: number }>;
 }
 
 export interface CategoriaConStockAdmin {
@@ -268,17 +304,13 @@ export interface CategoriaConStockAdmin {
   nombre: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CLIENTES
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface ClienteBusquedaAdminResponse {
   customerId: string;
   name: string;
   documentValue: string;
   documentTypeDescription: string;
   documentTypeSunatCode: string;
-  invoiceType: 'BOLETA' | 'FACTURA';
+  invoiceType: string;
   status: string;
   address?: string | null;
   email?: string | null;
@@ -322,10 +354,6 @@ export interface TipoDocumentoAdmin {
   sunatCode: string;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ITEMS DEL CARRITO (uso interno UI)
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface ItemVentaUIAdmin {
   productId: number;
   codigo: string;
@@ -334,36 +362,15 @@ export interface ItemVentaUIAdmin {
   description: string;
   total: number;
   igvUnitario: number;
+  categoriaId?: number;
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTES
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const IGV_RATE_ADMIN = 0.18;
-export const CURRENCY_PEN_ADMIN = 'PEN';
-export const OPERATION_TYPE_VENTA_INTERNA = '0101';
-
-export interface MetodoPagoAdmin {
-  id: number;
-  codSunat: string;
-  descripcion: string;
-}
-
-
-export const TIPOS_COMPROBANTE_ADMIN = [
-  { id: 2, description: 'Boleta', serie: 'B001' },
-  { id: 1, description: 'Factura', serie: 'F001' },
-] as const;
-
-
 
 export interface PromocionAdmin {
-  idPromocion: number;         // ← era "id"
+  idPromocion: number;
   concepto: string;
-  tipo: 'PORCENTAJE' | 'MONTO' | string;
+  tipo: string;
   valor: number;
-  activo: boolean | { type: 'Buffer'; data: number[] }; // Buffer de MySQL
+  activo: boolean | { type: 'Buffer'; data: number[] };
   descripcion?: string;
   reglas?: {
     idRegla: number;
@@ -374,8 +381,43 @@ export interface PromocionAdmin {
     idDescuento: number;
     monto: string;
   }[];
-  productosIds?: number[];     // opcional, si lo necesitas
+  productosIds?: number[];
+}
+
+export interface QuoteDetalleItem {
+  id_prod_ref: number;
+  cod_prod: string;
+  descripcion: string;
+  cantidad: number;
+  precio: number;
+}
+
+export interface QuoteCliente {
+  id_tipo_documento: number;
+  valor_doc: string;
+  razon_social?: string;
+  nombre_cliente?: string;
+  apellidos_cliente?: string;
+  direccion?: string;
+  email?: string;
+  telefono?: string;
+}
+
+export interface Quote {
+  id_cotizacion: number;
+  id_sede?: number;
+  id_cliente: number;
+  cliente?: QuoteCliente;
+  detalles?: QuoteDetalleItem[];
 }
 
 
-export type TipoEntrega = 'recojo' | 'delivery';
+export interface WhatsAppStatusResponse {
+  ready: boolean;
+  qr: string | null;
+}
+
+export interface SendNotificationResponse {
+  message: string;
+  sentTo: string;
+}

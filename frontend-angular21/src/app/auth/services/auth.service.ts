@@ -6,7 +6,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 import { UserRole } from '../../core/constants/roles.constants';
-import { User } from '../../core/interfaces/user.interface'; // ✅ Asegúrate que esté
+import { User } from '../../core/interfaces/user.interface'; 
 import { EmpleadosService } from '../../core/services/empleados.service';
 import {
   AuthInterface,
@@ -64,11 +64,11 @@ export class AuthService {
       email: account.email_emp,
       roleId: account.roles[0]?.id_rol,
       roleName: account.roles[0]?.nombre,
-      idSede: account.id_sede, // ✅
-      sedeNombre: account.sede_nombre, // ✅
+      idSede: account.id_sede,
+      sedeNombre: account.sede_nombre,
       permisos: account.permisos.map((p) => p.nombre),
-      nombres: account.usuario.nombres, // ✅
-      apellidos: `${account.usuario.ape_pat} ${account.usuario.ape_mat}`, // ✅
+      nombres: account.usuario.nombres, 
+      apellidos: `${account.usuario.ape_pat} ${account.usuario.ape_mat}`,
     };
   }
 
@@ -127,7 +127,7 @@ export class AuthService {
       [UserRole.LOGISTICA]: 'logistica',
     };
 
-    return roleNames[this.currentUser.roleId as UserRole] || null; // ✅ Cast
+    return roleNames[this.currentUser.roleId as UserRole] || null;
   }
 
   getCurrentUser(): User | null {

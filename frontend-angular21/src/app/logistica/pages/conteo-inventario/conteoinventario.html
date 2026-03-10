@@ -11,11 +11,11 @@
         </div>
       </div>
       <div class="flex justify-items-end gap-2">
-          <p-button 
-          label="Crear Nuevo Conteo" 
-          icon="pi pi-plus" 
+        <p-button
+          label="Crear Nuevo Conteo"
+          icon="pi pi-plus"
           styleClass="sedes-pill"
-          (onClick)="crearConteo()"> 
+          (onClick)="crearConteo()">
         </p-button>
       </div>
     </div>
@@ -29,8 +29,7 @@
         dateFormat="dd/mm/yy"
         placeholder="dd/mm/yyyy"
         [showIcon]="true"
-        (onClear)="alCambiarFiltro()"
-      >
+        (onClear)="alCambiarFiltro()">
       </p-datepicker>
 
       <span class="p-input-icon-left flex-1" style="display: flex; align-items: center; gap: 10px;">
@@ -40,153 +39,149 @@
           type="text"
           placeholder="Buscar por detalle..."
           [ngModel]="filtroBusqueda()"
-          (ngModelChange)="filtroBusqueda.set($event)"
+          (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
         />
       </span>
 
       <p-autoComplete
         [ngModel]="estadoSeleccionado()"
-        (ngModelChange)="estadoSeleccionado.set($event)"
+        (ngModelChange)="estadoSeleccionado.set($event); paginaActual.set(1)"
         [suggestions]="estadosFiltrados()"
         (completeMethod)="filtrarEstados($event)"
         optionLabel="nombre"
         placeholder="Estado"
-        [dropdown]="true"
-      >
+        [dropdown]="true">
       </p-autoComplete>
 
       <p-autoComplete
         [ngModel]="familiaSeleccionada()"
-        (ngModelChange)="familiaSeleccionada.set($event)"
+        (ngModelChange)="familiaSeleccionada.set($event); paginaActual.set(1)"
         [suggestions]="familiasFiltradas()"
         (completeMethod)="filtrarFamilias($event)"
         optionLabel="nombre"
         placeholder="Familia"
-        [dropdown]="true"
-      >
+        [dropdown]="true">
       </p-autoComplete>
     </div>
   </p-card>
+
   <p-card class="mt-3 tabla-card">
-    <p-table
-      [value]="conteosFiltrados()" 
-      [loading]="loading()" 
-      responsiveLayout="scroll"
-      styleClass="p-datatable-striped"
-      [paginator]="false" 
-    >
-      <ng-template pTemplate="header">
-        <tr>
-          <th>Fecha</th>
-          <th>Detalle</th>
-          <th>Estado</th>
-          <th>Familia</th>
-          <th class="text-center" style="text-align: center">Acción</th>
-        </tr>
-      </ng-template>
 
-      <ng-template pTemplate="body" let-row>
-        <tr>
-          <td>
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-calendar text-400"></i>
-              <span class="text-700 font-medium">
-                {{ row.fechaIni | date: 'dd MMM, yyyy · HH:mm' }}
-              </span>
-            </div>
-          </td>
-          <td>
-            <div class="flex flex-column">
-              <span class="font-semibold text-700"> Conteo en {{ row.nomSede }} </span>
-              <small class="text-500">
-                {{ row.totalItems }} ítems
-                <ng-container *ngIf="row.detalles && row.detalles.length > 0">
-                  ({{ row.detalles[0].descripcion }}
-                  <span *ngIf="row.detalles.length > 1">y otros...</span>)
-                </ng-container>
-              </small>
-            </div>
-          </td>
+    <div style="position: relative;">
 
-          <td>
-            <p-tag
-              [value]="row.estado"
-              [severity]="
-                row.estado === 'AJUSTADO' || row.estado === 'FINALIZADO'
-                  ? 'success'
-                  : row.estado === 'ANULADO'
-                    ? 'danger'
-                    : 'warn'
-              "
-            >
-            </p-tag>
-          </td>
+      <app-loading-overlay
+        [visible]="loading()"
+        mensaje="Cargando conteos..."
+        modo="inline">
+      </app-loading-overlay>
 
-          <td>
-            <p-tag
-              *ngIf="row.nomCategoria; else general"
-              [value]="row.nomCategoria"
-              severity="info"
-              [rounded]="true"
-              styleClass="p-tag-sm"
-            ></p-tag>
+      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
 
-            <ng-template #general>
-              <p-tag
-                value="Varias Familias"
-                [rounded]="true"
-                styleClass="p-tag-sm tag-general"
-              ></p-tag>
-            </ng-template>
-          </td>
+        <p-table
+          [value]="conteosPaginados()"
+          [loading]="false"
+          responsiveLayout="scroll"
+          styleClass="p-datatable-striped"
+          [paginator]="false">
 
-          <td class="text-center" style="text-align: center">
-            <p-button
-              label="Ver detalle"
-              icon="pi pi-eye"
-              styleClass="p-button-sm btn-detalle-amarillo"
-              (onClick)="verDetalle(row)"
-            >
-            </p-button>
-          </td>
-        </tr>
-      </ng-template>
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Fecha</th>
+              <th>Detalle</th>
+              <th>Estado</th>
+              <th>Familia</th>
+              <th class="text-center" style="text-align: center">Acción</th>
+            </tr>
+          </ng-template>
 
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="5" class="text-center py-6">
-            <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
-            <p class="text-900 font-medium mb-0">No se encontraron conteos</p>
-            <p class="text-600 mt-2">Ajusta los filtros arriba para buscar nuevamente</p>
-          </td>
-        </tr>
-      </ng-template>
-    </p-table>
+          <ng-template pTemplate="body" let-row>
+            <tr>
+              <td>
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-calendar text-400"></i>
+                  <span class="text-700 font-medium">
+                    {{ row.fechaIni | date: 'dd MMM, yyyy · HH:mm' }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <div class="flex flex-column">
+                  <span class="font-semibold text-700">Conteo en {{ row.nomSede }}</span>
+                  <small class="text-500">
+                    {{ row.totalItems }} ítems
+                    <ng-container *ngIf="row.detalles && row.detalles.length > 0">
+                      ({{ row.detalles[0].descripcion }}
+                      <span *ngIf="row.detalles.length > 1">y otros...</span>)
+                    </ng-container>
+                  </small>
+                </div>
+              </td>
 
-    <div
-      *ngIf="totalRegistros() > 0"
-      class="flex justify-content-between align-items-center gap-6 mt-4 p-3 surface-50 border-round-xl"
-    >
-      <div class="text-600 font-medium">
-        Mostrando {{ conteosFiltrados().length > 0 ? first() + 1 : 0 }}-{{ getLast() }} de {{ totalRegistros() }} conteos
-      </div>
-      <p-paginator
-        [rows]="rows()"
-        [first]="first()"
-        [totalRecords]="totalRegistros()"
-        (onPageChange)="onPageChange($event)"
-        styleClass="flex-1 justify-content-center"
-      ></p-paginator>
-      <div class="flex align-items-center gap-2">
-        <span class="text-600 mr-2">Filas:</span>
-        <p-select
-          [ngModel]="rows()"
-          name="rowsSelectActivos"
-          [options]="[5, 10, 25, 50]"
-          class="w-6rem"
-          (onChange)="cambiarFilas($event.value)"
-        ></p-select>
+              <td>
+                <p-tag
+                  [value]="row.estado"
+                  [severity]="
+                    row.estado === 'AJUSTADO' || row.estado === 'FINALIZADO'
+                      ? 'success'
+                      : row.estado === 'ANULADO'
+                        ? 'danger'
+                        : 'warn'
+                  ">
+                </p-tag>
+              </td>
+
+              <td>
+                <p-tag
+                  *ngIf="row.nomCategoria; else general"
+                  [value]="row.nomCategoria"
+                  severity="info"
+                  [rounded]="true"
+                  styleClass="p-tag-sm">
+                </p-tag>
+                <ng-template #general>
+                  <p-tag
+                    value="Varias Familias"
+                    [rounded]="true"
+                    styleClass="p-tag-sm tag-general">
+                  </p-tag>
+                </ng-template>
+              </td>
+
+              <td class="text-center" style="text-align: center">
+                <p-button
+                  label="Ver detalle"
+                  icon="pi pi-eye"
+                  styleClass="p-button-sm btn-detalle-amarillo"
+                  (onClick)="verDetalle(row)">
+                </p-button>
+              </td>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="5" class="text-center py-6">
+                <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
+                <p class="text-900 font-medium mb-0">No se encontraron conteos</p>
+                <p class="text-600 mt-2">Ajusta los filtros arriba para buscar nuevamente</p>
+              </td>
+            </tr>
+          </ng-template>
+
+        </p-table>
+
+        <!-- Paginador reutilizable -->
+        <app-paginador
+          [page]="paginaActual()"
+          [totalPages]="totalPaginas()"
+          [total]="totalRegistros() || conteosFiltrados().length"
+          [limit]="rows()"
+          (pageChange)="onPageChange($event)"
+          (limitChange)="onLimitChange($event)">
+        </app-paginador>
+
       </div>
     </div>
+
   </p-card>
 </div>

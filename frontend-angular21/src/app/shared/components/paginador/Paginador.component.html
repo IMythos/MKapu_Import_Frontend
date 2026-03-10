@@ -1,0 +1,60 @@
+<div class="pag-wrapper">
+
+  <!-- Info texto izquierda -->
+  <span class="pag-info">
+    @if (total === 0) {
+      Sin registros
+    } @else {
+      Mostrando <strong>{{ desde }} – {{ hasta }}</strong> de <strong>{{ total }}</strong> registros
+    }
+  </span>
+
+  <!-- Botones de navegación centro -->
+  <div class="pag-nav">
+
+    <!-- Primera página -->
+    <button class="pag-btn pag-arrow" [disabled]="page === 1" (click)="first()" title="Primera">
+      ««
+    </button>
+
+    <!-- Anterior -->
+    <button class="pag-btn pag-arrow" [disabled]="page === 1" (click)="prev()" title="Anterior">
+      ‹
+    </button>
+
+    <!-- Páginas numeradas + ellipsis -->
+    @for (p of pages; track $index) {
+      @if (p === '...') {
+        <span class="pag-ellipsis">…</span>
+      } @else {
+        <button
+          class="pag-btn pag-num"
+          [class.pag-active]="p === page"
+          (click)="goTo(p)"
+        >{{ p }}</button>
+      }
+    }
+
+    <!-- Siguiente -->
+    <button class="pag-btn pag-arrow" [disabled]="page === totalPages" (click)="next()" title="Siguiente">
+      ›
+    </button>
+
+    <!-- Última página -->
+    <button class="pag-btn pag-arrow" [disabled]="page === totalPages" (click)="last()" title="Última">
+      »»
+    </button>
+
+  </div>
+
+  <!-- Selector de límite derecha -->
+  <div class="pag-limit">
+    <select [value]="limit" (change)="onLimitChange($event)">
+      @for (op of limitOpciones; track op) {
+        <option [value]="op">{{ op }}</option>
+      }
+    </select>
+    <span class="pag-limit-label">/ pág.</span>
+  </div>
+
+</div>

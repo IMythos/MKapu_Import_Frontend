@@ -1,3 +1,5 @@
+<app-loading-overlay [visible]="isLoading()" mensaje="Cargando..." modo="inline" />
+
 <div class="p-2">
   <p-card class="ventas-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
@@ -37,6 +39,7 @@
 
 <div class="p-2">
   <p-card class="wizard-card">
+    <!-- ══ WIZARD STEPS ══ -->
     <div class="wizard-steps">
       <div
         *ngFor="let step of steps; let i = index"
@@ -55,26 +58,22 @@
     <p-divider styleClass="wizard-divider" />
 
     <div class="wizard-content">
-      <!-- ══ STEP 0 — Productos ══ -->
+
+      <!-- ══════════════════════════════════════════════════════════════
+           STEP 0 — Productos
+      ══════════════════════════════════════════════════════════════════ -->
       <div *ngIf="activeStep() === 0" class="step-content">
         <div class="step-header">
           <i class="pi pi-box step-icon"></i>
           <h3>Seleccionar Sede y Productos</h3>
         </div>
+
         <div class="productos-container">
+
+          <!-- Filtros -->
           <div class="seccion-busquedas">
-            <small *ngIf="!sedeSeleccionada()" class="text-orange-500 mt-1 block"
-              ><i class="pi pi-exclamation-circle mr-1"></i>Seleccione una sede para ver sus
-              almacenes disponibles</small
-            >
-            <small
-              *ngIf="sedeSeleccionada() && !almacenSeleccionado()"
-              class="text-orange-500 mt-1 block"
-              ><i class="pi pi-exclamation-circle mr-1"></i>Seleccione un almacén para poder agregar
-              productos</small
-            >
-            <br />
             <div class="filtros-productos">
+
               <div class="buscar-producto-auto">
                 <label class="font-semibold mb-2 block">Buscar producto</label>
                 <p-autocomplete
@@ -97,19 +96,13 @@
                   <ng-template let-producto pTemplate="item">
                     <div class="producto-suggestion-mejorado">
                       <div class="suggestion-row-1">
-                        <span class="suggestion-codigo-nuevo">{{ producto.codigo }}</span>
-                        <p-tag
-                          [value]="producto.familia"
-                          severity="info"
-                          styleClass="suggestion-tag-nuevo"
-                        />
+                        <span class="sugerencia-codigo-nuevo">{{ producto.codigo }}</span>
+                        <p-tag [value]="producto.familia" severity="info" styleClass="suggestion-tag-nuevo" />
                       </div>
                       <div class="suggestion-row-2">
-                        <span class="suggestion-nombre-nuevo">{{ producto.nombre }}</span>
+                        <span class="sugerencia-nombre-nuevo">{{ producto.nombre }}</span>
                         <div class="flex align-items-center gap-2">
-                          <span class="suggestion-precio-nuevo"
-                            >S/. {{ producto.precioUnidad | number: '1.2-2' }}</span
-                          >
+                          <span class="suggestion-precio-nuevo">S/. {{ producto.precioUnidad | number:'1.2-2' }}</span>
                           <p-tag
                             [value]="'Stock: ' + producto.stock"
                             [severity]="obtenerSeveridadStock(producto.stock)"
@@ -121,6 +114,7 @@
                   </ng-template>
                 </p-autocomplete>
               </div>
+
               <div class="familia-selector">
                 <label class="font-semibold mb-2 block">Sede</label>
                 <p-select
@@ -135,21 +129,7 @@
                   styleClass="w-full"
                 />
               </div>
-              <div class="familia-selector">
-                <label class="font-semibold mb-2 block">Almacén</label>
-                <p-select
-                  [ngModel]="almacenSeleccionado()"
-                  (ngModelChange)="onAlmacenChange($event)"
-                  [options]="almacenesOptions()"
-                  optionLabel="label"
-                  optionValue="value"
-                  placeholder="Seleccione un almacén"
-                  [loading]="almacenesLoading()"
-                  [showClear]="true"
-                  [disabled]="!sedeSeleccionada() || almacenesLoading()"
-                  styleClass="w-full"
-                />
-              </div>
+
               <div class="familia-selector">
                 <label class="font-semibold mb-2 block">Familia</label>
                 <p-select
@@ -176,29 +156,30 @@
                   </ng-template>
                 </p-select>
               </div>
+
             </div>
           </div>
 
+          <!-- Columnas productos + agregar -->
           <div class="seccion-productos-agregar">
+
+            <!-- Lista de productos -->
             <div class="columna-productos-disponibles">
               <div class="columna-header">
-                <h4>
-                  <i class="pi pi-box"></i> Productos Disponibles ({{
-                    productosFiltrados().length
-                  }})
-                </h4>
+                <h4><i class="pi pi-box"></i> Productos Disponibles ({{ productosFiltrados().length }})</h4>
               </div>
               <div class="columna-scroll">
+
                 <div *ngIf="!sedeSeleccionada() && !productosLoading()" class="no-productos">
                   <i class="pi pi-building text-4xl text-300 mb-3"></i>
                   <p class="text-600 font-semibold">Seleccione una sede</p>
-                  <small class="text-400"
-                    >Elija una sede en el filtro superior para ver los productos disponibles</small
-                  >
+                  <small class="text-400">Elija una sede en el filtro superior para ver los productos disponibles</small>
                 </div>
+
                 <div *ngIf="productosLoading()" class="flex justify-content-center p-4">
                   <i class="pi pi-spin pi-spinner text-2xl"></i>
                 </div>
+
                 <ng-container *ngIf="sedeSeleccionada() && !productosLoading()">
                   <div
                     *ngFor="let producto of productosFiltrados()"
@@ -213,26 +194,20 @@
                     <div class="producto-nombre mb-2">{{ producto.nombre }}</div>
                     <div class="producto-stock mb-2">
                       <p-tag
-                        [value]="'Stock: ' + producto.stock"
-                        [severity]="obtenerSeveridadStock(producto.stock)"
+                        *ngFor="let alm of producto.almacenes"
+                        [value]="alm.nombre + ': ' + alm.stock"
+                        [severity]="obtenerSeveridadStock(alm.stock)"
                         icon="pi pi-box"
+                        styleClass="almacen-tag"
                       />
                     </div>
                     <div class="producto-precios">
-                      <small
-                        ><strong>Unidad:</strong> S/.
-                        {{ producto.precioUnidad | number: '1.2-2' }}</small
-                      >
-                      <small
-                        ><strong>Caja:</strong> S/.
-                        {{ producto.precioCaja | number: '1.2-2' }}</small
-                      >
-                      <small
-                        ><strong>Mayorista:</strong> S/.
-                        {{ producto.precioMayorista | number: '1.2-2' }}</small
-                      >
+                      <small><strong>Unidad:</strong> S/. {{ producto.precioUnidad | number:'1.2-2' }}</small>
+                      <small><strong>Caja:</strong> S/. {{ producto.precioCaja | number:'1.2-2' }}</small>
+                      <small><strong>Mayorista:</strong> S/. {{ producto.precioMayorista | number:'1.2-2' }}</small>
                     </div>
                   </div>
+
                   <div *ngIf="hayMasPaginas()" class="flex justify-content-center p-3">
                     <p-button
                       label="Cargar más productos"
@@ -243,19 +218,23 @@
                       (onClick)="cargarMasProductos()"
                     />
                   </div>
+
                   <div *ngIf="productosFiltrados().length === 0" class="no-productos">
                     <i class="pi pi-inbox"></i>
                     <p>No se encontraron productos</p>
                   </div>
                 </ng-container>
+
               </div>
             </div>
 
+            <!-- Agregar al carrito -->
             <div class="columna-agregar-carrito">
               <div class="columna-header">
                 <h4><i class="pi pi-plus-circle"></i> Agregar al Carrito</h4>
               </div>
               <div class="columna-scroll">
+
                 <div *ngIf="productoTemp()" class="form-agregar">
                   <div class="producto-seleccionado mb-3">
                     <strong class="block mb-1">{{ productoTemp()!.nombre }}</strong>
@@ -268,6 +247,7 @@
                       />
                     </div>
                   </div>
+
                   <div class="form-field mb-3">
                     <label class="block mb-2 font-semibold">Tipo de Precio</label>
                     <p-selectButton
@@ -279,6 +259,7 @@
                       styleClass="w-full"
                     />
                   </div>
+
                   <div class="form-field mb-3">
                     <label class="block mb-2 font-semibold">Cantidad</label>
                     <p-inputNumber
@@ -289,20 +270,19 @@
                       [showButtons]="true"
                       styleClass="w-full"
                     />
-                    <small class="text-600 mt-1 block"
-                      >Máximo: {{ productoTemp()!.stock }} unidades</small
-                    >
+                    <small class="text-600 mt-1 block">Máximo: {{ productoTemp()!.stock }} unidades</small>
                   </div>
+
                   <div class="precio-display mb-3">
                     <span>Precio Unitario</span>
-                    <span class="precio-valor">S/. {{ precioSegunTipo() | number: '1.2-2' }}</span>
+                    <span class="precio-valor">S/. {{ precioSegunTipo() | number:'1.2-2' }}</span>
                   </div>
+
                   <div class="total-display mb-3">
                     <span>Total</span>
-                    <span class="total-valor"
-                      >S/. {{ precioSegunTipo() * cantidadTemp() | number: '1.2-2' }}</span
-                    >
+                    <span class="total-valor">S/. {{ precioSegunTipo() * cantidadTemp() | number:'1.2-2' }}</span>
                   </div>
+
                   <p-button
                     label="Agregar al Carrito"
                     icon="pi pi-plus"
@@ -310,36 +290,32 @@
                     [disabled]="cantidadTemp() <= 0 || cantidadTemp() > productoTemp()!.stock"
                     styleClass="w-full btn-agregar-producto"
                   />
-                  <small
-                    *ngIf="cantidadTemp() > productoTemp()!.stock"
-                    class="text-red-500 mt-2 block text-center"
-                    ><i class="pi pi-exclamation-triangle"></i> Stock insuficiente. Disponible:
-                    {{ productoTemp()!.stock }} unidades</small
-                  >
-                  <small
-                    *ngIf="cantidadTemp() > 0 && cantidadTemp() <= productoTemp()!.stock"
-                    class="text-green-500 mt-2 block text-center"
-                    ><i class="pi pi-check-circle"></i> Stock disponible</small
-                  >
+
+                  <small *ngIf="cantidadTemp() > productoTemp()!.stock" class="text-red-500 mt-2 block text-center">
+                    <i class="pi pi-exclamation-triangle"></i> Stock insuficiente. Disponible: {{ productoTemp()!.stock }} unidades
+                  </small>
+                  <small *ngIf="cantidadTemp() > 0 && cantidadTemp() <= productoTemp()!.stock" class="text-green-500 mt-2 block text-center">
+                    <i class="pi pi-check-circle"></i> Stock disponible
+                  </small>
                 </div>
+
                 <div *ngIf="!productoTemp()" class="no-seleccion">
                   <i class="pi pi-hand-pointer"></i>
                   <p>Seleccione un producto de la lista</p>
                 </div>
+
               </div>
             </div>
+
           </div>
 
+          <!-- Carrito -->
           <div class="seccion-carrito-completo">
             <div class="carrito-header">
-              <h4>
-                <i class="pi pi-shopping-cart"></i> Carrito de Compras ({{
-                  productosSeleccionados().length
-                }}
-                items)
-              </h4>
+              <h4><i class="pi pi-shopping-cart"></i> Carrito de Compras ({{ productosSeleccionados().length }} items)</h4>
             </div>
             <div class="carrito-contenido">
+
               <div *ngIf="productosSeleccionados().length > 0" class="carrito-tabla">
                 <p-table
                   [value]="productosSeleccionados()"
@@ -348,33 +324,21 @@
                 >
                   <ng-template pTemplate="header">
                     <tr>
-                      <th style="width: 120px">Código</th>
+                      <th style="width:120px">Código</th>
                       <th>Producto</th>
-                      <th class="text-right" style="width: 100px">Cantidad</th>
-                      <th class="text-right" style="width: 120px">Precio Unit.</th>
-                      <th class="text-right" style="width: 130px">Subtotal</th>
-                      <th class="text-center" style="width: 80px">Acción</th>
+                      <th class="text-right" style="width:100px">Cantidad</th>
+                      <th class="text-right" style="width:120px">Precio Unit.</th>
+                      <th class="text-right" style="width:130px">Subtotal</th>
+                      <th class="text-center" style="width:80px">Acción</th>
                     </tr>
                   </ng-template>
                   <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
                     <tr>
-                      <td>
-                        <span class="codigo-tabla">{{ item.codigo }}</span>
-                      </td>
-                      <td>
-                        <span class="producto-nombre-tabla">{{ item.description }}</span>
-                      </td>
-                      <td class="text-right">
-                        <span class="cantidad-badge">{{ item.quantity }}</span>
-                      </td>
-                      <td class="text-right">
-                        <strong>S/. {{ item.unitPrice | number: '1.2-2' }}</strong>
-                      </td>
-                      <td class="text-right">
-                        <strong class="subtotal-item"
-                          >S/. {{ item.total | number: '1.2-2' }}</strong
-                        >
-                      </td>
+                      <td><span class="codigo-tabla">{{ item.codigo }}</span></td>
+                      <td><span class="producto-nombre-tabla">{{ item.description }}</span></td>
+                      <td class="text-right"><span class="cantidad-badge">{{ item.quantity }}</span></td>
+                      <td class="text-right"><strong>S/. {{ item.unitPrice | number:'1.2-2' }}</strong></td>
+                      <td class="text-right"><strong class="subtotal-item">S/. {{ item.total | number:'1.2-2' }}</strong></td>
                       <td class="text-center">
                         <p-button
                           icon="pi pi-trash"
@@ -390,34 +354,41 @@
                     </tr>
                   </ng-template>
                 </p-table>
+
                 <div class="carrito-totales-box">
                   <div class="totales-contenido">
                     <div class="total-line">
-                      <span class="label">Subtotal (Base imponible):</span
-                      ><span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
+                      <span class="label">Subtotal (Base imponible):</span>
+                      <span class="total-valor">S/. {{ subtotal() | number:'1.2-2' }}</span>
                     </div>
                     <div class="total-line">
-                      <span class="label">IGV (18%):</span
-                      ><span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
+                      <span class="label">IGV (18%):</span>
+                      <span class="total-valor">S/. {{ igv() | number:'1.2-2' }}</span>
                     </div>
                     <div class="total-line total-final">
-                      <span class="label">TOTAL A PAGAR:</span
-                      ><span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
+                      <span class="label">TOTAL A PAGAR:</span>
+                      <span class="total-valor">S/. {{ total() | number:'1.2-2' }}</span>
                     </div>
                   </div>
                 </div>
               </div>
+
               <div *ngIf="productosSeleccionados().length === 0" class="carrito-vacio">
                 <i class="pi pi-shopping-cart"></i>
                 <p>El carrito está vacío</p>
                 <small>Agregue productos para continuar con la venta</small>
               </div>
+
             </div>
           </div>
+
         </div>
       </div>
 
-      <!-- ══ STEP 1 — Cliente y Comprobante ══ -->
+
+      <!-- ══════════════════════════════════════════════════════════════
+           STEP 1 — Cliente y Comprobante
+      ══════════════════════════════════════════════════════════════════ -->
       <div *ngIf="activeStep() === 1" class="step-content">
         <div class="step-header">
           <i class="pi pi-file-edit step-icon"></i>
@@ -425,21 +396,24 @@
         </div>
 
         <div class="content-centrado">
+
+          <!-- Tipo de comprobante -->
           <div class="comprobante-section">
             <label class="section-label"><i class="pi pi-file-edit"></i> Tipo de Comprobante</label>
-            <div class="flex justify-content-center">
+            <div *ngIf="tiposComprobante().length === 0" class="flex justify-content-center p-3">
+              <i class="pi pi-spin pi-spinner text-xl"></i>
+            </div>
+            <div *ngIf="tiposComprobante().length > 0" class="flex justify-content-center">
               <p-selectButton
                 [ngModel]="tipoComprobante()"
                 (ngModelChange)="tipoComprobante.set($event); onTipoComprobanteChange()"
-                [options]="tipoComprobanteOptions"
-                optionLabel="label"
-                optionValue="value"
+                [options]="tiposComprobante()"
+                optionLabel="descripcion"
+                optionValue="id"
                 styleClass="select-comprobante-inline"
               >
                 <ng-template let-item>
-                  <div class="option-inline">
-                    <i [class]="item.icon"></i><span>{{ item.label }}</span>
-                  </div>
+                  <div class="option-inline"><span>{{ item.descripcion }}</span></div>
                 </ng-template>
               </p-selectButton>
             </div>
@@ -447,12 +421,14 @@
 
           <p-divider styleClass="section-divider" />
 
+          <!-- Cliente -->
           <div class="cliente-section">
             <label class="section-label"><i class="pi pi-users"></i> Datos del Cliente</label>
 
             <div class="buscar-cliente-section">
               <div class="flex gap-2 align-items-end flex-wrap mb-2">
-                <div style="flex: 0 0 210px; min-width: 160px">
+
+                <div style="flex:0 0 210px; min-width:160px">
                   <label class="input-label">Tipo de Documento</label>
                   <p-select
                     [ngModel]="tipoComprobante() === 1 ? tipoDocRucId() : tipoDocBoleta()"
@@ -465,19 +441,14 @@
                     [disabled]="!!clienteEncontrado() || tipoComprobante() === 1"
                   />
                 </div>
-                <div style="flex: 1; min-width: 160px">
-                  <label class="input-label">{{
-                    tipoComprobante() === 2 ? 'Número de Documento' : 'RUC (11 dígitos)'
-                  }}</label>
+
+                <div style="flex:1; min-width:160px">
+                  <label class="input-label">{{ tipoComprobante() === 2 ? 'Número de Documento' : 'RUC (11 dígitos)' }}</label>
                   <input
                     pInputText
                     [value]="clienteDocumento()"
                     (input)="validarSoloNumeros($event)"
-                    [placeholder]="
-                      tipoComprobante() === 2
-                        ? 'Ingrese número de documento'
-                        : 'Ingrese RUC (11 dígitos)'
-                    "
+                    [placeholder]="tipoComprobante() === 2 ? 'Ingrese número de documento' : 'Ingrese RUC (11 dígitos)'"
                     class="w-full"
                     inputmode="numeric"
                     pattern="[0-9]*"
@@ -485,7 +456,8 @@
                     [disabled]="!!clienteEncontrado()"
                   />
                 </div>
-                <div style="flex: 0 0 200px; min-width: 160px">
+
+                <div style="flex:0 0 200px; min-width:160px">
                   <label class="input-label">&nbsp;</label>
                   <p-button
                     [label]="clienteEncontrado() ? 'Cambiar Cliente' : 'Buscar Cliente'"
@@ -497,38 +469,29 @@
                     styleClass="w-full btn-buscar-cliente"
                   />
                 </div>
+
               </div>
 
-              <div
-                *ngIf="clienteDocumento() && !clienteEncontrado()"
-                class="mt-2 flex align-items-center gap-2"
-              >
+              <div *ngIf="clienteDocumento() && !clienteEncontrado()" class="mt-2 flex align-items-center gap-2">
                 <i class="pi pi-info-circle text-500"></i>
                 <small class="text-600">
                   {{ clienteDocumento().length }} / {{ longitudDocumento() }} dígitos
-                  <span
-                    *ngIf="clienteDocumento().length < longitudDocumento()"
-                    class="text-orange-500"
-                    >({{ longitudDocumento() - clienteDocumento().length }} restantes)</span
-                  >
-                  <span
-                    *ngIf="clienteDocumento().length === longitudDocumento()"
-                    class="text-green-500"
-                    >✓ Completo</span
-                  >
+                  <span *ngIf="clienteDocumento().length < longitudDocumento()" class="text-orange-500">
+                    ({{ longitudDocumento() - clienteDocumento().length }} restantes)
+                  </span>
+                  <span *ngIf="clienteDocumento().length === longitudDocumento()" class="text-green-500">✓ Completo</span>
                 </small>
               </div>
             </div>
 
+            <!-- Cliente encontrado -->
             <div *ngIf="clienteEncontrado()" class="cliente-encontrado-card mt-3">
               <p-card class="cliente-card-success">
                 <div class="cliente-content">
                   <div class="cliente-cabecera-row">
                     <div class="cliente-row">
                       <h4 class="cliente-nombre">{{ clienteEncontrado()!.name }}</h4>
-                      <span class="badge-verified"
-                        ><i class="pi pi-check-circle"></i> Verificado</span
-                      >
+                      <span class="badge-verified"><i class="pi pi-check-circle"></i> Verificado</span>
                       <p-button
                         icon="pi pi-times-circle"
                         [text]="true"
@@ -542,125 +505,70 @@
                     </div>
                   </div>
                   <div class="cliente-row mt-3">
-                    <span class="info-badge dni"
-                      ><i class="pi pi-id-card"></i> {{ formatearDocumentoCompleto() }}</span
-                    >
-                    <span class="info-badge telefono" *ngIf="clienteEncontrado()!.phone"
-                      ><i class="pi pi-phone"></i> {{ clienteEncontrado()!.phone }}</span
-                    >
+                    <span class="info-badge dni"><i class="pi pi-id-card"></i> {{ formatearDocumentoCompleto() }}</span>
+                    <span class="info-badge telefono" *ngIf="clienteEncontrado()!.phone">
+                      <i class="pi pi-phone"></i> {{ clienteEncontrado()!.phone }}
+                    </span>
                   </div>
                   <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.email">
-                    <span class="info-badge email"
-                      ><i class="pi pi-envelope"></i> {{ clienteEncontrado()!.email }}</span
-                    >
+                    <span class="info-badge email"><i class="pi pi-envelope"></i> {{ clienteEncontrado()!.email }}</span>
                   </div>
                   <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.address">
-                    <span class="info-badge direccion"
-                      ><i class="pi pi-map-marker"></i> {{ clienteEncontrado()!.address }}</span
-                    >
+                    <span class="info-badge direccion"><i class="pi pi-map-marker"></i> {{ clienteEncontrado()!.address }}</span>
                   </div>
+
                   <div class="mt-3" *ngIf="!editandoCliente()">
-                    <p-button
-                      label="Editar datos"
-                      icon="pi pi-pencil"
-                      [text]="true"
-                      size="small"
-                      (onClick)="iniciarEdicionCliente()"
-                    />
+                    <p-button label="Editar datos" icon="pi pi-pencil" [text]="true" size="small" (onClick)="iniciarEdicionCliente()" />
                   </div>
+
                   <div *ngIf="editandoCliente()" class="mt-3">
                     <p-divider align="center">
-                      <span class="divider-text"
-                        ><i class="pi pi-pencil mr-2"></i>Editar datos del cliente</span
-                      >
+                      <span class="divider-text"><i class="pi pi-pencil mr-2"></i>Editar datos del cliente</span>
                     </p-divider>
                     <div class="form-grid">
                       <div class="form-field full-width">
-                        <label>Nombre *</label
-                        ><input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.name"
-                          placeholder="Nombre completo"
-                          class="w-full"
-                        />
+                        <label>Nombre *</label>
+                        <input pInputText [(ngModel)]="editarClienteForm.name" placeholder="Nombre completo" class="w-full" />
                       </div>
                       <div class="form-field">
-                        <label>Dirección</label
-                        ><input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.address"
-                          placeholder="Dirección"
-                          class="w-full"
-                        />
+                        <label>Dirección</label>
+                        <input pInputText [(ngModel)]="editarClienteForm.address" placeholder="Dirección" class="w-full" />
                       </div>
                       <div class="form-field">
-                        <label>Teléfono</label
-                        ><input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.phone"
-                          placeholder="Teléfono"
-                          class="w-full"
-                          maxlength="9"
-                          inputmode="numeric"
-                        />
+                        <label>Teléfono</label>
+                        <input pInputText [(ngModel)]="editarClienteForm.phone" placeholder="Teléfono" class="w-full" maxlength="9" inputmode="numeric" />
                       </div>
                       <div class="form-field full-width">
-                        <label>Email</label
-                        ><input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.email"
-                          placeholder="Email"
-                          class="w-full"
-                          type="email"
-                        />
+                        <label>Email</label>
+                        <input pInputText [(ngModel)]="editarClienteForm.email" placeholder="Email" class="w-full" type="email" />
                       </div>
                       <div class="form-field full-width flex gap-2">
-                        <p-button
-                          label="Cancelar"
-                          icon="pi pi-times"
-                          [outlined]="true"
-                          severity="secondary"
-                          (onClick)="cancelarEdicionCliente()"
-                          styleClass="flex-1"
-                        />
-                        <p-button
-                          label="Guardar"
-                          icon="pi pi-check"
-                          (onClick)="guardarCambiosCliente()"
-                          [loading]="guardandoCliente()"
-                          styleClass="flex-1"
-                        />
+                        <p-button label="Cancelar" icon="pi pi-times" [outlined]="true" severity="secondary" (onClick)="cancelarEdicionCliente()" styleClass="flex-1" />
+                        <p-button label="Guardar" icon="pi pi-check" (onClick)="guardarCambiosCliente()" [loading]="guardandoCliente()" styleClass="flex-1" />
                       </div>
                     </div>
                   </div>
+
                 </div>
               </p-card>
             </div>
 
-            <div
-              *ngIf="busquedaRealizada() && !clienteEncontrado() && !creandoCliente()"
-              class="mt-3"
-            >
-              <div class="monto-destacado-box" style="background: #fff3e0; border-color: #ff9800">
-                <i class="pi pi-exclamation-triangle" style="color: #ff9800"></i>
+            <!-- Cliente no encontrado -->
+            <div *ngIf="busquedaRealizada() && !clienteEncontrado() && !creandoCliente()" class="mt-3">
+              <div class="monto-destacado-box" style="background:#fff3e0; border-color:#ff9800">
+                <i class="pi pi-exclamation-triangle" style="color:#ff9800"></i>
                 <span>Cliente no encontrado.</span>
-                <p-button
-                  label="Registrar nuevo cliente"
-                  icon="pi pi-user-plus"
-                  [text]="true"
-                  size="small"
-                  (onClick)="creandoCliente.set(true)"
-                />
+                <p-button label="Registrar nuevo cliente" icon="pi pi-user-plus" [text]="true" size="small" (onClick)="creandoCliente.set(true)" />
               </div>
             </div>
 
+            <!-- Formulario nuevo cliente -->
             <div *ngIf="creandoCliente()" class="nuevo-cliente-form mt-3">
               <p-divider align="center">
-                <span class="divider-text"
-                  ><i class="pi pi-user-plus mr-2"></i>Registrar nuevo cliente</span
-                >
+                <span class="divider-text"><i class="pi pi-user-plus mr-2"></i>Registrar nuevo cliente</span>
               </p-divider>
               <div class="form-grid">
+
                 <div class="form-field full-width">
                   <label>Tipo de Documento *</label>
                   <p-select
@@ -670,11 +578,7 @@
                     optionValue="documentTypeId"
                     placeholder="Seleccione tipo"
                     styleClass="w-full"
-                    (ngModelChange)="
-                      nuevoClienteForm.documentValue = '';
-                      nuevoClienteForm.name = '';
-                      nombreDesdeReniec.set(false)
-                    "
+                    (ngModelChange)="nuevoClienteForm.documentValue = ''; nuevoClienteForm.name = ''; nombreDesdeReniec.set(false)"
                   />
                 </div>
 
@@ -692,37 +596,21 @@
                     <i
                       *ngIf="reniecLoading()"
                       class="pi pi-spin pi-spinner text-primary"
-                      style="font-size: 1.25rem; flex-shrink: 0"
+                      style="font-size:1.25rem; flex-shrink:0"
                       pTooltip="Consultando RENIEC/SUNAT..."
                       tooltipPosition="left"
                     ></i>
                   </div>
-
                   <ng-container *ngIf="nuevoClienteForm.documentTypeId">
                     <ng-container *ngFor="let t of tiposDocumento()">
                       <ng-container *ngIf="t.documentTypeId === nuevoClienteForm.documentTypeId">
-                        <small
-                          *ngIf="
-                            t.description.toUpperCase().includes('DNI') ||
-                            t.description.toUpperCase().includes('IDENTIDAD')
-                          "
-                          class="text-500 mt-1 block"
-                        >
+                        <small *ngIf="t.description.toUpperCase().includes('DNI') || t.description.toUpperCase().includes('IDENTIDAD')" class="text-500 mt-1 block">
                           <i class="pi pi-info-circle mr-1"></i>
-                          Al ingresar <strong>8 dígitos</strong> se consultará
-                          <strong>RENIEC</strong> automáticamente
+                          Al ingresar <strong>8 dígitos</strong> se consultará <strong>RENIEC</strong> automáticamente
                         </small>
-
-                        <small
-                          *ngIf="
-                            t.description.toUpperCase().includes('RUC') ||
-                            t.description.toUpperCase().includes('CONTRIBUYENTE')
-                          "
-                          class="text-500 mt-1 block"
-                        >
+                        <small *ngIf="t.description.toUpperCase().includes('RUC') || t.description.toUpperCase().includes('CONTRIBUYENTE')" class="text-500 mt-1 block">
                           <i class="pi pi-info-circle mr-1"></i>
-                          Al ingresar <strong>11 dígitos</strong> se consultará
-                          <strong>SUNAT</strong> automáticamente
+                          Al ingresar <strong>11 dígitos</strong> se consultará <strong>SUNAT</strong> automáticamente
                         </small>
                       </ng-container>
                     </ng-container>
@@ -732,16 +620,11 @@
                 <div class="form-field full-width">
                   <label>Nombre completo / Razón Social *</label>
                   <div class="flex align-items-center gap-2">
-                    <input
-                      pInputText
-                      [(ngModel)]="nuevoClienteForm.name"
-                      placeholder="Nombre o razón social"
-                      class="w-full"
-                    />
+                    <input pInputText [(ngModel)]="nuevoClienteForm.name" placeholder="Nombre o razón social" class="w-full" />
                     <span
                       *ngIf="nombreDesdeReniec()"
                       class="flex align-items-center gap-1 text-green-600"
-                      style="font-size: 0.78rem; white-space: nowrap; flex-shrink: 0"
+                      style="font-size:0.78rem; white-space:nowrap; flex-shrink:0"
                       pTooltip="Nombre obtenido de RENIEC/SUNAT"
                       tooltipPosition="left"
                     >
@@ -751,34 +634,16 @@
                 </div>
 
                 <div class="form-field">
-                  <label>Dirección</label
-                  ><input
-                    pInputText
-                    [(ngModel)]="nuevoClienteForm.address"
-                    placeholder="Dirección"
-                    class="w-full"
-                  />
+                  <label>Dirección</label>
+                  <input pInputText [(ngModel)]="nuevoClienteForm.address" placeholder="Dirección" class="w-full" />
                 </div>
                 <div class="form-field">
-                  <label>Teléfono</label
-                  ><input
-                    pInputText
-                    [(ngModel)]="nuevoClienteForm.phone"
-                    placeholder="Teléfono"
-                    class="w-full"
-                    maxlength="9"
-                    inputmode="numeric"
-                  />
+                  <label>Teléfono</label>
+                  <input pInputText [(ngModel)]="nuevoClienteForm.phone" placeholder="Teléfono" class="w-full" maxlength="9" inputmode="numeric" />
                 </div>
                 <div class="form-field full-width">
-                  <label>Email (opcional)</label
-                  ><input
-                    pInputText
-                    [(ngModel)]="nuevoClienteForm.email"
-                    placeholder="Email"
-                    class="w-full"
-                    type="email"
-                  />
+                  <label>Email (opcional)</label>
+                  <input pInputText [(ngModel)]="nuevoClienteForm.email" placeholder="Email" class="w-full" type="email" />
                 </div>
 
                 <div class="form-field full-width flex gap-2">
@@ -798,33 +663,32 @@
                     styleClass="flex-1 btn-registrar-cliente"
                   />
                 </div>
+
               </div>
             </div>
+
           </div>
         </div>
       </div>
 
-      <!-- ══ STEP 2 — Pago, Promociones y Entrega ══ -->
+
+      <!-- ══════════════════════════════════════════════════════════════
+           STEP 2 — Pago, Promociones y Entrega
+      ══════════════════════════════════════════════════════════════════ -->
       <div *ngIf="activeStep() === 2" class="step-content">
         <div class="step-header">
           <i class="pi pi-credit-card step-icon"></i>
           <h3>Pago, Promociones y Entrega</h3>
         </div>
 
+        <!-- Crédito -->
         <div *ngIf="tipoPagoOrigen() === 'credito'" class="content-centrado">
-          <div
-            class="surface-card border-round-xl p-5 text-center"
-            style="
-              border-left: 4px solid var(--p-primary-color);
-              max-width: 480px;
-              margin: 2rem auto;
-            "
-          >
-            <i class="pi pi-credit-card text-primary mb-3 block" style="font-size: 3rem"></i>
+          <div class="surface-card border-round-xl p-5 text-center" style="border-left:4px solid var(--p-primary-color); max-width:480px; margin:2rem auto">
+            <i class="pi pi-credit-card text-primary mb-3 block" style="font-size:3rem"></i>
             <h4 class="text-900 mb-2">Venta a Crédito</h4>
             <p class="text-600 mb-4 line-height-3">
-              Esta venta se registrará como <strong>cuenta por cobrar</strong>.<br />El pago se irá
-              abonando de forma parcial hasta completar el total.
+              Esta venta se registrará como <strong>cuenta por cobrar</strong>.<br />
+              El pago se irá abonando de forma parcial hasta completar el total.
             </p>
             <div class="flex justify-content-center gap-3 flex-wrap">
               <p-tag value="SIN PAGO INMEDIATO" severity="warn" styleClass="font-bold"></p-tag>
@@ -838,7 +702,10 @@
           </div>
         </div>
 
+        <!-- Contado -->
         <div *ngIf="tipoPagoOrigen() !== 'credito'" class="content-centrado">
+
+          <!-- Tipo de entrega -->
           <div class="tipo-pago-section">
             <label class="section-label"><i class="pi pi-truck"></i> Tipo de Entrega</label>
             <div class="metodos-pago-grid">
@@ -855,29 +722,29 @@
                 </div>
               </div>
             </div>
+
             <div *ngIf="tipoEntrega() === 'recojo'" class="pago-detalles-animated mt-3">
               <div class="monto-destacado-box">
-                <i class="pi pi-check-circle" style="color: var(--p-green-500)"></i
-                ><span
-                  >Recojo en <strong>{{ nombreSedeSeleccionada() }}</strong></span
-                >
+                <i class="pi pi-check-circle" style="color:var(--p-green-500)"></i>
+                <span>Recojo en <strong>{{ nombreSedeSeleccionada() }}</strong></span>
               </div>
             </div>
+
             <div *ngIf="tipoEntrega() === 'delivery'" class="pago-detalles-animated mt-3">
-              <div class="form-field">
-                <label class="input-label">Dirección de entrega</label>
+              <div class="monto-destacado-box">
+                <i class="pi pi-truck" style="color:var(--p-primary-color)"></i>
+                <span>Delivery — ingrese la dirección:</span>
+              </div>
+              <div class="form-field mt-2">
                 <input
                   pInputText
                   [value]="direccionDelivery()"
                   (input)="direccionDelivery.set($any($event.target).value)"
-                  placeholder="Ingrese dirección de delivery"
+                  placeholder="Dirección de entrega"
                   class="w-full"
                 />
-                <small *ngIf="!direccionDelivery().trim()" class="text-red-500 mt-1 block"
-                  ><i class="pi pi-exclamation-circle"></i> La dirección es obligatoria</small
-                >
               </div>
-              <div class="form-field mt-3">
+              <div class="form-field mt-2">
                 <label class="input-label">Costo de delivery (S/.)</label>
                 <p-inputNumber
                   [ngModel]="costoDelivery()"
@@ -892,104 +759,61 @@
             </div>
           </div>
 
-          <p-divider styleClass="section-divider"></p-divider>
+          <p-divider styleClass="section-divider" />
 
+          <!-- Código promoción -->
           <div class="tipo-pago-section">
-            <label class="section-label"
-              ><i class="pi pi-percentage"></i> Promociones Disponibles</label
-            >
-            <div *ngIf="promocionesLoading()" class="flex justify-content-center p-4">
-              <i class="pi pi-spin pi-spinner text-2xl"></i>
+            <label class="section-label"><i class="pi pi-percentage"></i> Código de Promoción</label>
+
+            <div class="flex gap-2 align-items-center mt-2">
+              <input
+                pInputText
+                [value]="codigoPromocionInput()"
+                (input)="codigoPromocionInput.set($any($event.target).value); promoNoEncontrada.set(false); promoYaAplicada.set(false)"
+                (keydown.enter)="buscarYAplicarPromocion()"
+                placeholder="Ingrese concepto de promoción..."
+                class="w-full"
+                [disabled]="!!promocionAplicada()"
+              />
+              <p-button
+                label="Aplicar"
+                icon="pi pi-check"
+                (onClick)="buscarYAplicarPromocion()"
+                [disabled]="!codigoPromocionInput().trim() || !!promocionAplicada()"
+                [loading]="promocionesLoading()"
+              />
             </div>
-            <div
-              *ngIf="!promocionesLoading() && promocionesDisponibles().length === 0"
-              class="monto-destacado-box"
-              style="background: #f5f5f5"
-            >
-              <i class="pi pi-info-circle text-500"></i
-              ><span class="text-600">No hay promociones disponibles</span>
-            </div>
-            <div *ngIf="!promocionesLoading() && promocionesDisponibles().length > 0">
-              <div
-                *ngIf="promocionAplicada()"
-                class="monto-destacado-box mb-3"
-                style="background: #e8f5e9; border-color: #4caf50"
-              >
-                <i class="pi pi-check-circle" style="color: #4caf50"></i>
-                <span
-                  >Aplicada: <strong>{{ promocionAplicada()!.concepto }}</strong> — descuento:
-                  <strong>{{
-                    esPorcentaje(promocionAplicada()!.tipo)
-                      ? promocionAplicada()!.valor + '%'
-                      : 'S/. ' + (promocionAplicada()!.valor | number: '1.2-2')
-                  }}</strong>
-                  (-S/. {{ descuentoPromocion() | number: '1.2-2' }})</span
-                >
-                <p-button
-                  icon="pi pi-times"
-                  [text]="true"
-                  severity="danger"
-                  size="small"
-                  (onClick)="quitarPromocion()"
-                  pTooltip="Quitar promoción"
-                ></p-button>
-              </div>
-              <div
-                *ngFor="let promo of promocionesDisponibles()"
-                class="metodo-pago-card mb-2"
-                style="
-                  flex-direction: row;
-                  justify-content: space-between;
-                  align-items: center;
-                  padding: 1rem;
-                "
-                [class.selected]="promocionAplicada()?.idPromocion === promo.idPromocion"
-              >
-                <div class="flex align-items-center gap-3">
-                  <i class="pi pi-tag text-xl"></i>
-                  <div>
-                    <strong class="block">{{ promo.concepto }}</strong>
-                    <small class="text-600"
-                      >Descuento:
-                      <p-tag
-                        [value]="
-                          promo.tipo.toUpperCase() === 'PORCENTAJE'
-                            ? promo.valor + '% descuento'
-                            : 'S/. ' + (promo.valor | number: '1.2-2') + ' descuento'
-                        "
-                        severity="success"
-                        styleClass="ml-1"
-                      ></p-tag
-                    ></small>
-                  </div>
-                </div>
-                <p-button
-                  *ngIf="promocionAplicada()?.idPromocion !== promo.idPromocion"
-                  label="Aplicar"
-                  icon="pi pi-check"
-                  size="small"
-                  (onClick)="aplicarPromocion(promo)"
-                ></p-button>
-                <p-button
-                  *ngIf="promocionAplicada()?.idPromocion === promo.idPromocion"
-                  label="Aplicada"
-                  icon="pi pi-check-circle"
-                  size="small"
-                  severity="success"
-                  [disabled]="true"
-                ></p-button>
-              </div>
+
+            <small *ngIf="promoNoEncontrada()" class="text-red-500 mt-1 block">
+              <i class="pi pi-times-circle mr-1"></i> Promoción no encontrada. Verifique el concepto.
+            </small>
+            <small *ngIf="promoYaAplicada()" class="text-orange-500 mt-1 block">
+              <i class="pi pi-exclamation-circle mr-1"></i> Esa promoción ya está aplicada.
+            </small>
+
+            <div *ngIf="promocionAplicada()" class="monto-destacado-box mt-3" style="background:#e8f5e9; border-color:#4caf50">
+              <i class="pi pi-check-circle" style="color:#4caf50"></i>
+              <span>
+                Aplicada: <strong>{{ promocionAplicada()!.concepto }}</strong>
+                &nbsp;—&nbsp;descuento:
+                <strong>{{ esPorcentaje(promocionAplicada()!.tipo) ? promocionAplicada()!.valor + '%' : 'S/. ' + (promocionAplicada()!.valor | number:'1.2-2') }}</strong>
+                &nbsp;=&nbsp;
+                <strong style="color:#2e7d32">-S/. {{ descuentoPromocion() | number:'1.2-2' }}</strong>
+              </span>
+              <p-button icon="pi pi-times" [text]="true" severity="danger" size="small" (onClick)="quitarPromocion()" pTooltip="Quitar promoción" />
             </div>
           </div>
 
-          <p-divider styleClass="section-divider"></p-divider>
+          <p-divider styleClass="section-divider" />
 
-          <!-- MÉTODO DE PAGO — fix: metodoPagoOptions() con () -->
+          <!-- Método de pago -->
           <div class="tipo-pago-section">
             <label class="section-label"><i class="pi pi-wallet"></i> Método de Pago</label>
+
             <div *ngIf="metodosPago().length === 0" class="flex justify-content-center p-4">
               <i class="pi pi-spin pi-spinner text-2xl"></i>
             </div>
+
             <div class="metodos-pago-grid" *ngIf="metodosPago().length > 0">
               <div
                 *ngFor="let metodo of metodoPagoOptions()"
@@ -1005,14 +829,12 @@
               </div>
             </div>
 
-            <!-- Efectivo (codSunat 008 → id dinámico) -->
-            <div
-              *ngIf="metodosPago().length > 0 && metodoPagoSeleccionado() === metodosPago()[0].id && metodosPago()[0].codSunat === '008'"
-              class="pago-detalles-animated mt-4"
-            >
+            <!-- ✅ FIX: usa idMetodoPagoEfectivo() en lugar de metodosPago()[0].id hardcodeado -->
+            <div *ngIf="metodoPagoSeleccionado() === idMetodoPagoEfectivo()" class="pago-detalles-animated mt-4">
               <div class="monto-destacado-box">
-                <i class="pi pi-tag"></i><span>Total a Pagar</span
-                ><strong class="monto-destacado">S/. {{ total() | number: '1.2-2' }}</strong>
+                <i class="pi pi-tag"></i>
+                <span>Total a Pagar</span>
+                <strong class="monto-destacado">S/. {{ total() | number:'1.2-2' }}</strong>
               </div>
               <div class="form-field mt-3">
                 <label class="input-label">Monto Recibido</label>
@@ -1027,24 +849,22 @@
                 />
               </div>
               <div *ngIf="montoRecibido() >= total()" class="vuelto-display mt-3">
-                <span>Vuelto</span
-                ><span class="vuelto-valor">S/. {{ vuelto() | number: '1.2-2' }}</span>
+                <span>Vuelto</span>
+                <span class="vuelto-valor">S/. {{ vuelto() | number:'1.2-2' }}</span>
               </div>
             </div>
 
-            <!-- Otros métodos (transferencia, tarjeta, etc.) -->
+            <!-- ✅ FIX: métodos distintos a efectivo -->
             <ng-container *ngFor="let m of metodosPago()">
-              <div
-                *ngIf="metodoPagoSeleccionado() === m.id && m.codSunat !== '008'"
-                class="pago-detalles-animated mt-4"
-              >
+              <div *ngIf="metodoPagoSeleccionado() === m.id && m.codSunat !== '008'" class="pago-detalles-animated mt-4">
                 <div class="monto-destacado-box">
-                  <i class="pi pi-tag"></i><span>Total a Pagar</span
-                  ><strong class="monto-destacado">S/. {{ total() | number: '1.2-2' }}</strong>
+                  <i class="pi pi-tag"></i>
+                  <span>Total a Pagar</span>
+                  <strong class="monto-destacado">S/. {{ total() | number:'1.2-2' }}</strong>
                 </div>
                 <div class="pago-header-inline mt-3">
-                  <i class="pi pi-credit-card"></i
-                  ><span>{{ getLabelMetodoPago(metodoPagoSeleccionado()) }}</span>
+                  <i class="pi pi-credit-card"></i>
+                  <span>{{ getLabelMetodoPago(metodoPagoSeleccionado() ?? 0) }}</span>
                 </div>
                 <div class="form-field mt-3">
                   <label class="input-label">Nº de Operación</label>
@@ -1058,38 +878,47 @@
                 </div>
               </div>
             </ng-container>
+
           </div>
 
-          <p-divider styleClass="section-divider"></p-divider>
+          <p-divider styleClass="section-divider" />
+
+          <!-- Totales paso 2 -->
           <div class="carrito-totales-box">
             <div class="totales-contenido">
               <div class="total-line">
-                <span class="label">Subtotal (base imponible)</span
-                ><span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
+                <span class="label">Subtotal (base imponible)</span>
+                <span class="total-valor">S/. {{ subtotal() | number:'1.2-2' }}</span>
               </div>
               <div class="total-line">
-                <span class="label">IGV (18%)</span
-                ><span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
+                <span class="label">IGV (18%)</span>
+                <span class="total-valor">S/. {{ igv() | number:'1.2-2' }}</span>
               </div>
-              <div *ngIf="promocionAplicada()" class="total-line" style="color: #4caf50">
-                <span class="label">Descuento ({{ promocionAplicada()!.concepto }})</span
-                ><span class="total-valor">-S/. {{ descuentoPromocion() | number: '1.2-2' }}</span>
+              <div *ngIf="promocionAplicada()" class="total-line" style="color:#4caf50">
+                <span class="label">Descuento</span>
+                <span class="total-valor">-S/. {{ descuentoPromocion() | number:'1.2-2' }}</span>
               </div>
               <div *ngIf="tipoEntrega() === 'delivery' && costoDelivery() > 0" class="total-line">
-                <span class="label">Costo de delivery</span
-                ><span class="total-valor">S/. {{ costoDelivery() | number: '1.2-2' }}</span>
+                <span class="label">Costo de delivery</span>
+                <span class="total-valor">S/. {{ costoDelivery() | number:'1.2-2' }}</span>
               </div>
               <div class="total-line total-final">
-                <span class="label">TOTAL A PAGAR</span
-                ><span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
+                <span class="label">TOTAL A PAGAR</span>
+                <span class="total-valor">S/. {{ total() | number:'1.2-2' }}</span>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
-      <!-- ══ STEP 3 — Confirmar Venta ══ -->
+
+      <!-- ══════════════════════════════════════════════════════════════
+           STEP 3 — Confirmar Venta / Comprobante generado
+      ══════════════════════════════════════════════════════════════════ -->
       <div *ngIf="activeStep() === 3" class="step-content">
+
+        <!-- Vista previa (antes de generar) -->
         <div *ngIf="!comprobanteGenerado()">
           <div class="step-header">
             <i class="pi pi-check-circle step-icon"></i>
@@ -1097,107 +926,123 @@
           </div>
           <div class="content-centrado">
             <p-card class="resumen-venta">
-              <h4 class="resumen-titulo mb-4">
-                <i class="pi pi-file-check"></i> Resumen de la Venta
-              </h4>
+              <h4 class="resumen-titulo mb-4"><i class="pi pi-file-check"></i> Resumen de la Venta</h4>
+
               <div class="resumen-grid mb-4">
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-building"></i> Sede:</span
-                  ><strong class="resumen-value">{{ nombreSedeSeleccionada() }}</strong>
+                  <span class="label"><i class="pi pi-building"></i> Sede:</span>
+                  <strong class="resumen-value">{{ nombreSedeSeleccionada() }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-user"></i> Cliente:</span
-                  ><strong class="resumen-value">{{ clienteEncontrado()?.name }}</strong>
+                  <span class="label"><i class="pi pi-user"></i> Cliente:</span>
+                  <strong class="resumen-value">{{ clienteEncontrado()?.name }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-id-card"></i> Documento:</span
-                  ><strong class="resumen-value">{{ formatearDocumentoCompleto() }}</strong>
+                  <span class="label"><i class="pi pi-id-card"></i> Documento:</span>
+                  <strong class="resumen-value">{{ formatearDocumentoCompleto() }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-file"></i> Comprobante:</span
-                  ><strong class="resumen-value">{{
-                    tipoComprobante() === 1 ? 'Factura' : 'Boleta'
-                  }}</strong>
+                  <span class="label"><i class="pi pi-file"></i> Comprobante:</span>
+                  <strong class="resumen-value">{{ tipoComprobante() === 1 ? 'Factura' : 'Boleta' }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-wallet"></i> Pago:</span
-                  ><strong class="resumen-value">{{
-                    tipoPagoOrigen() === 'credito'
-                      ? 'Crédito (Cuenta por Cobrar)'
-                      : getLabelMetodoPago(metodoPagoSeleccionado())
-                  }}</strong>
+                  <span class="label"><i class="pi pi-tag"></i> Tipo de Venta:</span>
+                  <strong class="resumen-value">{{ nombreTipoVentaSeleccionado() }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"
-                    ><i [class]="tipoEntrega() === 'delivery' ? 'pi pi-truck' : 'pi pi-shop'"></i>
-                    Entrega:</span
-                  >
-                  <strong class="resumen-value">{{
-                    tipoEntrega() === 'delivery'
-                      ? 'Delivery — ' + direccionDelivery()
-                      : 'Recojo en tienda'
-                  }}</strong>
+                  <span class="label"><i class="pi pi-wallet"></i> Pago:</span>
+                  <strong class="resumen-value">
+                    {{ tipoPagoOrigen() === 'credito' ? 'Crédito (Cuenta por Cobrar)' : getLabelMetodoPago(metodoPagoSeleccionado() ?? 0) }}
+                  </strong>
+                </div>
+                <div class="resumen-item">
+                  <span class="label">
+                    <i [class]="tipoEntrega() === 'delivery' ? 'pi pi-truck' : 'pi pi-shop'"></i> Entrega:
+                  </span>
+                  <strong class="resumen-value">
+                    {{ tipoEntrega() === 'delivery' ? 'Delivery — ' + direccionDelivery() : 'Recojo en tienda' }}
+                  </strong>
                 </div>
                 <div class="resumen-item" *ngIf="promocionAplicada()">
                   <span class="label"><i class="pi pi-tag"></i> Promoción:</span>
-                  <strong class="resumen-value" style="color: #2e7d32"
-                    >{{ promocionAplicada()!.concepto }} (-S/.
-                    {{ descuentoPromocion() | number: '1.2-2' }})</strong
-                  >
+                  <strong class="resumen-value" style="color:#2e7d32">
+                    {{ promocionAplicada()!.concepto }} (-S/. {{ descuentoPromocion() | number:'1.2-2' }})
+                  </strong>
                 </div>
               </div>
+
               <p-divider />
-              <p-table
-                [value]="productosSeleccionados()"
-                styleClass="p-datatable-sm"
-                [tableStyle]="{ 'min-width': '100%' }"
-              >
+
+              <p-table [value]="productosSeleccionados()" styleClass="p-datatable-sm" [tableStyle]="{'min-width':'100%'}">
                 <ng-template pTemplate="header">
                   <tr>
+                    <th style="width:120px">Código</th>
                     <th>Producto</th>
-                    <th class="text-right" style="width: 80px">Cant.</th>
-                    <th class="text-right" style="width: 110px">P. Unit.</th>
-                    <th class="text-right" style="width: 110px">Subtotal</th>
+                    <th class="text-right" style="width:100px">Cantidad</th>
+                    <th class="text-right" style="width:120px">Precio Unit.</th>
+                    <th class="text-right" style="width:130px">Subtotal</th>
+                    <th class="text-center" style="width:110px">Promoción</th>
+                    <th class="text-center" style="width:80px">Acción</th>
                   </tr>
                 </ng-template>
-                <ng-template pTemplate="body" let-item>
+                <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
                   <tr>
-                    <td>{{ item.description }}</td>
-                    <td class="text-right">{{ item.quantity }}</td>
-                    <td class="text-right">S/. {{ item.unitPrice | number: '1.2-2' }}</td>
-                    <td class="text-right">S/. {{ item.total | number: '1.2-2' }}</td>
+                    <td><span class="codigo-tabla">{{ item.codigo }}</span></td>
+                    <td><span class="producto-nombre-tabla">{{ item.description }}</span></td>
+                    <td class="text-right"><span class="cantidad-badge">{{ item.quantity }}</span></td>
+                    <td class="text-right"><strong>S/. {{ item.unitPrice | number:'1.2-2' }}</strong></td>
+                    <td class="text-right"><strong class="subtotal-item">S/. {{ item.total | number:'1.2-2' }}</strong></td>
+                    <td class="text-center">
+                      <p-tag
+                        *ngIf="promocionAplicada() && itemCalificaPromocion(item)"
+                        value="🎁 Promo"
+                        severity="success"
+                        pTooltip="Este producto aplica al descuento de la promoción"
+                        tooltipPosition="left"
+                      />
+                      <span *ngIf="!promocionAplicada() || !itemCalificaPromocion(item)" class="text-400">—</span>
+                    </td>
+                    <td class="text-center">
+                      <p-button
+                        icon="pi pi-trash"
+                        severity="danger"
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        (onClick)="eliminarProducto(rowIndex)"
+                        pTooltip="Eliminar producto"
+                        tooltipPosition="left"
+                      />
+                    </td>
                   </tr>
                 </ng-template>
               </p-table>
+
               <div class="carrito-totales-box mt-3">
                 <div class="totales-contenido">
                   <div class="total-line">
-                    <span class="label">Subtotal (Base imponible):</span
-                    ><span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
+                    <span class="label">Subtotal (Base imponible):</span>
+                    <span class="total-valor">S/. {{ subtotal() | number:'1.2-2' }}</span>
                   </div>
                   <div class="total-line">
-                    <span class="label">IGV (18%):</span
-                    ><span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
+                    <span class="label">IGV (18%):</span>
+                    <span class="total-valor">S/. {{ igv() | number:'1.2-2' }}</span>
                   </div>
                   <div class="total-line" *ngIf="descuentoPromocion() > 0">
-                    <span class="label"><i class="pi pi-tag mr-1"></i>Descuento:</span
-                    ><span class="total-valor" style="color: #e53935"
-                      >-S/. {{ descuentoPromocion() | number: '1.2-2' }}</span
-                    >
+                    <span class="label"><i class="pi pi-tag mr-1"></i>Descuento:</span>
+                    <span class="total-valor" style="color:#e53935">-S/. {{ descuentoPromocion() | number:'1.2-2' }}</span>
                   </div>
-                  <div
-                    class="total-line"
-                    *ngIf="tipoEntrega() === 'delivery' && costoDelivery() > 0"
-                  >
-                    <span class="label"><i class="pi pi-truck mr-1"></i>Delivery:</span
-                    ><span class="total-valor">S/. {{ costoDelivery() | number: '1.2-2' }}</span>
+                  <div class="total-line" *ngIf="tipoEntrega() === 'delivery' && costoDelivery() > 0">
+                    <span class="label"><i class="pi pi-truck mr-1"></i>Delivery:</span>
+                    <span class="total-valor">S/. {{ costoDelivery() | number:'1.2-2' }}</span>
                   </div>
                   <div class="total-line total-final">
-                    <span class="label">TOTAL A PAGAR:</span
-                    ><span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
+                    <span class="label">TOTAL A PAGAR:</span>
+                    <span class="total-valor">S/. {{ total() | number:'1.2-2' }}</span>
                   </div>
                 </div>
               </div>
+
               <div class="flex justify-content-center mt-4">
                 <p-button
                   label="Generar Venta"
@@ -1212,40 +1057,55 @@
           </div>
         </div>
 
+        <!-- ✅ Comprobante generado exitosamente -->
         <div *ngIf="comprobanteGenerado()">
           <div class="step-header">
-            <i class="pi pi-check-circle step-icon" style="color: #4caf50"></i>
+            <i class="pi pi-check-circle step-icon" style="color:#4caf50"></i>
             <h3>¡Venta Generada Exitosamente!</h3>
           </div>
           <div class="content-centrado">
             <p-card class="resumen-venta">
+
               <div class="text-center mb-4">
-                <i class="pi pi-file-check" style="font-size: 3rem; color: #4caf50"></i>
-                <h4 class="mt-3">Comprobante: {{ comprobanteGenerado()!.numero_completo }}</h4>
-                <p class="text-600">
-                  Emitido el {{ comprobanteGenerado()!.fec_emision | date: 'dd/MM/yyyy HH:mm' }}
-                </p>
+                <i class="pi pi-file-check" style="font-size:3rem; color:#4caf50"></i>
+                <h4 class="mt-3">Comprobante: {{ comprobanteGenerado()!.numeroCompleto }}</h4>
+                <p class="text-600">Emitido el {{ comprobanteGenerado()!.fecEmision | date:'dd/MM/yyyy HH:mm' }}</p>
               </div>
+
               <div class="resumen-grid mb-4">
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-user"></i> Cliente:</span
-                  ><strong class="resumen-value">{{ snapshotCliente()?.name }}</strong>
+                  <span class="label"><i class="pi pi-user"></i> Cliente:</span>
+                  <strong class="resumen-value">{{ snapshotCliente()?.name }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-building"></i> Sede:</span
-                  ><strong class="resumen-value">{{ snapshotSede() }}</strong>
+                  <span class="label"><i class="pi pi-building"></i> Sede:</span>
+                  <strong class="resumen-value">{{ snapshotSede() }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-wallet"></i> Pago:</span
-                  ><strong class="resumen-value">{{ snapshotMetodoPago() }}</strong>
+                  <span class="label"><i class="pi pi-wallet"></i> Pago:</span>
+                  <strong class="resumen-value">{{ snapshotMetodoPago() }}</strong>
                 </div>
                 <div class="resumen-item">
-                  <span class="label"><i class="pi pi-dollar"></i> Total:</span
-                  ><strong class="resumen-value"
-                    >S/. {{ comprobanteGenerado()!.total | number: '1.2-2' }}</strong
-                  >
+                  <span class="label"><i class="pi pi-file"></i> Tipo:</span>
+                  <strong class="resumen-value">{{ snapshotTipoComprobante() === 1 ? 'Factura' : 'Boleta' }}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span class="label"><i class="pi pi-calculator"></i> Subtotal:</span>
+                  <strong class="resumen-value">S/. {{ comprobanteGenerado()!.subtotal | number:'1.2-2' }}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span class="label"><i class="pi pi-percentage"></i> IGV:</span>
+                  <strong class="resumen-value">S/. {{ comprobanteGenerado()!.igv | number:'1.2-2' }}</strong>
+                </div>
+                <div class="resumen-item">
+                  <span class="label"><i class="pi pi-dollar"></i> Total:</span>
+                  <strong class="resumen-value" style="color:var(--p-primary-color); font-size:1.1rem">
+                    S/. {{ comprobanteGenerado()!.total | number:'1.2-2' }}
+                  </strong>
                 </div>
               </div>
+
+              <!-- ✅ Botones de acción post-venta -->
               <div class="flex justify-content-center gap-3 mt-4 flex-wrap">
                 <p-button
                   label="Nueva Venta"
@@ -1261,13 +1121,38 @@
                   (onClick)="verListado()"
                   styleClass="ventas-pill"
                 />
+                <!-- ✅ NUEVO: descarga PDF -->
+                <p-button
+                  label="Descargar PDF"
+                  icon="pi pi-file-pdf"
+                  severity="danger"
+                  [outlined]="true"
+                  (onClick)="ventasService.descargarComprobantePdf(comprobanteGenerado()!.idComprobante).subscribe()"
+                  pTooltip="Descargar comprobante en PDF"
+                  tooltipPosition="top"
+                  styleClass="ventas-pill"
+                />
+                <!-- ✅ NUEVO: ver PDF en pestaña -->
+                <p-button
+                  label="Ver PDF"
+                  icon="pi pi-eye"
+                  severity="info"
+                  [outlined]="true"
+                  (onClick)="ventasService.verComprobantePdfEnPestana(comprobanteGenerado()!.idComprobante).subscribe()"
+                  pTooltip="Previsualizar PDF en nueva pestaña"
+                  tooltipPosition="top"
+                  styleClass="ventas-pill"
+                />
               </div>
+
             </p-card>
           </div>
         </div>
+
       </div>
     </div>
 
+    <!-- ══ NAVEGACIÓN WIZARD ══ -->
     <p-divider styleClass="wizard-divider" />
     <div class="wizard-navigation" *ngIf="!comprobanteGenerado()">
       <p-button
@@ -1288,6 +1173,7 @@
         styleClass="btn-wizard-nav"
       />
     </div>
+
   </p-card>
 </div>
 
