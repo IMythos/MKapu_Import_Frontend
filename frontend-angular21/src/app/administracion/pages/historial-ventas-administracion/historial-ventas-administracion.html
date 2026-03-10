@@ -19,7 +19,6 @@
   </p-card>
 </div>
 
-<!-- KPIs -->
 <div class="p-2">
   <div class="ventas-header-bordered mb-4">
     <div class="seccion-estadisticas">
@@ -55,7 +54,6 @@
   </div>
 </div>
 
-<!-- FILTROS -->
 <div class="p-2">
   <div class="filtros-container mb-4">
     <div class="seccion-filtros">
@@ -166,7 +164,6 @@
   </div>
 </div>
 
-<!-- TABLA -->
 <div class="p-2">
   <div style="position: relative">
     <p-card class="tarjeta-principal">
@@ -260,7 +257,6 @@
               </td>
               <td class="text-center">
                 <div class="acciones-tabla">
-                  <!-- Ver detalle -->
                   <p-button
                     icon="pi pi-eye"
                     (onClick)="verDetalleVenta(comprobante)"
@@ -270,8 +266,6 @@
                     pTooltip="Ver detalle"
                     tooltipPosition="top"
                   />
-
-                  <!-- Acciones del comprobante (PDF, email, WhatsApp, ver PDF) -->
                   <p-button
                     icon="pi pi-file-pdf"
                     [loading]="accionesCargando() === comprobante.idComprobante"
@@ -282,8 +276,6 @@
                     pTooltip="Acciones del comprobante"
                     tooltipPosition="top"
                   />
-
-                  <!-- Guía de Remisión -->
                   <p-button
                     icon="pi pi-truck"
                     (onClick)="crearGuiaRemision(comprobante)"
@@ -294,8 +286,6 @@
                     pTooltip="Generar Guía de Remisión"
                     tooltipPosition="top"
                   />
-
-                  <!-- Anular -->
                   <p-button
                     icon="pi pi-trash"
                     (onClick)="anularComprobante(comprobante)"
@@ -339,7 +329,6 @@
   <p-confirmDialog></p-confirmDialog>
 </div>
 
-<!-- ── DIALOG ACCIONES COMPROBANTE ────────────────────────────────────────── -->
 <p-dialog
   header="Opciones del comprobante"
   [(visible)]="accionesDialogVisible"
@@ -354,7 +343,6 @@
       <p class="text-color-secondary text-sm mt-1 mb-0">{{ accionesComprobante.clienteNombre }}</p>
     </div>
 
-    <!-- SECCIÓN ENVÍOS -->
     <p class="acciones-seccion-label">Envíos</p>
     <div class="acciones-grid mb-4">
       <div class="accion-item">
@@ -371,7 +359,6 @@
         </button>
         <span>WhatsApp</span>
       </div>
-
       <div class="accion-item">
         <button
           class="accion-icono-btn"
@@ -391,7 +378,6 @@
       </div>
     </div>
 
-    <!-- SECCIÓN DESCARGAS -->
     <p class="acciones-seccion-label">Descargas</p>
     <div class="acciones-grid">
       <div class="accion-item">
@@ -405,7 +391,6 @@
         </button>
         <span>Imprimir</span>
       </div>
-
       <div class="accion-item">
         <button
           class="accion-icono-btn"
@@ -422,4 +407,67 @@
       </div>
     </div>
   </div>
+</p-dialog>
+
+<p-dialog
+  header="Enviar por WhatsApp"
+  [(visible)]="wspDialogVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '380px' }"
+  (onHide)="cerrarDialogWsp()"
+>
+  <ng-container *ngIf="wspConsultando">
+    <div class="flex flex-column align-items-center gap-3 py-4">
+      <i class="pi pi-spin pi-spinner text-4xl text-green-500"></i>
+      <span class="font-semibold text-sm">Conectando con WhatsApp...</span>
+      <span class="text-color-secondary text-xs text-center">
+        Esto puede tardar hasta 2 minutos la primera vez
+      </span>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!wspConsultando && !wspReady && !wspQr">
+    <div class="flex flex-column align-items-center gap-3 py-4">
+      <i class="pi pi-spin pi-spinner text-4xl text-green-500"></i>
+      <span class="text-color-secondary text-sm">Iniciando sesión de WhatsApp...</span>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!wspConsultando && !wspReady && wspQr">
+    <div class="flex flex-column align-items-center gap-3 py-3">
+      <span class="font-semibold text-sm">Escanea el código QR con tu WhatsApp</span>
+      <img [src]="wspQr" alt="WhatsApp QR" style="width: 220px; height: 220px" />
+      <span class="text-color-secondary text-xs text-center">
+        Abre WhatsApp → Dispositivos vinculados → Vincular dispositivo
+      </span>
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-spin pi-spinner text-green-500"></i>
+        <span class="text-xs text-color-secondary">Esperando conexión...</span>
+      </div>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!wspConsultando && wspReady">
+    <div class="flex flex-column align-items-center gap-3 py-3">
+      <i class="pi pi-check-circle text-5xl text-green-500"></i>
+      <span class="font-semibold">WhatsApp conectado</span>
+      <span class="text-color-secondary text-sm text-center">
+        Se enviará el comprobante
+        <strong>{{ wspComprobanteActual ? getNumeroFormateado(wspComprobanteActual) : '' }}</strong>
+        al número registrado del cliente.
+      </span>
+    </div>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="cerrarDialogWsp()" />
+    <p-button
+      label="Enviar"
+      icon="pi pi-whatsapp"
+      severity="success"
+      [disabled]="!wspReady || wspConsultando"
+      (onClick)="confirmarEnvioWsp()"
+    />
+  </ng-template>
 </p-dialog>
