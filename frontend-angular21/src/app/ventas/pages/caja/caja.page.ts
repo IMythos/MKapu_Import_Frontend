@@ -10,10 +10,15 @@ import { CardModule }           from 'primeng/card';
 import { ButtonModule }         from 'primeng/button';
 import { InputNumberModule }    from 'primeng/inputnumber';
 import { ConfirmDialogModule }  from 'primeng/confirmdialog';
-import { ConfirmationService }  from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { FormsModule }          from '@angular/forms';
 import { RouterModule }         from '@angular/router';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { ToastModule }          from 'primeng/toast';
+import { DialogModule }         from 'primeng/dialog';
+import { TableModule }          from 'primeng/table';   // ← agregado
+import { TagModule }            from 'primeng/tag';      // ← agregado
+import { TooltipModule }        from 'primeng/tooltip';  // ← agregado (pTooltip en historial)
 
 @Component({
   selector: 'app-caja',
@@ -24,9 +29,12 @@ import { LoadingOverlayComponent } from '../../../shared/components/loading-over
     CommonModule, DatePipe, DecimalPipe, FormsModule,
     CardModule, ButtonModule, InputNumberModule,
     ConfirmDialogModule, RouterModule,
-    LoadingOverlayComponent,
+    LoadingOverlayComponent, ToastModule, DialogModule,
+    TableModule,   // ← p-table
+    TagModule,     // ← p-tag
+    TooltipModule, // ← pTooltip
   ],
-  providers: [ConfirmationService],
+  providers: [ConfirmationService, MessageService],
 })
 export class CajaPage implements OnInit, OnDestroy {
   private roleService     = inject(RoleService);
@@ -39,9 +47,11 @@ export class CajaPage implements OnInit, OnDestroy {
   readonly loading      = signal<boolean>(false);
   readonly resumen      = signal<any>(null);
   readonly montoInicial = signal<number | null>(null);
+  readonly historial        = signal<any[]>([]);
+  readonly historialVisible = signal<boolean>(false);
+  readonly historialLoading = signal<boolean>(false);
   isLoading = signal<boolean>(true);
 
-  // Referencia al chart para destruirlo al recargar
   private chartInstance: any = null;
 
   readonly tiempoAbierta = computed(() => {
@@ -58,7 +68,7 @@ export class CajaPage implements OnInit, OnDestroy {
   private cajaListener = () => {
     this.loading.set(false);
     if (this.cashboxSocket.caja()) {
-      this.cargarCajaDesdeDB(); // isLoading se apaga dentro
+      this.cargarCajaDesdeDB();
     } else {
       this.cajaDetalle.set(null);
       this.isLoading.set(false);
@@ -69,10 +79,8 @@ export class CajaPage implements OnInit, OnDestroy {
   constructor() {
     this.idSede = this.roleService.getCurrentUser()?.idSede;
 
-    // Renderiza el gráfico cuando cambie el resumen (con o sin ventas)
     effect(() => {
       const r = this.resumen();
-      // Generar horas del día 08:00–20:00 como fallback si no hay datos
       const horas = r?.ventasPorHora ?? this.generarHorasVacias();
       setTimeout(() => this.renderChart(horas), 0);
     });
@@ -110,9 +118,9 @@ export class CajaPage implements OnInit, OnDestroy {
   private cargarCajaDesdeDB(): void {
     if (!this.idSede) return;
     this.cashboxService.getActiveCashbox(this.idSede).subscribe({
-      next:  (data) => this.cajaDetalle.set(data),
-      error: ()     => { this.cajaDetalle.set(null); this.isLoading.set(false); },
-      complete: ()  => this.isLoading.set(false),
+      next:     (data) => this.cajaDetalle.set(data),
+      error:    ()     => { this.cajaDetalle.set(null); this.isLoading.set(false); },
+      complete: ()     => this.isLoading.set(false),
     });
   }
 
@@ -135,9 +143,9 @@ export class CajaPage implements OnInit, OnDestroy {
 
   confirmarCierre(): void {
     this.confirmService.confirm({
-      message: '¿Estás seguro de cerrar la caja? Se generará el reporte del día.',
-      header:  'Cerrar Caja',
-      icon:    'pi pi-exclamation-triangle',
+      message:    '¿Estás seguro de cerrar la caja? Se generará el reporte del día.',
+      header:     'Cerrar Caja',
+      icon:       'pi pi-exclamation-triangle',
       acceptLabel: 'Sí, cerrar',
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
@@ -150,6 +158,11 @@ export class CajaPage implements OnInit, OnDestroy {
     if (!detalle) return;
     this.loading.set(true);
     this.cashboxService.closeCashbox(detalle.id_caja).subscribe({
+      next: () => {
+        if (this.idSede) {
+          this.cashboxService.printResumenThermal(this.idSede).subscribe();
+        }
+      },
       error: (err) => {
         alert(err.error?.message || 'No se pudo cerrar la caja');
         this.loading.set(false);
@@ -157,7 +170,28 @@ export class CajaPage implements OnInit, OnDestroy {
     });
   }
 
-  /** Genera array de horas vacías 08:00–20:00 para mostrar el eje aunque no haya ventas */
+  // ── Imprimir resumen de la caja actualmente abierta ───────────────
+  imprimirResumenActual(): void {
+    if (!this.idSede) return;
+    this.cashboxService.printResumenThermal(this.idSede).subscribe({
+      error: () => console.warn('No se pudo imprimir el resumen'),
+    });
+  }
+
+  verHistorial(): void {
+    if (!this.idSede) return;
+    this.historialVisible.set(true);
+    this.historialLoading.set(true);
+    this.cashboxService.getHistorial(this.idSede).subscribe({
+      next:  (data) => { this.historial.set(data); this.historialLoading.set(false); },
+      error: ()     => this.historialLoading.set(false),
+    });
+  }
+
+  imprimirCajaHistorial(idCaja: string): void {
+    this.cashboxService.printResumenThermalById(idCaja).subscribe();
+  }
+
   private generarHorasVacias(): { hora: string; total: number }[] {
     const horas = [];
     for (let h = 8; h <= 20; h++) {
@@ -166,34 +200,21 @@ export class CajaPage implements OnInit, OnDestroy {
     return horas;
   }
 
-  /**
-   * Renderiza el gráfico de barras con ventas por hora.
-   * ventasPorHora: Array<{ hora: string, total: number }>
-   *
-   * IMPORTANTE: requiere Chart.js → npm install chart.js
-   */
   private renderChart(ventasPorHora: { hora: string; total: number }[]): void {
     const canvas = document.getElementById('ventasHoraChart') as HTMLCanvasElement;
     if (!canvas) return;
 
-    // Destruir instancia previa si existe
     this.chartInstance?.destroy();
 
-    // Importación dinámica para no romper si Chart.js no está disponible
     import('chart.js').then(({ Chart, registerables }) => {
       Chart.register(...registerables);
 
       const labels = ventasPorHora.map(v => v.hora);
       const data   = ventasPorHora.map(v => v.total);
+      const maxVal = Math.max(...data);
 
-      // Encontrar el máximo para resaltarlo
-      const maxVal   = Math.max(...data);
-      const barColors = data.map(v =>
-        v === maxVal && v > 0 ? '#4f9cf9' : 'rgba(255,255,255,0.08)'
-      );
-      const borderColors = data.map(v =>
-        v === maxVal && v > 0 ? '#4f9cf9' : 'rgba(255,255,255,0.15)'
-      );
+      const barColors    = data.map(v => v === maxVal && v > 0 ? '#4f9cf9' : 'rgba(255,255,255,0.08)');
+      const borderColors = data.map(v => v === maxVal && v > 0 ? '#4f9cf9' : 'rgba(255,255,255,0.15)');
 
       this.chartInstance = new Chart(canvas, {
         type: 'bar',
@@ -236,7 +257,6 @@ export class CajaPage implements OnInit, OnDestroy {
         },
       });
     }).catch(() => {
-      // Chart.js no instalado — silencia el error
       console.warn('Chart.js no está disponible. Instálalo con: npm install chart.js');
     });
   }
