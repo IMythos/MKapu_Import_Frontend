@@ -21,8 +21,8 @@ import { SedeAlmacenService } from '../../../services/sede-almacen.service';
 
 import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { getLunesSemanaActualPeru,
-  getDomingoSemanaActualPeru ,  getHoyPeru } from '../../../../shared/utils/date-peru.utils';
+import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
+import { AccionesComprobanteDialogComponent, AccionesComprobanteConfig, AccionComprobante } from '../../../../shared/components/acciones-comprobante-dialog/acciones-comprobante';
 
 @Component({
   selector: 'app-gestion-cotizaciones',
@@ -32,7 +32,8 @@ import { getLunesSemanaActualPeru,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
     RouterModule, AutoComplete, TooltipModule, DatePickerModule,
     LoadingOverlayComponent, PaginadorComponent,
-    DialogModule, // ← nuevo
+    DialogModule,
+    AccionesComprobanteDialogComponent,
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
@@ -55,8 +56,8 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
   rows                  = signal<number>(5);
-  fechaFin              = signal<Date | null>(getDomingoSemanaActualPeru());
-  fechaInicio           = signal<Date | null>(getLunesSemanaActualPeru());
+  fechaFin              = signal<Date | null>(null);
+  fechaInicio           = signal<Date | null>(getHoyPeru());
 
   estadosOptions = [
     { label: 'Todos',     value: null        },
@@ -98,13 +99,18 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     });
   });
 
-  totalRecords    = computed(() => this.quoteService.total());
   totalPages      = computed(() => this.quoteService.totalPages());
   loading         = computed(() => this.quoteService.loading());
-  totalAprobadas  = computed(() => this.cotizaciones().filter(c => c.estado === 'APROBADA').length);
-  totalPendientes = computed(() => this.cotizaciones().filter(c => c.estado === 'PENDIENTE').length);
+  totalAprobadas  = computed(() => this.quoteService.kpiAprobadas());
+  totalPendientes = computed(() => this.quoteService.kpiPendientes());
+  totalRecords = computed(() => this.quoteService.kpiTotal());
+  // ── Dialog de acciones (shared) ──────────────────────────────────
+  accionesVisible  = false;
+  accionCargando: string | null = null;
+  accionesConfig: AccionesComprobanteConfig | null = null;
+  private cotizacionAcciones: QuoteListItem | null = null;
 
-  // ── WhatsApp dialog ───────────────────────────────────────────────────────
+  // ── Dialog WhatsApp ───────────────────────────────────────────────
   mostrarDialogWsp                   = false;
   enviandoWsp                        = false;
   wspReady                           = false;
@@ -260,6 +266,106 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
         });
       },
     });
+  }
+
+  // ── Acciones dialog ───────────────────────────────────────────────
+  abrirAcciones(c: QuoteListItem): void {
+    this.cotizacionAcciones = c;
+    this.accionesConfig = {
+      titulo:    c.codigo,
+      subtitulo: c.cliente_nombre,
+      labelPdf:     'PDF Cotización',
+      labelVoucher: 'Voucher',
+    };
+    this.accionCargando  = null;
+    this.accionesVisible = true;
+  }
+
+  onAccion(accion: AccionComprobante): void {
+    const c = this.cotizacionAcciones!;
+
+    switch (accion) {
+
+      case 'wsp':
+        this.accionesVisible = false;
+        this.abrirDialogWsp(c);
+        break;
+
+      case 'email':
+        this.accionCargando = 'email';
+        this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
+          next: (res) => {
+            this.accionCargando  = null;
+            this.accionesVisible = false;
+            this.messageService.add({
+              severity: 'success', summary: 'Email enviado',
+              detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`, life: 4000,
+            });
+          },
+          error: () => {
+            this.accionCargando  = null;
+            this.accionesVisible = false;
+            this.messageService.add({
+              severity: 'error', summary: 'Error',
+              detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.', life: 3000,
+            });
+          },
+        });
+        break;
+
+      case 'pdf-imprimir':
+        this.accionCargando = 'pdf-imprimir';
+        this.quoteService.printPdf(c.id_cotizacion).subscribe({
+          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          error: () => { this.accionCargando = null; this.accionesVisible = false; },
+        });
+        break;
+
+      case 'pdf-descargar':
+        this.accionCargando = 'pdf-descargar';
+        this.quoteService.downloadPdf(c.id_cotizacion).subscribe({
+          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          error: () => {
+            this.accionCargando  = null;
+            this.accionesVisible = false;
+            this.messageService.add({
+              severity: 'error', summary: 'Error',
+              detail: 'No se pudo descargar el PDF', life: 3000,
+            });
+          },
+        });
+        break;
+
+      case 'voucher-imprimir':
+        this.accionCargando = 'voucher-imprimir';
+        this.quoteService.printThermalVoucher(c.id_cotizacion).subscribe({
+          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          error: () => {
+            this.accionCargando  = null;
+            this.accionesVisible = false;
+            this.messageService.add({
+              severity: 'error', summary: 'Error',
+              detail: 'No se pudo imprimir el voucher térmico.', life: 3000,
+            });
+          },
+        });
+        break;
+
+      case 'voucher-descargar':
+        this.accionCargando = 'voucher-descargar';
+        this.quoteService.downloadThermalVoucher(c.id_cotizacion).subscribe({
+          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          error: () => {
+            this.accionCargando  = null;
+            this.accionesVisible = false;
+            this.messageService.add({
+              severity: 'error', summary: 'Error',
+              detail: 'No se pudo descargar el voucher térmico.', life: 3000,
+            });
+          },
+        });
+        break;
+    }
   }
 
   imprimirCotizacion(c: QuoteListItem) {

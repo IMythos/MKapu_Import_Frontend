@@ -1,7 +1,7 @@
 import { Injectable, computed, signal, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from '../../../enviroments/enviroment';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, firstValueFrom } from 'rxjs';
 import { finalize, tap, catchError } from 'rxjs/operators';
 import { Quote, QuoteListItem, QuotePagedResponse } from '../interfaces/quote.interface';
 
@@ -28,6 +28,11 @@ export class QuoteService {
   private readonly _loading    = signal(false);
   private readonly _error      = signal<string | null>(null);
 
+  // ── KPI globales ──────────────────────────────────────────────────
+  readonly kpiTotal      = signal<number>(0);
+  readonly kpiAprobadas  = signal<number>(0);
+  readonly kpiPendientes = signal<number>(0);
+
   readonly quotes     = computed(() => this._quoteList());
   readonly total      = computed(() => this._total());
   readonly page       = computed(() => this._page());
@@ -36,7 +41,7 @@ export class QuoteService {
   readonly loading    = computed(() => this._loading());
   readonly error      = computed(() => this._error());
 
-  // ── Listar cotizaciones paginadas ─────────────────────────────────────────
+  // ── Listar cotizaciones paginadas ─────────────────────────────────
   loadQuotes(filters?: LoadQuotesFilters): Observable<QuotePagedResponse> {
     this._loading.set(true);
     this._error.set(null);
@@ -47,6 +52,9 @@ export class QuoteService {
     if (filters?.id_sede) params = params.set('id_sede', filters.id_sede.toString());
     if (filters?.page)    params = params.set('page',    filters.page.toString());
     if (filters?.limit)   params = params.set('limit',   filters.limit.toString());
+
+    // KPIs en paralelo — sin await para no bloquear el Observable principal
+    this._loadKpis();
 
     return this.http.get<QuotePagedResponse>(this.api, { params }).pipe(
       tap((res) => {
@@ -63,7 +71,21 @@ export class QuoteService {
     );
   }
 
-  // ── Obtener por ID ────────────────────────────────────────────────────────
+  private _loadKpis(): void {
+    const base = new HttpParams().set('page', '1').set('limit', '1');
+
+    Promise.all([
+      firstValueFrom(this.http.get<QuotePagedResponse>(this.api, { params: base })),
+      firstValueFrom(this.http.get<QuotePagedResponse>(this.api, { params: base.set('estado', 'APROBADA') })),
+      firstValueFrom(this.http.get<QuotePagedResponse>(this.api, { params: base.set('estado', 'PENDIENTE') })),
+    ]).then(([totalRes, aprobRes, pendRes]) => {
+      this.kpiTotal.set(totalRes.total);
+      this.kpiAprobadas.set(aprobRes.total);
+      this.kpiPendientes.set(pendRes.total);
+    }).catch(() => { /* silencioso — los KPIs no son críticos */ });
+  }
+
+  // ── Obtener por ID ────────────────────────────────────────────────
   getQuoteById(id: number): Observable<Quote> {
     this._loading.set(true);
     this._error.set(null);
@@ -77,7 +99,7 @@ export class QuoteService {
     );
   }
 
-  // ── Crear ─────────────────────────────────────────────────────────────────
+  // ── Crear ─────────────────────────────────────────────────────────
   createQuote(payload: CreateQuoteRequest): Observable<Quote> {
     this._loading.set(true);
     this._error.set(null);
@@ -91,7 +113,7 @@ export class QuoteService {
     );
   }
 
-  // ── Aprobar ───────────────────────────────────────────────────────────────
+  // ── Aprobar ───────────────────────────────────────────────────────
   approveQuote(id: number): Observable<Quote> {
     this._loading.set(true);
     this._error.set(null);
@@ -105,7 +127,7 @@ export class QuoteService {
     );
   }
 
-  // ── Cambiar estado ────────────────────────────────────────────────────────
+  // ── Cambiar estado ────────────────────────────────────────────────
   updateQuoteStatus(id: number, estado: 'RECHAZADA' | 'APROBADA' | 'PENDIENTE'): Observable<Quote> {
     this._loading.set(true);
     this._error.set(null);
@@ -119,7 +141,7 @@ export class QuoteService {
     );
   }
 
-  // ── Eliminar permanentemente ──────────────────────────────────────────────
+  // ── Eliminar permanentemente ──────────────────────────────────────
   deleteQuote(id: number): Observable<void> {
     this._loading.set(true);
     this._error.set(null);
@@ -132,7 +154,7 @@ export class QuoteService {
     );
   }
 
-  // ── Por documento de cliente ──────────────────────────────────────────────
+  // ── Por documento de cliente ──────────────────────────────────────
   getQuotesByCustomerDocument(document: string): Observable<Quote[]> {
     this._loading.set(true);
     this._error.set(null);
@@ -146,12 +168,79 @@ export class QuoteService {
     );
   }
 
-  // ── Exportar PDF (abre en nueva pestaña) ──────────────────────────────────
+  // ── Voucher térmico ───────────────────────────────────────────────
+  printThermalVoucher(id: number): Observable<void> {
+    return new Observable((observer) => {
+      this.http.get(`${this.api}/${id}/export/thermal`, { responseType: 'blob' }).subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+          const win = window.open(url, '_blank');
+          if (win) {
+            win.onload = () => { win.focus(); win.print(); };
+            setTimeout(() => { try { win.focus(); win.print(); } catch { } }, 1500);
+          }
+          setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
+          observer.next();
+          observer.complete();
+        },
+        error: (err) => observer.error(err),
+      });
+    });
+  }
+
+  downloadThermalVoucher(id: number): Observable<void> {
+    return new Observable((observer) => {
+      const link    = document.createElement('a');
+      link.href     = `${this.api}/${id}/export/thermal`;
+      link.download = `voucher-${id}.pdf`;
+      link.target   = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      observer.next();
+      observer.complete();
+    });
+  }
+
+  // ── Exportar PDF ──────────────────────────────────────────────────
   exportPdf(id: number): void {
     window.open(`${this.api}/${id}/export/pdf`, '_blank');
   }
 
-  // ── Enviar por email ──────────────────────────────────────────────────────
+  printPdf(id: number): Observable<void> {
+    return new Observable((observer) => {
+      this.http.get(`${this.api}/${id}/export/pdf`, { responseType: 'blob' }).subscribe({
+        next: (blob) => {
+          const blobUrl = window.URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+          const win = window.open(blobUrl, '_blank');
+          if (win) {
+            win.onload = () => { win.focus(); win.print(); };
+            setTimeout(() => { try { win.focus(); win.print(); } catch { } }, 1500);
+          }
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60_000);
+          observer.next();
+          observer.complete();
+        },
+        error: (err) => observer.error(err),
+      });
+    });
+  }
+
+  downloadPdf(id: number): Observable<void> {
+    return new Observable((observer) => {
+      const link    = document.createElement('a');
+      link.href     = `${this.api}/${id}/export/pdf`;
+      link.download = `cotizacion-${id}.pdf`;
+      link.target   = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      observer.next();
+      observer.complete();
+    });
+  }
+
+  // ── Email ─────────────────────────────────────────────────────────
   sendByEmail(id: number): Observable<{ message: string; sentTo: string }> {
     this._loading.set(true);
     this._error.set(null);
@@ -166,21 +255,20 @@ export class QuoteService {
     );
   }
 
-  // ── Estado WhatsApp (QR o conectado) ─────────────────────────────────────
+  // ── WhatsApp ──────────────────────────────────────────────────────
   getWhatsAppStatus(): Observable<{ ready: boolean; qr: string | null }> {
     return this.http.get<{ ready: boolean; qr: string | null }>(
       `${this.api}/whatsapp/status`
     );
   }
 
-  // ── Enviar por WhatsApp ───────────────────────────────────────────────────
   sendByWhatsApp(id: number): Observable<{ message: string; sentTo: string }> {
     return this.http.post<{ message: string; sentTo: string }>(
       `${this.api}/${id}/send-whatsapp`, {}
     );
   }
 
-  // ── Reset ─────────────────────────────────────────────────────────────────
+  // ── Reset ─────────────────────────────────────────────────────────
   reset() {
     this._quoteList.set([]);
     this._total.set(0);

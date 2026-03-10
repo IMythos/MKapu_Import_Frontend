@@ -27,6 +27,7 @@
       <div>
         <span class="contador-label">Total Cotizaciones</span>
         <span class="contador-valor">{{ totalRecords() }}</span>
+        <span class="contador-detalle"><i class="pi pi-bars"></i> En el sistema</span>
       </div>
     </div>
     <div class="contador-card">
@@ -34,6 +35,7 @@
       <div>
         <span class="contador-label">Aprobadas</span>
         <span class="contador-valor">{{ totalAprobadas() }}</span>
+        <span class="contador-detalle"><i class="pi pi-check-circle"></i> Cotizaciones</span>
       </div>
     </div>
     <div class="contador-card">
@@ -41,6 +43,7 @@
       <div>
         <span class="contador-label">Pendientes</span>
         <span class="contador-valor">{{ totalPendientes() }}</span>
+        <span class="contador-detalle"><i class="pi pi-clock"></i> Por aprobar</span>
       </div>
     </div>
     <div class="contador-card">
@@ -48,6 +51,7 @@
       <div>
         <span class="contador-label">Sedes</span>
         <span class="contador-valor">{{ sedesOptions().length }}</span>
+        <span class="contador-detalle"><i class="pi pi-map-marker"></i> Registradas</span>
       </div>
     </div>
   </div>
@@ -231,27 +235,12 @@
                       (onClick)="irDetalle(c.id_cotizacion)">
                     </p-button>
 
-                    <p-button icon="pi pi-print"
-                      [rounded]="true" [text]="true" severity="secondary"
-                      pTooltip="Imprimir" tooltipPosition="top"
-                      (onClick)="imprimirCotizacion(c)">
-                    </p-button>
-
-                    <p-button icon="pi pi-send"
-                      [rounded]="true" [text]="true" severity="secondary"
-                      pTooltip="Enviar por Email" tooltipPosition="top"
-                      (onClick)="enviarCotizacion(c)">
-                    </p-button>
-
-                    <!-- ✅ WhatsApp — ahora con acción -->
+                    <!-- ★ Acciones (PDF / Voucher / WSP / Email) -->
                     <p-button
-                      icon="pi pi-whatsapp"
-                      [rounded]="true"
-                      [text]="true"
-                      severity="success"
-                      pTooltip="Enviar por WhatsApp"
-                      tooltipPosition="top"
-                      (onClick)="abrirDialogWsp(c)">
+                      icon="pi pi-file-pdf"
+                      [rounded]="true" [text]="true" severity="secondary"
+                      pTooltip="Documentos" tooltipPosition="top"
+                      (onClick)="abrirAcciones(c)">
                     </p-button>
 
                     <ng-container *ngIf="c.estado === 'PENDIENTE'">
@@ -322,6 +311,15 @@
   </div>
 
 </div>
+
+<!-- ══ DIALOG DE ACCIONES (shared) ══════════════════════════════════════════ -->
+<app-acciones-comprobante-dialog
+  [(visible)]="accionesVisible"
+  [config]="accionesConfig"
+  [accionCargando]="accionCargando"
+  (accion)="onAccion($event)"
+  (cerrar)="accionesVisible = false">
+</app-acciones-comprobante-dialog>
 
 <!-- ══ DIALOG WHATSAPP ═══════════════════════════════════════════════════════ -->
 <p-dialog

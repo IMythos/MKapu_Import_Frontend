@@ -39,10 +39,10 @@
       </div>
     </div>
     <div class="contador-card">
-      <i class="pi pi-check-circle"></i>
+      <i class="pi pi-ban"></i>
       <div>
-        <p class="contador-label">PROCESADAS HOY</p>
-        <p class="contador-valor">{{ totalProcesadasHoy() }}</p>
+        <p class="contador-label">CANCELADOS</p>
+        <p class="contador-valor">{{ totalCancelados() }}</p>
       </div>
     </div>
   </div>
@@ -53,7 +53,6 @@
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
 
       <div class="filtros-linea-1">
-
         <div class="filtro-item filtro-cliente-50">
           <label>Cliente / Comprobante</label>
           <p-autocomplete
@@ -82,44 +81,31 @@
             <p-datepicker
               [ngModel]="fechaInicio()"
               (ngModelChange)="fechaInicio.set($event)"
-              dateFormat="dd/mm/yy"
-              placeholder="Fecha Inicio"
-              (onSelect)="onFechaChange()"
-              (onClear)="onFechaChange()"
-              [showClear]="true"
-              [showIcon]="true"
-              styleClass="w-full">
+              dateFormat="dd/mm/yy" placeholder="Fecha Inicio"
+              (onSelect)="onFechaChange()" (onClear)="onFechaChange()"
+              [showClear]="true" [showIcon]="true" styleClass="w-full">
             </p-datepicker>
             <span class="fecha-separador">—</span>
             <p-datepicker
               [ngModel]="fechaFin()"
               (ngModelChange)="fechaFin.set($event)"
-              dateFormat="dd/mm/yy"
-              placeholder="Fecha Fin"
-              (onSelect)="onFechaChange()"
-              (onClear)="onFechaChange()"
-              [showClear]="true"
-              [showIcon]="true"
-              styleClass="w-full">
+              dateFormat="dd/mm/yy" placeholder="Fecha Fin"
+              (onSelect)="onFechaChange()" (onClear)="onFechaChange()"
+              [showClear]="true" [showIcon]="true" styleClass="w-full">
             </p-datepicker>
           </div>
         </div>
-
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Sede</label>
           <p-select
             [options]="sedesOptions()"
             [ngModel]="sedeSeleccionada()"
             (ngModelChange)="onSedeChange($event)"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Todas"
-            [showClear]="true"
-            styleClass="w-full">
+            optionLabel="label" optionValue="value"
+            placeholder="Todas" [showClear]="true" styleClass="w-full">
           </p-select>
         </div>
 
@@ -129,25 +115,19 @@
             [options]="estadosOptions"
             [ngModel]="estadoSeleccionado()"
             (ngModelChange)="onEstadoChange($event)"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Todos"
-            [showClear]="true"
-            styleClass="w-full">
+            optionLabel="label" optionValue="value"
+            placeholder="Todos" [showClear]="true" styleClass="w-full">
           </p-select>
         </div>
 
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button
-            label="Limpiar Filtros"
-            icon="pi pi-filter-slash"
-            (onClick)="limpiarFiltros()"
-            severity="danger"
+            label="Limpiar Filtros" icon="pi pi-filter-slash"
+            (onClick)="limpiarFiltros()" severity="danger"
             styleClass="btn-limpiar-filtros">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
@@ -157,11 +137,8 @@
     <div class="surface-card border-round p-3 mb-3 border-left-3 border-red-500">
       <i class="pi pi-exclamation-triangle text-red-500 mr-2"></i>
       <span class="text-red-600">{{ arService.error() }}</span>
-      <p-button
-        label="Reintentar"
-        icon="pi pi-refresh"
-        styleClass="p-button-text p-button-sm ml-3"
-        (onClick)="arService.getAll()">
+      <p-button label="Reintentar" icon="pi pi-refresh"
+        styleClass="p-button-text p-button-sm ml-3" (onClick)="arService.getAll()">
       </p-button>
     </div>
   }
@@ -176,20 +153,16 @@
         modo="inline">
       </app-loading-overlay>
 
-      <div class="seccion-tabla" [style.opacity]="arService.loading() ? '0.3' : '1'"
+      <div class="seccion-tabla"
+           [style.opacity]="arService.loading() ? '0.3' : '1'"
            style="transition: opacity 0.2s ease;">
 
         <div class="tabla-header">
           <h3><i class="pi pi-list"></i> Listado de cuentas por cobrar</h3>
           <p-button
-            label="Exportar Excel"
-            icon="pi pi-download"
-            (onClick)="exportarExcel()"
-            severity="success"
-            [outlined]="true"
-            pTooltip="Descargar reporte en Excel"
-            tooltipPosition="bottom"
-            size="small">
+            label="Exportar Excel" icon="pi pi-download"
+            (onClick)="exportarExcel()" severity="success" [outlined]="true"
+            pTooltip="Descargar reporte en Excel" tooltipPosition="bottom" size="small">
           </p-button>
         </div>
 
@@ -208,7 +181,7 @@
               <th style="width:12%">Monto Total</th>
               <th style="width:12%">Saldo Pendiente</th>
               <th style="width:12%">Estado</th>
-              <th style="width:14%">Acciones</th>
+              <th style="width:14%" class="text-center">Acciones</th>
             </tr>
           </ng-template>
 
@@ -245,55 +218,44 @@
               <td>
                 <p-tag [value]="a.status" [styleClass]="getTagClass(a.status)"></p-tag>
               </td>
-              <td>
+              <td class="text-center">
                 <div class="acciones-grupo">
+
+                  <!-- Ver detalle — se mantiene directo -->
                   <p-button
                     icon="pi pi-eye"
-                    styleClass="accion-btn accion-btn--ver p-button-text p-button-rounded"
+                    [rounded]="true" [text]="true" severity="secondary"
                     pTooltip="Ver detalle" tooltipPosition="top"
-                    severity="secondary"
                     (onClick)="verDetalle(a.id)">
                   </p-button>
 
-                  <p-button icon="pi pi-print"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Imprimir" tooltipPosition="top"
-                    (onClick)="imprimirCuenta(a.id)">
-                  </p-button>
-
-                  <p-button icon="pi pi-send"
-                    [rounded]="true" [text]="true" severity="secondary"
-                    pTooltip="Enviar a Correo" tooltipPosition="top"
-                    (onClick)="enviarCuenta(a.id)">
-                  </p-button>
-
-                  <!-- ✅ WhatsApp — con acción -->
+                  <!-- ★ Acciones (PDF / Voucher / WSP / Email) -->
                   <p-button
-                    icon="pi pi-whatsapp"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="success"
-                    pTooltip="Enviar por WhatsApp"
-                    tooltipPosition="top"
-                    (onClick)="abrirDialogWsp(a)">
+                    icon="pi pi-file-pdf"
+                    [rounded]="true" [text]="true" severity="secondary"
+                    pTooltip="Documentos" tooltipPosition="top"
+                    (onClick)="abrirAcciones(a)">
                   </p-button>
 
                   <span class="accion-separador"></span>
 
+                  <!-- Registrar pago — se mantiene directo -->
                   <p-button
                     icon="pi pi-shopping-cart"
-                    styleClass="accion-btn accion-btn--venta p-button-text p-button-rounded"
+                    [rounded]="true" [text]="true" severity="success"
                     pTooltip="Registrar Pago" tooltipPosition="top"
                     (onClick)="irAgregarVentaPorCobrar(a.id)">
                   </p-button>
 
+                  <!-- Cancelar — se mantiene directo -->
                   <p-button
                     icon="pi pi-times"
-                    styleClass="accion-btn accion-btn--eliminar p-button-text p-button-rounded"
+                    [rounded]="true" [text]="true" severity="danger"
                     pTooltip="Cancelar" tooltipPosition="top"
                     [disabled]="a.status === 'CANCELADO' || a.status === 'PAGADO'"
                     (onClick)="rechazarCotizacion(a.id)">
                   </p-button>
+
                 </div>
               </td>
             </tr>
@@ -329,6 +291,15 @@
 
 </div>
 
+<!-- ══ DIALOG DE ACCIONES (shared) ══════════════════════════════════════════ -->
+<app-acciones-comprobante-dialog
+  [(visible)]="accionesVisible"
+  [config]="accionesConfig"
+  [accionCargando]="accionCargando"
+  (accion)="onAccion($event)"
+  (cerrar)="accionesVisible = false">
+</app-acciones-comprobante-dialog>
+
 <!-- ══ DIALOG WHATSAPP ═══════════════════════════════════════════════════════ -->
 <p-dialog
   [(visible)]="mostrarDialogWsp"
@@ -341,13 +312,11 @@
 
   <div class="flex flex-column align-items-center gap-4 py-3">
 
-    <!-- Iniciando conexión -->
     <ng-container *ngIf="!wspReady && !wspQr">
       <i class="pi pi-spin pi-spinner" style="font-size:2.5rem; color:var(--gold)"></i>
       <p style="color:var(--text-muted); font-size:0.9rem">Iniciando WhatsApp...</p>
     </ng-container>
 
-    <!-- QR -->
     <ng-container *ngIf="!wspReady && wspQr">
       <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; line-height:1.6">
         Escanea este QR con WhatsApp en tu teléfono.<br>
@@ -361,7 +330,6 @@
       </div>
     </ng-container>
 
-    <!-- Listo -->
     <ng-container *ngIf="wspReady">
       <i class="pi pi-check-circle" style="font-size:3rem; color:#25D366"></i>
       <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; line-height:1.6">
@@ -378,13 +346,8 @@
 
   <ng-template pTemplate="footer">
     <div class="flex justify-content-end gap-2">
-      <p-button
-        label="Cancelar"
-        icon="pi pi-times"
-        severity="secondary"
-        [outlined]="true"
-        [disabled]="enviandoWsp"
-        (onClick)="cerrarDialogWsp()">
+      <p-button label="Cancelar" icon="pi pi-times" severity="secondary" [outlined]="true"
+        [disabled]="enviandoWsp" (onClick)="cerrarDialogWsp()">
       </p-button>
       <p-button
         [label]="enviandoWsp ? 'Enviando...' : 'Enviar por WhatsApp'"
