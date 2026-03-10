@@ -38,7 +38,7 @@ export class TransferApiService {
 
   private readonly logisticsApi = environment.apiUrl;
   private readonly transferBase = `${this.logisticsApi}/logistics/warehouse/transfer`;
-  private readonly productsBase = `${this.logisticsApi}/products`;
+  private readonly productsBase = `${this.logisticsApi}/logistics/products`;
 
   requestAggregated(
     dto: RequestTransferAggregatedDto,

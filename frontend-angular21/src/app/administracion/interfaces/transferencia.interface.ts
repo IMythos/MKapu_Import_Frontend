@@ -169,6 +169,16 @@ export interface TransferApiError {
   conflict?: TransferConflictInfo;
 }
 
+export interface TransferSocketTransferDto extends Partial<TransferListResponseDto> {
+  reason?: string;
+}
+
+export interface TransferSocketEventDto {
+  message: string;
+  transfer: TransferSocketTransferDto;
+  emittedAt: string;
+}
+
 export interface TransferProductsStockQuery {
   id_sede: number;
   id_almacen?: number;

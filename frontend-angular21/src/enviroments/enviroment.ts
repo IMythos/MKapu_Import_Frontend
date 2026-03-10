@@ -1,5 +1,9 @@
 export const environment = {
     production: false,
     apiUrl: 'http://localhost:3000',
+
+//    production: true,
+//    apiUrl: 'https://mkapu.duckdns.org/api'
+
 };
 

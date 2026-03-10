@@ -1,57 +1,88 @@
 <div class="flex h-screen">
-  <div class="sidebar-root flex flex-column h-full w-64">
-    <div
-      class="flex align-items-center justify-content-between px-4 py-3 border-bottom-1 surface-border"
-    >
-      <div class="flex align-items-center gap-2">
-        <div class="flex justify-content-center mb-3">
-          <img src="/images/logo.jpg" alt="Logo MKapu" class="img-custom" />
-        </div>
-        <span class="font-bold text-sm" style="user-select: none">Mkapu Import</span>
+  <div class="sidebar-root flex flex-column h-full">
+
+    <!-- HEADER -->
+    <div class="sidebar-header flex align-items-center gap-3 px-4 py-3">
+      <div class="logo-badge">
+        <img src="/images/logo.jpg" alt="Logo MKapu" class="img-custom" />
+      </div>
+      <div class="brand-info">
+        <span class="brand-name">Mkapu Import</span>
+        <span class="brand-sub">ERP · Sistema</span>
       </div>
     </div>
 
-    <div class="flex-1 overflow-auto p-2">
-      <ng-container *ngFor="let item of menuItems">
-        <div *ngIf="isSection(item)" class="mt-3 font-bold text-xs px-4 text-gray-400">
-          {{ item.label }}
+    <!-- SEDE BADGE 
+    <div class="sede-badge mx-3 mb-2">
+      <span class="sede-dot"></span>
+      <span class="sede-label">San Juan de Lurigancho</span>
+    </div>
+    -->
+    <!-- NAV -->
+    <div class="flex-1 overflow-auto nav-scroll px-2 py-1">
+      <ng-container *ngFor="let section of menuSections; let last = last">
+
+        <!-- SECTION HEADER -->
+        <div
+          class="menu-section flex align-items-center gap-2 px-2 py-2 cursor-pointer"
+          [class.menu-section--open]="activeMenu === section.label"
+          (click)="toggleMenu(section.label)">
+
+          <div class="section-icon-wrap">
+            <i [class]="section.icon" class="section-icon"></i>
+          </div>
+
+          <span class="menu-title flex-1">{{ section.label }}</span>
+
+          <i class="pi menu-arrow"
+            [ngClass]="activeMenu === section.label ? 'pi-chevron-right rotate' : 'pi-chevron-right'">
+          </i>
         </div>
-        <a
-          *ngIf="!isSection(item)"
-          class="flex align-items-center px-4 py-2 gap-2 cursor-pointer hover:surface-400"
-          [routerLink]="item.path"
-          routerLinkActive="bg-primary text-black border-round"
-          [routerLinkActiveOptions]="{ exact: true }"
-          (click)="navigateTo($event, item.path)"
-          style="text-decoration: none; color: white"
-        >
-          <i [class]="item.icon" *ngIf="item.icon"></i>
-          <span>{{ item.label }}</span>
-        </a>
+
+        <!-- ITEMS -->
+        <div class="items-wrap" [class.items-wrap--open]="activeMenu === section.label">
+          <a
+            *ngFor="let item of section.items"
+            class="menu-item flex align-items-center gap-2"
+            [routerLink]="item.path"
+            routerLinkActive=" bg-primary menu-active"
+            [routerLinkActiveOptions]="{ exact: true }"
+            (click)="navigateTo($event, item.path)">
+            <i [class]="item.icon" class="item-icon" style="text-decoration: none; color: white"></i>
+            <span>{{ item.label }}</span>
+          </a>
+        </div>
+
+        <!-- DIVIDER entre secciones -->
+        <div *ngIf="!last" class="nav-divider my-2"></div>
+
       </ng-container>
     </div>
 
-    <!-- FOOTER CON INFO DE USUARIO -->
-    <div class="mt-auto border-top-1 surface-border p-3 flex align-items-center gap-2">
+    <!-- FOOTER -->
+    <div class="sidebar-footer flex align-items-center gap-2 px-3 py-3">
       <p-avatar
         image="https://primefaces.org/cdn/primeng/images/demo/avatar/amyelsner.png"
         shape="circle"
-      >
+        styleClass="footer-avatar">
       </p-avatar>
 
-      <div class="flex flex-column">
-        <span class="font-bold text-sm">{{ username }}</span>
-        <span class="text-xs text-gray-400">{{ roleName | titlecase }}</span>
+      <div class="flex flex-column flex-1" style="min-width:0">
+        <span class="user-name">{{ username }}</span>
+        <span class="user-role">{{ roleName | titlecase }}</span>
       </div>
 
       <p-button
-        class="ml-auto"
+        class="logout-btn"
         icon="pi pi-sign-out"
         severity="danger"
-        (onClick)="confirm2($event)"
-      >
+        [rounded]="true"
+        [text]="false"
+        size="small"
+        (onClick)="confirm2($event)">
       </p-button>
     </div>
+
   </div>
 
   <p-toast></p-toast>

@@ -61,7 +61,10 @@ export class SedeAlmacenService {
           }));
         }),
         catchError((error) => {
-          this.patchError(sedeKey, 'No se pudieron cargar los almacenes de la sede seleccionada.');
+          this.patchError(
+            sedeKey,
+            'No se pudieron cargar los almacenes de la sede seleccionada.',
+          );
           return throwError(() => error);
         }),
         finalize(() => this.patchLoading(sedeKey, false)),
@@ -83,11 +86,7 @@ export class SedeAlmacenService {
     return (response.almacenes ?? [])
       .map((item) => {
         const warehouseId = Number(item.almacen?.id_almacen ?? item.id_almacen ?? 0);
-        if (
-          !Number.isFinite(warehouseId) ||
-          warehouseId <= 0 ||
-          uniqueWarehouseIds.has(warehouseId)
-        ) {
+        if (!Number.isFinite(warehouseId) || warehouseId <= 0 || uniqueWarehouseIds.has(warehouseId)) {
           return null;
         }
 
@@ -95,7 +94,10 @@ export class SedeAlmacenService {
 
         const warehouseCode = String(item.almacen?.codigo ?? '').trim();
         const warehouseName = String(item.almacen?.nombre ?? '').trim();
-        const label = [warehouseCode, warehouseName].filter(Boolean).join(' - ').trim();
+        const label = [warehouseCode, warehouseName]
+          .filter(Boolean)
+          .join(' - ')
+          .trim();
 
         return {
           value: warehouseId,

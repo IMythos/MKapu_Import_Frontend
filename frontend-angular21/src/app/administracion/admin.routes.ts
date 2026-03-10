@@ -7,8 +7,8 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'notificaciones',
     loadComponent: () =>
-      import('./pages/reportes/pages/notificacion-transferencia/notificacion-transferencia').then(
-        (m) => m.NotificacionTransferencia,
+      import('./pages/notificacion-admin/notificacion-admin').then(
+        (m) => m.NotificacionAdmin,
       ),
   },
   {
@@ -17,50 +17,50 @@ export const ADMIN_ROUTES: Routes = [
       import('./pages/dashboard-admin/dashboard-admin').then((m) => m.DashboardAdmin),
   },
 
-  {
+
+    {
     path: 'dashboard-almacen',
     loadComponent: () =>
-      import('../almacen/pages/dashboard-almacen/dashboard-almacen').then(
-        (m) => m.DashboardAlmacen,
-      ),
-  },
-  {
+      import('../almacen/pages/dashboard-almacen/dashboard-almacen').then((m) => m.DashboardAlmacen),
+    },
+    {
     path: 'dashboard-ventas',
     loadComponent: () =>
       import('../ventas/pages/dashboard-ventas/dashboard-ventas').then((m) => m.DashboardVentas),
-  },
+    },
 
-  /* =======================
+    /* =======================
       USUARIOS
     ======================= */
-  {
-    path: 'usuarios',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./pages/usuarios/pages/administracion-crear-usuario/administracion-crear-usuario').then(
-            (m) => m.AdministracionCrearUsuario,
-          ),
-      },
-      {
-        path: 'crear-usuario',
-        loadComponent: () =>
-          import('./pages/usuarios/pages/administracion/administracion').then(
-            (m) => m.Administracion,
-          ),
-      },
-      {
-        path: 'editar-usuario/:id',
-        loadComponent: () =>
-          import('./pages/usuarios/pages/administracion-editar-usuario/administracion-editar-usuario').then(
-            (m) => m.AdministracionEditarUsuario,
-          ),
-      },
-    ],
-  },
+    {
+      path: 'usuarios',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./pages/usuarios/pages/administracion-crear-usuario/administracion-crear-usuario').then(
+              (m) => m.AdministracionCrearUsuario,
+            ),
+        },
+        {
+          path: 'crear-usuario',
+          loadComponent: () =>
+            import('./pages/usuarios/pages/administracion/administracion').then(
+              (m) => m.Administracion,
+            ),
+        },
+        {
+          path: 'editar-usuario/:id',
+          loadComponent: () =>
+            import('./pages/usuarios/pages/administracion-editar-usuario/administracion-editar-usuario').then(
+              (m) => m.AdministracionEditarUsuario,
+            ),
+        },
+      ],
+    },
 
-  /* =======================
+
+    /* =======================
       Almacen
     ======================= */
     {
@@ -124,7 +124,9 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'transferencia',
     loadComponent: () =>
-      import('./pages/reportes/pages/transferencia/transferencia').then((m) => m.Transferencia),
+      import('./pages/reportes/pages/transferencia/transferencia').then(
+        (m) => m.Transferencia,
+      ),
   },
   {
     path: 'transferencia/nueva-transferencia',
@@ -138,13 +140,6 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/reportes/pages/detalle-transferencia/detalle-transferencia').then(
         (m) => m.DetalleTransferencia,
-      ),
-  },
-  {
-    path: 'transferencia/notificacion',
-    loadComponent: () =>
-      import('./pages/reportes/pages/notificacion-transferencia/notificacion-transferencia').then(
-        (m) => m.NotificacionTransferencia,
       ),
   },
   {
@@ -182,89 +177,90 @@ export const ADMIN_ROUTES: Routes = [
   ======================= */
   {
     path: 'gestion-productos',
-    loadComponent: () =>
-      import('./pages/gestion-productos/productos-listado/gestion-listado').then(
-        (m) => m.GestionListado,
-      ),
+    loadComponent: () => import('./pages/gestion-productos/productos-listado/gestion-listado')
+      .then((m) => m.GestionListado),
   },
 
   {
     path: 'gestion-productos/crear-producto',
-    loadComponent: () =>
-      import('./pages/gestion-productos/productos-formulario/productos-formulario').then(
-        (m) => m.ProductosFormulario,
-      ),
+    loadComponent: () => import('./pages/gestion-productos/productos-formulario/productos-formulario')
+      .then((m) => m.ProductosFormulario),
   },
   {
     path: 'gestion-productos/editar-producto/:id',
-    loadComponent: () =>
-      import('./pages/gestion-productos/productos-formulario/productos-formulario').then(
-        (m) => m.ProductosFormulario,
-      ),
+    loadComponent: () => import('./pages/gestion-productos/productos-formulario/productos-formulario')
+      .then((m) => m.ProductosFormulario),
   },
   {
     path: 'gestion-productos/ver-detalle-producto/:id',
-    loadComponent: () =>
-      import('./pages/gestion-productos/productos-detalles/productos-detalles').then(
-        (m) => m.ProductosDetalles,
-      ),
+    loadComponent: () => import('./pages/gestion-productos/productos-detalles/productos-detalles')
+      .then((m) => m.ProductosDetalles),
   },
 
-  /* =======================
+    /* =======================
       SEDES
     ======================= */
-  {
-    path: 'sedes',
-    children: [
-      {
-        path: '',
-        loadComponent: () => import('./pages/sedes/pages/sedes/sedes').then((m) => m.Sedes),
-      },
-      {
-        path: 'agregar-sede',
-        loadComponent: () =>
-          import('./pages/sedes/pages/agregar-sede/agregar-sede').then((m) => m.AgregarSede),
-        canDeactivate: [pendingChangesGuard],
-      },
-      {
-        path: 'editar-sede',
-        loadComponent: () =>
-          import('./pages/sedes/pages/editar-sede/editar-sede').then((m) => m.EditarSede),
-        canDeactivate: [pendingChangesGuard],
-      },
-    ],
-  },
+    {
+      path: 'sedes',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./pages/sedes/pages/sedes/sedes').then((m) => m.Sedes),
+        },
+        {
+          path: 'agregar-sede',
+          loadComponent: () =>
+            import('./pages/sedes/pages/agregar-sede/agregar-sede').then(
+              (m) => m.AgregarSede,
+            ),
+          canDeactivate: [pendingChangesGuard],
+        },
+        {
+          path: 'editar-sede',
+          loadComponent: () =>
+            import('./pages/sedes/pages/editar-sede/editar-sede').then(
+              (m) => m.EditarSede,
+            ),
+          canDeactivate: [pendingChangesGuard],
+        },
+      ],
+    },
 
-  /* =======================
+
+
+
+   /* =======================
         categorias
     ======================= */
-  {
-    path: 'categoria',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./pages/categoria/pages/categoria/categoria').then((m) => m.CategoriaListado),
-      },
-      {
-        path: 'agregar-categoria',
-        loadComponent: () =>
-          import('./pages/categoria/pages/agregar-categoria/agregar-categoria').then(
-            (m) => m.AgregarCategoria,
-          ),
-        canDeactivate: [pendingChangesGuard],
-      },
-      {
-        path: 'editar-categoria/:id',
-        loadComponent: () =>
-          import('./pages/categoria/pages/editar-categoria/editar-categoria').then(
-            (m) => m.EditarCategoria,
-          ),
-        canDeactivate: [pendingChangesGuard],
-      },
-    ],
-  },
-
+    {
+      path: 'categoria',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./pages/categoria/pages/categoria/categoria').then(
+              (m) => m.CategoriaListado
+            ),
+        },
+        {
+          path: 'agregar-categoria',
+          loadComponent: () =>
+            import('./pages/categoria/pages/agregar-categoria/agregar-categoria').then(
+              (m) => m.AgregarCategoria,
+            ),
+          canDeactivate: [pendingChangesGuard],
+        },
+        {
+          path: 'editar-categoria/:id',
+          loadComponent: () =>
+            import('./pages/categoria/pages/editar-categoria/editar-categoria').then(
+              (m) => m.EditarCategoria,
+            ),
+          canDeactivate: [pendingChangesGuard],
+        },
+      ],
+    },
 
   /* =======================
         roles y permisos
@@ -355,32 +351,53 @@ export const ADMIN_ROUTES: Routes = [
 
 
   /* =======================
+=======
+    /* =======================
+>>>>>>> f75fe07143de40b895e0335631d5d04b814720e2
       CLIENTES
     ======================= */
-  {
-    path: 'clientes',
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./pages/clientes/pages/clientes/clientes').then((m) => m.Clientes),
-      },
-      {
-        path: 'agregar-cliente',
-        loadComponent: () =>
-          import('./pages/clientes/pages/agregar-cliente/agregar-cliente').then(
-            (m) => m.AgregarCliente,
-          ),
-      },
-      {
-        path: 'editar-cliente/:id',
-        loadComponent: () =>
-          import('./pages/clientes/pages/editar-cliente/editar-cliente').then(
-            (m) => m.EditarCliente,
-          ),
-      },
-    ],
-  },
+    {
+      path: 'clientes',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./pages/clientes/pages/clientes/clientes').then(m => m.Clientes),
+        },
+        {
+          path: 'agregar-cliente',
+          loadComponent: () =>
+            import('./pages/clientes/pages/agregar-cliente/agregar-cliente').then(m => m.AgregarCliente),
+        },
+        {
+          path: 'editar-cliente/:id',
+          loadComponent: () =>
+            import('./pages/clientes/pages/editar-cliente/editar-cliente').then(m => m.EditarCliente),
+        },
+      ],
+    },
+    /* =======================
+      INGRESOS ALMACÉN
+    ======================= */
+    {
+      path: 'ingresos-almacen',
+      children: [
+        {
+          path: '',
+          loadComponent: () =>
+            import('./pages/ingresos-almacen/pages/ingresos-almacen/ingresos-almacen').then(
+              (m) => m.IngresosAlmacen,
+            ),
+        },
+        {
+          path: 'ingresos-agregar',
+          loadComponent: () =>
+            import('./pages/ingresos-almacen/pages/ingresos-agregar/ingresos-agregar').then(
+              (m) => m.IngresosAgregar,
+            ),
+        },
+      ],
+    },
 
   /* =======================
     VENTAS ADMINISTRACIÓN
@@ -395,7 +412,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'historial-ventas-administracion',
     loadComponent: () =>
-      import('./pages/historial-ventas-administracion/historial-ventas-administracion').then((m) => m.HistorialVentasAdministracion),
+      import('../ventas/pages/historial-ventas/historial-ventas').then((m) => m.HistorialVentas),
   },
   {
     path: 'detalles-ventas-administracion/:id',
@@ -410,9 +427,11 @@ export const ADMIN_ROUTES: Routes = [
     pathMatch: 'full',
   },
 
-  /* =======================
+/* =======================
     COMISIONES
-  ======================= */
+  ======================= 
+
+*/
   {
     path: 'comision',
     loadComponent: () => import('./pages/comision/comision').then((m) => m.Comision),
@@ -429,6 +448,7 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/comision/comision-reportes/comisionreportes').then((m) => m.ComisionReportes),
   },
+
   /* =======================
   GESTIÓN DE Conteos
 ======================= */
@@ -453,6 +473,8 @@ export const ADMIN_ROUTES: Routes = [
         .then((m) => m.ConteoDetalle),
   },
 
+
+
   /* =======================
     MERMAS
   ======================= */
@@ -462,7 +484,9 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/mermas/pages/mermas-pr/mermas-pr').then((m) => m.MermasPr),
+          import('./pages/mermas/pages/mermas-pr/mermas-pr').then(
+            (m) => m.MermasPr,
+          ),
       },
       {
         path: 'registro-merma',
@@ -481,6 +505,7 @@ export const ADMIN_ROUTES: Routes = [
     ],
   },
 
+
   /* =======================
     REMATES
   ======================= */
@@ -490,7 +515,9 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: '',
         loadComponent: () =>
-          import('./pages/remates/pages/remates-pr/remates-pr').then((m) => m.RematesPr),
+          import('./pages/remates/pages/remates-pr/remates-pr').then(
+            (m) => m.RematesPr,
+          ),
       },
       {
         path: 'registro-remate',
@@ -501,6 +528,7 @@ export const ADMIN_ROUTES: Routes = [
       },
     ],
   },
+
 
     /* =======================
       cotizacion
@@ -563,7 +591,7 @@ export const ADMIN_ROUTES: Routes = [
     ),
 },
 
-  /* =======================
+/* =======================
     DESPACHO PRODUCTOS
   ======================= */
   {
@@ -580,7 +608,7 @@ export const ADMIN_ROUTES: Routes = [
         (m) => m.DetallesDespacho,
       ),
   },
-{
+  {
     path: 'despacho-productos/agregar-despacho',
     loadComponent: () =>
       import('./pages/despacho-productos/pages/agregar-despacho/agregar-despacho').then(
@@ -597,34 +625,23 @@ export const ADMIN_ROUTES: Routes = [
 
   {
     path: 'proveedores',
-    loadComponent: () =>
-      import('./pages/gestion-proveedor/proveedor-listado/proveedor-listado').then(
-        (m) => m.ProveedorListado,
-      ),
+    loadComponent: () => import('./pages/gestion-proveedor/proveedor-listado/proveedor-listado').then(m => m.ProveedorListado),
     children: [
       {
         path: 'crear',
-        loadComponent: () =>
-          import('./pages/gestion-proveedor/proveedor-formulario/proveedor-formulario').then(
-            (m) => m.ProveedorFormulario,
-          ),
+        loadComponent: () => import('./pages/gestion-proveedor/proveedor-formulario/proveedor-formulario').then(m => m.ProveedorFormulario)
       },
       {
         path: 'editar/:id',
-        loadComponent: () =>
-          import('./pages/gestion-proveedor/proveedor-formulario/proveedor-formulario').then(
-            (m) => m.ProveedorFormulario,
-          ),
+        loadComponent: () => import('./pages/gestion-proveedor/proveedor-formulario/proveedor-formulario').then(m => m.ProveedorFormulario)
       },
       {
         path: 'ver-detalle/:id',
-        loadComponent: () =>
-          import('./pages/gestion-proveedor/proveedor-detalles/proveedor-detalles').then(
-            (m) => m.ProveedorDetalles,
-          ),
-      },
-    ],
+        loadComponent: () => import('./pages/gestion-proveedor/proveedor-detalles/proveedor-detalles').then(m => m.ProveedorDetalles)
+      }
+    ]
   },
+
 
   {
     path: 'promociones',
@@ -759,4 +776,5 @@ export const ADMIN_ROUTES: Routes = [
 
   ],
 },
+
 ];
