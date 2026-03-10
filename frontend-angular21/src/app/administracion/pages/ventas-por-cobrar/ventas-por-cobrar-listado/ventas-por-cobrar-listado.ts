@@ -25,7 +25,8 @@ import {
   AccountReceivableResponse,
   AccountReceivableStatus,
 } from '../../../services/account-receivable.service';
-import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
+import {   getLunesSemanaActualPeru,
+  getDomingoSemanaActualPeru, getHoyPeru } from '../../../../shared/utils/date-peru.utils';
 
 @Component({
   selector: 'app-ventas-por-cobrar-listado',
@@ -58,8 +59,8 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
   estadoSeleccionado = signal<AccountReceivableStatus | null>('PENDIENTE');
   sedeSeleccionada   = signal<number | null>(null);
   rows               = signal<number>(5);
-  fechaInicio        = signal<Date | null>(getHoyPeru());
-  fechaFin           = signal<Date | null>(null);
+  fechaInicio        = signal<Date | null>(getLunesSemanaActualPeru());
+  fechaFin           = signal<Date | null>(getDomingoSemanaActualPeru());
 
   paginaActual = signal<number>(1);
   totalPaginas = computed(() => {

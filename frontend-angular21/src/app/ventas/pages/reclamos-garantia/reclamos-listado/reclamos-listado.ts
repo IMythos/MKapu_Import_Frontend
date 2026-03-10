@@ -22,7 +22,11 @@ import {
 } from '../../../../core/services/claim.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
 import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
-import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
+
+
+import {  getLunesSemanaActualPeru,
+  getDomingoSemanaActualPeru,
+  formatFechaPeru } from '../../../../shared/utils/date-peru.utils';
 import { AuthService } from '../../../../auth/services/auth.service';
 
 @Component({
@@ -62,8 +66,8 @@ export class ReclamosListado implements OnInit, OnDestroy {
 
   filtroEstado: ClaimStatus | null = null;
   filtroBusqueda = '';
-  filtroFechaInicio: Date | null = getHoyPeru();
-  filtroFechaFin: Date | null = null;
+  filtroFechaInicio: Date | null = getLunesSemanaActualPeru();
+  filtroFechaFin: Date | null = getDomingoSemanaActualPeru();
 
   estadosOptions = [
     { label: 'Todos', value: null },
