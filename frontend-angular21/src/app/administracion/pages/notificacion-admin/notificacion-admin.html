@@ -1,0 +1,272 @@
+﻿<div class="notification-page">
+  <section class="notification-shell">
+    <header class="notification-hero">
+      <div class="notification-hero__identity">
+        <span class="notification-hero__icon" aria-hidden="true">
+          <i class="pi pi-bell"></i>
+        </span>
+
+        <div class="notification-hero__copy">
+          <span class="notification-hero__eyebrow">Administrador · Centro de actividad</span>
+          <h1>Notificaciones</h1>
+        </div>
+      </div>
+
+      <div class="notification-hero__actions">
+        <button
+          type="button"
+          class="notification-toolbar-button notification-toolbar-button--secondary"
+          (click)="markAllAsRead()"
+          [disabled]="!notifications().length"
+        >
+          <i class="pi pi-check"></i>
+          <span>Marcar todo como leido</span>
+        </button>
+
+        <button
+          type="button"
+          class="notification-toolbar-button notification-toolbar-button--danger"
+          (click)="removeAll()"
+          [disabled]="!notifications().length"
+        >
+          <i class="pi pi-trash"></i>
+          <span>Eliminar todo</span>
+        </button>
+      </div>
+    </header>
+
+    <section class="notification-summary">
+      @for (card of summaryCards(); track card.label) {
+        <article class="notification-summary__card" [attr.data-tone]="card.tone">
+          <span class="notification-summary__icon">
+            <i [class]="card.icon"></i>
+          </span>
+
+          <div class="notification-summary__content">
+            <span class="notification-summary__label">{{ card.label }}</span>
+            <strong class="notification-summary__value">{{ card.value }}</strong>
+            <p class="notification-summary__description">{{ card.description }}</p>
+          </div>
+        </article>
+      }
+    </section>
+
+    <section class="notification-toolbar">
+      <div class="notification-segments" role="tablist" aria-label="Vista de notificaciones">
+        <button
+          type="button"
+          class="notification-segment"
+          [class.is-active]="view() === 'all'"
+          [attr.aria-pressed]="view() === 'all'"
+          (click)="setView('all')"
+        >
+          <span>Todas</span>
+          <span class="notification-segment__count">{{ viewCounts().all }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="notification-segment"
+          [class.is-active]="view() === 'nuevo'"
+          [attr.aria-pressed]="view() === 'nuevo'"
+          (click)="setView('nuevo')"
+        >
+          <span>Nuevo</span>
+          <span class="notification-segment__count">{{ viewCounts().nuevo }}</span>
+        </button>
+
+        <button
+          type="button"
+          class="notification-segment"
+          [class.is-active]="view() === 'anterior'"
+          [attr.aria-pressed]="view() === 'anterior'"
+          (click)="setView('anterior')"
+        >
+          <span>Anterior</span>
+          <span class="notification-segment__count">{{ viewCounts().anterior }}</span>
+        </button>
+      </div>
+
+      <div class="notification-toolbar__filters">
+        <label class="notification-search" aria-label="Buscar notificaciones">
+          <i class="pi pi-search"></i>
+          <input
+            pInputText
+            type="text"
+            class="notification-search__input"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="updateSearch($event)"
+            placeholder="Buscar notificaciones, productos o sedes"
+          />
+        </label>
+
+        <p-select
+          [options]="categoryOptions"
+          optionLabel="label"
+          optionValue="value"
+          [ngModel]="selectedCategory()"
+          (ngModelChange)="setCategory($event)"
+          styleClass="notification-filter__select"`r`n          appendTo="body"`r`n          panelStyleClass="notification-filter__panel"></p-select>
+
+        <button
+          type="button"
+          class="notification-text-button"
+          (click)="clearFilters()"
+          [disabled]="!hasActiveFilters()"
+        >
+          <i class="pi pi-filter-slash"></i>
+          <span>Limpiar</span>
+        </button>
+      </div>
+    </section>
+
+    @if (filteredNotifications().length) {
+      <section class="notification-list">
+        <div class="notification-list__header">
+          <div>
+            <h2>{{ listTitle() }}</h2>
+            <p>{{ listDescription() }}</p>
+          </div>
+
+          <div class="notification-list__header-meta">
+            <span class="notification-counter">{{ filteredNotifications().length }} visibles</span>
+            <span class="notification-counter notification-counter--soft">
+              {{ collectionStatus() }}
+            </span>
+          </div>
+        </div>
+
+        <div class="notification-list__items">
+          @for (item of filteredNotifications(); track item.id) {
+            <article
+              class="notification-card"
+              [class.is-unread]="!item.read"
+              [attr.data-palette]="item.palette"
+            >
+              <div class="notification-card__icon">
+                <i [class]="item.icon"></i>
+                <span class="notification-card__indicator"></span>
+              </div>
+
+              <div class="notification-card__content">
+                <div class="notification-card__meta">
+                  <div class="notification-card__chips">
+                    <span
+                      class="notification-chip notification-chip--view"
+                      [class.notification-chip--new]="item.view === 'nuevo'"
+                    >
+                      {{ item.view === 'nuevo' ? 'Nuevo' : 'Anterior' }}
+                    </span>
+
+                    <span class="notification-chip">
+                      {{ categoryLabel(item.category) }}
+                    </span>
+
+                    @if (!item.read) {
+                      <span class="notification-chip notification-chip--unread">
+                        Sin leer
+                      </span>
+                    }
+                  </div>
+
+                  <span class="notification-card__time">{{ item.timeLabel }}</span>
+                </div>
+
+                <h3 class="notification-card__title">
+                  {{ item.title }}:
+                  <span>{{ item.subject }}</span>
+                </h3>
+
+                <p class="notification-card__description">{{ item.description }}</p>
+
+                <div class="notification-card__detail-row">
+                  <span class="notification-card__detail">
+                    <i class="pi pi-map-marker"></i>
+                    {{ item.detail }}
+                  </span>
+
+                  <span class="notification-card__detail">
+                    <i class="pi pi-info-circle"></i>
+                    {{ item.site }}
+                  </span>
+                </div>
+              </div>
+
+              <div class="notification-card__actions">
+                <button
+                  type="button"
+                  class="notification-icon-button"
+                  (click)="markAsRead(item.id)"
+                  [disabled]="item.read"
+                  aria-label="Marcar como leido"
+                  title="Marcar como leido"
+                >
+                  <i class="pi pi-check"></i>
+                </button>
+
+                <button
+                  type="button"
+                  class="notification-icon-button notification-icon-button--danger"
+                  (click)="removeNotification(item.id)"
+                  aria-label="Eliminar notificacion"
+                  title="Eliminar notificacion"
+                >
+                  <i class="pi pi-trash"></i>
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+
+        <footer class="notification-list__footer">
+          <button type="button" class="notification-text-button notification-text-button--accent">
+            <span>Ver todas</span>
+            <i class="pi pi-arrow-right"></i>
+          </button>
+
+          <span class="notification-list__footer-copy">{{ collectionStatus() }}</span>
+        </footer>
+      </section>
+    } @else {
+      <section class="notification-empty">
+        <div class="notification-empty__icon">
+          <i class="pi pi-bell-slash"></i>
+        </div>
+
+        <div class="notification-empty__copy">
+          <h2>No hay notificaciones en esta vista</h2>
+          <p>
+            @if (hasActiveFilters()) {
+              Ajusta la busqueda o limpia los filtros para recuperar eventos.
+            } @else {
+              La bandeja esta vacia. Puedes restaurar el estado visual de demostracion.
+            }
+          </p>
+        </div>
+
+        <div class="notification-empty__actions">
+          <button
+            type="button"
+            class="notification-toolbar-button notification-toolbar-button--secondary"
+            (click)="clearFilters()"
+            [disabled]="!hasActiveFilters()"
+          >
+            <i class="pi pi-filter-slash"></i>
+            <span>Limpiar filtros</span>
+          </button>
+
+          <button
+            type="button"
+            class="notification-toolbar-button notification-toolbar-button--accent"
+            (click)="restoreDemoState()"
+          >
+            <i class="pi pi-refresh"></i>
+            <span>Restaurar demo</span>
+          </button>
+        </div>
+      </section>
+    }
+  </section>
+</div>
+
+

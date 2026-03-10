@@ -7,8 +7,8 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'notificaciones',
     loadComponent: () =>
-      import('./pages/reportes/pages/notificacion-transferencia/notificacion-transferencia').then(
-        (m) => m.NotificacionTransferencia,
+      import('./pages/notificacion-admin/notificacion-admin').then(
+        (m) => m.NotificacionAdmin,
       ),
   },
   {
@@ -138,13 +138,6 @@ export const ADMIN_ROUTES: Routes = [
     loadComponent: () =>
       import('./pages/reportes/pages/detalle-transferencia/detalle-transferencia').then(
         (m) => m.DetalleTransferencia,
-      ),
-  },
-  {
-    path: 'transferencia/notificacion',
-    loadComponent: () =>
-      import('./pages/reportes/pages/notificacion-transferencia/notificacion-transferencia').then(
-        (m) => m.NotificacionTransferencia,
       ),
   },
   {

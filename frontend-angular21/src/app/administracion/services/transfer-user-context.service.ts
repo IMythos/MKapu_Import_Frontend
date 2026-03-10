@@ -9,7 +9,15 @@ interface StoredUserShape {
   roleId?: number;
   roleName?: string;
   idSede?: number | string;
-  id_sede?: number | string; 
+  id_sede?: number | string;
+}
+
+interface AuthUserShape {
+  userId?: number;
+  roleId?: number;
+  roleName?: string;
+  idSede?: number | string;
+  id_sede?: number | string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -18,7 +26,7 @@ export class TransferUserContextService {
 
   // TODO(aggregated-temporal): sustituir fallback localStorage cuando auth central exponga contexto uniforme.
   getCurrentUserId(defaultValue: number = 22): number {
-    const authUser = this.authService?.getCurrentUser?.();
+    const authUser = this.authService?.getCurrentUser?.() as AuthUserShape | undefined;
     const authUserId = Number(authUser?.userId ?? 0);
     if (authUserId > 0) {
       return authUserId;
@@ -30,7 +38,7 @@ export class TransferUserContextService {
   }
 
   getCurrentRole(defaultValue: TransferRole = 'JEFE DE ALMACEN'): TransferRole {
-    const authUser = this.authService?.getCurrentUser?.();
+    const authUser = this.authService?.getCurrentUser?.() as AuthUserShape | undefined;
     const roleFromAuth = this.mapRole(authUser?.roleId, authUser?.roleName);
     if (roleFromAuth) {
       return roleFromAuth;
@@ -42,15 +50,17 @@ export class TransferUserContextService {
   }
 
   getCurrentHeadquarterId(): string | null {
-    // Requerimiento funcional: priorizar sede del usuario logeado desde localStorage.
     const user = this.readStoredUser();
-    if (user?.idSede === undefined || user?.idSede === null) {
-      const authUser = this.authService?.getCurrentUser?.();
-      const authSede = authUser?.idSede;
-      return authSede !== undefined && authSede !== null ? String(authSede) : null;
+    const storedHeadquarterId = user?.idSede ?? user?.id_sede;
+    if (storedHeadquarterId !== undefined && storedHeadquarterId !== null) {
+      return String(storedHeadquarterId);
     }
 
-    return String(user.idSede ?? user.id_sede);
+    const authUser = this.authService?.getCurrentUser?.() as AuthUserShape | undefined;
+    const authHeadquarterId = authUser?.idSede ?? authUser?.id_sede;
+    return authHeadquarterId !== undefined && authHeadquarterId !== null
+      ? String(authHeadquarterId)
+      : null;
   }
 
   isAdmin(): boolean {
