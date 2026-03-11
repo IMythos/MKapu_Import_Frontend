@@ -32,7 +32,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TransferUserContextService } from '../../../../services/transfer-user-context.service';
 import { SedeService } from '../../../../services/sede.service';
 import { TransferSocketService } from '../../../../services/transfer-socket.service';
-
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component'
 interface TransferenciaRow {
   id: number;
   codigo: string;
@@ -66,6 +67,8 @@ interface TransferenciaRow {
     TagModule,
     ConfirmDialogModule,
     ToastModule,
+    LoadingOverlayComponent,
+    PaginadorComponent,
   ],
   templateUrl: './transferencia.html',
   styleUrl: './transferencia.css',
