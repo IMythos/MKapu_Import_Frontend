@@ -77,25 +77,14 @@ export class ConteoInventarioService {
     this.loading.set(true);
     return this.http.post<any>(this.apiUrl, payload);
   }
-  finalizarYajustar(idConteo: number, estado: 'AJUSTADO' | 'ANULADO') {
-    const detalles = this.conteoOperacion()?.detalles || [];
-    
-    const session = JSON.parse(localStorage.getItem('user') || '{}');
-    const idSedeReal = session.idSede || session.id_sede || 1;
-
-    const payloadData = detalles.map((det: any) => ({
-      id_detalle: det.idDetalle,
-      stock_conteo: det.stockConteo || 0,
-      warehouseId: Number(idSedeReal)
-    }));
-
-    return this.http.patch(`${this.apiUrl}/${idConteo}/finalizar`, {
-      estado,
-      totalDiferencias: this.totalDiferenciasCalculado(),
-      totalItems: detalles.length,
-      data: payloadData,
-    });
-  }
+  finalizarYajustar(idConteo: number, estado: 'AJUSTADO' | 'ANULADO', data: any[]) {
+  return this.http.patch(`${this.apiUrl}/${idConteo}/finalizar`, {
+    estado,
+    data, // Este array ya trae id_detalle y stock_conteo
+    totalDiferencias: data.length > 0 ? 1 : 0, // Un valor por defecto para que no falle la validación general
+    totalItems: data.length
+  });
+}
   obtenerSedes() {
     return this.http.get<any[]>(`${this.apiUrl.replace('/conteo-inventario', '')}/sedes`);
   }

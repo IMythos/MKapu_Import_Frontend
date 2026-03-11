@@ -112,7 +112,7 @@ export class ConteoDetalle implements OnInit {
     if (confirmar) {
       this.conteoService.loading.set(true);
 
-      this.conteoService.finalizarYajustar(id, 'ANULADO').subscribe({
+      this.conteoService.finalizarYajustar(id, 'ANULADO', []).subscribe({
         next: () => {
           this.conteoService.loading.set(false);
           this.messageService.add({
@@ -120,7 +120,6 @@ export class ConteoDetalle implements OnInit {
             summary: 'Anulado',
             detail: 'El conteo fue anulado correctamente.',
           });
-
           this.conteoService.obtenerDetalle(id);
         },
         error: () => {

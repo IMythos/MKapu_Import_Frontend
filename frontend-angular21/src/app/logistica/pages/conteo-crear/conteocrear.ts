@@ -90,16 +90,16 @@ export class ConteoCrear implements OnInit {
 
     if (idRetomar) {
       this.conteoService.obtenerDetalle(Number(idRetomar)).subscribe({
-        next: (res: any) =>{
+        next: (res: any) => {
           const detalle = res.data || res;
           this.conteoService.conteoOperacion.set(detalle);
           this.conteoService.loading.set(false);
         },
-        error: (err) =>{
+        error: (err) => {
           console.error('Error al retomar conteo', err);
           this.conteoService.loading.set(false);
-        }
-      })
+        },
+      });
     } else {
       this.conteoService.conteoOperacion.set(null);
       this.cargarCatalogos();
@@ -130,16 +130,16 @@ export class ConteoCrear implements OnInit {
           const idGenerado = nuevoConteo.idConteo;
           if (idGenerado) {
             this.conteoService.obtenerDetalle(idGenerado).subscribe({
-            next: (detalle) => {
-              this.conteoService.conteoOperacion.set(detalle); 
-              this.conteoService.loading.set(false);
-              this.messageService.add({ 
-                severity: 'info', 
-                summary: 'Iniciado', 
-                detail: 'Snapshot generado. Ya puedes contar.' 
-              });
-            },
-            error: () => this.conteoService.loading.set(false)
+              next: (detalle) => {
+                this.conteoService.conteoOperacion.set(detalle);
+                this.conteoService.loading.set(false);
+                this.messageService.add({
+                  severity: 'info',
+                  summary: 'Iniciado',
+                  detail: 'Snapshot generado. Ya puedes contar.',
+                });
+              },
+              error: () => this.conteoService.loading.set(false),
             });
           } else {
             console.warn(
@@ -175,37 +175,35 @@ export class ConteoCrear implements OnInit {
   }
 
   guardarConteo() {
-    const id = this.conteoActual()?.idConteo;
-    if (!id) return;
-    if (this.totalPendientes() > 0) {
-      if (
-        !confirm('Aún hay ítems sin contar. Se asumirá cantidad 0 para ellos. ¿Deseas continuar?')
-      )
-        return;
-    }
-    this.conteoService.loading.set(true);
+  const conteo = this.conteoActual();
+  const id = conteo?.idConteo;
 
-    this.conteoService.finalizarYajustar(id, 'AJUSTADO').subscribe({
-      next: () => {
-        this.conteoService.loading.set(false);
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Completado',
-          detail: 'Stock ajustado correctamente.',
-        });
-        setTimeout(() => this.router.navigate(['/logistica/conteo-inventario']), 1500);
-      },
-      error: () => {
-        this.conteoService.loading.set(false);
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'Fallo al procesar los ajustes de stock.',
-        });
-      },
-    });
-    this.router.navigate(['/logistica/conteo-inventario']);
+  if (!id || !conteo?.detalles) {
+    this.messageService.add({ severity: 'warn', summary: 'Atención', detail: 'No hay datos.' });
+    return;
   }
+
+  this.conteoService.loading.set(true);
+
+  // MAPEADO EXACTO SEGÚN EL ERROR DE CONSOLA:
+  const datosParaBackend = conteo.detalles.map((d: any) => ({
+    id_detalle: Number(d.idDetalle),      // Debe ser id_detalle (snake_case) y Número
+    stock_conteo: Number(d.stockConteo ?? 0) // Debe ser stock_conteo (snake_case) y Número
+  }));
+
+  this.conteoService.finalizarYajustar(id, 'AJUSTADO', datosParaBackend).subscribe({
+    next: () => {
+      this.conteoService.loading.set(false);
+      this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Conteo guardado.' });
+      setTimeout(() => this.router.navigate(['/logistica/conteo-inventario']), 1500);
+    },
+    error: (err) => {
+      this.conteoService.loading.set(false);
+      console.error('Detalle del error:', err.error);
+      this.messageService.add({ severity: 'error', summary: 'Error 400', detail: 'Error de formato en los datos.' });
+    }
+  });
+}
 
   cargarCatalogos() {
     this.sedeService.getSedes().subscribe({
