@@ -10,11 +10,16 @@ import { CardModule } from 'primeng/card';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
+// 👇 Importaciones nuevas de RxJS necesarias para la reactividad
+import { filter, switchMap, catchError, tap, distinctUntilChanged } from 'rxjs/operators';
+import { of } from 'rxjs';
+
 import { VentasService } from '../../../../core/services/ventas.service';
 import { RemissionService } from '../../../services/remission.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-import { SunatService } from '../../../services/sunat.service';
+// Asegúrate de exportar la interfaz ReniecDniResponse desde tu sunat.service.ts y agregarla aquí
+import { SunatService, ReniecDniResponse } from '../../../services/sunat.service';
 import { TagModule } from 'primeng/tag';
 
 @Component({
@@ -63,7 +68,6 @@ export class NuevaRemision implements OnInit {
   ngOnInit() {
     this.initForm();
     
-    // 👇 Suscribirnos a los queryParams para recibir el comprobanteRef o ventaId
     this.route.queryParams.subscribe(params => {
       const comprobanteRef = params['comprobanteRef'];
       const correlativo = params['correlativo']; 
@@ -102,7 +106,7 @@ export class NuevaRemision implements OnInit {
         licencia: [''],
         placa: [''],
         ruc: [''],
-        razon_social: [''],
+        razon_social: [{ value: '', disabled: true }],
       }),
 
       items: this.fb.array([]),
@@ -125,43 +129,47 @@ export class NuevaRemision implements OnInit {
 
       this.itemsWeights.set(this.items.getRawValue());
     });
+
+    this.configurarAutocompletadoRuc();
+  }
+
+  private configurarAutocompletadoRuc() {
+    const rucControl = this.remissionForm.get('datos_transporte.ruc');
+    
+    rucControl?.valueChanges.pipe(
+      filter((ruc): ruc is string => typeof ruc === 'string' && /^\d{11}$/.test(ruc)),
+      distinctUntilChanged(),
+      tap(() => {
+        this.buscandoRuc.set(true);
+        this.remissionForm.get('datos_transporte.razon_social')?.setValue('', { emitEvent: false });
+      }),
+      switchMap((ruc) => this.sunatService.consultarRuc(ruc).pipe(
+        catchError((err) => {
+          this.buscandoRuc.set(false);
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Atención',
+            detail: err.error?.message || 'RUC no encontrado',
+          });
+          return of(null);
+        })
+      ))
+    ).subscribe((res: ReniecDniResponse | null) => {
+      this.buscandoRuc.set(false);
+      
+      if (res && res.razonSocial) {
+        this.remissionForm.get('datos_transporte.razon_social')?.setValue(res.razonSocial);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'RUC Validado',
+          detail: 'Razón social autocompletada exitosamente'
+        });
+      }
+    });
   }
 
   get items(): FormArray {
     return this.remissionForm.get('items') as FormArray;
-  }
-
-  buscarRucTransportista() {
-    const rucControl = this.remissionForm.get('datos_transporte.ruc');
-    const ruc = rucControl?.value;
-
-    if (!ruc || ruc.length !== 11) {
-      return;
-    }
-
-    this.buscandoRuc.set(true);
-    this.sunatService.consultarRuc(ruc).subscribe({
-      next: (res: any) => {
-        const razonSocial = res.razonSocial || res.razon_social || res.nombre; 
-        if (razonSocial) {
-          this.remissionForm.get('datos_transporte.razon_social')?.setValue(razonSocial);
-          this.messageService.add({
-            severity: 'success',
-            summary: 'RUC Encontrado',
-            detail: 'Razón social actualizada'
-          });
-        }
-        this.buscandoRuc.set(false);
-      },
-      error: (err) => {
-        this.buscandoRuc.set(false);
-        this.messageService.add({
-          severity: 'warn',
-          summary: 'Atención',
-          detail: 'No se pudo encontrar el RUC ingresado',
-        });
-      }
-    });
   }
 
   buscarComprobante(correlativo: string) {
@@ -187,7 +195,6 @@ export class NuevaRemision implements OnInit {
     });
   }
 
-  // 👇 MÉTODO ADAPTADO PARA SETEAR TODOS LOS DATOS CORRECTAMENTE
   private cargarDatosVenta(venta: any) {
     const comprobanteActual = this.correlativoInicial();
     const idSede = (venta.id_sede || venta.sedeId)?.toString() || '';
@@ -206,7 +213,6 @@ export class NuevaRemision implements OnInit {
 
     this.items.clear();
     
-    // Mapeo flexible para soportar tanto snake_case como camelCase en el DTO
     if (venta.detalles && venta.detalles.length > 0) {
       venta.detalles.forEach((d: any) => {
         const idProd = d.id_producto || d.productoId;
@@ -259,11 +265,11 @@ export class NuevaRemision implements OnInit {
     }
     
     this.isLoading.set(true);
-    const formValue = this.remissionForm.getRawValue();
+    const formValue = this.remissionForm.getRawValue(); 
     const payload = {
       ...formValue,
       peso_bruto_total: this.pesoBrutoTotal(),
-      id_usuario: 1, // Esto idealmente se saca del Auth Service/Token
+      id_usuario: 1, 
       fecha_inicio_traslado: formValue.fecha_inicio_traslado.toISOString(),
     };
 
@@ -307,7 +313,40 @@ export class NuevaRemision implements OnInit {
     transport?.get('ruc')?.updateValueAndValidity();
     transport?.get('razon_social')?.updateValueAndValidity();
   }
+  buscarRucTransportista() {
+    const rucControl = this.remissionForm.get('datos_transporte.ruc');
+    const ruc = rucControl?.value;
 
+    if (!ruc || ruc.length !== 11) {
+      return;
+    }
+
+    this.buscandoRuc.set(true);
+    this.remissionForm.get('datos_transporte.razon_social')?.setValue('');
+
+    this.sunatService.consultarRuc(ruc).subscribe({
+      next: (res: ReniecDniResponse) => { 
+        this.buscandoRuc.set(false);
+        
+        if (res && res.razonSocial) {
+          this.remissionForm.get('datos_transporte.razon_social')?.setValue(res.razonSocial);
+          this.messageService.add({
+            severity: 'success',
+            summary: 'RUC Encontrado',
+            detail: 'Razón social autocompletada'
+          });
+        }
+      },
+      error: (err) => {
+        this.buscandoRuc.set(false);
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Atención',
+          detail: err.error?.message || 'No se pudo encontrar el RUC ingresado',
+        });
+      }
+    });
+  }
   cerrar() {
     this.router.navigate(['/logistica/remision']);
   }

@@ -16,6 +16,7 @@ import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
 import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { getLunesSemanaActualPeru, getDomingoSemanaActualPeru } from '../../../shared/utils/date-peru.utils';
 
 @Component({
   selector: 'app-movimientos-inventario',
@@ -49,11 +50,16 @@ export class MovimientosInventario implements OnInit {
   paginaActual = signal<number>(1);
   limitePagina = signal<number>(10);
 
-  totalPaginas = computed(() => Math.ceil(this.totalItems() / this.limitePagina()));
+  totalPaginas = computed(() => Math.ceil(this.totalItems() / this.limitePagina()) || 1);
 
   filtroEstado = signal<number>(0);
   filtroTexto = signal<string>('');
-  filtroFechas = signal<Date[] | undefined>(undefined);
+  
+  filtroFechas = signal<Date[] | undefined>([
+    getLunesSemanaActualPeru(), 
+    getDomingoSemanaActualPeru()
+  ]);
+  
   sedeId = signal<string>('');
 
   opcionesEstado = [
@@ -64,19 +70,19 @@ export class MovimientosInventario implements OnInit {
   ];
 
   ngOnInit() {
+    this.obtenerFiltroSede();
     this.cargarMovimientos();
   }
 
   cargarMovimientos() {
     this.cargando.set(true);
-    this.obtenerFiltroSede();
 
     const fechas = this.filtroFechas();
     const filtros = {
       texto: this.filtroTexto(),
-      estado: this.filtroEstado(),
-      fechaInicio: fechas?.[0] ? new Date(fechas[0]).toISOString() : null,
-      fechaFin: fechas?.[1] ? new Date(fechas[1]).toISOString() : null,
+      estado: this.filtroEstado() === 0 ? null : this.filtroEstado(),
+      fechaInicio: fechas?.[0] ? this.formatearFechaInicio(fechas[0]) : null,
+      fechaFin: fechas?.[1] ? this.formatearFechaFin(fechas[1]) : null,
       sedeId: this.sedeId(),
       page: this.paginaActual(),
       limit: this.limitePagina(),
@@ -108,7 +114,7 @@ export class MovimientosInventario implements OnInit {
   limpiarFiltros() {
     this.filtroEstado.set(0);
     this.filtroTexto.set('');
-    this.filtroFechas.set(undefined);
+    this.filtroFechas.set([getLunesSemanaActualPeru(), getDomingoSemanaActualPeru()]);
     this.paginaActual.set(1);
     this.cargarMovimientos();
   }
@@ -139,5 +145,17 @@ export class MovimientosInventario implements OnInit {
       default:
         return 'warn';
     }
+  }
+
+  private formatearFechaInicio(fecha: Date): string {
+    const f = new Date(fecha);
+    f.setHours(0, 0, 0, 0);
+    return f.toISOString();
+  }
+
+  private formatearFechaFin(fecha: Date): string {
+    const f = new Date(fecha);
+    f.setHours(23, 59, 59, 999);
+    return f.toISOString();
   }
 }

@@ -42,18 +42,18 @@ export class ConteoCrear implements OnInit {
   private conteoService = inject(ConteoInventarioService);
   private messageService = inject(MessageService);
   private route = inject(ActivatedRoute);
+  private sedeService = inject(SedeService);
+  private categoriaService = inject(CategoriaService);
 
   loading = this.conteoService.loading;
   conteoActual = this.conteoService.conteoOperacion;
 
-  sedes = signal<any[]>([]);
   familias = signal<any[]>([]);
   sedeSeleccionada = signal<any>(null);
   familiaSeleccionada = signal<any>(null);
-  private sedeService = inject(SedeService);
-  private categoriaService = inject(CategoriaService);
-  idUsuario = signal<number>(2);
 
+  // Inicializamos sin un ID quemado (se llenará con localStorage)
+  idUsuario = signal<number>(0);
   filtroNombre = signal<string>('');
 
   productosFiltrados = computed(() => {
@@ -86,13 +86,15 @@ export class ConteoCrear implements OnInit {
   });
 
   ngOnInit() {
+    this.recuperarDatosSesion();
+
     const idRetomar = this.route.snapshot.queryParamMap.get('idRetomar');
 
     if (idRetomar) {
       this.conteoService.obtenerDetalle(Number(idRetomar)).subscribe({
         next: (res: any) => {
           const detalle = res.data || res;
-          this.conteoService.conteoOperacion.set(detalle);
+          this.conteoService.conteoOperacion.set(this.aplicarBorradorLocal(detalle));
           this.conteoService.loading.set(false);
         },
         error: (err) => {
@@ -106,9 +108,45 @@ export class ConteoCrear implements OnInit {
     }
   }
 
+  // 👇 MÉTODO NUEVO PARA LEER LOCALSTORAGE
+  recuperarDatosSesion(): void {
+    try {
+      const session = localStorage.getItem('user');
+      if (session) {
+        const userData = JSON.parse(session);
+
+        // Múltiples formatos para asegurar la captura del id
+        const sedeId =
+          userData.idSede || userData.id_sede || userData.sedeId || userData.id_sede_actual;
+        const sedeNom = userData.nomSede || userData.nombre_sede || userData.sede || 'Sede Actual';
+        const userId = userData.id || userData.idUsuario || userData.id_usuario;
+
+        if (userId) this.idUsuario.set(Number(userId));
+
+        if (sedeId) {
+          // Seteamos la sede que se enviará al crear el snapshot
+          this.sedeSeleccionada.set({
+            value: Number(sedeId),
+            label: sedeNom,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error recuperando sesión del storage', error);
+    }
+  }
+
   iniciarSnapshot() {
     const sede = this.sedeSeleccionada();
-    if (!sede) return;
+
+    if (!sede || !sede.value) {
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Error',
+        detail: 'No se detectó una sede asignada en tu sesión.',
+      });
+      return;
+    }
 
     const familia = this.familiaSeleccionada();
     const idCat = familia && familia.value ? Number(familia.value) : undefined;
@@ -170,55 +208,64 @@ export class ConteoCrear implements OnInit {
         detalle.stockConteo = nuevoValor;
         detalle.diferencia = nuevoValor - Number(detalle.stockSistema || 0);
       }
+      localStorage.setItem(`conteo_borrador_${conteo.idConteo}`, JSON.stringify(conteo.detalles));
       return { ...conteo };
     });
   }
 
   guardarConteo() {
-  const conteo = this.conteoActual();
-  const id = conteo?.idConteo;
+    const conteo = this.conteoActual();
+    const id = conteo?.idConteo;
 
-  if (!id || !conteo?.detalles) {
-    this.messageService.add({ severity: 'warn', summary: 'Atención', detail: 'No hay datos.' });
-    return;
-  }
-
-  this.conteoService.loading.set(true);
-
-  // MAPEADO EXACTO SEGÚN EL ERROR DE CONSOLA:
-  const datosParaBackend = conteo.detalles.map((d: any) => ({
-    id_detalle: Number(d.idDetalle),      // Debe ser id_detalle (snake_case) y Número
-    stock_conteo: Number(d.stockConteo ?? 0) // Debe ser stock_conteo (snake_case) y Número
-  }));
-
-  this.conteoService.finalizarYajustar(id, 'AJUSTADO', datosParaBackend).subscribe({
-    next: () => {
-      this.conteoService.loading.set(false);
-      this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Conteo guardado.' });
-      setTimeout(() => this.router.navigate(['/logistica/conteo-inventario']), 1500);
-    },
-    error: (err) => {
-      this.conteoService.loading.set(false);
-      console.error('Detalle del error:', err.error);
-      this.messageService.add({ severity: 'error', summary: 'Error 400', detail: 'Error de formato en los datos.' });
+    if (!id || !conteo?.detalles) {
+      this.messageService.add({ severity: 'warn', summary: 'Atención', detail: 'No hay datos.' });
+      return;
     }
-  });
-}
+
+    this.conteoService.loading.set(true);
+
+    const datosParaBackend = conteo.detalles.map((d: any) => ({
+      id_detalle: Number(d.idDetalle),
+      stock_conteo: Number(d.stockConteo ?? 0),
+    }));
+
+    this.conteoService.finalizarYajustar(id, 'AJUSTADO', datosParaBackend).subscribe({
+      next: () => {
+        this.conteoService.loading.set(false);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Éxito',
+          detail: 'Conteo guardado.',
+        });
+        localStorage.removeItem(`conteo_borrador_${id}`);
+        setTimeout(() => this.router.navigate(['/logistica/conteo-inventario']), 1500);
+      },
+      error: (err) => {
+        this.conteoService.loading.set(false);
+        console.error('Detalle del error:', err.error);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error 400',
+          detail: 'Error de formato en los datos.',
+        });
+      },
+    });
+  }
 
   cargarCatalogos() {
     this.sedeService.getSedes().subscribe({
       next: (res: any) => {
         const listaSedes = res.headquarters || [];
+        const sedeIdSession = this.sedeSeleccionada()?.value;
 
-        const sedesFormateadas = listaSedes.map((s: any) => ({
-          label: s.nombre,
-          value: s.id_sede,
-        }));
-
-        this.sedes.set(sedesFormateadas);
-
-        if (sedesFormateadas.length > 0) {
-          this.sedeSeleccionada.set(sedesFormateadas[0]);
+        if (sedeIdSession) {
+          const sedeBD = listaSedes.find((s: any) => s.id_sede === sedeIdSession);
+          if (sedeBD) {
+            this.sedeSeleccionada.set({
+              value: sedeBD.id_sede,
+              label: sedeBD.nombre,
+            });
+          }
         }
       },
       error: (err) => console.error('Error cargando sedes:', err),
@@ -255,6 +302,25 @@ export class ConteoCrear implements OnInit {
         });
       },
     });
+  }
+  aplicarBorradorLocal(conteo: any): any {
+    const borradorStr = localStorage.getItem(`conteo_borrador_${conteo.idConteo}`);
+    if (borradorStr) {
+      try {
+        const detallesBorrador = JSON.parse(borradorStr);
+        conteo.detalles = conteo.detalles.map((det: any) => {
+          const detGuardado = detallesBorrador.find((d: any) => d.idDetalle === det.idDetalle);
+          if (detGuardado && detGuardado.stockConteo !== null) {
+            det.stockConteo = detGuardado.stockConteo;
+            det.diferencia = detGuardado.diferencia;
+          }
+          return det;
+        });
+      } catch (e) {
+        console.error('Error leyendo borrador', e);
+      }
+    }
+    return conteo;
   }
 
   cancelar() {

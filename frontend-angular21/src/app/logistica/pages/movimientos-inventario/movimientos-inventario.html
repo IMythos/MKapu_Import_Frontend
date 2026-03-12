@@ -13,7 +13,51 @@
     </div>
   </p-card>
 
-  <!-- Tabla con overlay -->
+  <p-card class="mb-4">
+    <div class="flex flex-wrap gap-3 align-items-center">
+      
+      <span class="p-input-icon-left flex-1" style="display: flex; align-items: center; gap: 10px;">
+        <i class="pi pi-search"></i>
+        <input 
+          pInputText 
+          type="text" 
+          placeholder="Buscar por documento o motivo..." 
+          [ngModel]="filtroTexto()" 
+          (ngModelChange)="filtroTexto.set($event); aplicarFiltros()"
+          class="w-full"
+        />
+      </span>
+
+      <p-datepicker
+        [ngModel]="filtroFechas()"
+        (ngModelChange)="filtroFechas.set($event); aplicarFiltros()"
+        selectionMode="range"
+        dateFormat="dd/mm/yy"
+        placeholder="Seleccionar rango"
+        [showIcon]="true"
+        (onClear)="aplicarFiltros()">
+      </p-datepicker>
+
+      <p-select 
+        [options]="opcionesEstado" 
+        [ngModel]="filtroEstado()" 
+        (ngModelChange)="filtroEstado.set($event); aplicarFiltros()"
+        optionLabel="label" 
+        optionValue="value"
+        placeholder="Tipo">
+      </p-select>
+
+      <p-button 
+        icon="pi pi-filter-slash" 
+        severity="secondary" 
+        [outlined]="true"
+        (onClick)="limpiarFiltros()" 
+        pTooltip="Limpiar filtros">
+      </p-button>
+
+    </div>
+  </p-card>
+
   <div style="position: relative">
     <app-loading-overlay [visible]="cargando()" mensaje="Cargando movimientos..." modo="inline">
     </app-loading-overlay>
@@ -71,12 +115,11 @@
 
         <ng-template pTemplate="emptymessage">
           <tr>
-            <td colspan="7" class="text-center p-4">No se encontraron movimientos registrados.</td>
+            <td colspan="7" class="text-center p-4">No se encontraron movimientos registrados en esta semana.</td>
           </tr>
         </ng-template>
       </p-table>
 
-      <!-- Paginador custom -->
       <app-paginador
         [page]="paginaActual()"
         [totalPages]="totalPaginas()"
