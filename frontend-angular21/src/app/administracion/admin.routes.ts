@@ -583,7 +583,7 @@ export const ADMIN_ROUTES: Routes = [
             (m) => m.ListadoDespacho,
           ),
       },
-    
+
       {
         path: 'agregar-despacho',
         loadComponent: () =>
