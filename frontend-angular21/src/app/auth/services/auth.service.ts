@@ -1,12 +1,9 @@
-// src/app/auth/services/auth.service.ts
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
-import { UserRole } from '../../core/constants/roles.constants';
-import { User } from '../../core/interfaces/user.interface'; 
+import { User } from '../../core/interfaces/user.interface';
 import { EmpleadosService } from '../../core/services/empleados.service';
 import {
   AuthInterface,
@@ -14,27 +11,27 @@ import {
   AuthAccountBackend,
 } from '../interfaces/auth.interface';
 
-import { ROLE_NAME_TO_ID } from '../../core/constants/roles.constants';
-
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
-  private http = inject(HttpClient);
-  private router = inject(Router);
+  private http             = inject(HttpClient);
+  private router           = inject(Router);
   private empleadosService = inject(EmpleadosService);
 
   private api = environment.apiUrl || 'http://localhost:3000';
   private currentUser: User | null = null;
+
   constructor() {
     this.verificarSesionActiva();
   }
 
+  // ================= SESION ACTIVA =================
+
   private verificarSesionActiva(): void {
     try {
       const userStr = localStorage.getItem('user');
-      const token = localStorage.getItem('token');
-
+      const token   = localStorage.getItem('token');
       if (userStr && token) {
         this.currentUser = JSON.parse(userStr);
         this.empleadosService.sincronizarDesdeAuth();
@@ -45,52 +42,63 @@ export class AuthService {
     }
   }
 
-  private mapRoleToRoleId(rolNombre: string): UserRole {
-    const normalizedRole = rolNombre.toLowerCase();
-    const roleId = ROLE_NAME_TO_ID[normalizedRole];
-
-    if (!roleId) {
-      console.error('Rol no reconocido:', rolNombre);
-      throw new Error(`Rol "${rolNombre}" no es válido`);
-    }
-
-    return roleId;
-  }
+  // ================= TRANSFORM USER =================
 
   private transformUser(account: AuthAccountBackend): User {
     return {
-      userId: account.usuario.id_usuario,
-      username: account.username,
-      email: account.email_emp,
-      roleId: account.roles[0]?.id_rol,
-      roleName: account.roles[0]?.nombre,
-      idSede: account.id_sede,
+      userId:    account.usuario.id_usuario,
+      username:  account.username,
+      email:     account.email_emp,
+      roleId:    account.roles[0]?.id_rol,
+      roleName:  account.roles[0]?.nombre,
+      idSede:    account.id_sede,
       sedeNombre: account.sede_nombre,
-      permisos: account.permisos.map((p) => p.nombre),
-      nombres: account.usuario.nombres, 
+      permisos:  account.permisos.map((p) => p.nombre),
+      nombres:   account.usuario.nombres,
       apellidos: `${account.usuario.ape_pat} ${account.usuario.ape_mat}`,
     };
   }
 
-  private redirectByRole(roleId: UserRole): void {
-    const routes: Record<UserRole, string> = {
-      [UserRole.ADMIN]: '/admin/dashboard-admin',
-      [UserRole.VENTAS]: '/ventas/caja',
-      [UserRole.ALMACEN]: '/almacen/dashboard',
-      [UserRole.LOGISTICA]: '/logistica/dashboard',
-    };
+  // ================= REDIRECT POR PERMISOS =================
 
-    const route = routes[roleId];
-    this.router.navigate([route]);
+  private redirectByPermisos(user: User): void {
+    const permisos = user.permisos;
+
+    // Admin → sección admin
+    if (permisos.includes('VENTAS')) {
+      this.router.navigate(['/admin/dashboard-admin']);
+      return;
+    }
+
+    // Almacén → dashboard almacén
+    if (permisos.includes('ALMACEN')) {
+      this.router.navigate(['/almacen/dashboard']);
+      return;
+    }
+
+    // Cualquier rol con PRINCIPAL → primera ruta disponible
+    if (permisos.includes('PRINCIPAL')) {
+      if (permisos.includes('VER_CAJA'))              { this.router.navigate(['/ventas/caja']);              return; }
+      if (permisos.includes('VER_DASHBOARD_VENTAS'))  { this.router.navigate(['/ventas/dashboard-ventas']); return; }
+      if (permisos.includes('VER_LIBRO_VENTAS'))      { this.router.navigate(['/ventas/libro-ventas']);      return; }
+      if (permisos.includes('VER_REPORTES'))          { this.router.navigate(['/ventas/reporte-ventas']);    return; }
+      if (permisos.includes('VER_MOVIMIENTOS'))       { this.router.navigate(['/ventas/movimientos']);       return; }
+      this.router.navigate(['/ventas/dashboard-ventas']);
+      return;
+    }
+
+    // Sin permisos reconocidos
+    this.router.navigate(['/login']);
   }
+
+  // ================= LOGIN =================
 
   login(username: string, password: string): Observable<AuthInterfaceResponse> {
     const loginData: AuthInterface = { username, password };
 
     return this.http.post<AuthInterfaceResponse>(`${this.api}/auth/auth/login`, loginData).pipe(
       tap((response) => {
-        console.log('Respuesta del servidor:', response)
-        const account = response.account;
+        const account         = response.account;
         const transformedUser = this.transformUser(account);
 
         this.currentUser = transformedUser;
@@ -100,10 +108,12 @@ export class AuthService {
 
         this.empleadosService.sincronizarDesdeAuth();
 
-        this.redirectByRole(transformedUser.roleId);
+        this.redirectByPermisos(transformedUser); // ← por permisos, no por roleId
       }),
     );
   }
+
+  // ================= LOGOUT =================
 
   logout(): void {
     this.currentUser = null;
@@ -113,21 +123,10 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  // ================= HELPERS =================
+
   isLoggedIn(): boolean {
     return this.currentUser !== null && !!localStorage.getItem('token');
-  }
-
-  getRole(): string | null {
-    if (!this.currentUser) return null;
-
-    const roleNames: Record<UserRole, string> = {
-      [UserRole.ADMIN]: 'admin',
-      [UserRole.VENTAS]: 'ventas',
-      [UserRole.ALMACEN]: 'almacen',
-      [UserRole.LOGISTICA]: 'logistica',
-    };
-
-    return roleNames[this.currentUser.roleId as UserRole] || null;
   }
 
   getCurrentUser(): User | null {
@@ -146,19 +145,23 @@ export class AuthService {
     return localStorage.getItem('token');
   }
 
-  getRoleId(): UserRole | null {
+  getRoleId(): number | null {
     return this.currentUser?.roleId || null;
   }
 
+  hasPermiso(permiso: string): boolean {
+    return this.currentUser?.permisos?.includes(permiso) ?? false;
+  }
+
   isAdmin(): boolean {
-    return this.currentUser?.roleId === UserRole.ADMIN;
+    return this.hasPermiso('ADMINISTRACION');
   }
 
   isVentas(): boolean {
-    return this.currentUser?.roleId === UserRole.VENTAS;
+    return this.hasPermiso('PRINCIPAL') && this.hasPermiso('CREAR_VENTA');
   }
 
   isAlmacen(): boolean {
-    return this.currentUser?.roleId === UserRole.ALMACEN;
+    return this.hasPermiso('ALMACEN');
   }
 }

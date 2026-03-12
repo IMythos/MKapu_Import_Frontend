@@ -6,7 +6,6 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { InputTextModule } from 'primeng/inputtext';
 import { RoleService } from '../../core/services/role.service';
 import { CashboxSocketService } from '../../ventas/services/cashbox-socket.service';
-import { UserRole } from '../../core/constants/roles.constants';
 import { ThemeService } from '../../core/services/theme.service';
 import { CommonModule } from '@angular/common';
 
@@ -18,22 +17,23 @@ import { CommonModule } from '@angular/common';
   standalone: true,
 })
 export class Header implements OnInit {
-  private router        = inject(Router);
-  private roleService   = inject(RoleService);
+  private router          = inject(Router);
+  private roleService     = inject(RoleService);
   protected cashboxSocket = inject(CashboxSocketService);
   protected themeService  = inject(ThemeService);
 
   @Output() toggleSidebar = new EventEmitter<void>();
 
-  private readonly currentRole = this.roleService.getCurrentUserRole();
+  // ← Usa permisos en lugar de comparar con UserRole enum
+  private readonly permisos = this.roleService.getPermisos();
 
-  readonly isVentas   = this.currentRole === UserRole.VENTAS;
-  readonly isAdmin    = this.currentRole === UserRole.ADMIN;
-  readonly showCaja   = this.isVentas || this.isAdmin; 
+  readonly isVentas = this.permisos.includes('PRINCIPAL');      
+  readonly isAdmin  = this.permisos.includes('ADMINISTRACION'); 
+  readonly showCaja = this.isVentas || this.isAdmin;
 
-  notifCount          = this.loadNotifCount();
-  readonly caja       = this.cashboxSocket.caja;
-  sedeNombre: string  = this.roleService.getCurrentUser()?.sedeNombre ?? '';
+  notifCount         = this.loadNotifCount();
+  readonly caja      = this.cashboxSocket.caja;
+  sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';
 
   ngOnInit(): void {
     this.router.events
@@ -42,17 +42,14 @@ export class Header implements OnInit {
 
     if (this.showCaja) {
       const user = this.roleService.getCurrentUser();
-      console.log('🔍 showCaja user:', user);          // 👈 ver qué trae
-      console.log('🔍 idSede:', user?.idSede);          // 👈 ¿es undefined?
-      console.log('🔍 caja signal:', this.caja());      // 👈 estado actual
-
       const id_sede = user?.idSede;
+
       if (id_sede) {
         this.cashboxSocket.checkActiveSession(id_sede).then(data => {
-          console.log('✅ checkActiveSession response:', data); // 👈 respuesta del socket
+          console.log('✅ checkActiveSession response:', data);
         });
       } else {
-        console.warn('⚠️ Admin no tiene idSede asignado');
+        console.warn('⚠️ Usuario no tiene idSede asignado');
       }
     }
   }

@@ -7,40 +7,63 @@ export const VENTAS_ROUTES: Routes = [
     redirectTo: 'caja',
     pathMatch: 'full',
   },
-  {
-    path: 'dashboard-ventas',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/dashboard-ventas/dashboard-ventas').then((m) => m.DashboardVentas),
-  },
+
   {
     path: 'generar-ventas',
     canActivate: [CashboxGuard],
     loadComponent: () =>
-      import('./pages/generar-venta/generar-venta').then((m) => m.GenerarVenta),
+      import('../administracion/pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
   },
   {
     path: 'historial-ventas',
     canActivate: [CashboxGuard],
     loadComponent: () =>
-      import('./pages/historial-ventas/historial-ventas').then((m) => m.HistorialVentas),
-  },
-  {
-    path: 'imprimir-comprobante',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./shared/imprimir-comprobante/imprimir-comprobante').then(
-        (m) => m.ImprimirComprobante,
-      ),
+      import('../administracion/pages/historial-ventas-administracion/historial-ventas-administracion').then((m) => m.HistorialVentasAdministracion),
   },
   {
     path: 'ver-detalle/:id',
     canActivate: [CashboxGuard],
     loadComponent: () =>
-      import('./shared/detalles-venta/detalle-venta').then((m) => m.DetalleVenta),
+      import('../administracion/shared/detalles-ventas-administracion/detalles-ventas-administracion').then((m) => m.DetallesVentasAdministracion),
   },
   
 
+  /* =======================
+      VENTAS POR COBRAR
+  ======================= */
+  {
+    path: 'ventas-por-cobrar',
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('../administracion/pages/ventas-por-cobrar/ventas-por-cobrar-listado/ventas-por-cobrar-listado').then(
+            (m) => m.VentasPorCobrarListadoComponent,
+          ),
+      },
+      {
+        path: 'agregar',
+        loadComponent: () =>
+          import('../administracion/pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(
+            (m) => m.VentasPorCobrarFormulario,
+          ),
+      },
+      {
+        path: 'detalles/:id',
+        loadComponent: () =>
+          import('../administracion/pages/ventas-por-cobrar/detalle-ventas-por-cobrar-formulario/detalle-ventas-por-cobrar-formulario').then(
+            (m) => m.DetalleVentaPorCobrar,
+          ),
+      },
+      {
+        path: 'pagar/:id',
+        loadComponent: () =>
+          import('../administracion/pages/ventas-por-cobrar/ventas-por-cobrar-pago/ventas-por-cobrar-pago.component').then(
+            (m) => m.VentasPorCobrarPagoComponent,
+          ),
+      },
+    ],
+  },
   {
     path: 'reclamos-listado',
     canActivate: [CashboxGuard],
@@ -78,40 +101,46 @@ export const VENTAS_ROUTES: Routes = [
 
 
 
-  {
-    path: 'reporte-ventas',
-    canActivate: [CashboxGuard],
-    loadComponent: () => import('./pages/dashboard-ventas/dashboard-ventas').then((m) => m.DashboardVentas)
-  },
-
-  // ─── COTIZACIONES ───────────────────────────────────────────
+  /* =======================
+      COTIZACIONES
+  ======================= */
   {
     path: 'cotizaciones',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/cotizaciones/listado-cotizacion/listado-cotizacion')
-        .then((m) => m.ListadoCotizacion),
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('../administracion/pages/gestion-cotizacion/gestion-listado/gestion-listado').then(
+            (m) => m.GestionCotizacionesComponent,
+          ),
+      },
+      {
+        path: 'agregar',
+        loadComponent: () =>
+          import('../administracion/pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then(
+            (m) => m.CotizacionFormulario,
+          ),
+      },
+      {
+        path: 'ver-detalle/:id',
+        loadComponent: () =>
+          import('../administracion/pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then(
+            (m) => m.DetalleCotizacionComponent,
+          ),
+      },
+    ],
+  },
+  { path: 'agregar-cotizaciones',        redirectTo: 'cotizaciones/agregar',        pathMatch: 'full' },
+  { path: 'ver-detalle-cotizacion/:id',  redirectTo: 'cotizaciones/ver-detalle/:id', pathMatch: 'full' },
+
+  
+  {
+    path: 'movimiento-inventario',
+    loadComponent: () => import('../logistica/pages/movimientos-inventario/movimientos-inventario').then((m) => m.MovimientosInventario)
   },
   {
-    path: 'cotizaciones/crear',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/cotizaciones/formulario-cotizacion/formulario-cotizacion')
-        .then((m) => m.FormularioCotizacion),
-  },
-  {
-    path: 'cotizaciones/editar/:id',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/cotizaciones/formulario-cotizacion/formulario-cotizacion')
-        .then((m) => m.FormularioCotizacion),
-  },
-  {
-    path: 'cotizaciones/detalle/:id',
-    canActivate: [CashboxGuard],
-    loadComponent: () =>
-      import('./pages/cotizaciones/detalle-cotizacion/detalle-cotizacion')
-        .then((m) => m.DetalleCotizacion),
+    path: 'movimientos-inventario/detalle/:id',
+    loadComponent: () => import('../logistica/pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(m => m.DetalleMovimientoInventario)
   },
 
   {

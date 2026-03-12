@@ -42,8 +42,8 @@
   height: 18px;
   padding: 0 4px;
   border-radius: 999px;
-  background: var(--p-primary-color, #f6af33);
-  color: #1f1f1f;
+  background: var(--sb-bg, #f6af33);
+  color: #111113;
   font-size: 0.65rem;
   font-weight: 700;
   display: inline-flex;
@@ -63,7 +63,7 @@ html.p-dark :host ::ng-deep .app-toolbar {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  margin-right: 6px;
+  margin-right: 10px;
   vertical-align: middle;
 }
 .caja-abierta { background: #37d857; }

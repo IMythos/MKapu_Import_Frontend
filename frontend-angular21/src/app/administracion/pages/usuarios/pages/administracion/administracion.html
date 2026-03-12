@@ -77,15 +77,13 @@
           </div>
           <div class="col-12 md:col-4 usuarios-field">
             <label class="usuarios-label">DNI</label>
-            <p-inputNumber
+            <input pInputText
               [(ngModel)]="dniInput"
-              [useGrouping]="false"
-              [maxFractionDigits]="0"
+              maxlength="8"
               placeholder="8 dígitos"
-              (onKeyDown)="onDniKeyDown($event)"
-              (ngModelChange)="onDniChange($event)"
-              class="w-full">
-            </p-inputNumber>
+              (keypress)="onDniKeyPress($event)"
+              (input)="onDniInput($event)"
+              class="w-full" />
             <small *ngIf="dniInput !== null && dniInput.toString().length !== 8" class="p-error">
               El DNI debe tener exactamente 8 dígitos
             </small>
@@ -220,7 +218,7 @@
           </div>
           <div class="usuarios-summary-row">
             <span>Rol</span>
-            <strong>{{ rolCuentaSeleccionado || '-' }}</strong>
+            <strong>{{ rolSeleccionadoNombre }}</strong>
           </div>
           <div class="usuarios-summary-row">
             <span>Estado</span>

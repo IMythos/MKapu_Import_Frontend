@@ -58,6 +58,7 @@
   <div class="filtros-container mb-4">
     <div class="seccion-filtros">
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
       <div class="filtros-linea-1">
         <div class="filtro-item filtro-cliente-50">
           <label>Cliente (Nombre / DNI / RUC)</label>
@@ -100,10 +101,14 @@
           </div>
         </div>
       </div>
+
       <div class="filtros-linea-2">
+
         <div class="filtro-item filtro-compacto">
           <label>Sede</label>
+
           <p-select
+            *ngIf="esAdmin"
             [(ngModel)]="filtros.sedeSeleccionada"
             [options]="sedesOptions"
             placeholder="Todas"
@@ -112,7 +117,13 @@
             (onChange)="aplicarFiltros()"
             styleClass="w-full"
           ></p-select>
+
+          <div *ngIf="!esAdmin" class="sede-fija-badge">
+            <i class="pi pi-map-marker"></i>
+            <span>{{ sedeNombreVentas }}</span>
+          </div>
         </div>
+
         <div class="filtro-item filtro-compacto">
           <label>Tipo</label>
           <p-select
@@ -125,6 +136,7 @@
             styleClass="w-full"
           ></p-select>
         </div>
+
         <div class="filtro-item filtro-compacto">
           <label>Tipo de Pago</label>
           <p-select
@@ -137,6 +149,7 @@
             styleClass="w-full"
           ></p-select>
         </div>
+
         <div class="filtro-item filtro-compacto">
           <label>Estado</label>
           <p-select
@@ -149,6 +162,7 @@
             styleClass="w-full"
           ></p-select>
         </div>
+
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button
@@ -159,6 +173,7 @@
             styleClass="btn-limpiar-filtros"
           ></p-button>
         </div>
+
       </div>
     </div>
   </div>
@@ -201,17 +216,31 @@
         >
           <ng-template pTemplate="header">
             <tr>
-              <th pSortableColumn="numero">N° Comprobante <p-sortIcon field="numero" /></th>
-              <th pSortableColumn="tipoComprobante">Tipo <p-sortIcon field="tipoComprobante" /></th>
-              <th pSortableColumn="fecEmision">Fecha Emisión <p-sortIcon field="fecEmision" /></th>
+              <th pSortableColumn="numero">
+                N° Comprobante <p-sortIcon field="numero" />
+              </th>
+              <th pSortableColumn="tipoComprobante">
+                Tipo <p-sortIcon field="tipoComprobante" />
+              </th>
+              <th pSortableColumn="fecEmision">
+                Fecha Emisión <p-sortIcon field="fecEmision" />
+              </th>
               <th>Cliente</th>
               <th>Documento</th>
-              <th pSortableColumn="sedeNombre">Sede <p-sortIcon field="sedeNombre" /></th>
-              <th pSortableColumn="metodoPago">Tipo Pago <p-sortIcon field="metodoPago" /></th>
+              <th pSortableColumn="sedeNombre">
+                Sede <p-sortIcon field="sedeNombre" />
+              </th>
+              <th pSortableColumn="metodoPago">
+                Tipo Pago <p-sortIcon field="metodoPago" />
+              </th>
               <th pSortableColumn="responsableNombre">
                 Responsable <p-sortIcon field="responsableNombre" />
               </th>
-              <th pSortableColumn="total" class="text-right" style="min-width: 125px; width: 125px">
+              <th
+                pSortableColumn="total"
+                class="text-right"
+                style="min-width: 125px; width: 125px"
+              >
                 Total <p-sortIcon field="total" />
               </th>
               <th pSortableColumn="estado">Estado</th>
@@ -257,6 +286,7 @@
               </td>
               <td class="text-center">
                 <div class="acciones-tabla">
+
                   <p-button
                     icon="pi pi-eye"
                     (onClick)="verDetalleVenta(comprobante)"
@@ -266,6 +296,7 @@
                     pTooltip="Ver detalle"
                     tooltipPosition="top"
                   />
+
                   <p-button
                     icon="pi pi-file-pdf"
                     [loading]="accionesCargando() === comprobante.idComprobante"
@@ -276,6 +307,7 @@
                     pTooltip="Acciones del comprobante"
                     tooltipPosition="top"
                   />
+
                   <p-button
                     icon="pi pi-truck"
                     (onClick)="crearGuiaRemision(comprobante)"
@@ -286,6 +318,7 @@
                     pTooltip="Generar Guía de Remisión"
                     tooltipPosition="top"
                   />
+
                   <p-button
                     icon="pi pi-trash"
                     (onClick)="anularComprobante(comprobante)"
@@ -329,85 +362,13 @@
   <p-confirmDialog></p-confirmDialog>
 </div>
 
-<p-dialog
-  header="Opciones del comprobante"
-  [(visible)]="accionesDialogVisible"
-  [modal]="true"
-  [closable]="true"
-  [style]="{ width: '500px' }"
-  (onHide)="cerrarDialogAcciones()"
->
-  <div *ngIf="accionesComprobante" class="py-2">
-    <div class="text-center mb-4">
-      <span class="font-bold text-base">{{ getNumeroFormateado(accionesComprobante) }}</span>
-      <p class="text-color-secondary text-sm mt-1 mb-0">{{ accionesComprobante.clienteNombre }}</p>
-    </div>
-
-    <p class="acciones-seccion-label">Envíos</p>
-    <div class="acciones-grid mb-4">
-      <div class="accion-item">
-        <button
-          class="accion-icono-btn"
-          [class.loading]="wspCargando() === accionesComprobante.idComprobante"
-          (click)="abrirDialogWspDesdeAcciones(accionesComprobante)"
-        >
-          <i class="pi pi-whatsapp" *ngIf="wspCargando() !== accionesComprobante.idComprobante"></i>
-          <i
-            class="pi pi-spin pi-spinner"
-            *ngIf="wspCargando() === accionesComprobante.idComprobante"
-          ></i>
-        </button>
-        <span>WhatsApp</span>
-      </div>
-      <div class="accion-item">
-        <button
-          class="accion-icono-btn"
-          [class.loading]="emailCargando() === accionesComprobante.idComprobante"
-          (click)="enviarCotizacionDesdeDialog(accionesComprobante)"
-        >
-          <i
-            class="pi pi-envelope"
-            *ngIf="emailCargando() !== accionesComprobante.idComprobante"
-          ></i>
-          <i
-            class="pi pi-spin pi-spinner"
-            *ngIf="emailCargando() === accionesComprobante.idComprobante"
-          ></i>
-        </button>
-        <span>Correo</span>
-      </div>
-    </div>
-
-    <p class="acciones-seccion-label">Descargas</p>
-    <div class="acciones-grid">
-      <div class="accion-item">
-        <button
-          class="accion-icono-btn"
-          [class.loading]="verPdfCargando"
-          (click)="verPdfEnPestana(accionesComprobante)"
-        >
-          <i class="pi pi-print" *ngIf="!verPdfCargando"></i>
-          <i class="pi pi-spin pi-spinner" *ngIf="verPdfCargando"></i>
-        </button>
-        <span>Imprimir</span>
-      </div>
-      <div class="accion-item">
-        <button
-          class="accion-icono-btn"
-          [class.loading]="pdfCargando() === accionesComprobante.idComprobante"
-          (click)="imprimirComprobante(accionesComprobante)"
-        >
-          <i class="pi pi-download" *ngIf="pdfCargando() !== accionesComprobante.idComprobante"></i>
-          <i
-            class="pi pi-spin pi-spinner"
-            *ngIf="pdfCargando() === accionesComprobante.idComprobante"
-          ></i>
-        </button>
-        <span>Descargar PDF</span>
-      </div>
-    </div>
-  </div>
-</p-dialog>
+<app-acciones-comprobante-dialog
+  [(visible)]="dialogVisible"
+  [config]="dialogConfig"
+  [accionCargando]="dialogAccionCargando"
+  (accion)="onAccionDialog($event)"
+  (cerrar)="onDialogCerrar()"
+/>
 
 <p-dialog
   header="Enviar por WhatsApp"
@@ -461,7 +422,12 @@
   </ng-container>
 
   <ng-template pTemplate="footer">
-    <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="cerrarDialogWsp()" />
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      [text]="true"
+      (onClick)="cerrarDialogWsp()"
+    />
     <p-button
       label="Enviar"
       icon="pi pi-whatsapp"

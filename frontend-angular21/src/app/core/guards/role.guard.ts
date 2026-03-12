@@ -1,35 +1,24 @@
 import { inject } from '@angular/core';
 import { Router, CanActivateFn, ActivatedRouteSnapshot } from '@angular/router';
-import { UserRole } from '../constants/roles.constants';
+import { RoleService } from '../services/role.service';
 
-export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot, state) => {
-  const router = inject(Router);
-  
-  const userStr = localStorage.getItem('user');
-  
-  if (!userStr) {
+export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+  const router      = inject(Router);
+  const roleService = inject(RoleService);
+
+  const permisos = roleService.getPermisos();
+
+  if (!permisos.length) {
     router.navigate(['/login']);
     return false;
   }
-  
-  try {
-    const user = JSON.parse(userStr);
-    const allowedRoles = route.data['allowedRoles'] as UserRole[];
-    
-    if (!allowedRoles || allowedRoles.length === 0) {
-      return true;
-    }
-    
-    if (allowedRoles.includes(user.roleId)) {
-      return true;
-    }
-    
-    router.navigate(['/login']);
-    return false;
-    
-  } catch (error) {
-    console.error('Error al parsear usuario:', error);
-    router.navigate(['/login']);
-    return false;
-  }
+
+  const permisoRequerido: string = route.data['permiso'];
+
+  if (!permisoRequerido) return true;
+
+  if (permisos.includes(permisoRequerido)) return true;
+
+  router.navigate(['/login']);
+  return false;
 };

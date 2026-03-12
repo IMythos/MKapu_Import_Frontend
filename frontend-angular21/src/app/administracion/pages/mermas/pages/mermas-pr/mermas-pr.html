@@ -125,12 +125,13 @@
 
           <ng-template pTemplate="header">
             <tr>
-              <th style="width: 10%">CÓDIGO</th>
-              <th style="width: 30%">MOTIVO</th>
-              <th style="width: 12%">TIPO MERMA</th>
-              <th style="width: 10%">CANTIDAD</th>
-              <th style="width: 15%">RESPONSABLE</th>
-              <th style="width: 13%">FECHA</th>
+              <th style="width: 8%">CÓDIGO</th>
+              <th style="width: 20%">MOTIVO</th>
+              <th style="width: 20%">PRODUCTOS</th>
+              <th style="width: 10%">TIPO MERMA</th>
+              <th style="width: 8%">CANTIDAD</th>
+              <th style="width: 12%">RESPONSABLE</th>
+              <th style="width: 12%">FECHA</th>
               <th style="width: 10%" class="text-center">ACCIONES</th>
             </tr>
           </ng-template>
@@ -146,6 +147,26 @@
                   </div>
                 </div>
               </td>
+
+              <!-- ── Columna Productos ───────────────────────────── -->
+              <td>
+                <div *ngIf="merma.detalles && merma.detalles.length > 0"
+                     class="flex flex-column gap-1">
+                  <div *ngFor="let d of merma.detalles"
+                       class="flex align-items-center gap-1">
+                    <span class="codigo-producto" style="font-size: 0.72rem;">
+                      {{ d.cod_prod }}
+                    </span>
+                    <span class="text-700" style="font-size: 0.82rem;">
+                      {{ d.desc_prod }}
+                    </span>
+                  </div>
+                </div>
+                <span *ngIf="!merma.detalles || merma.detalles.length === 0"
+                      class="text-400 text-sm">—</span>
+              </td>
+              <!-- ─────────────────────────────────────────────────── -->
+
               <td>
                 <p-tag [value]="getTipoMermaLabel(merma.tipoMerma)"
                        [severity]="getTipoMermaSeverity(merma.tipoMerma)">
@@ -164,7 +185,7 @@
 
           <ng-template pTemplate="emptymessage">
             <tr>
-              <td colspan="7" class="text-center py-5">
+              <td colspan="8" class="text-center py-5">
                 <i class="pi pi-inbox text-4xl text-400 mb-3"></i>
                 <p class="text-500 mt-2">No hay mermas registradas con los filtros seleccionados.</p>
               </td>

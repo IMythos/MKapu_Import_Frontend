@@ -28,6 +28,7 @@ import { Quote } from '../../interfaces/quote.interface';
 import { DispatchService } from '../../services/dispatch.service';
 import { CreateDispatchRequest } from '../../interfaces/dispatch.interfaces';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { UserRole } from '../../../core/constants/roles.constants';
 
 import {
   ClienteBusquedaAdminResponse,
@@ -87,7 +88,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   private readonly dispatchService = inject(DispatchService);
 
   readonly tituloKicker = 'VENTAS - GENERAR VENTAS';
-  readonly subtituloKicker = 'GENERAR NUEVA VENTA (ADMIN)';
+  readonly subtituloKicker = 'GENERAR NUEVA VENTA';
   readonly iconoCabecera = 'pi pi-shopping-cart';
 
   readonly steps = [
@@ -96,6 +97,11 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     'Pago, Promociones y Entrega',
     'Confirmar Venta',
   ];
+
+  readonly esAdmin: boolean;
+
+  /** Nombre legible de la sede del usuario de ventas (badge informativo). */
+  readonly sedeNombreVentas: string;
 
   tiposVenta = signal<TipoVentaAdmin[]>([]);
   tiposComprobante = signal<TipoComprobanteAdmin[]>([]);
@@ -207,13 +213,20 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   promoNoEncontrada = signal(false);
   promoYaAplicada = signal(false);
 
-  // ─── COMPUTEDS ─────────────────────────────────────────────────────────────
+  // ── Constructor ───────────────────────────────────────────────────
+
+  constructor() {
+    const user = this.authService.getCurrentUser();
+    this.esAdmin = this.authService.getRoleId() === UserRole.ADMIN;
+    this.sedeNombreVentas = user?.sedeNombre ?? 'Mi sede';
+  }
+
+  // ── Computeds ─────────────────────────────────────────────────────
 
   readonly nombreTipoVentaSeleccionado = computed(
     () => this.tiposVenta().find((t) => t.id === this.tipoVentaSeleccionado())?.descripcion ?? '—',
   );
 
-  // ✅ FIX: ID dinámico de efectivo en lugar de hardcodear === 1
   readonly idMetodoPagoEfectivo = computed(
     () => this.metodosPago().find((m) => m.codSunat === '008')?.id ?? null,
   );
@@ -304,10 +317,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   readonly descuentoPromocion = computed(() => {
     const promo = this.promocionAplicada();
     if (!promo) return 0;
-
     const reglaProducto = promo.reglas?.find((r) => r.tipoCondicion === 'PRODUCTO');
     let base: number;
-
     if (reglaProducto) {
       const itemAfectado = this.productosSeleccionados().find(
         (i) =>
@@ -321,7 +332,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
         0,
       );
     }
-
     return this.esPorcentaje(promo.tipo)
       ? Number(((base * Number(promo.valor)) / 100).toFixed(2))
       : Number(Number(promo.valor).toFixed(2));
@@ -359,7 +369,10 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   readonly nombreSedeSeleccionada = computed(() => {
     const id = this.sedeSeleccionada();
     if (!id) return 'Sin sede seleccionada';
-    return this.sedes().find((s) => s.id_sede === id)?.nombre ?? '';
+    // ADMIN: busca en la lista cargada
+    if (this.esAdmin) return this.sedes().find((s) => s.id_sede === id)?.nombre ?? '';
+    // VENTAS: usa el nombre del usuario directamente
+    return this.sedeNombreVentas;
   });
 
   readonly sedesOptions = computed(() =>
@@ -379,12 +392,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     );
   });
 
-  // ─── LIFECYCLE ─────────────────────────────────────────────────────────────
+  // ── Lifecycle ─────────────────────────────────────────────────────
 
   ngOnInit(): void {
     this.cargarSesion();
     this.cargarTiposDocumento();
-    this.cargarSedes();
+    this.cargarSedes(); // solo ejecuta lógica real si esAdmin
     this.leerParamsCotizacion();
     this.cargarMetodosPago();
     this.cargarTiposVenta();
@@ -395,7 +408,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     setTimeout(() => this.cargarFamilias(), 0);
   }
 
-  // ─── SESIÓN ────────────────────────────────────────────────────────────────
+  // ── Sesión ────────────────────────────────────────────────────────
 
   private cargarSesion(): void {
     const user = this.authService.getCurrentUser();
@@ -405,6 +418,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     }
     this.idUsuarioActual.set(user.userId?.toString() ?? '0');
     this.nombreUsuarioActual.set(`${user.nombres} ${user.apellidos}`.trim());
+
+    // Siempre fijar la sede del usuario (para VENTAS es definitiva; para ADMIN es el punto de partida)
     if (user.idSede) {
       this.sedeSeleccionada.set(user.idSede);
       this.onSedeChange(user.idSede);
@@ -448,9 +463,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  // ─── SEDES ─────────────────────────────────────────────────────────────────
+  // ── Sedes ─────────────────────────────────────────────────────────
 
   private cargarSedes(): void {
+    // VENTAS no necesita la lista completa: su sede ya está fijada en cargarSesion()
+    if (!this.esAdmin) return;
+
     this.sedesLoading.set(true);
     this.ventasService.obtenerSedes().subscribe({
       next: (data) => {
@@ -471,6 +489,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   }
 
   onSedeChange(sedeId: number | null): void {
+    // VENTAS no puede cambiar su sede
+    if (!this.esAdmin) {
+      const user = this.authService.getCurrentUser();
+      if (sedeId !== user?.idSede) return;
+    }
+
     this.sedeSeleccionada.set(sedeId);
     this.almacenSeleccionado.set(null);
     this.familiaSeleccionada.set(null);
@@ -486,7 +510,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  // ─── PRODUCTOS ─────────────────────────────────────────────────────────────
+  // ── Productos ─────────────────────────────────────────────────────
 
   private cargarProductos(resetear = true): void {
     if (!this.sedeSeleccionada()) {
@@ -681,7 +705,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  // ─── CLIENTE ───────────────────────────────────────────────────────────────
+  // ── Cliente ───────────────────────────────────────────────────────
 
   onTipoDocBoleta(id: number): void {
     this.tipoDocBoleta.set(id);
@@ -920,7 +944,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     }
   }
 
-  // ─── COTIZACIÓN ────────────────────────────────────────────────────────────
+  // ── Cotización ────────────────────────────────────────────────────
 
   private leerParamsCotizacion(): void {
     const cotizacionId = this.route.snapshot.queryParamMap.get('cotizacion');
@@ -949,7 +973,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   }
 
   private prefillDesdeCotizacion(cotizacion: Quote): void {
-    if (cotizacion.id_sede) this.onSedeChange(cotizacion.id_sede);
+    // Solo el ADMIN puede cambiar de sede desde una cotización
+    if (cotizacion.id_sede && this.esAdmin) this.onSedeChange(cotizacion.id_sede);
     const tipoDoc = cotizacion.cliente?.id_tipo_documento;
     this.tipoComprobante.set(tipoDoc === 1 ? 1 : 2);
     if (cotizacion.cliente?.valor_doc) {
@@ -1002,7 +1027,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  // ─── PROMOCIONES ───────────────────────────────────────────────────────────
+  // ── Promociones ───────────────────────────────────────────────────
 
   private cargarPromociones(): void {
     this.promocionesLoading.set(true);
@@ -1054,21 +1079,17 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     if (!codigo) return;
     this.promoNoEncontrada.set(false);
     this.promoYaAplicada.set(false);
-
     if (this.promocionAplicada()) {
       this.promoYaAplicada.set(true);
       return;
     }
-
     const encontrada = this.promocionesDisponibles().find(
       (p) => p.concepto.toLowerCase() === codigo.toLowerCase(),
     );
-
     if (!encontrada) {
       this.promoNoEncontrada.set(true);
       return;
     }
-
     this.aplicarPromocion(encontrada);
     this.codigoPromocionInput.set('');
   }
@@ -1086,7 +1107,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  // ─── ENTREGA ───────────────────────────────────────────────────────────────
+  // ── Entrega ───────────────────────────────────────────────────────
 
   onTipoEntregaChange(tipo: TipoEntrega): void {
     this.tipoEntrega.set(tipo);
@@ -1099,7 +1120,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     }
   }
 
-  // ─── WIZARD ────────────────────────────────────────────────────────────────
+  // ── Wizard ────────────────────────────────────────────────────────
 
   nextStep(): void {
     if (!this.validarPasoActual()) return;
@@ -1155,7 +1176,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           return false;
         }
         if (this.tipoPagoOrigen() === 'credito') return true;
-        // ✅ FIX: compara con el ID dinámico, no con 1 hardcodeado
         const esEfectivo = this.metodoPagoSeleccionado() === this.idMetodoPagoEfectivo();
         if (esEfectivo && this.montoRecibido() < this.total()) {
           this.messageService.add({
@@ -1180,7 +1200,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     }
   }
 
-  // ─── VENTA ─────────────────────────────────────────────────────────────────
+  // ── Venta ─────────────────────────────────────────────────────────
 
   generarVenta(): void {
     if (!this.clienteEncontrado()) return;
@@ -1216,8 +1236,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     const promo = this.promocionAplicada();
     const serie = this.tipoComprobante() === 1 ? 'F001' : 'B001';
     const cotizId = this.cotizacionOrigen();
-
-    // ✅ FIX: usa idMetodoPagoEfectivo() dinámico
     const esEfectivo = this.metodoPagoSeleccionado() === this.idMetodoPagoEfectivo();
 
     const request: RegistroVentaAdminRequest = {
@@ -1250,11 +1268,8 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     };
 
     this.ventasService.registrarVenta(request).subscribe({
-      // ✅ FIX: usa RegistroVentaAdminResponse tipado, no any
       next: (response: RegistroVentaAdminResponse) => {
         this.loading.set(false);
-
-        // ✅ FIX: avanza al paso de confirmación
         this.activeStep.set(this.steps.length - 1);
         this.comprobanteGenerado.set(response);
 
@@ -1269,7 +1284,6 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           life: 5000,
         });
 
-        // ─── Despacho automático ───────────────────────────────────────
         const almacenDespacho = this.almacenSeleccionado() ?? request.warehouseId ?? 0;
         if (response.idComprobante > 0 && almacenDespacho) {
           const direccion =
@@ -1307,14 +1321,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
           });
         }
 
-        // ─── Actualizar cotización de origen ──────────────────────────
         if (cotizId) {
           this.quoteService.updateQuoteStatus(cotizId, 'APROBADA').subscribe({
             error: () => console.warn('No se pudo actualizar estado de cotización'),
           });
         }
 
-        // ─── Cuenta por cobrar (crédito) ──────────────────────────────
         if (esCredito) {
           const fechaVenc = new Date();
           fechaVenc.setDate(fechaVenc.getDate() + 30);
@@ -1353,7 +1365,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     });
   }
 
-  // ─── NAVEGACIÓN ────────────────────────────────────────────────────────────
+  // ── Navegación ────────────────────────────────────────────────────
 
   nuevaVenta(): void {
     this.productosSeleccionados.set([]);
@@ -1377,7 +1389,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     this.router.navigate(['/admin/historial-ventas-administracion']);
   }
 
-  // ─── HELPERS ───────────────────────────────────────────────────────────────
+  // ── Helpers ───────────────────────────────────────────────────────
 
   getLabelMetodoPago(id: number): string {
     return this.metodosPago().find((m) => m.id === id)?.descripcion ?? 'N/A';
@@ -1406,7 +1418,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     const promo = this.promocionAplicada();
     if (!promo) return false;
     const regla = promo.reglas?.find((r) => r.tipoCondicion === 'PRODUCTO');
-    if (!regla) return true; // promo aplica a todos
+    if (!regla) return true;
     return (
       item.codigo === regla.valorCondicion || item.productId.toString() === regla.valorCondicion
     );

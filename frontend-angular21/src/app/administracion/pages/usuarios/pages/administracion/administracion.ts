@@ -25,6 +25,7 @@ import { Headquarter } from '../../../../interfaces/sedes.interface';
 import { UsuarioInterfaceResponse, UsuarioRequest } from '../../../../interfaces/usuario.interface';
 import { ROLE_NAMES } from '../../../../../core/constants/roles.constants';
 import { RoleService } from '../../../../services/role.service';
+import { AuthService } from '../../../../../auth/services/auth.service';
 
 @Component({
   selector: 'app-administracion',
@@ -90,7 +91,8 @@ export class Administracion implements AfterViewInit {
     nombreCompleto: '',
   };
 
-  dniInput: number | null = null;
+  // DNI como string para preservar ceros iniciales (ej: 01234567)
+  dniInput: string = '';
   celularInput: number | null = null;
 
   cuentaForm = {
@@ -106,12 +108,13 @@ export class Administracion implements AfterViewInit {
   private messageService  = inject(MessageService);
   private router          = inject(Router);
   private roleService     = inject(RoleService);
+  private authService     = inject(AuthService);
 
 
   ngAfterViewInit(): void {
     setTimeout(() => {
       this.cargarSedes();
-      this.cargarRoles(); 
+      this.cargarRoles();
     }, 0);
   }
 
@@ -128,10 +131,16 @@ export class Administracion implements AfterViewInit {
           value: sede.id_sede,
         }));
 
-        // Preselecciona la primera sede disponible
-        if (this.sedes.length > 0) {
-          this.usuarioRequestForm.id_sede    = this.sedes[0].value;
-          this.usuarioRequestForm.sedeNombre = this.sedes[0].label;
+        // Preselecciona la sede del usuario logueado (desde localStorage vía AuthService).
+        // Si no tiene sede asignada o no coincide, cae a la primera disponible.
+        const currentUser         = this.authService.getCurrentUser();
+        const idSedeUsuario       = currentUser?.idSede ?? null;
+        const sedeMatch           = idSedeUsuario ? this.sedes.find(s => s.value === idSedeUsuario) : null;
+        const sedePreseleccionada = sedeMatch ?? this.sedes[0] ?? null;
+
+        if (sedePreseleccionada) {
+          this.usuarioRequestForm.id_sede    = sedePreseleccionada.value;
+          this.usuarioRequestForm.sedeNombre = sedePreseleccionada.label;
         }
       },
       error: () => {
@@ -162,8 +171,8 @@ export class Administracion implements AfterViewInit {
 
   private getIconForRole(nombre: string): string {
     const n = nombre.toLowerCase();
-    if (n.includes('admin'))                          return 'pi pi-shield';
-    if (n.includes('venta'))                          return 'pi pi-money-bill';
+    if (n.includes('admin'))                            return 'pi pi-shield';
+    if (n.includes('venta'))                            return 'pi pi-money-bill';
     if (n.includes('almacen') || n.includes('almacén')) return 'pi pi-warehouse';
     return 'pi pi-user';
   }
@@ -181,7 +190,6 @@ export class Administracion implements AfterViewInit {
   }
 
   enviarUsuarioRequestPrueba(): void {
-    // Validaciones
     if (!this.cuentaForm.username.trim()) {
       this.messageService.add({ severity: 'warn', summary: 'Faltan datos', detail: 'Ingresa el nombre de usuario.' });
       return;
@@ -206,7 +214,7 @@ export class Administracion implements AfterViewInit {
 
     const payload: UsuarioRequest = {
       ...this.usuarioRequestForm,
-      dni:            this.dniInput === null ? '' : String(this.dniInput),
+      dni:            this.dniInput ?? '',
       celular:        this.celularInput === null ? 0 : this.celularInput,
       nombreCompleto: this.buildNombreCompleto(),
       fec_nac:        this.formatFechaNac(this.usuarioRequestForm.fec_nac as unknown as string | Date),
@@ -282,29 +290,61 @@ export class Administracion implements AfterViewInit {
   }
 
   private resetFormulario(): void {
+    // Al resetear, respeta la sede del usuario logueado
+    const currentUser         = this.authService.getCurrentUser();
+    const idSedeUsuario       = currentUser?.idSede ?? null;
+    const sedeMatch           = idSedeUsuario ? this.sedes.find(s => s.value === idSedeUsuario) : null;
+    const sedePreseleccionada = sedeMatch ?? this.sedes[0] ?? null;
+
     this.usuarioRequestForm = {
       usu_nom: '', ape_mat: '', ape_pat: '', dni: '', email: '',
       celular: 0, direccion: '', genero: '', fec_nac: '',
-      activo: true,
-      id_sede:        this.sedes[0]?.value ?? 0,
-      sedeNombre:     this.sedes[0]?.label ?? '',
+      activo:         true,
+      id_sede:        sedePreseleccionada?.value ?? 0,
+      sedeNombre:     sedePreseleccionada?.label ?? '',
       nombreCompleto: '',
     };
-    this.dniInput              = null;
+    this.dniInput              = '';
     this.celularInput          = null;
     this.cuentaForm            = { username: '', password: '', confirmPassword: '' };
     this.rolCuentaSeleccionado = null;
     this.activeStepUsuario     = 0;
   }
 
+  // ─── DNI (texto, acepta cero inicial) ──────────────────────────────────────
+
+  /** Permite solo dígitos al presionar tecla */
+  onDniKeyPress(event: KeyboardEvent): void {
+    if (!/^\d$/.test(event.key)) {
+      event.preventDefault();
+    }
+  }
+
+  /** Limita a 8 dígitos y actualiza el modelo */
+  onDniInput(event: Event): void {
+    const input  = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').slice(0, 8);
+    this.dniInput = digits;
+    // Corrige el valor visible por si pegaron texto con letras
+    input.value = digits;
+  }
+
+  // ─── Nombres en MAYÚSCULAS ─────────────────────────────────────────────────
+
+  /** Bloquea caracteres que no sean letras o espacios */
   allowOnlyLetters(event: KeyboardEvent): void {
     if (event.key.length !== 1) return;
     if (!/^[A-Za-zÁÉÍÓÚáéíóúÑñ\s]$/.test(event.key)) event.preventDefault();
   }
 
+  /** Elimina caracteres no permitidos y convierte a mayúsculas */
   sanitizeOnlyLetters(value: string): string {
-    return value.replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '');
+    return value
+      .replace(/[^A-Za-zÁÉÍÓÚáéíóúÑñ\s]/g, '')
+      .toUpperCase();
   }
+
+  // ─── Utilitarios ──────────────────────────────────────────────────────────
 
   trimUsuarioField(
     key: keyof Pick<UsuarioRequest, 'usu_nom' | 'ape_pat' | 'ape_mat' | 'email' | 'direccion'>
@@ -317,10 +357,12 @@ export class Administracion implements AfterViewInit {
     return typeof value === 'string' ? value.replace(/\s+/g, '') : '';
   }
 
+  // ─── Celular ───────────────────────────────────────────────────────────────
+
   onCelularChange(value: number | null): void {
     if (value === null || value === undefined) { this.celularInput = null; return; }
     const digits = String(value).replace(/\D/g, '');
-    if (!digits)  { this.celularInput = null; return; }
+    if (!digits) { this.celularInput = null; return; }
     this.celularInput = Number(digits.length > 9 ? digits.slice(0, 9) : digits);
   }
 
@@ -334,28 +376,10 @@ export class Administracion implements AfterViewInit {
     if (selEnd <= selStart && value.length >= 9) event.preventDefault();
   }
 
+  // ─── Otros ────────────────────────────────────────────────────────────────
+
   getEstadoSeverity(activo: boolean): 'success' | 'danger' {
     return activo ? 'success' : 'danger';
-  }
-
-  onDniChange(value: number | null): void {
-    if (value === null || value === undefined) {
-      this.dniInput = null;
-      return;
-    }
-    const digits = String(value).replace(/\D/g, '');
-    this.dniInput = Number(digits.length > 8 ? digits.slice(0, 8) : digits);
-  }
-
-  onDniKeyDown(event: KeyboardEvent): void {
-    if (event.key.length !== 1 || !/\d/.test(event.key)) return;
-    const input = event.target as HTMLInputElement | null;
-    if (!input) return;
-    const value      = input.value?.replace(/\D/g, '') ?? '';
-    const selStart   = input.selectionStart ?? value.length;
-    const selEnd     = input.selectionEnd   ?? value.length;
-    const hasSelection = selEnd > selStart;
-    if (!hasSelection && value.length >= 8) event.preventDefault();
   }
 
   getRolDisplay(usuario: UsuarioInterfaceResponse): string {
@@ -369,4 +393,10 @@ export class Administracion implements AfterViewInit {
         : '') || 'Sin rol'
     );
   }
+  
+  get rolSeleccionadoNombre(): string {
+  if (!this.rolCuentaSeleccionado) return '-';
+  const rol = this.roles.find(r => r.value === this.rolCuentaSeleccionado);
+  return rol?.label ?? '-';
+}
 }

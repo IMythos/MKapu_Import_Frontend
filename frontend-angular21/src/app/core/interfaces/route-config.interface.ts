@@ -1,10 +1,9 @@
-import { UserRole } from '../constants/roles.constants';
 
+// src/app/core/interfaces/route-config.interface.ts
 export interface RouteConfig {
   path: string;
-  allowedRoles: UserRole[];
   label: string;
-  icon?: string;
-  children?: RouteConfig[];
-  isSection?: boolean;
+  icon: string;
+  permiso?: string;
+  allowedRoles?: any[];
 }
