@@ -484,9 +484,9 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     return 'var(--text-muted)';
   }
 
-  irCrear()             { this.router.navigate(['/admin/agregar-cotizaciones']); }
-  irEditar(id: number)  { this.router.navigate(['/admin/editar-cotizacion', id]); }
-  irDetalle(id: number) { this.router.navigate(['/admin/ver-detalle-cotizacion', id]); }
+  irCrear()             { this.router.navigate(['/admin/cotizaciones/agregar-cotizaciones']); }
+  irEditar(id: number)  { this.router.navigate(['/admin/cotizaciones/editar-cotizacion', id]); }
+  irDetalle(id: number) { this.router.navigate(['/admin/cotizaciones/ver-detalle-cotizacion', id]); }
 
   irAgregarVenta(id: number) {
     this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'contado' } });

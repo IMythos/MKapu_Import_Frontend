@@ -135,9 +135,9 @@ export const routes: Routes = [
         path: 'admin/ventas-por-cobrar',
         children: [
           { path: '', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/ventas-por-cobrar-listado/ventas-por-cobrar-listado').then(m => m.VentasPorCobrarListadoComponent) },
-          { path: 'agregar', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(m => m.VentasPorCobrarFormulario) },
-          { path: 'detalles/:id', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/detalle-ventas-por-cobrar-formulario/detalle-ventas-por-cobrar-formulario').then(m => m.DetalleVentaPorCobrar) },
-          { path: 'pagar/:id', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/ventas-por-cobrar-pago/ventas-por-cobrar-pago.component').then(m => m.VentasPorCobrarPagoComponent) },
+          //borrar { path: 'agregar', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/ventas-por-cobrar-formulario/ventas-por-cobrar-formulario').then(m => m.VentasPorCobrarFormulario) },
+          { path: 'detalles-ventas-por-cobrar/:id', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/detalle-ventas-por-cobrar-formulario/detalle-ventas-por-cobrar-formulario').then(m => m.DetalleVentaPorCobrar) },
+          { path: 'pagar-ventas-por-cobrar/:id', loadComponent: () => import('./administracion/pages/ventas-por-cobrar/ventas-por-cobrar-pago/ventas-por-cobrar-pago.component').then(m => m.VentasPorCobrarPagoComponent) },
         ]
       },
 
@@ -156,8 +156,8 @@ export const routes: Routes = [
         path: 'admin/cotizaciones',
         children: [
           { path: '', loadComponent: () => import('./administracion/pages/gestion-cotizacion/gestion-listado/gestion-listado').then(m => m.GestionCotizacionesComponent) },
-          { path: 'agregar', loadComponent: () => import('./administracion/pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then(m => m.CotizacionFormulario) },
-          { path: 'ver-detalle/:id', loadComponent: () => import('./administracion/pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then(m => m.DetalleCotizacionComponent) },
+          { path: 'agregar-cotizaciones', loadComponent: () => import('./administracion/pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then(m => m.CotizacionFormulario) },
+          { path: 'ver-detalle-cotizacion/:id', loadComponent: () => import('./administracion/pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then(m => m.DetalleCotizacionComponent) },
         ]
       },
 
@@ -235,8 +235,8 @@ export const routes: Routes = [
         path: 'logistica/conteo-inventario',
         children: [
           { path: '', loadComponent: () => import('./logistica/pages/conteo-inventario/conteoinventario').then(m => m.ConteoInventarios) },
-          { path: 'crear', loadComponent: () => import('./logistica/pages/conteo-crear/conteocrear').then(m => m.ConteoCrear) },
-          { path: 'detalle/:id', loadComponent: () => import('./logistica/pages/conteo-detalle/conteodetalle').then(m => m.ConteoDetalle) },
+          { path: 'conteo-crear', loadComponent: () => import('./logistica/pages/conteo-crear/conteocrear').then(m => m.ConteoCrear) },
+          { path: 'conteo-detalle/:id', loadComponent: () => import('./logistica/pages/conteo-detalle/conteodetalle').then(m => m.ConteoDetalle) },
         ]
       },
       {
@@ -268,6 +268,7 @@ export const routes: Routes = [
           { path: 'agregar-despacho', loadComponent: () => import('./administracion/pages/despacho-productos/pages/agregar-despacho/agregar-despacho').then(m => m.AgregarDespacho) },
           { path: 'detalle-despacho/:id', loadComponent: () => import('./administracion/pages/despacho-productos/pages/detalles-despacho/detalles-despacho').then(m => m.DetallesDespacho) },
           { path: 'editar-despacho/:id', loadComponent: () => import('./administracion/pages/despacho-productos/pages/editar-despacho/editar-despacho').then(m => m.EditarDespacho) },
+          {  path: 'confirmar-despacho', loadComponent: () => import('./administracion/pages/despacho-productos/pages/confirmar-despacho/confirmar-despacho').then((m) => m.ConfirmarDespacho) } ,
         ]
       },
       {
@@ -321,8 +322,8 @@ export const routes: Routes = [
         path: 'admin/comision',
         children: [
           { path: '', loadComponent: () => import('./administracion/pages/comision/comision').then(m => m.Comision) },
-          { path: 'regla', loadComponent: () => import('./administracion/pages/comision/comision-regla/comisionregla').then(m => m.ComisionRegla) },
-          { path: 'reportes', loadComponent: () => import('./administracion/pages/comision/comision-reportes/comisionreportes').then(m => m.ComisionReportes) },
+          { path: 'comision-regla', loadComponent: () => import('./administracion/pages/comision/comision-regla/comisionregla').then(m => m.ComisionRegla) },
+          { path: 'comision-reportes', loadComponent: () => import('./administracion/pages/comision/comision-reportes/comisionreportes').then(m => m.ComisionReportes) },
         ]
       },
       {

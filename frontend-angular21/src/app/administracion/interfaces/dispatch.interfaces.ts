@@ -1,17 +1,16 @@
-/**
- * ============================================================
- * ENUMS Y TIPOS DE ESTADO
- * ============================================================
- */
-
-/** Estado individual de cada item dentro de un despacho */
+/* =========================================
+   DISPATCH DETAIL STATUS — inline, sin imports externos
+========================================= */
 export type DispatchDetailStatus =
   | 'PENDIENTE'
   | 'PREPARADO'
   | 'DESPACHADO'
   | 'FALTANTE';
 
-/** Estado global del proceso de despacho (Sincronizado con Backend) */
+/* =========================================
+   DISPATCH STATUS — alineado al backend
+   (DispatchStatus enum en dispatch-domain-entity.ts)
+========================================= */
 export type DispatchStatus =
   | 'GENERADO'
   | 'EN_PREPARACION'
@@ -19,13 +18,9 @@ export type DispatchStatus =
   | 'ENTREGADO'
   | 'CANCELADO';
 
-/**
- * ============================================================
- * ENTIDADES PRINCIPALES (OUTPUT DTOs)
- * ============================================================
- */
-
-/** Detalle de producto específico en un despacho */
+/* =========================================
+   DETALLE DE DESPACHO — alineado a DispatchDetailOutputDto
+========================================= */
 export interface DispatchDetail {
   id_detalle_despacho: number | null;
   id_producto: number;
@@ -35,9 +30,11 @@ export interface DispatchDetail {
   tieneFaltante: boolean;
 }
 
-/** Entidad principal de Despacho */
+/* =========================================
+   ENTIDAD PRINCIPAL — alineada a DispatchOutputDto
+========================================= */
 export interface Dispatch {
-  id_despacho: number ;
+  id_despacho: number;
   id_venta_ref: number;
   id_usuario_ref: string;
   id_almacen_origen: number;
@@ -53,43 +50,36 @@ export interface Dispatch {
   detalles: DispatchDetail[];
 }
 
-/** Respuesta estándar para listados de despachos */
+/* =========================================
+   RESPONSE — backend devuelve array directo
+========================================= */
 export interface DispatchListResponse {
   dispatches: Dispatch[];
 }
 
-/**
- * ============================================================
- * ACCIONES Y PETICIONES (INPUT DTOs)
- * ============================================================
- */
-
-/** Payload para crear un nuevo detalle de despacho */
+/* =========================================
+   REQUEST TYPES — alineados a CreateDispatchDto
+========================================= */
 export interface CreateDispatchDetailRequest {
   id_producto: number;
   cantidad_solicitada: number;
 }
 
-/** Payload para la creación de un despacho completo */
 export interface CreateDispatchRequest {
   id_venta_ref: number;
   id_usuario_ref: string;
   id_almacen_origen: number;
-  direccion_entrega: string;
   fecha_programada?: Date;
+  direccion_entrega: string;
   observacion?: string;
   detalles: CreateDispatchDetailRequest[];
 }
 
-/** Payload para actualización parcial de un despacho */
 export type UpdateDispatchRequest = Partial<Omit<Dispatch, 'id_despacho'>>;
 
-/**
- * ============================================================
- * DTOS PARA FLUJOS DE ESTADO (ACTIONS)
- * ============================================================
- */
-
+/* =========================================
+   DTOs para acciones de estado
+========================================= */
 export interface IniciarTransitoRequest {
   fecha_salida: Date;
 }

@@ -1,45 +1,31 @@
 <div class="p-2">
-
-  <!-- CABECERA -->
+  <!-- ===================== CABECERA ===================== -->
   <p-card styleClass="despacho-header-card mb-4">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <span class="despacho-title-icon">
-          <i [class]="iconoCabecera"></i>
-        </span>
+        <span class="despacho-title-icon"><i [class]="iconoCabecera"></i></span>
         <div>
           <p class="despacho-kicker mb-0">{{ tituloKicker }}</p>
           <h2 class="despacho-title mb-0">{{ subtituloKicker }}</h2>
         </div>
       </div>
       <div class="flex gap-2">
-        <p-button
-          label="Nuevo Despacho"
-          icon="pi pi-plus"
+        <p-button label="Nuevo Despacho" icon="pi pi-plus"
           styleClass="despacho-pill despacho-pill-warning"
           routerLink="/admin/despacho-productos/agregar-despacho">
         </p-button>
       </div>
     </div>
   </p-card>
-
 </div>
 
 <div class="p-2">
-
-  <!-- BANNER DE ERROR -->
-  <div *ngIf="error()"
-    class="despacho-error-banner mb-4 flex align-items-center gap-3 p-3 border-round-xl">
+  <!-- ERROR BANNER -->
+  <div *ngIf="error()" class="despacho-error-banner mb-4 flex align-items-center gap-3 p-3 border-round-xl">
     <i class="pi pi-exclamation-circle text-2xl"></i>
     <span class="flex-1">{{ error() }}</span>
-    <p-button
-      label="Reintentar"
-      icon="pi pi-refresh"
-      size="small"
-      severity="danger"
-      [outlined]="true"
-      (onClick)="dispatchService.loadDispatches().subscribe()">
-    </p-button>
+    <p-button label="Reintentar" icon="pi pi-refresh" size="small" severity="danger" [outlined]="true"
+      (onClick)="dispatchService.loadDispatches().subscribe()"></p-button>
   </div>
 
   <!-- CONTADORES -->
@@ -49,6 +35,7 @@
       <div>
         <span class="contador-label">Total Despachos</span>
         <span class="contador-valor">{{ dispatches().length }}</span>
+        <span class="contador-detalle"><i class="pi pi-list"></i> Registrados</span>
       </div>
     </div>
     <div class="contador-card">
@@ -56,6 +43,7 @@
       <div>
         <span class="contador-label">Pendientes</span>
         <span class="contador-valor">{{ totalPendientes() }}</span>
+        <span class="contador-detalle"><i class="pi pi-hourglass"></i> Por procesar</span>
       </div>
     </div>
     <div class="contador-card">
@@ -63,6 +51,7 @@
       <div>
         <span class="contador-label">Enviados</span>
         <span class="contador-valor">{{ totalEnviados() }}</span>
+        <span class="contador-detalle"><i class="pi pi-arrow-right"></i> En camino</span>
       </div>
     </div>
     <div class="contador-card">
@@ -70,6 +59,7 @@
       <div>
         <span class="contador-label">Entregados</span>
         <span class="contador-valor">{{ totalEntregados() }}</span>
+        <span class="contador-detalle"><i class="pi pi-verified"></i> Completados</span>
       </div>
     </div>
   </div>
@@ -79,171 +69,308 @@
     <div class="p-3">
       <div class="flex flex-wrap gap-3 align-items-end">
 
-        <div class="flex-1 p-fluid" style="min-width: 220px;">
-          <label class="font-medium mb-2 block">Buscar Despacho</label>
-          <input
-            pInputText
-            type="text"
-            [ngModel]="searchTerm()"
-            (ngModelChange)="searchTerm.set($event); paginaActual.set(1)"
-            placeholder="ID despacho, venta o dirección de entrega..."
-            class="w-full"
-          />
+        <!-- Búsqueda -->
+        <div class="flex-1 p-fluid" style="min-width: 200px;">
+          <label class="font-medium mb-2 block">Buscar</label>
+          <input pInputText type="text" [ngModel]="searchTerm()" (ngModelChange)="searchTerm.set($event)"
+            placeholder="Comprobante, cliente, DNI, dirección..." class="w-full" />
         </div>
 
-        <div class="flex flex-column" style="min-width: 200px;">
-          <label class="font-medium mb-2 block">Filtrar por Estado</label>
-          <p-select
-            [options]="estadoOptions"
-            [ngModel]="estadoFiltro()"
-            (ngModelChange)="estadoFiltro.set($event); paginaActual.set(1)"
-            optionLabel="label"
-            optionValue="value"
-            placeholder="Seleccione estado"
-            class="w-full">
-          </p-select>
+        <!-- Estado -->
+        <div class="flex flex-column" style="min-width: 180px;">
+          <label class="font-medium mb-2 block">Estado</label>
+          <p-select [options]="estadoOptions" [ngModel]="estadoFiltro()" (ngModelChange)="estadoFiltro.set($event)"
+            optionLabel="label" optionValue="value" placeholder="Todos" class="w-full"></p-select>
         </div>
 
+        <!-- Fecha Desde -->
+        <div class="flex flex-column" style="min-width: 160px;">
+          <label class="font-medium mb-2 block">Desde</label>
+          <p-datepicker [ngModel]="fechaDesde()" (ngModelChange)="fechaDesde.set($event)"
+            dateFormat="dd/mm/yy" [showClear]="true" placeholder="Fecha inicio"
+            styleClass="w-full" appendTo="body"></p-datepicker>
+        </div>
+
+        <!-- Fecha Hasta -->
+        <div class="flex flex-column" style="min-width: 160px;">
+          <label class="font-medium mb-2 block">Hasta</label>
+          <p-datepicker [ngModel]="fechaHasta()" (ngModelChange)="fechaHasta.set($event)"
+            dateFormat="dd/mm/yy" [showClear]="true" placeholder="Fecha fin"
+            styleClass="w-full" appendTo="body"></p-datepicker>
+        </div>
+
+        <!-- Botones -->
+        <div class="flex align-items-end gap-2">
+          <p-button icon="pi pi-calendar" label="Hoy" severity="info" size="small"
+            pTooltip="Ver despachos de hoy" (onClick)="filtrarHoy()"></p-button>
+          <p-button icon="pi pi-filter-slash" label="Limpiar" severity="danger" size="small"
+            (onClick)="limpiarFiltros()"></p-button>
+        </div>
+
+        <!-- Responsables -->
         <div class="despacho-responsables-card flex flex-column gap-1 px-3 py-2 border-round-lg">
           <span class="despacho-responsable-label">
-            <i class="pi pi-user mr-1"></i>
-            Almacenero: <strong>{{ despachador() }}</strong>
+            <i class="pi pi-user mr-1"></i> Almacenero: <strong>{{ despachador() }}</strong>
           </span>
           <span class="despacho-responsable-label">
-            <i class="pi pi-briefcase mr-1"></i>
-            Asesor: <strong>{{ asesor() }}</strong>
+            <i class="pi pi-briefcase mr-1"></i> Asesor: <strong>{{ asesor() }}</strong>
           </span>
         </div>
 
-        <div class="flex align-items-end">
-          <p-button
-            icon="pi pi-filter-slash"
-            label="Limpiar"
-            severity="danger"
-            size="small"
-            (onClick)="limpiarFiltros()">
-          </p-button>
+      </div>
+
+      <!-- Resumen de filtros activos -->
+      <div *ngIf="fechaDesde() || fechaHasta()" class="mt-2 flex align-items-center gap-2 text-sm text-500">
+        <i class="pi pi-filter text-primary"></i>
+        <span>
+          Mostrando {{ filasFiltradas().length }} despacho(s)
+          <ng-container *ngIf="fechaDesde()">desde {{ fechaDesde() | date:'dd/MM/yy' }}</ng-container>
+          <ng-container *ngIf="fechaHasta()"> hasta {{ fechaHasta() | date:'dd/MM/yy' }}</ng-container>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <div class="mb-6">
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+      <p-table [value]="filasFiltradas()" [loading]="loading()" [paginator]="true" [rows]="10"
+        [rowsPerPageOptions]="[5,10,25,50]" styleClass="despacho-table-nativa despacho-table-hover" [rowHover]="true">
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width:18%">Comprobante</th>
+            <th style="width:22%">Cliente</th>
+            <th style="width:14%">Sede</th>
+            <th style="width:26%">Dirección de Entrega</th>
+            <th style="width:10%">Estado</th>
+            <th style="width:10%">Acciones</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-d>
+          <tr>
+            <!-- Comprobante -->
+            <td>
+              <span class="font-semibold text-primary block">{{ getNumeroComprobante(d.id_venta_ref) }}</span>
+              <span class="text-xs text-500">#Despacho {{ d.id_despacho }}</span>
+            </td>
+            <!-- Cliente -->
+            <td>
+              <span class="font-semibold block">{{ getClienteNombre(d.id_venta_ref) }}</span>
+              <span class="text-xs text-500" *ngIf="getClienteDoc(d.id_venta_ref)">
+                <i class="pi pi-id-card mr-1"></i>{{ getClienteDoc(d.id_venta_ref) }}
+              </span>
+            </td>
+            <!-- Sede -->
+            <td>
+              <span class="flex align-items-center gap-1">
+                <i class="pi pi-building text-400 text-xs"></i>
+                {{ getSede(d.id_venta_ref) }}
+              </span>
+            </td>
+            <!-- Dirección -->
+            <td>
+              <span class="flex align-items-center gap-2">
+                <i class="pi pi-map-marker text-400"></i>
+                {{ d.direccion_entrega ?? '—' }}
+              </span>
+            </td>
+            <!-- Estado -->
+            <td>
+              <p-tag [value]="getEstadoLabel(d.estado)" [severity]="getEstadoSeverity(d.estado)" styleClass="font-bold"></p-tag>
+            </td>
+            <!-- Acciones -->
+            <td>
+              <div class="flex align-items-center gap-2">
+                <p-button icon="pi pi-eye" [text]="true" severity="secondary"
+                  styleClass="despacho-icon-btn despacho-icon-soft"
+                  pTooltip="Ver Detalle" (onClick)="verDetalle(d)"></p-button>
+                <p-button icon="pi pi-pencil" [text]="true" severity="secondary"
+                  styleClass="despacho-icon-btn despacho-icon-warn"
+                  pTooltip="Editar Despacho"></p-button>
+                <p-button icon="pi pi-ban" [text]="true" severity="danger"
+                  styleClass="despacho-icon-btn despacho-icon-danger"
+                  pTooltip="Cancelar Despacho" (onClick)="cancelar(d)"></p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="text-center py-6">
+              <i class="pi pi-truck text-4xl text-400 mb-3 block"></i>
+              <p class="text-900 font-medium mb-0">No se encontraron despachos</p>
+              <p class="text-600 mt-2">
+                {{ (searchTerm() || estadoFiltro() !== 'TODOS' || fechaDesde() || fechaHasta()) ? 'Prueba ajustando los filtros' : 'Aún no hay despachos registrados' }}
+              </p>
+            </td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     MODAL DETALLE DESPACHO
+══════════════════════════════════════════ -->
+<p-dialog
+  [visible]="modalVisible()"
+  (visibleChange)="modalVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '800px', 'max-width': '96vw' }"
+  [contentStyle]="{ padding: '0', background: '#12121f', 'border-radius': '16px' }"
+  [showHeader]="false"
+  styleClass="dm-dialog">
+
+  <ng-container *ngIf="despachoSeleccionado() as d">
+
+    <!-- ── HEADER ── -->
+    <div class="dm-header">
+      <div class="dm-header-left">
+        <div class="dm-header-icon"><i class="pi pi-truck"></i></div>
+        <div>
+          <p class="dm-header-sub">Detalle de Despacho</p>
+          <h3 class="dm-header-title">#{{ d.id_despacho }}
+            <span class="dm-header-venta">· {{ numeroVentaModal() }}</span>
+          </h3>
+        </div>
+      </div>
+      <div class="dm-header-right">
+        <span [class]="'dm-estado-pill dm-estado-' + d.estado">{{ getEstadoLabel(d.estado) }}</span>
+        <button class="dm-close-btn" (click)="cerrarModal()"><i class="pi pi-times"></i></button>
+      </div>
+    </div>
+
+    <!-- ── LOADING ── -->
+    <div *ngIf="loadingDetalle()" class="dm-loading">
+      <i class="pi pi-spin pi-spinner"></i>
+      <span>Cargando detalles...</span>
+    </div>
+
+    <ng-container *ngIf="!loadingDetalle()">
+
+      <!-- ── INFO GRID ── -->
+      <div class="dm-info-grid">
+
+        <!-- Cliente -->
+        <div class="dm-info-card" *ngIf="clienteInfo()">
+          <span class="dm-info-label"><i class="pi pi-user mr-1"></i>Cliente</span>
+          <p class="dm-info-value">{{ clienteInfo()!.nombre }}</p>
+          <p class="dm-info-obs mt-1" *ngIf="clienteInfo()!.documento">
+            <i class="pi pi-id-card mr-1"></i>{{ clienteInfo()!.documento }}
+          </p>
+          <p class="dm-info-obs" *ngIf="clienteInfo()!.telefono">
+            <i class="pi pi-phone mr-1"></i>{{ clienteInfo()!.telefono }}
+          </p>
+        </div>
+
+        <!-- Dirección de entrega -->
+        <div class="dm-info-card dm-info-address">
+          <span class="dm-info-label"><i class="pi pi-map-marker mr-1"></i>Dirección de Entrega</span>
+          <p class="dm-info-value">{{ d.direccion_entrega }}</p>
+          <a [href]="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.direccion_entrega + ', Lima, Perú')"
+             target="_blank" rel="noopener" class="dm-map-link">
+            <i class="pi pi-map-marker mr-1"></i> Ver en Google Maps
+          </a>
+        </div>
+
+        <!-- Sede de origen -->
+        <div class="dm-info-card">
+          <span class="dm-info-label"><i class="pi pi-building mr-1"></i>Sede Origen</span>
+          <p class="dm-info-value">{{ sedeNombreModal() }}</p>
+        </div>
+
+        <!-- Fechas -->
+        <div class="dm-info-card dm-info-fechas">
+          <span class="dm-info-label"><i class="pi pi-calendar mr-1"></i>Fechas</span>
+          <div class="dm-fechas-row">
+            <div class="dm-fecha-item">
+              <span class="dm-fecha-lbl">Creación</span>
+              <span class="dm-fecha-val">{{ d.fecha_creacion | date:'dd/MM/yy' }}</span>
+            </div>
+            <div class="dm-fecha-item">
+              <span class="dm-fecha-lbl">Programada</span>
+              <span class="dm-fecha-val">{{ d.fecha_programada ? (d.fecha_programada | date:'dd/MM/yy') : '—' }}</span>
+            </div>
+            <div class="dm-fecha-item">
+              <span class="dm-fecha-lbl">Salida</span>
+              <span class="dm-fecha-val">{{ d.fecha_salida ? (d.fecha_salida | date:'dd/MM/yy') : '—' }}</span>
+            </div>
+            <div class="dm-fecha-item">
+              <span class="dm-fecha-lbl">Entrega</span>
+              <span class="dm-fecha-val">{{ d.fecha_entrega ? (d.fecha_entrega | date:'dd/MM/yy') : '—' }}</span>
+            </div>
+          </div>
         </div>
 
       </div>
-    </div>
-  </div>
 
-  <!-- TABLA con overlay -->
-  <div class="mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative;">
+      <!-- ── PRODUCTOS ── -->
+      <div class="dm-productos">
+        <div class="dm-productos-header">
+          <div class="dm-productos-title">
+            <i class="pi pi-box"></i>
+            <span>Productos por Despachar</span>
+          </div>
+          <div class="dm-productos-badges">
+            <span class="dm-badge-count">{{ d.detalles.length || 0 }} ítems</span>
+            <span class="dm-badge-units">{{ totalProductosModal() }} unidades</span>
+          </div>
+        </div>
 
-      <app-loading-overlay
-        [visible]="loading()"
-        mensaje="Cargando despachos..."
-        modo="inline">
-      </app-loading-overlay>
-
-      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
-
-        <p-table
-          [value]="filasPaginadas()"
-          [loading]="false"
-          [paginator]="false"
-          styleClass="despacho-table-nativa despacho-table-hover"
-          [rowHover]="true">
-
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width: 12%">ID Despacho</th>
-              <th style="width: 15%">ID Venta Ref.</th>
-              <th style="width: 33%">Dirección de Entrega</th>
-              <th style="width: 20%">Estado</th>
-              <th style="width: 20%">Acciones</th>
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="body" let-d>
-            <tr>
-              <td class="font-semibold text-primary">#{{ d.id_despacho }}</td>
-              <td class="font-semibold">{{ d.id_venta_ref ?? '—' }}</td>
-              <td>
-                <span class="flex align-items-center gap-2">
-                  <i class="pi pi-map-marker text-400"></i>
-                  {{ d.direccion_entrega ?? '—' }}
-                </span>
-              </td>
-              <td>
-                <p-tag
-                  [value]="getEstadoLabel(d.estado)"
-                  [severity]="getEstadoSeverity(d.estado)"
-                  styleClass="font-bold">
-                </p-tag>
-              </td>
-              <td>
-                <div class="flex align-items-center gap-2">
-                  <p-button
-                    icon="pi pi-eye"
-                    text severity="secondary"
-                    styleClass="despacho-icon-btn despacho-icon-soft"
-                    pTooltip="Ver Detalle">
-                  </p-button>
-                  <p-button
-                    icon="pi pi-pencil"
-                    text severity="secondary"
-                    styleClass="despacho-icon-btn despacho-icon-warn"
-                    pTooltip="Editar Despacho">
-                  </p-button>
-                  <p-button
-                    icon="pi pi-print"
-                    text severity="secondary"
-                    styleClass="despacho-icon-btn despacho-icon-warn"
-                    pTooltip="Generar pdf">
-                  </p-button>
-                  <p-button
-                    icon="pi pi-send"
-                    text severity="secondary"
-                    styleClass="despacho-icon-btn despacho-icon-warn"
-                    pTooltip="Enviar a correo">
-                  </p-button>
-                  <p-button
-                    icon="pi pi-ban"
-                    text severity="danger"
-                    styleClass="despacho-icon-btn despacho-icon-danger"
-                    pTooltip="Cancelar Despacho"
-                    (onClick)="cancelar(d)">
-                  </p-button>
+        <div class="dm-productos-body">
+          <ng-container *ngIf="d.detalles.length > 0; else emptyProductos">
+            <div class="dm-producto-row" *ngFor="let det of d.detalles">
+              <div class="dm-producto-icon"><i class="pi pi-box"></i></div>
+              <div class="dm-producto-info">
+                <span class="dm-producto-nombre">{{ getProductoNombre(det.id_producto) }}</span>
+                <span class="dm-producto-id">{{ getProductoCodigo(det.id_producto) }}</span>
+              </div>
+              <div class="dm-producto-qty">
+                <div class="dm-qty-item">
+                  <span class="dm-qty-lbl">Solicitado</span>
+                  <span class="dm-qty-val">{{ det.cantidad_solicitada }}</span>
                 </div>
-              </td>
-            </tr>
+                <div class="dm-qty-divider">→</div>
+                <div class="dm-qty-item">
+                  <span class="dm-qty-lbl">Despachado</span>
+                  <span class="dm-qty-val dm-qty-despachado">{{ det.cantidad_despachada }}</span>
+                </div>
+              </div>
+              <span [class]="'dm-det-badge dm-det-' + det.estado.toLowerCase()">{{ det.estado }}</span>
+            </div>
+          </ng-container>
+          <ng-template #emptyProductos>
+            <div class="dm-empty-productos">
+              <i class="pi pi-inbox"></i>
+              <p>Sin productos registrados</p>
+            </div>
           </ng-template>
+        </div>
 
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="5" class="text-center py-6">
-                <i class="pi pi-truck text-4xl text-400 mb-3 block"></i>
-                <p class="text-900 font-medium mb-0">No se encontraron despachos</p>
-                <p class="text-600 mt-2">
-                  {{ (searchTerm() || estadoFiltro() !== 'TODOS')
-                    ? 'Prueba ajustando los filtros de búsqueda'
-                    : 'Aún no hay despachos registrados' }}
-                </p>
-              </td>
-            </tr>
-          </ng-template>
-
-        </p-table>
-
-        <app-paginador
-          [page]="paginaActual()"
-          [totalPages]="totalPaginas()"
-          [total]="filasFiltradas().length"
-          [limit]="limitePagina()"
-          [limitOpciones]="[5, 10, 25, 50]"
-          (pageChange)="onPageChange($event)"
-          (limitChange)="onLimitChange($event)">
-        </app-paginador>
-
+        <div class="dm-productos-footer">
+          <span>Total unidades: <strong>{{ totalProductosModal() }}</strong></span>
+          <span *ngIf="d.tieneFaltantes" class="dm-faltantes-warn">
+            <i class="pi pi-exclamation-triangle mr-1"></i>Tiene faltantes
+          </span>
+        </div>
       </div>
-    </div>
-  </div>
 
-</div>
+      <!-- ── FOOTER ACCIONES ── -->
+      <div class="dm-footer">
+        <p-button label="Cerrar" icon="pi pi-times" severity="secondary" [outlined]="true" (onClick)="cerrarModal()"></p-button>
+
+        <button *ngIf="d.estado === 'GENERADO'"
+          class="dm-btn-salida" (click)="confirmarSalida()">
+          <i class="pi pi-send mr-2"></i>Confirmar y Registrar Salida
+        </button>
+      </div>
+
+    </ng-container>
+  </ng-container>
+</p-dialog>
 
 <p-toast position="bottom-right"></p-toast>
 <p-confirmdialog></p-confirmdialog>
