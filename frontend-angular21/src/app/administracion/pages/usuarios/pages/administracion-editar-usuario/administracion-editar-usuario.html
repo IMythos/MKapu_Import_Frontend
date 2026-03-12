@@ -167,7 +167,8 @@
             class="w-full"
             name="rolNombre"
             required
-            [(ngModel)]="form().rolNombre"
+            [ngModel]="form().rolNombre"
+            (ngModelChange)="setFormField('rolNombre', $event)"
             #rolNombre="ngModel"
             [ngClass]="{ 'p-invalid': (userForm.submitted || rolNombre.touched) && rolNombre.invalid }"
           ></p-select>
