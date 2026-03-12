@@ -32,53 +32,7 @@ export class SedeService {
   }
 
   private inicializarSedes(): void {
-    const sedesIniciales: Sede[] = [
-      {
-        id_sede: 'SEDE001',
-        nombre: 'LAS FLORES',
-        razon_social: 'MKAPU IMPORT',
-        ruc: '20123456789',
-        direccion: 'Av. Las Flores 123',
-        telefono: '01-2345678',
-        email: 'lasflores@mkapapu.com',
-        distrito: 'San Juan de Lurigancho',
-        provincia: 'Lima',
-        departamento: 'Lima',
-        ubigeo: '150117',
-        activo: true
-      },
-      {
-        id_sede: 'SEDE002',
-        nombre: 'LURIN',
-        razon_social: 'MKAPU IMPORT',
-        ruc: '20123456789',
-        direccion: 'Av. Principal 456, Lurín',
-        telefono: '01-3456789',
-        email: 'lurin@mkapapu.com',
-        distrito: 'Lurín',
-        provincia: 'Lima',
-        departamento: 'Lima',
-        ubigeo: '150123',
-        activo: true
-      },
-      {
-        id_sede: 'SEDE003',
-        nombre: 'VES',
-        razon_social: 'MKAPU IMPORT',
-        ruc: '20123456789',
-        direccion: 'Calle Los Álamos 789, VES',
-        telefono: '01-4567890',
-        email: 'ves@mkapapu.com',
-        distrito: 'Villa El Salvador',
-        provincia: 'Lima',
-        departamento: 'Lima',
-        ubigeo: '150142',
-        activo: true
-      }
-    ];
 
-    this.sedesSubject.next(sedesIniciales);
-    this.sedeActualSubject.next(sedesIniciales[0]);
   }
 
   getSedes(): Observable<Sede[]> {
@@ -147,4 +101,6 @@ export class SedeService {
     this.sedesSubject.next(sedes);
     return true;
   }
+
+
 }

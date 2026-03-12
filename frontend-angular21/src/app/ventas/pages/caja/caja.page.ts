@@ -160,7 +160,6 @@ export class CajaPage implements OnInit, OnDestroy {
     this.cashboxService.closeCashbox(detalle.id_caja).subscribe({
       next: () => {
         if (this.idSede) {
-          this.cashboxService.printResumenThermal(this.idSede).subscribe();
         }
       },
       error: (err) => {
