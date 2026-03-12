@@ -32,7 +32,7 @@ export class SedeService {
 
   private buildHeaders(role: string = 'Administrador'): HttpHeaders {
     return new HttpHeaders({ 'x-role': role ?? '' });
-  }
+   }
 
   loadSedes(role: string = 'Administrador'): Observable<HeadquarterResponse> {
     this._loading.set(true);

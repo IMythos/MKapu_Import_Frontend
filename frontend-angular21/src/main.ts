@@ -5,6 +5,8 @@ import { App } from './app/app';
 import Aura from '@primeuix/themes/aura';
 import { routes } from './app/app.routes';
 import MyPreset from './app/core/mypreset';
+import "primeflex/primeflex.css";
+
 
 bootstrapApplication(App, {
   providers: [

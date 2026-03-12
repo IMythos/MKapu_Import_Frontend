@@ -1,0 +1,273 @@
+<div class="p-4">
+
+  <!-- ================= PAGE WRAPPER ================= -->
+  <div class="comision-page">
+
+    <!-- ================= HEADER ================= -->
+    <p-card styleClass="sedes-header-card">
+
+      <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+
+        <!-- TITULO -->
+        <div class="flex align-items-center gap-3">
+
+          <span class="sedes-title-icon">
+            <i class="pi pi-clipboard"></i>
+          </span>
+
+          <div>
+            <p class="sedes-kicker">
+              ADMINISTRADOR · ALMACÉN · CONTEOS
+            </p>
+
+            <h2 class="sedes-title">
+              DETALLE DE CONTEO
+            </h2>
+
+            <small class="text-500 block mt-1" *ngIf="conteo">
+              {{ conteo.fecha }} · {{ conteo.detalle }}
+            </small>
+          </div>
+
+        </div>
+
+        <!-- BOTÓN -->
+        <div class="flex gap-2">
+          <p-button
+            label="Regresar"
+            icon="pi pi-arrow-left"
+            styleClass="sedes-pill"
+            (onClick)="regresar()">
+          </p-button>
+        </div>
+
+      </div>
+
+    </p-card>
+
+    <!-- ================= CONTENIDO ================= -->
+    <div *ngIf="conteo">
+
+      <!-- ================= INFO GENERAL ================= -->
+      <div class="grid  mt-4 mb-4">
+
+        <!-- DATOS GENERALES -->
+        <div class="col-12 md:col-8">
+          <p-card>
+
+            <div class="grid">
+
+              <div class="col-12 md:col-3 flex align-items-center gap-2">
+                <i class="pi pi-calendar text-primary"></i>
+                <div>
+                  <small class="text-500 block">Fecha</small>
+                  <strong>{{ conteo.fecha }}</strong>
+                </div>
+              </div>
+
+              <div class="col-12 md:col-3 flex align-items-center gap-2">
+                <i class="pi pi-box text-primary"></i>
+                <div>
+                  <small class="text-500 block">Familia</small>
+                  <strong>{{ conteo.familia }}</strong>
+                </div>
+              </div>
+
+              <div class="col-12 md:col-3 flex align-items-center gap-2">
+                <i class="pi pi-flag text-primary"></i>
+                <div>
+                  <small class="text-500 block">Estado</small>
+                  <p-tag
+                    [value]="conteo.estado"
+                    [severity]="
+                      conteo.estado === 'Finalizado' ? 'success' :
+                      conteo.estado === 'Inicio' ? 'warn' :
+                      'danger'
+                    ">
+                  </p-tag>
+                </div>
+              </div>
+
+              <div class="col-12 md:col-3 flex align-items-center gap-2">
+                <i class="pi pi-building text-primary"></i>
+                <div>
+                  <small class="text-500 block">Sede</small>
+                  <strong>{{ sede }}</strong>
+                </div>
+              </div>
+
+            </div>
+
+          </p-card>
+        </div>
+
+        <!-- EXACTITUD -->
+        <div class="col-12 md:col-4">
+          <p-card class="text-center surface-50">
+
+            <div class="flex justify-content-center align-items-center gap-2 mb-2">
+              <i class="pi pi-chart-line text-primary"></i>
+              <small class="text-500">Exactitud Inventario</small>
+            </div>
+
+            <h1 class="m-0 text-primary">
+              {{ exactitud }}%
+            </h1>
+
+            <p-progressBar
+              [value]="exactitud"
+              [showValue]="false"
+              class="mt-3">
+            </p-progressBar>
+
+          </p-card>
+        </div>
+
+      </div>
+
+      <!-- ================= TABLA PRODUCTOS ================= -->
+      <p-card class="mb-4">
+
+        <div class="flex align-items-center gap-2 mb-3">
+          <i class="pi pi-list text-primary"></i>
+          <h3 class="m-0">Productos Contados</h3>
+        </div>
+
+        <p-table
+          [value]="productos"
+          responsiveLayout="scroll"
+          stripedRows
+          showGridlines>
+
+          <ng-template pTemplate="header">
+            <tr>
+              <th>Código</th>
+              <th>Producto</th>
+              <th class="text-right">Stock Sistema</th>
+              <th class="text-right">Conteo Real</th>
+              <th class="text-right">Diferencia</th>
+              <th>Estado</th>
+            </tr>
+          </ng-template>
+
+          <ng-template pTemplate="body" let-row>
+            <tr>
+
+              <td>
+                <span class="font-semibold">
+                  {{ row.codigo }}
+                </span>
+              </td>
+
+              <td>
+                <div class="font-semibold">
+                  {{ row.producto }}
+                </div>
+                <small class="text-500">
+                  {{ row.categoria }}
+                </small>
+              </td>
+
+              <td class="text-right">
+                {{ row.stockSistema }}
+              </td>
+
+              <td class="text-right">
+                {{ row.conteoReal }}
+              </td>
+
+              <td class="text-right">
+                <span
+                  class="font-semibold"
+                  [ngClass]="{
+                    'text-green-500': calcularDiferencia(row) > 0,
+                    'text-red-500': calcularDiferencia(row) < 0
+                  }">
+                  {{ calcularDiferencia(row) }}
+                </span>
+              </td>
+
+              <td>
+                <p-tag
+                  [severity]="getEstadoSeverity(row)"
+                  [value]="
+                    calcularDiferencia(row) === 0 ? 'Correcto' :
+                    calcularDiferencia(row) < 0 ? 'Faltante' :
+                    'Exceso'
+                  ">
+                </p-tag>
+              </td>
+
+            </tr>
+          </ng-template>
+
+        </p-table>
+
+        <!-- EMPTY STATE -->
+        <div
+          *ngIf="productos.length === 0"
+          class="text-center p-4 text-500">
+          <i class="pi pi-info-circle mr-2"></i>
+          No hay productos registrados para este conteo.
+        </div>
+
+      </p-card>
+
+      <!-- ================= TOTALES ================= -->
+      <div class="grid mt-4" *ngIf="productos.length > 0">
+
+        <div class="col-12 md:col-4">
+          <p-card class="surface-50">
+
+            <div class="flex align-items-center gap-2 mb-2">
+              <i class="pi pi-database text-primary"></i>
+              <small class="text-500">Total Sistema</small>
+            </div>
+
+            <h2 class="m-0">
+              {{ totalSistema }}
+            </h2>
+
+          </p-card>
+        </div>
+
+        <div class="col-12 md:col-4">
+          <p-card class="surface-50">
+
+            <div class="flex align-items-center gap-2 mb-2">
+              <i class="pi pi-check-circle text-green-500"></i>
+              <small class="text-500">Total Real</small>
+            </div>
+
+            <h2 class="m-0">
+              {{ totalReal }}
+            </h2>
+
+          </p-card>
+        </div>
+
+        <div class="col-12 md:col-4">
+          <p-card class="surface-50">
+
+            <div class="flex align-items-center gap-2 mb-2">
+              <i class="pi pi-exclamation-circle text-orange-500"></i>
+              <small class="text-500">Diferencia Neta</small>
+            </div>
+
+            <h2
+              class="m-0"
+              [ngClass]="{
+                'text-green-500': diferenciaNeta > 0,
+                'text-red-500': diferenciaNeta < 0
+              }">
+              {{ diferenciaNeta }}
+            </h2>
+
+          </p-card>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>

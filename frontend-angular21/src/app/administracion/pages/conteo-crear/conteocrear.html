@@ -1,0 +1,151 @@
+<div class="conteo-crear-page">
+
+  <!-- ================= FILTROS ================= -->
+  <p-card class="mb-4">
+
+    <ng-template pTemplate="header">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-filter text-primary text-xl"></i>
+        <span class="text-xl font-semibold">FILTROS DE BÚSQUEDA</span>
+      </div>
+    </ng-template>
+
+    <div class="grid mt-3">
+
+      <!-- AUTOCOMPLETE PRODUCTO -->
+      <div class="col-12 md:col-4">
+        <label class="font-semibold">Buscar Producto</label>
+        <p-autoComplete
+            [(ngModel)]="productoSeleccionado"
+            [suggestions]="productosSugeridos"
+            (completeMethod)="buscarProducto($event)"
+            (onSelect)="seleccionarProducto($event)"
+            optionLabel="displayLabel"
+            [dropdown]="true"
+            [forceSelection]="true"
+            class="w-full">
+
+            <ng-template let-producto pTemplate="item">
+              <div>
+                <strong>{{ producto.codigo }}</strong>
+                - {{ producto.nombre }}
+              </div>
+            </ng-template>
+
+          </p-autoComplete>
+
+      
+
+      </div>
+
+      <!-- FAMILIA -->
+      <div class="col-12 md:col-4">
+        <label class="font-semibold">Familia</label>
+        <p-select
+          [options]="familias"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="familiaSeleccionada"
+          (onChange)="aplicarFiltros()"
+          class="w-full">
+        </p-select>
+      </div>
+
+      <!-- SEDE -->
+      <div class="col-12 md:col-4">
+        <label class="font-semibold">Sede</label>
+        <p-select
+          [options]="sedes"
+          optionLabel="label"
+          optionValue="value"
+          [(ngModel)]="sedeSeleccionada"
+          (onChange)="aplicarFiltros()"
+          class="w-full">
+        </p-select>
+      </div>
+
+    </div>
+  </p-card>
+
+
+  <!-- ================= TABLA ================= -->
+  <p-card>
+
+    <ng-template pTemplate="header">
+      <div class="flex justify-content-between align-items-center w-full">
+
+        <div class="flex align-items-center gap-2">
+          <i class="pi pi-box text-primary text-xl"></i>
+          <span class="text-xl font-semibold">
+            NUEVO CONTEO DE STOCK
+          </span>
+        </div>
+
+        <div class="flex gap-2">
+          <p-button label="Cancelar"
+                    severity="danger"
+                    icon="pi pi-times"
+                    (onClick)="cancelar()">
+          </p-button>
+
+          <p-button label="Guardar Conteo"
+                    severity="success"
+                    icon="pi pi-save"
+                    (onClick)="guardarConteo()">
+          </p-button>
+        </div>
+
+      </div>
+    </ng-template>
+
+
+    <p-table [value]="productosFiltrados" stripedRows>
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Código</th>
+          <th>Nombre</th>
+          <th>Familia</th>
+          <th>Sede</th>
+          <th>Stock Sistema</th>
+          <th>Conteo Propio</th>
+          <th>Diferencia</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-row>
+        <tr>
+          <td>{{ row.codigo }}</td>
+          <td>{{ row.nombre }}</td>
+          <td>{{ row.familia }}</td>
+          <td>{{ row.sede }}</td>
+          <td>{{ row.stockSistema }}</td>
+
+          <td>
+            <input pInputText
+                   type="number"
+                   [(ngModel)]="row.conteoPropio"
+                   style="width:80px" />
+          </td>
+
+          <td>
+            <span
+              [ngClass]="{
+                'text-green-500': calcularDiferencia(row) > 0,
+                'text-red-500': calcularDiferencia(row) < 0
+              }">
+              {{ calcularDiferencia(row) }}
+            </span>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+
+    <div class="text-right mt-3 text-sm text-color-secondary">
+      Total: {{ productosFiltrados.length }} productos
+    </div>
+
+  </p-card>
+
+</div>
