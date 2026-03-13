@@ -1,6 +1,6 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, of } from 'rxjs';
-import { catchError, finalize, map, take, tap } from 'rxjs/operators';
+import { catchError, finalize, take, tap } from 'rxjs/operators';
 import {
   ApproveTransferDto,
   ConfirmReceiptTransferDto,
@@ -155,37 +155,12 @@ export class TransferStore {
   }
 
   loadByHq(hqId: string | number): void {
-    const normalizedHqId = String(hqId);
-    this.loading.set(true);
-    this.error.set(null);
-
-    this.transferApiService
-      .listByHeadquarters(normalizedHqId)
-      .pipe(
-        take(1),
-        map((transfers) => transfers as TransferListResponseDto[]),
-        finalize(() => this.loading.set(false)),
-      )
-      .subscribe({
-        next: (transfers) => {
-          this.lastLoadedHqId.set(normalizedHqId);
-          this.transfers.set(transfers ?? []);
-          const totalRecords = transfers?.length ?? 0;
-          this.pagination.set({
-            page: 1,
-            pageSize: Math.max(1, totalRecords || this.pagination().pageSize),
-            totalRecords,
-            totalPages: totalRecords > 0 ? 1 : 0,
-            hasNextPage: false,
-            hasPreviousPage: false,
-          });
-        },
-        error: (error: TransferApiError) => {
-          this.error.set(this.resolveErrorMessage(error));
-          this.transfers.set([]);
-          this.pagination.set({ ...DEFAULT_TRANSFER_PAGINATION });
-        },
-      });
+    const normalizedHqId = String(hqId).trim();
+    this.loadAll({
+      headquartersId: normalizedHqId,
+      page: 1,
+      pageSize: this.pagination().pageSize,
+    });
   }
 
   loadById(id: number | string): void {
@@ -361,6 +336,16 @@ export class TransferStore {
     return source$.pipe(
       tap((updated) => {
         this.upsertTransfer(updated);
+
+        const currentSelected = this.selected();
+        if (currentSelected?.id === updated.id) {
+          this.selected.set({
+            ...currentSelected,
+            ...updated,
+          });
+          return;
+        }
+
         this.selected.set(updated);
       }),
       catchError((error: TransferApiError) => {
@@ -461,3 +446,4 @@ export class TransferStore {
     return error?.message || 'No se pudo completar la operación de transferencias.';
   }
 }
+

@@ -91,6 +91,8 @@ export interface TransferResponseDto {
   id: number;
   creatorUserId?: number;
   approveUserId?: number | null;
+  creatorUserName?: string;
+  creatorUserLastName?: string;
   originHeadquartersId: string;
   originWarehouseId: number;
   destinationHeadquartersId: string;
@@ -115,6 +117,8 @@ export interface TransferListResponseDto {
   id: number;
   creatorUserId?: number;
   approveUserId?: number | null;
+  creatorUserName?: string;
+  creatorUserLastName?: string;
   originHeadquartersId: string;
   originWarehouseId: number;
   destinationHeadquartersId: string;

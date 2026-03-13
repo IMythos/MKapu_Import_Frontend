@@ -116,6 +116,7 @@ export class NuevaTransferencia implements OnInit {
   private readonly responsableSig = signal<string | null>(null);
   private readonly submittingSig = signal(false);
   private readonly lastErrorShownSig = signal<string | null>(null);
+  private readonly lastWarningShownSig = signal<string | null>(null);
   private readonly warehouseFilterSedeByType: Record<'origen' | 'destino', string> = {
     origen: '',
     destino: '',
@@ -427,6 +428,7 @@ export class NuevaTransferencia implements OnInit {
   }
 
   onSedeOrigenChange(): void {
+    this.clearWarningLock();
     this.resetProductoSeleccionado();
     this.productos = [];
     this.productosAutocomplete = [];
@@ -468,6 +470,7 @@ export class NuevaTransferencia implements OnInit {
   }
 
   onAlmacenOrigenChange(): void {
+    this.clearWarningLock();
     this.transferStore.setDraftOriginWarehouse(this.almacenOrigenId ?? 0);
     this.resetProductoSeleccionado();
 
@@ -489,28 +492,40 @@ export class NuevaTransferencia implements OnInit {
     const sedeOrigen = this.sedeOrigen;
     const almacenOrigenId = this.almacenOrigenId;
 
-    if (!sedeOrigen || !almacenOrigenId) {
+    if (!sedeOrigen) {
       this.productosAutocomplete = [];
+      if (query.length > 0) {
+        this.showWarnOnce(
+          'missing-origin-headquarter',
+          'Sede de origen requerida',
+          'Elija una sede de origen antes de buscar productos.',
+        );
+      }
+      return;
+    }
+
+    if (!almacenOrigenId) {
+      this.productosAutocomplete = [];
+      if (query.length > 0) {
+        this.showWarnOnce(
+          'missing-origin-warehouse',
+          'Almacen de origen requerido',
+          'Elija un almacen de origen antes de buscar productos.',
+        );
+      }
       return;
     }
 
     const localMatches = this.filtrarProductosLocales(query);
     if (query.length < 3 || localMatches.length > 0) {
-      this.productosAutocomplete = localMatches.slice(
-        0,
-        NuevaTransferencia.AUTOCOMPLETE_LIMIT,
-      );
+      this.productosAutocomplete = localMatches.slice(0, NuevaTransferencia.AUTOCOMPLETE_LIMIT);
       return;
     }
 
     this.buscarProductosRemotos(query, sedeOrigen, almacenOrigenId);
   }
 
-  private buscarProductosRemotos(
-    query: string,
-    sedeOrigen: string,
-    almacenOrigenId: number,
-  ): void {
+  private buscarProductosRemotos(query: string, sedeOrigen: string, almacenOrigenId: number): void {
     this.transferenciaService
       .getProductsStock({
         id_sede: Number(sedeOrigen),
@@ -776,7 +791,7 @@ export class NuevaTransferencia implements OnInit {
           life: 3000,
         });
 
-        this.transferStore.loadByHq(response.originHeadquartersId);
+        this.transferStore.loadAll({ page: 1 });
         this.router.navigate(['/admin/transferencia']);
         this.resetForm();
       });
@@ -890,7 +905,8 @@ export class NuevaTransferencia implements OnInit {
             );
           }
 
-          this.cargarProductos(this.sedeOrigen);
+          this.productos = [];
+          this.productosAutocomplete = [];
         },
         error: () => {
           this.messageService.add({
@@ -898,7 +914,8 @@ export class NuevaTransferencia implements OnInit {
             summary: 'Error',
             detail: 'No se pudieron cargar las sedes',
           });
-          this.cargarProductos();
+          this.productos = [];
+          this.productosAutocomplete = [];
           this.sedes = [];
           this.almacenesOrigen = [];
           this.almacenesDestino = [];
@@ -987,39 +1004,24 @@ export class NuevaTransferencia implements OnInit {
     const sedeNumber = Number(normalizedSedeId);
     const originWarehouseId = this.almacenOrigenId;
 
-    if (sedeNumber > 0 && originWarehouseId) {
-      this.transferenciaService
-        .getProductsStock({
-          id_sede: sedeNumber,
-          id_almacen: originWarehouseId,
-          page: 1,
-          size: NuevaTransferencia.MAX_PRODUCT_FETCH_SIZE,
-          activo: true,
-        })
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe({
-          next: (response) => {
-            this.productos = this.mapProductos(response.data ?? [], normalizedSedeId);
-            this.productosAutocomplete = this.productos.slice(
-              0,
-              NuevaTransferencia.AUTOCOMPLETE_LIMIT,
-            );
-          },
-          error: () => {
-            this.productos = [];
-            this.productosAutocomplete = [];
-            this.showError('No se pudo cargar productos por sede y almac?n.');
-          },
-        });
+    if (!(sedeNumber > 0 && originWarehouseId)) {
+      this.productos = [];
+      this.productosAutocomplete = [];
       return;
     }
 
-    this.productoService
-      .getProductos(1, 100, true)
+    this.transferenciaService
+      .getProductsStock({
+        id_sede: sedeNumber,
+        id_almacen: originWarehouseId,
+        page: 1,
+        size: NuevaTransferencia.MAX_PRODUCT_FETCH_SIZE,
+        activo: true,
+      })
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (response) => {
-          this.productos = this.mapProductos(response.products ?? [], normalizedSedeId);
+          this.productos = this.mapProductos(response.data ?? [], normalizedSedeId);
           this.productosAutocomplete = this.productos.slice(
             0,
             NuevaTransferencia.AUTOCOMPLETE_LIMIT,
@@ -1031,6 +1033,7 @@ export class NuevaTransferencia implements OnInit {
           this.showError('No se pudo cargar productos por sede y almac?n.');
         },
       });
+    return;
   }
 
   private mapProductos(
@@ -1057,9 +1060,7 @@ export class NuevaTransferencia implements OnInit {
     });
   }
 
-  private getProductoNombre(
-    producto: TransferProductStockListItem | ProductoInterface,
-  ): string {
+  private getProductoNombre(producto: TransferProductStockListItem | ProductoInterface): string {
     if ('nombre' in producto && typeof producto.nombre === 'string') {
       const normalized = producto.nombre.trim();
       if (normalized) {
@@ -1081,9 +1082,7 @@ export class NuevaTransferencia implements OnInit {
     return codigo || `Producto ${String(producto.id_producto ?? '')}`.trim();
   }
 
-  private getProductoCategoria(
-    producto: TransferProductStockListItem | ProductoInterface,
-  ): string {
+  private getProductoCategoria(producto: TransferProductStockListItem | ProductoInterface): string {
     if ('familia' in producto && typeof producto.familia === 'string') {
       return producto.familia.trim();
     }
@@ -1091,9 +1090,7 @@ export class NuevaTransferencia implements OnInit {
     return String((producto as ProductoInterface).categoriaNombre ?? '').trim();
   }
 
-  private getProductoStock(
-    producto: TransferProductStockListItem | ProductoInterface,
-  ): number {
+  private getProductoStock(producto: TransferProductStockListItem | ProductoInterface): number {
     if ('stock' in producto) {
       return Number((producto as TransferProductStockListItem).stock ?? 0);
     }
@@ -1112,7 +1109,7 @@ export class NuevaTransferencia implements OnInit {
       categoria: '',
       marca: 'N/A',
       stockPorSede: { [sedeId]: Number(producto.stock ?? 0) },
-      }));
+    }));
   }
 
   private filtrarProductosLocales(query: string): TransferProducto[] {
@@ -1222,6 +1219,19 @@ export class NuevaTransferencia implements OnInit {
         },
       };
     });
+  }
+
+  private clearWarningLock(): void {
+    this.lastWarningShownSig.set(null);
+  }
+
+  private showWarnOnce(key: string, summary: string, detail: string): void {
+    if (this.lastWarningShownSig() === key) {
+      return;
+    }
+
+    this.lastWarningShownSig.set(key);
+    this.showWarn(summary, detail);
   }
 
   private showWarn(summary: string, detail: string): void {

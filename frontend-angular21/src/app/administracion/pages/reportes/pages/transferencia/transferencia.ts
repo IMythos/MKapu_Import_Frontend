@@ -485,7 +485,11 @@ export class Transferencia {
       destino:                   transferencia.destination?.nomSede || this.normalizeId(transferencia.destinationHeadquartersId) || '-',
       cantidad:                  transferencia.totalQuantity ?? this.getTotalQuantityFromItems(transferencia),
       solicitud:                 `${solicitudTipo}: ${transferencia.observation?.trim() || '-'}`,
-      responsable:               this.getFullUserName(transferencia.creatorUser),
+      responsable:               this.getFullUserName(
+        transferencia.creatorUser,
+        transferencia.creatorUserName,
+        transferencia.creatorUserLastName,
+      ),
       estado,
       fechaEnvio:                this.formatDate(transferencia.requestDate),
       fechaLlegada:              '-',
@@ -524,12 +528,44 @@ export class Transferencia {
     return (transferencia.items ?? []).reduce((acc, item) => acc + (item.quantity ?? item.series?.length ?? 0), 0);
   }
 
-  private getFullUserName(user: TransferenciaUserResponse | TransferenciaUserResponse[] | undefined): string {
-    if (!user) return '-';
-    const first    = Array.isArray(user) ? user[0] : user;
-    const fullName = [first.usuNom || first.nombres || '', first.apellidos || [first.apePat, first.apeMat].filter(Boolean).join(' ')]
-      .filter(Boolean).join(' ').trim();
-    return fullName || `Usuario #${first.idUsuario ?? first.userId ?? first.id ?? '-'}`;
+  private getFullUserName(
+    user: TransferenciaUserResponse | TransferenciaUserResponse[] | undefined,
+    fallbackName?: string | null,
+    fallbackLastName?: string | null,
+  ): string {
+    if (!user) {
+      const fallbackFullName = [
+        String(fallbackName ?? '').trim(),
+        String(fallbackLastName ?? '').trim(),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+      return fallbackFullName || '-';
+    }
+
+    const first = Array.isArray(user) ? user[0] : user;
+    const fullName = [
+      first.usuNom || first.nombres || '',
+      first.apellidos || [first.apePat, first.apeMat].filter(Boolean).join(' '),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    if (fullName) {
+      return fullName;
+    }
+
+    const fallbackFullName = [
+      String(fallbackName ?? '').trim(),
+      String(fallbackLastName ?? '').trim(),
+    ]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+
+    return fallbackFullName || `Usuario #${first.idUsuario ?? first.userId ?? first.id ?? '-'}`;
   }
 
   private normalizeStatus(value: string | TransferStatus | undefined): TransferStatus {
