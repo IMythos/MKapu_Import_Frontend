@@ -1,4 +1,4 @@
-﻿<div class="notification-page">
+<div class="notification-page">
   <section class="notification-shell">
     <header class="notification-hero">
       <div class="notification-hero__identity">
@@ -7,7 +7,7 @@
         </span>
 
         <div class="notification-hero__copy">
-          <span class="notification-hero__eyebrow">Administrador · Centro de actividad</span>
+          <span class="notification-hero__eyebrow">Administrador � Centro de actividad</span>
           <h1>Notificaciones</h1>
         </div>
       </div>
@@ -17,7 +17,7 @@
           type="button"
           class="notification-toolbar-button notification-toolbar-button--secondary"
           (click)="markAllAsRead()"
-          [disabled]="!notifications().length"
+          [disabled]="!visibleNotifications().length"
         >
           <i class="pi pi-check"></i>
           <span>Marcar todo como leido</span>
@@ -27,7 +27,7 @@
           type="button"
           class="notification-toolbar-button notification-toolbar-button--danger"
           (click)="removeAll()"
-          [disabled]="!notifications().length"
+          [disabled]="!visibleNotifications().length"
         >
           <i class="pi pi-trash"></i>
           <span>Eliminar todo</span>
@@ -61,29 +61,29 @@
           (click)="setView('all')"
         >
           <span>Todas</span>
-          <span class="notification-segment__count">{{ viewCounts().all }}</span>
+          <span class="notification-segment__count">{{ statusCounts().all }}</span>
         </button>
 
         <button
           type="button"
           class="notification-segment"
-          [class.is-active]="view() === 'nuevo'"
-          [attr.aria-pressed]="view() === 'nuevo'"
-          (click)="setView('nuevo')"
+          [class.is-active]="view() === 'unread'"
+          [attr.aria-pressed]="view() === 'unread'"
+          (click)="setView('unread')"
         >
-          <span>Nuevo</span>
-          <span class="notification-segment__count">{{ viewCounts().nuevo }}</span>
+          <span>Sin leer</span>
+          <span class="notification-segment__count">{{ statusCounts().unread }}</span>
         </button>
 
         <button
           type="button"
           class="notification-segment"
-          [class.is-active]="view() === 'anterior'"
-          [attr.aria-pressed]="view() === 'anterior'"
-          (click)="setView('anterior')"
+          [class.is-active]="view() === 'read'"
+          [attr.aria-pressed]="view() === 'read'"
+          (click)="setView('read')"
         >
-          <span>Anterior</span>
-          <span class="notification-segment__count">{{ viewCounts().anterior }}</span>
+          <span>Leidas</span>
+          <span class="notification-segment__count">{{ statusCounts().read }}</span>
         </button>
       </div>
 
@@ -96,17 +96,20 @@
             class="notification-search__input"
             [ngModel]="searchTerm()"
             (ngModelChange)="updateSearch($event)"
-            placeholder="Buscar notificaciones, productos o sedes"
+            placeholder="Buscar notificaciones o transferencias"
           />
         </label>
 
         <p-select
-          [options]="categoryOptions"
+          [options]="statusOptions"
           optionLabel="label"
           optionValue="value"
-          [ngModel]="selectedCategory()"
-          (ngModelChange)="setCategory($event)"
-          styleClass="notification-filter__select"`r`n          appendTo="body"`r`n          panelStyleClass="notification-filter__panel"></p-select>
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="setStatus($event)"
+          styleClass="notification-filter__select"
+          appendTo="body"
+          panelStyleClass="notification-filter__panel"
+        ></p-select>
 
         <button
           type="button"
@@ -137,11 +140,14 @@
         </div>
 
         <div class="notification-list__items">
-          @for (item of filteredNotifications(); track item.id) {
+          @for (item of filteredNotifications(); track item.transferId) {
             <article
-              class="notification-card"
+              class="notification-card notification-card--interactive"
               [class.is-unread]="!item.read"
               [attr.data-palette]="item.palette"
+              tabindex="0"
+              (click)="openNotification(item)"
+              (keydown.enter)="openNotification(item)"
             >
               <div class="notification-card__icon">
                 <i [class]="item.icon"></i>
@@ -151,15 +157,8 @@
               <div class="notification-card__content">
                 <div class="notification-card__meta">
                   <div class="notification-card__chips">
-                    <span
-                      class="notification-chip notification-chip--view"
-                      [class.notification-chip--new]="item.view === 'nuevo'"
-                    >
-                      {{ item.view === 'nuevo' ? 'Nuevo' : 'Anterior' }}
-                    </span>
-
-                    <span class="notification-chip">
-                      {{ categoryLabel(item.category) }}
+                    <span [class]="statusChipClass(item.status)">
+                      {{ statusLabel(item.status) }}
                     </span>
 
                     @if (!item.read) {
@@ -172,21 +171,17 @@
                   <span class="notification-card__time">{{ item.timeLabel }}</span>
                 </div>
 
-                <h3 class="notification-card__title">
-                  {{ item.title }}:
-                  <span>{{ item.subject }}</span>
-                </h3>
-
-                <p class="notification-card__description">{{ item.description }}</p>
+                <h3 class="notification-card__title">{{ item.title }}</h3>
+                <p class="notification-card__description">{{ item.message }}</p>
 
                 <div class="notification-card__detail-row">
                   <span class="notification-card__detail">
-                    <i class="pi pi-map-marker"></i>
+                    <i class="pi pi-tag"></i>
                     {{ item.detail }}
                   </span>
 
                   <span class="notification-card__detail">
-                    <i class="pi pi-info-circle"></i>
+                    <i class="pi pi-briefcase"></i>
                     {{ item.site }}
                   </span>
                 </div>
@@ -196,7 +191,7 @@
                 <button
                   type="button"
                   class="notification-icon-button"
-                  (click)="markAsRead(item.id)"
+                  (click)="$event.stopPropagation(); markAsRead(item.transferId)"
                   [disabled]="item.read"
                   aria-label="Marcar como leido"
                   title="Marcar como leido"
@@ -207,7 +202,7 @@
                 <button
                   type="button"
                   class="notification-icon-button notification-icon-button--danger"
-                  (click)="removeNotification(item.id)"
+                  (click)="$event.stopPropagation(); removeNotification(item.transferId)"
                   aria-label="Eliminar notificacion"
                   title="Eliminar notificacion"
                 >
@@ -219,8 +214,12 @@
         </div>
 
         <footer class="notification-list__footer">
-          <button type="button" class="notification-text-button notification-text-button--accent">
-            <span>Ver todas</span>
+          <button
+            type="button"
+            class="notification-text-button notification-text-button--accent"
+            (click)="openNotification(filteredNotifications()[0])"
+          >
+            <span>Ir a transferencias</span>
             <i class="pi pi-arrow-right"></i>
           </button>
 
@@ -234,14 +233,8 @@
         </div>
 
         <div class="notification-empty__copy">
-          <h2>No hay notificaciones en esta vista</h2>
-          <p>
-            @if (hasActiveFilters()) {
-              Ajusta la busqueda o limpia los filtros para recuperar eventos.
-            } @else {
-              La bandeja esta vacia. Puedes restaurar el estado visual de demostracion.
-            }
-          </p>
+          <h2>{{ emptyTitle() }}</h2>
+          <p>{{ emptyDescription() }}</p>
         </div>
 
         <div class="notification-empty__actions">
@@ -258,15 +251,14 @@
           <button
             type="button"
             class="notification-toolbar-button notification-toolbar-button--accent"
-            (click)="restoreDemoState()"
+            (click)="refreshNotifications()"
+            [disabled]="loading()"
           >
             <i class="pi pi-refresh"></i>
-            <span>Restaurar demo</span>
+            <span>{{ loading() ? 'Actualizando...' : 'Actualizar' }}</span>
           </button>
         </div>
       </section>
     }
   </section>
 </div>
-
-

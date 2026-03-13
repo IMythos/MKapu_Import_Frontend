@@ -3,21 +3,25 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
+  OnDestroy,
+  OnInit,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { Router } from '@angular/router';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
+import type {
+  StoredTransferNotification,
+  TransferNotificationStatus,
+} from '../../interfaces/transferencia.interface';
+import { TransferNotificationService } from '../../services/transfer-notification.service';
+import { TransferUserContextService } from '../../services/transfer-user-context.service';
 
-type NotificationView = 'all' | 'nuevo' | 'anterior';
-type NotificationCategory =
-  | 'all'
-  | 'transferencia'
-  | 'reposicion'
-  | 'venta'
-  | 'incidencia'
-  | 'sistema';
-type NotificationPalette = 'amber' | 'emerald' | 'sky' | 'rose' | 'violet';
+type NotificationView = 'all' | 'unread' | 'read';
+type NotificationPalette = 'amber' | 'emerald' | 'rose';
+type NotificationStatusFilter = 'all' | TransferNotificationStatus;
 
 interface NotificationOption<T> {
   label: string;
@@ -32,201 +36,32 @@ interface SummaryCard {
   tone: NotificationPalette;
 }
 
-interface NotificationItem {
-  id: number;
-  view: Exclude<NotificationView, 'all'>;
-  category: Exclude<NotificationCategory, 'all'>;
-  read: boolean;
+interface NotificationListItem {
+  transferId: number;
   title: string;
-  subject: string;
-  description: string;
+  message: string;
+  status: TransferNotificationStatus;
+  read: boolean;
+  createdAt: string;
+  timeLabel: string;
   detail: string;
   site: string;
-  timeLabel: string;
-  ageMinutes: number;
   icon: string;
   palette: NotificationPalette;
 }
 
-const CATEGORY_LABELS: Record<NotificationCategory, string> = {
+const STATUS_LABELS: Record<NotificationStatusFilter, string> = {
   all: 'Todas',
-  transferencia: 'Transferencias',
-  reposicion: 'Reposiciones',
-  venta: 'Ventas',
-  incidencia: 'Incidencias',
-  sistema: 'Sistema',
+  SOLICITADA: 'Solicitadas',
+  APROBADA: 'Aprobadas',
+  RECHAZADA: 'Rechazadas',
 };
 
-const CATEGORY_OPTIONS: NotificationOption<NotificationCategory>[] = [
+const STATUS_OPTIONS: NotificationOption<NotificationStatusFilter>[] = [
   { label: 'Todas', value: 'all' },
-  { label: 'Transferencias', value: 'transferencia' },
-  { label: 'Reposiciones', value: 'reposicion' },
-  { label: 'Ventas', value: 'venta' },
-  { label: 'Incidencias', value: 'incidencia' },
-  { label: 'Sistema', value: 'sistema' },
-];
-
-const DEMO_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 101,
-    view: 'nuevo',
-    category: 'transferencia',
-    read: false,
-    title: 'Transferencia completada',
-    subject: 'Tarjeta de Video NVIDIA RTX2060',
-    description:
-      'La mercaderia llego a destino y el stock ya quedo disponible para despacho.',
-    detail: 'Ruta: Sede Miraflores -> Sede San Juan de Lurigancho',
-    site: 'Operacion de logistica',
-    timeLabel: 'Hace 5 minutos',
-    ageMinutes: 5,
-    icon: 'pi pi-send',
-    palette: 'amber',
-  },
-  {
-    id: 102,
-    view: 'nuevo',
-    category: 'reposicion',
-    read: false,
-    title: 'Reposicion realizada',
-    subject: 'Monitor LG 27" LED',
-    description:
-      'Se agregaron 10 unidades al almacen operativo y el nuevo saldo ya esta visible en ventas.',
-    detail: 'Destino: Sede Miraflores / Almacen Central',
-    site: 'Reposicion aprobada por compras',
-    timeLabel: 'Hace 20 minutos',
-    ageMinutes: 20,
-    icon: 'pi pi-box',
-    palette: 'emerald',
-  },
-  {
-    id: 103,
-    view: 'nuevo',
-    category: 'venta',
-    read: false,
-    title: 'Venta completada',
-    subject: 'Cooler Master Fuente 750W MWE Gold',
-    description:
-      'El comprobante fue emitido y la salida del inventario quedo cerrada sin diferencias.',
-    detail: 'Canal: Tienda online',
-    site: 'Documento asociado: F001-00018452',
-    timeLabel: 'Hace 1 hora',
-    ageMinutes: 60,
-    icon: 'pi pi-shopping-cart',
-    palette: 'sky',
-  },
-  {
-    id: 104,
-    view: 'anterior',
-    category: 'incidencia',
-    read: true,
-    title: 'Incidencia rechazada',
-    subject: 'Solicitud de traslado de 5 SSD Samsung 970 EVO Plus 1TB',
-    description:
-      'La validacion operativa detecto una diferencia entre stock teorico y stock disponible.',
-    detail: 'Observacion: faltan series registradas en la salida',
-    site: 'Sede Miraflores',
-    timeLabel: 'Hace 3 horas',
-    ageMinutes: 180,
-    icon: 'pi pi-exclamation-triangle',
-    palette: 'rose',
-  },
-  {
-    id: 105,
-    view: 'anterior',
-    category: 'transferencia',
-    read: true,
-    title: 'Transferencia programada',
-    subject: 'Procesador 3L',
-    description:
-      'La solicitud fue aprobada y paso a cola de despacho para la ruta intersedes del cierre de turno.',
-    detail: 'Ruta: Sede SJL -> Sede Comas',
-    site: 'Pendiente de confirmacion fisica',
-    timeLabel: 'Hace 5 horas',
-    ageMinutes: 300,
-    icon: 'pi pi-send',
-    palette: 'amber',
-  },
-  {
-    id: 106,
-    view: 'anterior',
-    category: 'sistema',
-    read: true,
-    title: 'Sincronizacion estable',
-    subject: 'Canal de inventario',
-    description:
-      'La replica entre administracion y logistica respondio sin errores durante la ultima verificacion.',
-    detail: 'Latencia media: 142 ms',
-    site: 'Monitoreo automatico',
-    timeLabel: 'Hace 6 horas',
-    ageMinutes: 360,
-    icon: 'pi pi-cog',
-    palette: 'violet',
-  },
-  {
-    id: 107,
-    view: 'anterior',
-    category: 'incidencia',
-    read: false,
-    title: 'Revision manual requerida',
-    subject: 'Lote de cafeteras RAF R110',
-    description:
-      'Se detectaron movimientos pendientes de conciliacion entre almacen origen y almacen destino.',
-    detail: 'Accion sugerida: revisar detalle de movimiento 3028',
-    site: 'Sede Principal',
-    timeLabel: 'Ayer, 09:14',
-    ageMinutes: 1994,
-    icon: 'pi pi-exclamation-triangle',
-    palette: 'rose',
-  },
-  {
-    id: 108,
-    view: 'anterior',
-    category: 'reposicion',
-    read: true,
-    title: 'Reposicion cerrada',
-    subject: 'Batidora pedestal 8L',
-    description:
-      'El reabastecimiento concluyo con ingreso completo y stock alineado en el almacen secundario.',
-    detail: 'Destino: Sede SJL / Almacen Secundario',
-    site: 'Orden interna RP-204',
-    timeLabel: 'Ayer, 08:20',
-    ageMinutes: 1940,
-    icon: 'pi pi-box',
-    palette: 'emerald',
-  },
-  {
-    id: 109,
-    view: 'anterior',
-    category: 'venta',
-    read: true,
-    title: 'Venta anulada',
-    subject: 'Laptop HP Pavilion 15 Intel Core i5',
-    description:
-      'La reserva fue revertida y las unidades regresaron al stock disponible de tienda.',
-    detail: 'Motivo: pago no confirmado por pasarela',
-    site: 'Caja virtual',
-    timeLabel: 'Ayer, 07:48',
-    ageMinutes: 1908,
-    icon: 'pi pi-shopping-cart',
-    palette: 'sky',
-  },
-  {
-    id: 110,
-    view: 'anterior',
-    category: 'sistema',
-    read: true,
-    title: 'Recordatorio operativo',
-    subject: 'Cierre de notificaciones',
-    description:
-      'Los eventos con mas de 48 horas sin accion seran archivados automaticamente en el historial.',
-    detail: 'Ventana de limpieza: 22:00',
-    site: 'Politica del modulo administrativo',
-    timeLabel: 'Ayer, 06:05',
-    ageMinutes: 1865,
-    icon: 'pi pi-cog',
-    palette: 'violet',
-  },
+  { label: 'Solicitadas', value: 'SOLICITADA' },
+  { label: 'Aprobadas', value: 'APROBADA' },
+  { label: 'Rechazadas', value: 'RECHAZADA' },
 ];
 
 @Component({
@@ -237,41 +72,51 @@ const DEMO_NOTIFICATIONS: NotificationItem[] = [
   styleUrl: './notificacion-admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotificacionAdmin {
-  readonly categoryOptions = CATEGORY_OPTIONS;
-  readonly notifications = signal<NotificationItem[]>([...DEMO_NOTIFICATIONS]);
+export class NotificacionAdmin implements OnInit, OnDestroy {
+  private readonly router = inject(Router);
+  private readonly notificationService = inject(TransferNotificationService);
+  private readonly userContext = inject(TransferUserContextService);
+
+  readonly statusOptions = STATUS_OPTIONS;
+  readonly role = this.userContext.getCurrentRole();
+  readonly headquartersId = this.userContext.getCurrentHeadquarterId();
+  readonly canViewNotifications =
+    this.role === 'ADMINISTRADOR' && !!this.headquartersId;
+  readonly notifications = this.notificationService.notifications;
+  readonly loading = this.notificationService.loading;
+  readonly backendError = this.notificationService.error;
   readonly view = signal<NotificationView>('all');
-  readonly selectedCategory = signal<NotificationCategory>('all');
+  readonly selectedStatus = signal<NotificationStatusFilter>('all');
   readonly searchTerm = signal('');
 
+  readonly visibleNotifications = computed(() =>
+    this.notifications().filter((item) => item.deletedAt === null),
+  );
+
   readonly unreadCount = computed(() =>
-    this.notifications().filter((item) => !item.read).length,
+    this.visibleNotifications().filter((item) => !item.read).length,
   );
 
-  readonly newCount = computed(() =>
-    this.notifications().filter((item) => item.view === 'nuevo').length,
+  readonly requestedCount = computed(() =>
+    this.visibleNotifications().filter((item) => item.status === 'SOLICITADA').length,
   );
 
-  readonly previousCount = computed(() =>
-    this.notifications().filter((item) => item.view === 'anterior').length,
-  );
-
-  readonly attentionCount = computed(() =>
-    this.notifications().filter(
-      (item) => !item.read || item.category === 'incidencia',
+  readonly resolvedCount = computed(() =>
+    this.visibleNotifications().filter(
+      (item) => item.status === 'APROBADA' || item.status === 'RECHAZADA',
     ).length,
   );
 
-  readonly viewCounts = computed(() => ({
-    all: this.notifications().length,
-    nuevo: this.newCount(),
-    anterior: this.previousCount(),
+  readonly statusCounts = computed(() => ({
+    all: this.visibleNotifications().length,
+    unread: this.visibleNotifications().filter((item) => !item.read).length,
+    read: this.visibleNotifications().filter((item) => item.read).length,
   }));
 
   readonly hasActiveFilters = computed(
     () =>
       this.view() !== 'all' ||
-      this.selectedCategory() !== 'all' ||
+      this.selectedStatus() !== 'all' ||
       this.searchTerm().trim().length > 0,
   );
 
@@ -279,89 +124,96 @@ export class NotificacionAdmin {
     {
       label: 'Sin leer',
       value: this.unreadCount(),
-      description: 'Alertas pendientes del equipo administrativo',
+      description: 'Alertas pendientes del modulo de transferencias',
       icon: 'pi pi-bell',
       tone: 'amber',
     },
     {
-      label: 'Nuevas',
-      value: this.newCount(),
-      description: 'Eventos recientes del turno actual',
-      icon: 'pi pi-bolt',
-      tone: 'emerald',
+      label: 'Solicitadas',
+      value: this.requestedCount(),
+      description: 'Solicitudes que requieren respuesta en la sede asignada',
+      icon: 'pi pi-send',
+      tone: 'amber',
     },
     {
-      label: 'Atencion',
-      value: this.attentionCount(),
-      description: 'Incidencias y eventos que requieren seguimiento',
-      icon: 'pi pi-exclamation-circle',
-      tone: 'rose',
+      label: 'Respondidas',
+      value: this.resolvedCount(),
+      description: 'Transferencias aprobadas o rechazadas recientemente',
+      icon: 'pi pi-check-circle',
+      tone: 'emerald',
     },
   ]);
 
   readonly filteredNotifications = computed(() => {
     const currentView = this.view();
-    const currentCategory = this.selectedCategory();
+    const currentStatus = this.selectedStatus();
     const normalizedTerm = this.searchTerm().trim().toLowerCase();
 
-    return [...this.notifications()]
+    return this.visibleNotifications()
+      .map((item) => this.toListItem(item))
       .filter((item) =>
-        currentView === 'all' ? true : item.view === currentView,
+        currentView === 'all'
+          ? true
+          : currentView === 'unread'
+            ? !item.read
+            : item.read,
       )
       .filter((item) =>
-        currentCategory === 'all' ? true : item.category === currentCategory,
+        currentStatus === 'all' ? true : item.status === currentStatus,
       )
       .filter((item) =>
         normalizedTerm ? this.matchesSearch(item, normalizedTerm) : true,
       )
-      .sort((left, right) => left.ageMinutes - right.ageMinutes);
+      .sort(
+        (left, right) =>
+          Date.parse(right.createdAt) - Date.parse(left.createdAt),
+      );
   });
 
   readonly listTitle = computed(() => {
     switch (this.view()) {
-      case 'nuevo':
-        return 'Bandeja nueva';
-      case 'anterior':
-        return 'Historial reciente';
+      case 'unread':
+        return 'Pendientes de lectura';
+      case 'read':
+        return 'Historial local';
       default:
-        return 'Actividad centralizada';
+        return 'Actividad de transferencias';
     }
   });
 
   readonly listDescription = computed(() => {
-    const category = this.selectedCategory();
-
-    if (this.view() === 'nuevo') {
-      return category === 'all'
-        ? 'Eventos recientes con foco en operaciones, stock y ventas.'
-        : `Eventos recientes filtrados por ${CATEGORY_LABELS[category].toLowerCase()}.`;
+    if (!this.canViewNotifications) {
+      return 'Disponible solo para administradores con una sede asignada.';
     }
 
-    if (this.view() === 'anterior') {
-      return category === 'all'
-        ? 'Historial consolidado de las alertas mas relevantes.'
-        : `Historial filtrado por ${CATEGORY_LABELS[category].toLowerCase()}.`;
+    if (this.selectedStatus() === 'all') {
+      return 'Bandeja derivada de transferencias solicitadas, aprobadas o rechazadas.';
     }
 
-    return category === 'all'
-      ? 'Vista general con transferencias, incidencias, reposiciones y sistema.'
-      : `Vista general enfocada en ${CATEGORY_LABELS[category].toLowerCase()}.`;
+    return `Bandeja filtrada por ${STATUS_LABELS[this.selectedStatus()].toLowerCase()}.`;
   });
 
   readonly collectionStatus = computed(() => {
     const visible = this.filteredNotifications().length;
-    const total = this.notifications().length;
+    const total = this.visibleNotifications().length;
     const label = total === 1 ? 'notificacion' : 'notificaciones';
-
     return `${visible} de ${total} ${label}`;
   });
+
+  ngOnInit(): void {
+    this.notificationService.start();
+  }
+
+  ngOnDestroy(): void {
+    this.notificationService.stop();
+  }
 
   setView(view: NotificationView): void {
     this.view.set(view);
   }
 
-  setCategory(category: NotificationCategory | null | undefined): void {
-    this.selectedCategory.set(category ?? 'all');
+  setStatus(status: NotificationStatusFilter | null | undefined): void {
+    this.selectedStatus.set(status ?? 'all');
   }
 
   updateSearch(term: string | null | undefined): void {
@@ -370,49 +222,139 @@ export class NotificacionAdmin {
 
   clearFilters(): void {
     this.view.set('all');
-    this.selectedCategory.set('all');
+    this.selectedStatus.set('all');
     this.searchTerm.set('');
   }
 
+  async refreshNotifications(): Promise<void> {
+    await this.notificationService.refresh();
+  }
+
   markAllAsRead(): void {
-    this.notifications.update((items) =>
-      items.map((item) => (item.read ? item : { ...item, read: true })),
-    );
+    this.notificationService.markAllAsRead();
   }
 
   removeAll(): void {
-    this.notifications.set([]);
+    this.notificationService.removeAll();
   }
 
-  restoreDemoState(): void {
-    this.notifications.set([...DEMO_NOTIFICATIONS]);
-    this.clearFilters();
+  markAsRead(transferId: number): void {
+    this.notificationService.markAsRead(transferId);
   }
 
-  markAsRead(id: number): void {
-    this.notifications.update((items) =>
-      items.map((item) =>
-        item.id === id && !item.read ? { ...item, read: true } : item,
-      ),
-    );
+  removeNotification(transferId: number): void {
+    this.notificationService.removeNotification(transferId);
   }
 
-  removeNotification(id: number): void {
-    this.notifications.update((items) => items.filter((item) => item.id !== id));
+  async openNotification(item: NotificationListItem): Promise<void> {
+    this.notificationService.markAsRead(item.transferId);
+    await this.router.navigate(['/admin/transferencia'], {
+      queryParams: { notificationTransferId: item.transferId },
+    });
   }
 
-  categoryLabel(category: NotificationCategory): string {
-    return CATEGORY_LABELS[category];
+  statusLabel(status: TransferNotificationStatus): string {
+    return STATUS_LABELS[status];
   }
 
-  private matchesSearch(item: NotificationItem, term: string): boolean {
+  statusChipClass(status: TransferNotificationStatus): string {
+    switch (status) {
+      case 'SOLICITADA':
+        return 'notification-chip notification-chip--status-requested';
+      case 'APROBADA':
+        return 'notification-chip notification-chip--status-approved';
+      case 'RECHAZADA':
+        return 'notification-chip notification-chip--status-rejected';
+    }
+  }
+
+  emptyTitle(): string {
+    if (!this.canViewNotifications) {
+      return 'Notificaciones no disponibles';
+    }
+
+    if (this.backendError()) {
+      return 'No se pudo cargar la bandeja';
+    }
+
+    return 'No hay notificaciones activas';
+  }
+
+  emptyDescription(): string {
+    if (!this.canViewNotifications) {
+      return 'La bandeja de transferencias solo esta disponible para usuarios administradores con una sede asignada.';
+    }
+
+    if (this.backendError()) {
+      return this.backendError() ?? 'Intenta actualizar nuevamente.';
+    }
+
+    if (this.hasActiveFilters()) {
+      return 'Ajusta la busqueda o limpia los filtros para recuperar eventos visibles.';
+    }
+
+    return 'No hay alertas de transferencias para mostrar en esta sede.';
+  }
+
+  private toListItem(notification: StoredTransferNotification): NotificationListItem {
+    const statusPresentation = this.getStatusPresentation(notification.status);
+    return {
+      transferId: notification.transferId,
+      title: notification.title,
+      message: notification.message,
+      status: notification.status,
+      read: notification.read,
+      createdAt: notification.createdAt,
+      timeLabel: this.formatRelativeTime(notification.createdAt),
+      detail: `Transferencia #${notification.transferId}`,
+      site: 'Gestion de transferencias',
+      icon: statusPresentation.icon,
+      palette: statusPresentation.palette,
+    };
+  }
+
+  private getStatusPresentation(
+    status: TransferNotificationStatus,
+  ): { icon: string; palette: NotificationPalette } {
+    switch (status) {
+      case 'SOLICITADA':
+        return { icon: 'pi pi-send', palette: 'amber' };
+      case 'APROBADA':
+        return { icon: 'pi pi-check-circle', palette: 'emerald' };
+      case 'RECHAZADA':
+        return { icon: 'pi pi-times-circle', palette: 'rose' };
+    }
+  }
+
+  private formatRelativeTime(value: string): string {
+    const timestamp = Date.parse(value);
+    if (Number.isNaN(timestamp)) {
+      return 'Ahora';
+    }
+
+    const diffInMinutes = Math.max(0, Math.floor((Date.now() - timestamp) / 60000));
+    if (diffInMinutes < 1) {
+      return 'Ahora';
+    }
+    if (diffInMinutes < 60) {
+      return `Hace ${diffInMinutes} minuto${diffInMinutes === 1 ? '' : 's'}`;
+    }
+    if (diffInMinutes < 1440) {
+      const hours = Math.floor(diffInMinutes / 60);
+      return `Hace ${hours} hora${hours === 1 ? '' : 's'}`;
+    }
+
+    const days = Math.floor(diffInMinutes / 1440);
+    return `Hace ${days} dia${days === 1 ? '' : 's'}`;
+  }
+
+  private matchesSearch(item: NotificationListItem, term: string): boolean {
     const source = [
       item.title,
-      item.subject,
-      item.description,
+      item.message,
       item.detail,
       item.site,
-      this.categoryLabel(item.category),
+      this.statusLabel(item.status),
     ]
       .join(' ')
       .toLowerCase();

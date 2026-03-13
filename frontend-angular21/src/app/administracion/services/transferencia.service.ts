@@ -23,6 +23,8 @@ import {
   TransferProductDetailWithStockResponse,
   TransferProductsStockQuery,
   TransferProductsStockResponse,
+  TransferNotificationQueryDto,
+  TransferNotificationResponseDto,
   TransferProductStockQuery,
   TransferResponseDto,
   TransferRole,
@@ -131,6 +133,25 @@ export class TransferApiService {
       })
       .pipe(
         catchError((error) => this.handleHttpError(error, `No se pudo obtener transferencia #${id}`)),
+      );
+  }
+
+  listNotifications(
+    query: TransferNotificationQueryDto,
+  ): Observable<TransferNotificationResponseDto[]> {
+    let params = new HttpParams();
+    params = this.setParamIfDefined(params, 'headquartersId', query.headquartersId);
+    params = this.setParamIfDefined(params, 'role', query.role);
+
+    return this.http
+      .get<TransferNotificationResponseDto[]>(`${this.transferBase}/notifications`, {
+        params,
+        headers: this.buildHeaders(),
+      })
+      .pipe(
+        catchError((error) =>
+          this.handleHttpError(error, 'No se pudo cargar notificaciones de transferencias'),
+        ),
       );
   }
 
