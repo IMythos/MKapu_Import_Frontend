@@ -30,7 +30,7 @@ import { PaginadorComponent }      from '../paginador/Paginador.component';
     <div style="position: relative">
         <p-card styleClass="shared-card tarjeta-principal">
 
-        <!-- Loading overlay sobre toda la card -->
+        <!-- Loading overlay sobre toda la card aaaaa-->
         <app-loading-overlay
           [visible]="loading"
           [mensaje]="mensajeCarga"
