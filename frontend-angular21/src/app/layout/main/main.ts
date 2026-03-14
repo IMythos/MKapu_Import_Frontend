@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
-import { Sidebar } from "../sidebar/sidebar";
-import { Header } from "../header/header";
-import { RouterModule } from "@angular/router";
+import { Component, inject, OnInit } from '@angular/core';
+import { Sidebar } from '../sidebar/sidebar';
+import { Header } from '../header/header';
+import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../core/services/theme.service';
 import { DrawerModule } from 'primeng/drawer';
+import { RoleSocketService } from '../../core/services/role.socket.service';
+import { AuthService } from '../../auth/services/auth.service';
 
 @Component({
   selector: 'app-main',
@@ -11,19 +13,26 @@ import { DrawerModule } from 'primeng/drawer';
   templateUrl: './main.html',
   styleUrl: './main.css',
 })
-export class Main {
-
-  constructor(private themeService: ThemeService){}
-
+export class Main implements OnInit {
+  private roleSocket = inject(RoleSocketService);
+  private authService = inject(AuthService);
+  private themeService = inject(ThemeService);
   toggleTheme(): void {
     this.themeService.toggleTheme();
   }
 
-mobileSidebarVisible = false;
+  mobileSidebarVisible = false;
 
-openMobileSidebar() {
-  this.mobileSidebarVisible = true;
-}
-  
+  ngOnInit(): void {
+    this.roleSocket.onRolePermissionsUpdated().subscribe((data) => {
+      const miRolId = this.authService.getRoleId();
+      if (Number(miRolId) === Number(data.roleId)) {
+        this.authService.refrescarPermisosSilenciosamente();
+      }
+    });
+  }
 
+  openMobileSidebar() {
+    this.mobileSidebarVisible = true;
+  }
 }

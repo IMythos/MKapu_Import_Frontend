@@ -1,24 +1,27 @@
 import { inject } from '@angular/core';
-import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { catchError } from 'rxjs/operators';
 import { throwError } from 'rxjs';
-import { AuthService } from '../../auth/services/auth.service';
+import { Router } from '@angular/router';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const authService = inject(AuthService);
   const token = localStorage.getItem('token');
+  const router = inject(Router);
 
-  let requestCloned = req;
-  if (token) {
-    requestCloned = req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` }
+  let authReq = req;
+  if (token && !req.url.includes('/auth/login')) {
+    authReq = req.clone({
+      headers: req.headers.set('Authorization', `Bearer ${token}`)
     });
   }
-  return next(requestCloned).pipe(
+
+  return next(authReq).pipe(
     catchError((error: HttpErrorResponse) => {
-      if (error.status === 401 || error.status === 403) {
-        console.warn('Permisos insuficientes o sesión expirada. Cerrando sesión...');
-        authService.logout();
+      if (error.status === 401 && !req.url.includes('/auth/login')) {
+        console.warn('⚠️ Token expirado o inválido. Redirigiendo al login...');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        router.navigate(['/login']);
       }
       return throwError(() => error);
     })
