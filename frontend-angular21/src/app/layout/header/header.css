@@ -155,3 +155,21 @@ html.p-dark :host ::ng-deep .app-toolbar {
 
 .caja-status-wrapper.abierta .caja-status-label { color: #37d857; }
 .caja-status-wrapper.cerrada .caja-status-label { color: #d83746; }
+
+@media (max-width: 768px) {
+  /* Permite que los grupos de la barra (izquierda y derecha) hagan salto de línea suavemente */
+  :host ::ng-deep .app-toolbar .p-toolbar-group-start,
+  :host ::ng-deep .app-toolbar .p-toolbar-group-end {
+    flex-wrap: wrap;
+    gap: 8px; /* Espaciado entre los botones cuando se apilan */
+  }
+
+  /* Limitamos el tamaño del badge de la sede para que no empuje todo lo demás */
+  .header-sede-badge {
+    max-width: 160px; /* Ajusta este valor si lo necesitas */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; /* Agrega "..." si el texto es muy largo */
+    margin-right: 8px;
+  }
+}

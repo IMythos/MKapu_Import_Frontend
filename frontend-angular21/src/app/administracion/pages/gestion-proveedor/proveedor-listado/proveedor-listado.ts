@@ -129,7 +129,8 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   cargarProveedores(): void {
     this.loading.set(true);
     this.proveedorService
-      .listSuppliers({ estado: this.getEstadoFiltro(), search: this.buscarValue() || undefined })
+      //.listSuppliers({ estado: this.getEstadoFiltro(), search: this.buscarValue() || undefined })
+      .listSuppliers({ search: this.buscarValue() || undefined })
       .subscribe({
         next: response => {
           this.proveedores.set(response.suppliers);
@@ -225,7 +226,7 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
 
   irDetalle(id: number): void { this.router.navigate(['/admin/proveedores/ver-detalle', id]); }
   irCrear():             void { this.router.navigate(['/admin/proveedores/crear']); }
-  irEditar(id: number):  void { this.router.navigate(['/admin/proveedores/editar']); }
+  irEditar(id: number):  void { this.router.navigate(['/admin/proveedores/editar', id]); }
 
   irEliminados(): void { this.esVistaEliminados.set(true);  this.paginaActual.set(1); this.cargarProveedores(); }
   irActivos():    void { this.esVistaEliminados.set(false); this.paginaActual.set(1); this.cargarProveedores(); }
