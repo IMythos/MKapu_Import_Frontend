@@ -19,7 +19,7 @@ import { ToastModule } from 'primeng/toast';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
+import { PaginadorComponent } from '../../../shared/components/paginador/paginador.component';
 
 @Component({
   selector: 'app-remision',

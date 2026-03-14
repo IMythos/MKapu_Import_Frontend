@@ -11,7 +11,7 @@ import { Card }                   from 'primeng/card';
 import { Button }                 from 'primeng/button';
 import { Tooltip }                from 'primeng/tooltip';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component';
-import { PaginadorComponent }      from '../paginador/Paginador.component';
+import { PaginadorComponent } from '../paginador/paginador.component';
 
 @Component({
   selector: 'app-shared-table-container',
