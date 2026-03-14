@@ -18,8 +18,8 @@ export class CashboxSocketService {
 
   constructor() {
     this.socket = io(`${environment.apiUrl}/cashbox`, {
-      path: '/socket.io',
-      //path: '/sales/socket.io',
+      //path: '/socket.io',
+      path: '/sales/socket.io',
       transports: ['polling', 'websocket'],
       withCredentials: false,
     });

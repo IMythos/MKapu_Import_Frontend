@@ -3,7 +3,8 @@ export const environment = {
 //    apiUrl: 'http://localhost:3000',
 
     production: true,
-    apiUrl: 'https://mkapu.duckdns.org/api'
+    apiUrl: 'https://mkapu.duckdns.org/api',
+    apiUrlSocket: 'https://mkapu.duckdns.org',
 
 };
 

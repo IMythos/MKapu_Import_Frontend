@@ -11,8 +11,8 @@ export class RoleSocketService {
   private ngZone = inject(NgZone);
   constructor() {
     this.socket = io(`${environment.apiUrl}/roles`, {
-      //path: '/admin/socket.io/',
-      path: '/socket.io',
+      path: '/admin/socket.io/',
+      //path: '/socket.io',
       transports: ['websocket'], // 👈 1. FORZAMOS SOLO WEBSOCKET (Evita el limbo del polling)
     });
 
