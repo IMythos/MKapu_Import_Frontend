@@ -1,5 +1,4 @@
 <div class="p-2">
-  <!-- CABECERA -->
   <p-card class="cotizaciones-header-card mb-4 cotizaciones-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap">
       <div class="flex align-items-center gap-3">
@@ -14,7 +13,6 @@
 </div>
 
 <div class="p-2">
-  <!-- CONTADORES -->
   <div class="contadores-cotizaciones contador-cotizaciones mb-4">
     <div class="contador-card">
       <i class="pi pi-list"></i>
@@ -46,7 +44,6 @@
     </div>
   </div>
 
-  <!-- FILTROS -->
   <div class="filtros-container mb-4">
     <div class="seccion-filtros">
       <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
@@ -153,7 +150,6 @@
     </div>
   </div>
 
-  <!-- ERROR -->
   @if (arService.error()) {
     <div class="surface-card border-round p-3 mb-3 border-left-3 border-red-500">
       <i class="pi pi-exclamation-triangle text-red-500 mr-2"></i>
@@ -162,13 +158,12 @@
         label="Reintentar"
         icon="pi pi-refresh"
         styleClass="p-button-text p-button-sm ml-3"
-        (onClick)="arService.getAll()"
+        (onClick)="onPageChange(paginaActual())"
       >
       </p-button>
     </div>
   }
 
-  <!-- TABLA -->
   <div style="position: relative">
     <p-card class="tarjeta-principal">
       <app-loading-overlay
@@ -250,7 +245,6 @@
               </td>
               <td class="text-center">
                 <div class="acciones-grupo">
-                  <!-- Ver detalle — se mantiene directo -->
                   <p-button
                     icon="pi pi-eye"
                     [rounded]="true"
@@ -262,7 +256,6 @@
                   >
                   </p-button>
 
-                  <!-- ★ Acciones (PDF / Voucher / WSP / Email) -->
                   <p-button
                     icon="pi pi-file-pdf"
                     [rounded]="true"
@@ -276,7 +269,6 @@
 
                   <span class="accion-separador"></span>
 
-                  <!-- Registrar pago — se mantiene directo -->
                   <p-button
                     icon="pi pi-shopping-cart"
                     [rounded]="true"
@@ -288,7 +280,6 @@
                   >
                   </p-button>
 
-                  <!-- Cancelar — se mantiene directo -->
                   <p-button
                     icon="pi pi-times"
                     [rounded]="true"
@@ -329,41 +320,8 @@
           El botón <i class="pi pi-shopping-cart"></i> permite registrar un pago sobre la cuenta.
         </small>
       </div>
-    </ng-container>
-    <ng-container *ngIf="wspReady">
-      <i class="pi pi-check-circle" style="font-size:3rem; color:#25D366"></i>
-      <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; line-height:1.6">
-        WhatsApp conectado ✅<br>
-        <ng-container *ngIf="cuentaWsp">
-          Se enviará la cuenta por cobrar del comprobante
-          <strong>#{{ cuentaWsp.salesReceiptId }}</strong><br>
-          con el PDF adjunto al número del cliente.
-        </ng-container>
-      </p>
-    </ng-container>
+    </p-card>
   </div>
-  <ng-template pTemplate="footer">
-    <div class="flex justify-content-end gap-2">
-      <p-button
-        label="Cancelar" icon="pi pi-times"
-        severity="secondary" [outlined]="true"
-        [disabled]="enviandoWsp"
-        (onClick)="cerrarDialogWsp()">
-      </p-button>
-      <p-button
-        [label]="enviandoWsp ? 'Enviando...' : 'Enviar por WhatsApp'"
-        [icon]="enviandoWsp ? 'pi pi-spin pi-spinner' : 'pi pi-send'"
-        severity="success"
-        [disabled]="!wspReady || enviandoWsp"
-        (onClick)="enviarPorWsp()">
-      </p-button>
-    </div>
-  </ng-template>
-</p-dialog>
-
-<p-toast></p-toast>
-<p-confirmdialog></p-confirmdialog>
-
 </div>
 
 <app-acciones-comprobante-dialog

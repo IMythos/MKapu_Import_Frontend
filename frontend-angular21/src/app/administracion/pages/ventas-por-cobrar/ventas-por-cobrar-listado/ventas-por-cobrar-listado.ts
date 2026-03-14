@@ -58,6 +58,8 @@ import { SharedTableContainerComponent } from '../../../../shared/components/tab
     DialogModule,
     AccionesComprobanteDialogComponent,
     SharedTableContainerComponent,
+    PaginadorComponent,
+    LoadingOverlayComponent
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
   styleUrl: './ventas-por-cobrar-listado.css',
