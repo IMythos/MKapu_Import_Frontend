@@ -23,6 +23,7 @@ export class RoleSocketService {
 
     this.socket.on('connect_error', (err) => {
       console.error('❌ [Roles Socket] Falló la conexión:', err.message);
+      console.log(this.socket); // Ver qué transporte se está usando
     });
 
     this.socket.on('disconnect', (reason) => {
