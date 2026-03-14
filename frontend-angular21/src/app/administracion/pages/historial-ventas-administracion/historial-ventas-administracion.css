@@ -1486,3 +1486,257 @@
   color: #60a5fa;
   font-size: 0.85rem;
 }
+
+
+/* =========================================================
+   ESTILOS DEL TICKET (PANTALLA Y VISTA PREVIA)
+========================================================= */
+.ticket-container {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  color: #000;
+  background: white;
+  padding: 10px;
+}
+
+.ticket-header, .ticket-footer { text-align: center; }
+
+.logo-texto {
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -1px;
+  text-transform: lowercase;
+}
+
+.logo-subtexto {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  margin: -5px 0 0 0;
+  letter-spacing: 2px;
+}
+
+.ticket-header p, .ticket-footer p { 
+  margin: 2px 0; 
+  font-size: 11px;
+}
+
+.documento-titulo {
+  font-size: 13px;
+  margin: 0;
+  font-weight: normal;
+}
+
+.separador {
+  text-align: center;
+  margin: 4px 0;
+  letter-spacing: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.separador-doble {
+  text-align: center;
+  letter-spacing: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 2px 0;
+}
+
+.ticket-items { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin: 5px 0;
+}
+
+.ticket-items th { font-weight: normal; text-align: left; padding: 2px 0; }
+.ticket-items td { padding: 4px 0; vertical-align: top; }
+
+/* Alineación como en tu foto */
+.col-desc { width: 45%; }
+.col-cant { width: 15%; text-align: center; }
+.col-precio { width: 20%; text-align: right; }
+.col-total { width: 20%; text-align: right; }
+
+.ticket-totales { margin-top: 5px; }
+.total-row { 
+  display: flex; 
+  justify-content: space-between; 
+  margin: 2px 0; 
+}
+.total-final { margin-top: 4px; }
+
+.qr-container {
+  margin-top: 15px;
+  text-align: center;
+}
+.qr-container img {
+  width: 120px;
+  height: 120px;
+}
+
+/* =========================================================
+   ESTILOS DEL TICKET (PANTALLA Y VISTA PREVIA)
+========================================================= */
+.ticket-container {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  color: #000000;
+  font-weight: 600; /* Letras oscuras */
+  background: white;
+  padding: 10px;
+}
+
+.ticket-header, .ticket-footer { text-align: center; }
+
+.logo-texto {
+  font-family: 'Arial Black', Impact, sans-serif;
+  font-size: 28px;
+  margin: 0;
+  letter-spacing: -1px;
+  text-transform: lowercase;
+  color: #000000;
+}
+
+.logo-subtexto {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  margin: -5px 0 0 0;
+  letter-spacing: 2px;
+  font-weight: bold;
+  color: #000000;
+}
+
+.ticket-header p, .ticket-footer p { 
+  margin: 2px 0; 
+  font-size: 11px;
+  color: #000000;
+}
+
+.documento-titulo {
+  font-size: 13px;
+  margin: 0;
+  font-weight: bold;
+  color: #000000;
+}
+
+.separador {
+  text-align: center;
+  margin: 4px 0;
+  letter-spacing: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  color: #000000;
+}
+
+.separador-doble {
+  text-align: center;
+  letter-spacing: 1px;
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 2px 0;
+  color: #000000;
+}
+
+/* --- TABLA ARREGLADA --- */
+.ticket-items { 
+  width: 100%; 
+  border-collapse: collapse; 
+  margin: 2px 0;
+  table-layout: fixed; /* Mantiene el ancho estricto ahora que no hay colspans */
+}
+
+.ticket-items th { 
+  font-weight: bold; 
+  text-align: left; 
+  padding: 2px 0;
+  color: #000000;
+}
+
+.ticket-items td { 
+  padding: 4px 0; 
+  vertical-align: top;
+  color: #000000;
+}
+
+/* Ajuste exacto de las columnas */
+.col-desc { width: 44%; word-wrap: break-word; padding-right: 5px !important;}
+.col-cant { width: 12%; text-align: center; }
+.col-precio { width: 20%; text-align: right; }
+.col-total { width: 24%; text-align: right; }
+
+.ticket-totales { margin-top: 5px; }
+.total-row { 
+  display: flex; 
+  justify-content: space-between; 
+  margin: 2px 0; 
+  color: #000000;
+}
+.total-final { margin-top: 4px; font-weight: bold; font-size: 13px;}
+
+.qr-container {
+  margin-top: 15px;
+  text-align: center;
+}
+.qr-container img {
+  width: 120px;
+  height: 120px;
+  display: inline-block;
+}
+
+/* =========================================================
+   MEDIA PRINT: FUERZA BRUTA PARA PRIMENG
+========================================================= */
+@media print {
+  /* Ocultar TODO el cuerpo de Angular */
+  body * {
+    visibility: hidden;
+  }
+  
+  /* Mostrar SOLO el div del ticket y todo su contenido */
+  #impresion-ticket-termico, 
+  #impresion-ticket-termico * {
+    visibility: visible !important;
+  }
+  
+  /* Posicionar el ticket exactamente en el borde de la impresora */
+  #impresion-ticket-termico {
+    position: fixed !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* ELIMINAR EL MODAL Y BOTONES DE PRIMENG */
+  :host ::ng-deep .p-dialog-mask {
+    background: transparent !important;
+  }
+  
+  :host ::ng-deep .p-dialog {
+    box-shadow: none !important;
+    border: none !important;
+    background: transparent !important;
+  }
+
+  /* Esto mata la cabecera (la X) y el pie de página (los botones) al imprimir */
+  :host ::ng-deep .p-dialog-header,
+  :host ::ng-deep .p-dialog-footer,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  /* Evitar que el modal corte el ticket si es muy largo */
+  :host ::ng-deep .p-dialog-content {
+    overflow: visible !important;
+    padding: 0 !important;
+  }
+}

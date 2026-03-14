@@ -144,6 +144,12 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
   wspPollingInterval: any = null;
   wspComprobanteActual: SalesReceiptSummaryAdmin | null = null;
 
+  // Dialogo voucher termico
+  ticketDialogVisible = false;
+  ticketConsultando = false;
+  ticketDetalle: any = null;
+  ticketQrUrl: string = ''; 
+
   readonly estadosComprobante = [
     { label: 'Todos',     value: null },
     { label: 'Emitido',   value: 'EMITIDO' },
@@ -524,6 +530,11 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
 
       // 🚧 PENDIENTE — conectar servicio de voucher térmico
       case 'voucher-imprimir':
+        this.dialogVisible = false; // Cerramos el menú de acciones
+        this.dialogAccionCargando = null;
+        this.abrirDialogTicket(comprobante); // Abrimos el nuevo modal
+        break;
+        /*
         console.log('TODO: imprimir voucher térmico', comprobante.idComprobante);
         this.dialogAccionCargando = null;
         this.messageService.add({
@@ -532,6 +543,7 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
         });
         this.cdr.markForCheck();
         break;
+        */
 
       // 🚧 PENDIENTE — conectar servicio de voucher térmico
       case 'voucher-descargar':
@@ -742,4 +754,62 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
     if (m.includes('tarjeta')) return 'warn';
     return 'secondary';
   }
+
+  abrirDialogTicket(comprobante: SalesReceiptSummaryAdmin): void {
+    this.ticketDialogVisible = true;
+    this.ticketConsultando = true;
+    this.ticketDetalle = null;
+    this.ticketQrUrl = '';
+
+    // Llamamos al backend para traer el detalle completo (productos, totales, etc)
+    this.ventasService.getDetalleCompleto(comprobante.idComprobante, 1).subscribe({
+      next: (data: any) => {
+        this.ticketDetalle = data;
+        this.generarQrSunat(data); // Generamos el QR cuando llega la data
+        this.ticketConsultando = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.ticketConsultando = false;
+        this.messageService.add({
+          severity: 'error', summary: 'Error',
+          detail: 'No se pudieron cargar los productos del comprobante', life: 3000,
+        });
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  generarQrSunat(detalle: any): void {
+    // Formato estándar SUNAT: RUC | TIPO DOC | SERIE | NUMERO | IGV | TOTAL | FECHA | TIPO CLIENTE | NUM CLIENTE |
+    const rucEmisor = '20613016946'; // Tu RUC
+    const tipoComprobante = detalle.tipo_comprobante === '01' ? '01' : '03'; // 01 Factura, 03 Boleta
+    const serieNumero = detalle.numero_completo.split('-'); // Ej: ['F001', '00000474']
+    const serie = serieNumero[0];
+    const numero = serieNumero[1];
+    const igv = detalle.igv || '0.00';
+    const total = detalle.total || '0.00';
+    const fecha = detalle.fec_emision.split('T')[0]; // Solo YYYY-MM-DD
+    const tipoDocCliente = detalle.cliente?.tipo_documento?.includes('RUC') ? '6' : '1';
+    const numDocCliente = detalle.cliente?.documento || '0';
+
+    const textoQr = `${rucEmisor}|${tipoComprobante}|${serie}|${numero}|${igv}|${total}|${fecha}|${tipoDocCliente}|${numDocCliente}|`;
+    
+    // Usamos una API gratuita y rápida para generar el QR en base al texto
+    // (Si prefieres usar una librería local en el futuro, puedes cambiar esta línea)
+    this.ticketQrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(textoQr)}`;
+  }
+
+  cerrarDialogTicket(): void {
+    this.ticketDialogVisible = false;
+    this.ticketDetalle = null;
+  }
+
+  imprimirTicketNativo(): void {
+    // Le damos un respiro pequeñito al DOM para que tenga las imágenes listas
+    setTimeout(() => {
+      window.print();
+    }, 150);
+  }
+
 }

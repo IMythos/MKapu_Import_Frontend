@@ -437,3 +437,117 @@
     />
   </ng-template>
 </p-dialog>
+
+<p-dialog
+  header="Vista Previa de Ticket"
+  [(visible)]="ticketDialogVisible"
+  [modal]="true"
+  [style]="{ width: '400px' }"
+  styleClass="ticket-dialog"
+  (onHide)="cerrarDialogTicket()"
+>
+  <div *ngIf="ticketConsultando" class="flex flex-column align-items-center gap-3 py-4">
+    <i class="pi pi-spin pi-spinner text-4xl text-yellow-500"></i>
+    <span class="font-semibold text-sm">Cargando formato del ticket...</span>
+  </div>
+
+  <div id="impresion-ticket-termico" class="ticket-container" *ngIf="!ticketConsultando && ticketDetalle">
+    
+    <div class="ticket-header">
+      <h1 class="logo-texto">mkapu</h1>
+      <h2 class="logo-subtexto">import</h2>
+      <br>
+      <div class="separador">----------------------------------------</div>
+      <h3 class="documento-titulo">{{ getTipoComprobanteLabel(ticketDetalle.tipo_comprobante) }} ELECTRÓNICA</h3>
+      <div class="separador">----------------------------------------</div>
+      <p>20613016946</p>
+      <p>MKAPU IMPORT S.A.C.</p>
+      <p>MKAPU</p>
+      <div class="separador">----------------------------------------</div>
+      <p>AV LAS FLORES DE LA PRIMAVERA 1838, 15 DE LAS</p>
+      <p>FLORES - SAN JUAN DE LURIGANCHO - LIMA - LIMA</p>
+      <p>celular: 903019610</p>
+      <div class="separador">----------------------------------------</div>
+      <p>{{ ticketDetalle.fec_emision | date: 'dd/MM/yyyy hh:mm a' }}</p>
+      <p class="font-bold">{{ ticketDetalle.numero_completo }}</p>
+      <div class="separador">----------------------------------------</div>
+      <p>{{ ticketDetalle.cliente?.nombre }}</p>
+      <p>{{ ticketDetalle.cliente?.documento }}</p>
+      <p *ngIf="ticketDetalle.cliente?.direccion">{{ ticketDetalle.cliente?.direccion }}</p>
+      <div class="separador">----------------------------------------</div>
+      <p>TIENDA</p>
+    </div>
+
+    <div class="separador-doble">========================================</div>
+    
+    <table class="ticket-items">
+      <thead>
+        <tr>
+          <th class="col-desc">Desc.</th>
+          <th class="col-cant">Cant.</th>
+          <th class="col-precio">P.Unit</th>
+          <th class="col-total">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of ticketDetalle.productos">
+          <td class="col-desc">{{ item.descripcion }}</td>
+          <td class="col-cant">{{ item.cantidad }}</td>
+          <td class="col-precio">{{ item.precio_unit | number:'1.2-2' }}</td>
+          <td class="col-total">{{ item.total | number:'1.2-2' }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="separador-doble">========================================</div>
+
+    <div class="ticket-totales">
+      <div class="total-row" *ngIf="ticketDetalle.promocion">
+        <span>Descuento Gral.</span>
+        <span>S/ {{ ticketDetalle.promocion.monto_descuento | number:'1.2-2' }}</span>
+      </div>
+
+      <div class="total-row">
+        <span>OP. GRAVADA</span>
+        <span>S/ {{ ticketDetalle.subtotal | number:'1.2-2' }}</span>
+      </div>
+      
+      <div class="total-row">
+        <span>IGV (18%)</span>
+        <span>S/ {{ ticketDetalle.igv | number:'1.2-2' }}</span>
+      </div>
+
+      <div class="total-row total-final">
+        <span>Total</span>
+        <span>S/ {{ ticketDetalle.total | number:'1.2-2' }}</span>
+      </div>
+      
+      <div class="total-row">
+        <span>Pago ({{ ticketDetalle.metodo_pago }})</span>
+        <span>S/ {{ ticketDetalle.total | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="ticket-footer">
+      <div class="separador">----------------------------------------</div>
+      <p>Atendido por:</p>
+      <p>{{ ticketDetalle.responsable?.nombre | uppercase }}</p>
+      <div class="separador">----------------------------------------</div>
+      <p>**GRACIAS POR SU COMPRA**</p>
+      <p>Representación impresa de la {{ getTipoComprobanteLabel(ticketDetalle.tipo_comprobante) }} Electrónica.</p>
+      <p>toda falla de fabrica tiene una garantia hasta 2 meses despues de su compra (solo venta por unidad, debe acercarse a nuestro establecimiento para presentar la solicitud de garantia.)</p>
+      
+      <div class="qr-container" *ngIf="ticketQrUrl">
+        <img [src]="ticketQrUrl" alt="QR SUNAT" />
+      </div>
+    </div>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="no-print">
+      <p-button label="Cancelar" severity="secondary" [text]="true" (onClick)="cerrarDialogTicket()"></p-button>
+      <p-button label="Imprimir Voucher" icon="pi pi-print"  (onClick)="imprimirTicketNativo()" [disabled]="ticketConsultando || !ticketDetalle"></p-button>
+    </div>
+  </ng-template>
+</p-dialog>
