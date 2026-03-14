@@ -1,7 +1,7 @@
-import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { ApplicationRef, Injectable, NgZone, inject } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
+import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../enviroments/enviroment';
 import { User } from '../../core/interfaces/user.interface';
 import { EmpleadosService } from '../../core/services/empleados.service';
@@ -18,7 +18,9 @@ export class AuthService {
   private http = inject(HttpClient);
   private router = inject(Router);
   private empleadosService = inject(EmpleadosService);
-
+  private appRef = inject(ApplicationRef);
+  private ngZone = inject(NgZone);
+  public permisosActualizados$ = new BehaviorSubject<boolean>(true);
   private api = environment.apiUrl || 'http://localhost:3000';
   private currentUser: User | null = null;
 
@@ -59,7 +61,6 @@ export class AuthService {
     };
   }
 
-
   private redirectByPermisos(user: User): void {
     const permisos = user.permisos || [];
 
@@ -68,7 +69,7 @@ export class AuthService {
       return;
     }
     if (permisos.includes('VER_DASHBOARD_ALMACEN')) {
-      this.router.navigate(['/logistica/dashboard']); 
+      this.router.navigate(['/logistica/dashboard']);
       return;
     }
     if (permisos.includes('VER_DASHBOARD_VENTAS')) {
@@ -77,37 +78,37 @@ export class AuthService {
     }
 
     const rutasSalvavidas: Record<string, string> = {
-      'VER_CAJA': '/ventas/caja',
-      'CREAR_VENTA_ADMIN': '/admin/generar-ventas-administracion',
-      'VER_VENTAS_ADMIN': '/admin/historial-ventas-administracion',
-      'CREAR_VENTA': '/ventas/generar-ventas',
-      'VER_VENTAS': '/ventas/historial-ventas',
-      'CREAR_VENTA_POR_COBRAR': '/ventas/ventas-por-cobrar',
-      'VER_LIBRO_VENTAS': '/ventas/libro-ventas',
-      'VER_REPORTES': '/ventas/reporte-ventas',
-      'CREAR_CLIENTE': '/admin/clientes',
-      'CREAR_COTIZACIONES': '/ventas/cotizaciones',
-      'CREAR_PROMOCION': '/ventas/promociones',
-      'CREAR_DESCUENTO': '/admin/descuentos',
-      'CREAR_NC': '/ventas/nota-credito',
-      'CREAR_RECLAMO': '/ventas/reclamos-listado',
-      'CONTEO_INVENTARIO': '/logistica/conteo-inventario',
-      'CREAR_MOV_INVENTARIO': '/logistica/movimiento-inventario',
-      'VER_MOVIMIENTOS': '/ventas/movimiento-inventario',
-      'CREAR_AJUSTE_INVENTARIO': '/logistica/ajuste-inventario',
-      'CREAR_REMISION': '/logistica/remision',
-      'CREAR_ALMACEN': '/admin/almacen',
-      'CREAR_TRANSFERENCIA': '/admin/transferencia',
-      'CREAR_DESPACHO': '/admin/despacho-productos',
-      'CREAR_PRODUCTOS': '/admin/gestion-productos',
-      'CREAR_CATEGORIAS': '/admin/categoria',
-      'CREAR_PROVEEDORES': '/admin/proveedores',
-      'CREAR_COMISIONES': '/admin/comision',
-      'CREAR_MERMAS': '/admin/mermas',
-      'CREAR_REMATES': '/ventas/remates',
-      'CREAR_SEDES': '/admin/sedes',
-      'CREAR_USUARIOS': '/admin/usuarios',
-      'ADMINISTRACION': '/admin/roles-permisos'
+      VER_CAJA: '/ventas/caja',
+      CREAR_VENTA_ADMIN: '/admin/generar-ventas-administracion',
+      VER_VENTAS_ADMIN: '/admin/historial-ventas-administracion',
+      CREAR_VENTA: '/ventas/generar-ventas',
+      VER_VENTAS: '/ventas/historial-ventas',
+      CREAR_VENTA_POR_COBRAR: '/ventas/ventas-por-cobrar',
+      VER_LIBRO_VENTAS: '/ventas/libro-ventas',
+      VER_REPORTES: '/ventas/reporte-ventas',
+      CREAR_CLIENTE: '/admin/clientes',
+      CREAR_COTIZACIONES: '/ventas/cotizaciones',
+      CREAR_PROMOCION: '/ventas/promociones',
+      CREAR_DESCUENTO: '/admin/descuentos',
+      CREAR_NC: '/ventas/nota-credito',
+      CREAR_RECLAMO: '/ventas/reclamos-listado',
+      CONTEO_INVENTARIO: '/logistica/conteo-inventario',
+      CREAR_MOV_INVENTARIO: '/logistica/movimiento-inventario',
+      VER_MOVIMIENTOS: '/ventas/movimiento-inventario',
+      CREAR_AJUSTE_INVENTARIO: '/logistica/ajuste-inventario',
+      CREAR_REMISION: '/logistica/remision',
+      CREAR_ALMACEN: '/admin/almacen',
+      CREAR_TRANSFERENCIA: '/admin/transferencia',
+      CREAR_DESPACHO: '/admin/despacho-productos',
+      CREAR_PRODUCTOS: '/admin/gestion-productos',
+      CREAR_CATEGORIAS: '/admin/categoria',
+      CREAR_PROVEEDORES: '/admin/proveedores',
+      CREAR_COMISIONES: '/admin/comision',
+      CREAR_MERMAS: '/admin/mermas',
+      CREAR_REMATES: '/ventas/remates',
+      CREAR_SEDES: '/admin/sedes',
+      CREAR_USUARIOS: '/admin/usuarios',
+      ADMINISTRACION: '/admin/roles-permisos',
     };
 
     for (const [permiso, ruta] of Object.entries(rutasSalvavidas)) {
@@ -118,9 +119,8 @@ export class AuthService {
     }
 
     console.warn('El usuario está autenticado pero no tiene permisos para ninguna vista.');
-    this.logout(); 
+    this.logout();
   }
-
 
   login(username: string, password: string): Observable<AuthInterfaceResponse> {
     const loginData: AuthInterface = { username, password };
@@ -142,7 +142,6 @@ export class AuthService {
     );
   }
 
-
   logout(): void {
     this.currentUser = null;
     this.empleadosService.logout();
@@ -150,7 +149,6 @@ export class AuthService {
     localStorage.removeItem('user');
     this.router.navigate(['/login']);
   }
-
 
   isLoggedIn(): boolean {
     return this.currentUser !== null && !!localStorage.getItem('token');
@@ -190,5 +188,30 @@ export class AuthService {
 
   isAlmacen(): boolean {
     return this.hasPermiso('ALMACEN');
+  }
+  refrescarPermisosSilenciosamente() {
+    const token = this.getToken();
+    if (!token) {
+      return;
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    this.ngZone.run(() => {
+      this.http.get<any>(`${this.api}/auth/auth/refresh-profile`, { headers }).subscribe({
+        next: (res) => {
+          if (res && res.account) {
+            const updatedUser = this.transformUser(res.account);
+            this.currentUser = updatedUser;
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            localStorage.setItem('permisos', JSON.stringify(updatedUser.permisos));
+
+            this.permisosActualizados$.next(true);
+
+            setTimeout(() => this.appRef.tick(), 0);
+          }
+        },
+        error: (err) => console.error('❌ Error refrescando perfil:', err),
+      });
+    });
   }
 }
