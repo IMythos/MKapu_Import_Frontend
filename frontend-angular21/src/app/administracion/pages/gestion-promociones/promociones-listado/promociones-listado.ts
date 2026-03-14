@@ -19,7 +19,7 @@ import { SharedTableContainerComponent } from '../../../../shared/components/tab
 
 import { PromotionsService, Promotion } from '../../../services/promotions.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.temp';
 
 interface Filtros {
   busqueda: string;

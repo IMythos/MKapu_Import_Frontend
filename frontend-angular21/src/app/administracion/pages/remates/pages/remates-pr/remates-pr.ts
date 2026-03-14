@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
 
 import { AuctionService, AuctionResponseDto } from '../../../../services/auction.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.temp';
 
 interface RemateUI {
   id_remate: number;

@@ -20,7 +20,7 @@ import { CommonModule } from '@angular/common';
 
 import { WastageService, WastageResponseDto } from '../../../../services/wastage.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.temp';
 
 interface WastageDetail {
   id_detalle: number;

@@ -18,7 +18,7 @@ import { VentasAdminService } from '../../../services/ventas.service';
 import { TooltipModule } from 'primeng/tooltip';
 import { SedeService } from '../../../services/sede.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.temp';
 import { ExcelUtils } from '../../../utils/excel.utils';
 import {
   AccountReceivableService,

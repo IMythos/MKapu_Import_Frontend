@@ -21,7 +21,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ProveedorService } from '../../../services/proveedor.service';
 import { SupplierResponse } from '../../../interfaces/supplier.interface';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.temp';
 
 @Component({
   selector: 'app-proveedor-listado',
