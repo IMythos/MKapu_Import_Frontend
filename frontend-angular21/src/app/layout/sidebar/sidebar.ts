@@ -73,6 +73,7 @@ export class Sidebar implements OnInit {
         { path: '/admin/clientes',                        label: 'Clientes',                   icon: 'pi pi-users',              permiso: 'CREAR_CLIENTE' },
         { path: '/admin/cotizaciones',                    label: 'Cotizaciones',               icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
         { path: '/admin/reclamos-listado',                label: 'Reclamos',                   icon: 'pi pi-exclamation-circle', permiso: 'CREAR_RECLAMO' },
+        { path: '/admin/notas-credito',                   label: 'Notas de Credito',           icon: 'pi pi-id-card',            permiso: 'VER_NOTAS_CREDITO' } // CAMBIAR ICONO
       ]
     },
 
@@ -151,7 +152,7 @@ export class Sidebar implements OnInit {
     this.iniciarSuscripcionReactiva();
   }
 
-  
+
   private iniciarSuscripcionReactiva(): void {
     this.authService.permisosActualizados$.subscribe(() => {
       console.log('🔄 Sidebar detectó nuevos permisos. Redibujando menú...');
@@ -177,7 +178,7 @@ export class Sidebar implements OnInit {
   private loadMenu(): void {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
-    
+
     const permisos = user?.permisos || [];
     const roleName = user?.roleName || 'Invitado';
 

@@ -1,0 +1,403 @@
+<div class="p-2">
+  <p-card styleClass="mb-4 shadow-1 border-round-xl">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+
+      <div class="flex align-items-center gap-3">
+        <div class="flex align-items-center justify-content-center border-round-lg"
+             style="width: 3.5rem; height: 3.5rem; background-color: var(--primary-color); color: var(--primary-color-text);">
+          <i [class]="iconoCabecera" style="font-size: 1.5rem;"></i>
+        </div>
+        <div class="flex flex-column justify-content-center">
+          <span class="text-sm font-semibold mb-1" style="color: var(--text-color-secondary); letter-spacing: 0.5px;">
+            {{ tituloKicker }}
+          </span>
+          <h2 class="m-0 text-2xl font-bold" style="color: var(--text-color);">
+            {{ subtituloKicker }}
+          </h2>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <p-button
+          label="Generar Nota de Crédito"
+          icon="pi pi-plus"
+          [rounded]="true"
+          (onClick)="generarNotaCredito()"
+        ></p-button>
+      </div>
+
+    </div>
+  </p-card>
+</div>
+
+<div class="p-2">
+  <div class="surface-card p-4 border-round-xl shadow-1 mb-4">
+    <h3 class="m-0 mb-4 text-lg font-semibold text-color">
+      <i class="pi pi-filter text-primary mr-2"></i> Filtros de búsqueda
+    </h3>
+
+    <div class="formgrid grid">
+      <div class="field col-12 md:col-4">
+        <label class="font-semibold text-sm text-color-secondary">Serie / Correlativo</label>
+        <input
+          pInputText
+          [(ngModel)]="filtroSerie"
+          placeholder="Ej: FN01-0001"
+          (keyup.enter)="aplicarFiltros()"
+          class="w-full mt-2"
+        />
+      </div>
+
+      <div class="field col-12 md:col-4">
+        <label class="font-semibold text-sm text-color-secondary">Doc. Cliente</label>
+        <input
+          pInputText
+          [(ngModel)]="filtroDoc"
+          placeholder="DNI / RUC"
+          (keyup.enter)="aplicarFiltros()"
+          class="w-full mt-2"
+        />
+      </div>
+
+      <div class="field col-12 md:col-4">
+        <label class="font-semibold text-sm text-color-secondary">Rango de Fechas (Emisión)</label>
+        <div class="flex align-items-center gap-2 mt-2 w-full">
+          <p-datepicker
+            [(ngModel)]="filtroFechaInicio"
+            dateFormat="dd/mm/yy"
+            placeholder="Inicio"
+            (onSelect)="aplicarFiltros()"
+            (onClear)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full flex-1"
+          ></p-datepicker>
+          <span class="text-color-secondary">—</span>
+          <p-datepicker
+            [(ngModel)]="filtroFechaFin"
+            dateFormat="dd/mm/yy"
+            placeholder="Fin"
+            (onSelect)="aplicarFiltros()"
+            (onClear)="aplicarFiltros()"
+            [showClear]="true"
+            styleClass="w-full flex-1"
+          ></p-datepicker>
+        </div>
+      </div>
+
+      <div class="field col-12 md:col-4">
+        <label class="font-semibold text-sm text-color-secondary">Estado</label>
+        <p-select
+          [(ngModel)]="filtroEstado"
+          [options]="estadosOpciones"
+          placeholder="Todos"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="aplicarFiltros()"
+          [showClear]="true"
+          styleClass="w-full mt-2"
+        ></p-select>
+      </div>
+
+      <div class="field col-12 md:col-4 flex align-items-end">
+        <p-button
+          label="Limpiar Filtros"
+          icon="pi pi-filter-slash"
+          (onClick)="limpiarFiltros()"
+          severity="danger"
+          [outlined]="true"
+          styleClass="w-full md:w-auto"
+        ></p-button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="p-2">
+  <app-shared-table-container
+    titulo="Listado de Notas de Crédito"
+    iconoTitulo="pi pi-list"
+    mensajeCarga="Cargando notas de crédito..."
+    [loading]="loading"
+    [paginaActual]="paginaActual"
+    [totalPaginas]="totalPaginas"
+    [totalRegistros]="totalRegistros"
+    [limitePorPagina]="limitePorPagina"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
+    <div slot="acciones" class="flex align-items-center gap-2">
+      <p-button
+        label="Exportar Excel"
+        icon="pi pi-file-excel"
+        (onClick)="exportarExcel()"
+        severity="success"
+        [outlined]="true"
+        pTooltip="Descargar reporte en Excel"
+        tooltipPosition="left"
+        size="small"
+      ></p-button>
+    </div>
+
+    <p-table
+      [value]="notas"
+      [paginator]="false"
+      styleClass="p-datatable-striped"
+      [tableStyle]="{ 'min-width': '65rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Correlativo</th>
+          <th>Cliente</th>
+          <th class="text-center">Moneda</th>
+          <th>Fecha Emisión</th>
+          <th class="text-right">Total</th>
+          <th class="text-center">Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-nota>
+        <tr>
+          <td class="font-semibold">{{ nota.correlative }}</td>
+          <td>
+            <div class="text-sm font-semibold">{{ nota.customerName }}</div>
+            <div class="text-xs text-color-secondary">{{ nota.customerDocument }}</div>
+          </td>
+          <td class="text-center">
+            <span class="text-sm font-semibold">{{ nota.currency }}</span>
+          </td>
+          <td>
+            <div class="flex flex-column gap-1">
+              <div class="flex align-items-center gap-1">
+                <i class="pi pi-calendar-plus" style="font-size:0.7rem; color:var(--text-muted)"></i>
+                <span style="font-size:0.8rem; color:var(--text-color-secondary)">
+                  {{ nota.emissionDate | date: 'dd/MM/yyyy HH:mm' }}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td class="text-right font-bold text-primary">
+            {{ nota.currency }} {{ nota.totalAmount | number: '1.2-2' }}
+          </td>
+          <td class="text-center">
+            <p-tag
+              [value]="nota.status"
+              [severity]="getSeveridadEstado(nota.status)"
+            ></p-tag>
+          </td>
+          <td class="text-center">
+            <div class="flex align-items-center justify-content-center gap-2">
+              <p-button
+                icon="pi pi-eye"
+                (onClick)="verDetalle(nota)"
+                [rounded]="true"
+                [text]="true"
+                severity="secondary"
+                pTooltip="Ver detalle completo"
+                tooltipPosition="top"
+              ></p-button>
+
+              <p-button
+                icon="pi pi-ban"
+                (onClick)="abrirAnular(nota)"
+                [rounded]="true"
+                [text]="true"
+                severity="danger"
+                [disabled]="!puedeAnular(nota.status)"
+                pTooltip="Anular nota de crédito"
+                tooltipPosition="top"
+              ></p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center">
+            <div class="flex flex-column align-items-center py-5">
+              <i class="pi pi-inbox text-4xl mb-3 text-color-secondary"></i>
+              <span class="text-color-secondary">No se encontraron notas de crédito con los filtros aplicados.</span>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+  </app-shared-table-container>
+</div>
+
+<p-dialog
+  header="Detalle de Nota de Crédito"
+  [(visible)]="detalleVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '700px' }"
+  (onHide)="cerrarDetalle()"
+>
+  <ng-container *ngIf="detalleLoading">
+    <div class="flex justify-content-center align-items-center py-5">
+      <i class="pi pi-spin pi-spinner text-4xl text-primary"></i>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="!detalleLoading && detalleActual">
+    <div class="formgrid grid mb-3">
+
+      <div class="col-12 md:col-6 p-2">
+        <div class="surface-ground border-round p-3 h-full">
+          <h4 class="mt-0 mb-3 text-lg"><i class="pi pi-file-edit text-primary mr-2"></i> Información General</h4>
+
+          <div class="flex justify-content-between mb-2">
+            <span class="text-color-secondary text-sm">Correlativo</span>
+            <strong class="text-color text-sm">{{ detalleActual.correlative }}</strong>
+          </div>
+          <div class="flex justify-content-between mb-2">
+            <span class="text-color-secondary text-sm">Comprobante Ref.</span>
+            <span class="text-color text-sm">{{ detalleActual.serieRef ?? '-' }}-{{ detalleActual.numberDocRef ?? '-' }}</span>
+          </div>
+          <div class="flex justify-content-between mb-2">
+            <span class="text-color-secondary text-sm">Fecha Emisión</span>
+            <span class="text-color text-sm">{{ detalleActual.issueDate | date: 'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="flex flex-column mb-2">
+            <span class="text-color-secondary text-sm mb-1">Cliente</span>
+            <span class="text-color text-sm font-semibold">{{ detalleActual.customerName }}</span>
+          </div>
+          <div class="flex justify-content-between mb-2 align-items-center">
+            <span class="text-color-secondary text-sm">Tipo Devolución</span>
+            <p-tag
+              [value]="getLabelTipo(detalleActual.businessType)"
+              [severity]="getSeveridadTipo(detalleActual.businessType)"
+            ></p-tag>
+          </div>
+          <div class="flex justify-content-between align-items-center">
+            <span class="text-color-secondary text-sm">Estado</span>
+            <p-tag
+              [value]="detalleActual.status"
+              [severity]="getSeveridadEstado(detalleActual.status)"
+            ></p-tag>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 md:col-6 p-2">
+        <div class="surface-ground border-round p-3 h-full flex flex-column">
+          <h4 class="mt-0 mb-3 text-lg"><i class="pi pi-calculator text-primary mr-2"></i> Desglose de Montos</h4>
+
+          <div class="flex justify-content-between mb-2">
+            <span class="text-color-secondary text-sm">Valor Venta</span>
+            <span class="text-color text-sm">{{ detalleActual.currency }} {{ detalleActual.saleValue | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-content-between mb-2">
+            <span class="text-color-secondary text-sm">IGV (18%)</span>
+            <span class="text-color text-sm">{{ detalleActual.currency }} {{ detalleActual.igv | number: '1.2-2' }}</span>
+          </div>
+          <div class="flex justify-content-between mb-2">
+            <span class="text-color-secondary text-sm">ISC</span>
+            <span class="text-color text-sm">{{ detalleActual.currency }} {{ detalleActual.isc | number: '1.2-2' }}</span>
+          </div>
+          <div class="mt-auto pt-3 border-top-1 surface-border">
+            <div class="flex justify-content-between align-items-center">
+              <span class="font-bold text-lg">Total Final</span>
+              <strong class="text-xl text-primary">{{ detalleActual.currency }} {{ detalleActual.totalAmount | number: '1.2-2' }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-2">
+      <h4 class="mt-0 mb-3 text-lg"><i class="pi pi-list text-primary mr-2"></i> Ítems Devueltos</h4>
+      <p-table
+        [value]="detalleActual.items"
+        [tableStyle]="{ 'min-width': '100%' }"
+        styleClass="p-datatable-sm p-datatable-striped"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th>Descripción</th>
+            <th class="text-center">Cant.</th>
+            <th class="text-right">P. Unit.</th>
+            <th class="text-right">IGV</th>
+            <th class="text-right">Total</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item>
+          <tr>
+            <td class="text-sm">{{ item.description }}</td>
+            <td class="text-center text-sm">{{ item.quantity }}</td>
+            <td class="text-right text-sm">{{ item.unitPrice | number: '1.2-2' }}</td>
+            <td class="text-right text-sm">{{ item.igv | number: '1.2-2' }}</td>
+            <td class="text-right font-semibold text-sm">{{ item.total | number: '1.2-2' }}</td>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="5" class="text-center py-3 text-color-secondary">No hay ítems registrados.</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cerrar"
+      severity="secondary"
+      [text]="true"
+      icon="pi pi-times"
+      (onClick)="cerrarDetalle()"
+    ></p-button>
+  </ng-template>
+</p-dialog>
+
+<p-dialog
+  header="Anular Nota de Crédito"
+  [(visible)]="anularVisible"
+  [modal]="true"
+  [closable]="true"
+  [style]="{ width: '420px' }"
+  (onHide)="cerrarAnular()"
+>
+  <div class="anular-contenido pt-2">
+    <div class="flex align-items-start gap-3 p-3 mb-4 surface-ground border-round">
+      <i class="pi pi-exclamation-triangle text-red-500 text-2xl mt-1"></i>
+      <p class="m-0 text-sm line-height-3 text-color-secondary">
+        Esta acción <strong>no se puede deshacer</strong> y cambiará el estado del comprobante ante el sistema y SUNAT. Ingrese el motivo detallado.
+      </p>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label class="font-semibold text-sm">Motivo de anulación <span class="text-red-500">*</span></label>
+      <input
+        pInputText
+        [(ngModel)]="anularMotivo"
+        placeholder="Ej: Error en el monto, cliente desistió..."
+        class="w-full"
+        (keyup.enter)="confirmarAnular()"
+      />
+    </div>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      severity="secondary"
+      [text]="true"
+      (onClick)="cerrarAnular()"
+    ></p-button>
+    <p-button
+      label="Proceder a Anular"
+      icon="pi pi-ban"
+      severity="danger"
+      [loading]="anularLoading()"
+      [disabled]="!anularMotivo.trim()"
+      (onClick)="confirmarAnular()"
+    ></p-button>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
