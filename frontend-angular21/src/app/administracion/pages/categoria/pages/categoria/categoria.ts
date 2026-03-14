@@ -18,7 +18,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { CategoriaService } from '../../../../services/categoria.service';
 import { Categoria } from '../../../../interfaces/categoria.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.temp';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.components';
 import { TooltipModule } from 'primeng/tooltip';
 import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 

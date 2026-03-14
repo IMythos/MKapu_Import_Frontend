@@ -11,7 +11,7 @@ import { RouterModule } from '@angular/router';
 import { CommissionService, CommissionRule } from '../../services/commission.service';
 import { CategoriaService } from '../../services/categoria.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../shared/components/paginador/paginador.temp';
+import { PaginadorComponent } from '../../../shared/components/paginador/paginador.components';
 
 @Component({
   selector: 'app-comision',

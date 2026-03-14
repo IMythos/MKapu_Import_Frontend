@@ -15,7 +15,7 @@ import { SelectModule } from 'primeng/select';
 import { ConteoInventarioService } from '../../../logistica/services/conteo-inventario.service';
 import { CategoriaService } from '../../../administracion/services/categoria.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../shared/components/paginador/paginador.temp';
+import { PaginadorComponent } from '../../../shared/components/paginador/paginador.components';
 
 // 👇 Importamos las utilidades de fecha
 import { getLunesSemanaActualPeru, getDomingoSemanaActualPeru } from '../../../shared/utils/date-peru.utils';

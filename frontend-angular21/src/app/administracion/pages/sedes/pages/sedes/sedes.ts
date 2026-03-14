@@ -20,7 +20,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { SedeService } from '../../../../services/sede.service';
 import { Headquarter } from '../../../../interfaces/sedes.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.temp';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.components';
 import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';

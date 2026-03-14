@@ -31,7 +31,7 @@ import { Dialog } from 'primeng/dialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../shared/components/paginador/paginador.temp';
+import { PaginadorComponent } from '../../../shared/components/paginador/paginador.components';
 import { VentasAdminService } from '../../services/ventas.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ExcelUtils } from '../../utils/excel.utils';
