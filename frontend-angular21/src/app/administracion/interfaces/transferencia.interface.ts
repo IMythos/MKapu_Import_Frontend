@@ -183,6 +183,32 @@ export interface TransferSocketEventDto {
   emittedAt: string;
 }
 
+export type TransferNotificationStatus = Extract<
+  TransferStatus,
+  'SOLICITADA' | 'APROBADA' | 'RECHAZADA'
+>;
+
+export interface TransferNotificationQueryDto {
+  headquartersId: string;
+  role: TransferRole;
+}
+
+export interface TransferNotificationResponseDto {
+  transferId: number;
+  title: string;
+  message: string;
+  status: TransferNotificationStatus;
+}
+
+export interface StoredTransferNotification
+  extends TransferNotificationResponseDto {
+  createdAt: string;
+  updatedAt: string;
+  read: boolean;
+  deletedAt: string | null;
+}
+
+
 export interface TransferProductsStockQuery {
   id_sede: number;
   id_almacen?: number;
