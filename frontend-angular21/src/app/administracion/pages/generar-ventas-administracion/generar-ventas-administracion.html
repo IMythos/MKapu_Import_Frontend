@@ -469,11 +469,10 @@
 
           <!-- Cliente -->
           <div class="cliente-section">
-            <label class="section-label"><i class="pi pi-users"></i> Datos del Cliente</label>
-
-            <div class="buscar-cliente-section">
-              <div class="flex gap-2 align-items-end flex-wrap mb-2">
-                <div style="flex: 0 0 210px; min-width: 160px">
+            <div class="buscar-cliente-grid mb-2">
+              <!-- Fila 1: Selector + Input -->
+              <div class="buscar-fila-1">
+                <div class="buscar-campo">
                   <label class="input-label">Tipo de Documento</label>
                   <p-select
                     [ngModel]="tipoComprobante() === 1 ? tipoDocRucId() : tipoDocBoleta()"
@@ -486,8 +485,7 @@
                     [disabled]="!!clienteEncontrado() || tipoComprobante() === 1"
                   />
                 </div>
-
-                <div style="flex: 1; min-width: 160px">
+                <div class="buscar-campo buscar-campo-flex">
                   <label class="input-label">{{
                     tipoComprobante() === 2 ? 'Número de Documento' : 'RUC (11 dígitos)'
                   }}</label>
@@ -495,52 +493,49 @@
                     pInputText
                     [value]="clienteDocumento()"
                     (input)="validarSoloNumeros($event)"
-                    [placeholder]="
-                      tipoComprobante() === 2
-                        ? 'Ingrese número de documento'
-                        : 'Ingrese RUC (11 dígitos)'
-                    "
+                    [placeholder]="documentoConfig().placeholder"
                     class="w-full"
-                    inputmode="numeric"
-                    pattern="[0-9]*"
-                    [attr.maxlength]="longitudDocumento()"
+                    [attr.inputmode]="documentoConfig().soloNumeros ? 'numeric' : 'text'"
+                    [attr.pattern]="documentoConfig().soloNumeros ? '[0-9]*' : '[a-zA-Z0-9]*'"
+                    [attr.maxlength]="documentoConfig().maxLength"
                     [disabled]="!!clienteEncontrado()"
-                  />
-                </div>
-
-                <div style="flex: 0 0 200px; min-width: 160px">
-                  <label class="input-label">&nbsp;</label>
-                  <p-button
-                    [label]="clienteEncontrado() ? 'Cambiar Cliente' : 'Buscar Cliente'"
-                    [icon]="clienteEncontrado() ? 'pi pi-times' : 'pi pi-search'"
-                    [severity]="clienteEncontrado() ? 'secondary' : 'primary'"
-                    (onClick)="clienteEncontrado() ? limpiarCliente() : buscarCliente()"
-                    [disabled]="!clienteEncontrado() && !botonClienteHabilitado()"
-                    [loading]="clienteLoading()"
-                    styleClass="w-full btn-buscar-cliente"
                   />
                 </div>
               </div>
 
-              <div
-                *ngIf="clienteDocumento() && !clienteEncontrado()"
-                class="mt-2 flex align-items-center gap-2"
-              >
-                <i class="pi pi-info-circle text-500"></i>
-                <small class="text-600">
-                  {{ clienteDocumento().length }} / {{ longitudDocumento() }} dígitos
-                  <span
-                    *ngIf="clienteDocumento().length < longitudDocumento()"
-                    class="text-orange-500"
-                  >
-                    ({{ longitudDocumento() - clienteDocumento().length }} restantes)
-                  </span>
-                  <span
-                    *ngIf="clienteDocumento().length === longitudDocumento()"
-                    class="text-green-500"
-                    >✓ Completo</span
-                  >
-                </small>
+              <!-- Fila 2: Info dígitos + Botón -->
+              <div class="buscar-fila-2">
+                <div
+                  *ngIf="clienteDocumento() && !clienteEncontrado()"
+                  class="flex align-items-center gap-2"
+                >
+                  <i class="pi pi-info-circle text-500"></i>
+                  <small class="text-600">
+                    {{ clienteDocumento().length }} / {{ longitudDocumento() }} dígitos
+                    <span
+                      *ngIf="clienteDocumento().length < longitudDocumento()"
+                      class="text-orange-500"
+                    >
+                      ({{ longitudDocumento() - clienteDocumento().length }} restantes)
+                    </span>
+                    <span
+                      *ngIf="clienteDocumento().length === longitudDocumento()"
+                      class="text-green-500"
+                      >✓ Completo</span
+                    >
+                  </small>
+                </div>
+                <div *ngIf="!clienteDocumento() || clienteEncontrado()"></div>
+
+                <p-button
+                  [label]="clienteEncontrado() ? 'Cambiar Cliente' : 'Buscar Cliente'"
+                  [icon]="clienteEncontrado() ? 'pi pi-times' : 'pi pi-search'"
+                  [severity]="clienteEncontrado() ? 'secondary' : 'primary'"
+                  (onClick)="clienteEncontrado() ? limpiarCliente() : buscarCliente()"
+                  [disabled]="!clienteEncontrado() && !botonClienteHabilitado()"
+                  [loading]="clienteLoading()"
+                  styleClass="btn-buscar-cliente"
+                />
               </div>
             </div>
 
@@ -585,7 +580,7 @@
                     >
                   </div>
 
-                  <div class="mt-3" *ngIf="!editandoCliente()">
+                  <div class="mt-3 flex justify-content-end" *ngIf="!editandoCliente()">
                     <p-button
                       label="Editar datos"
                       icon="pi pi-pencil"
@@ -641,21 +636,21 @@
                           type="email"
                         />
                       </div>
-                      <div class="form-field full-width flex gap-2">
+                      <div class="botones-form-cliente">
                         <p-button
                           label="Cancelar"
                           icon="pi pi-times"
                           [outlined]="true"
                           severity="secondary"
                           (onClick)="cancelarEdicionCliente()"
-                          styleClass="flex-1"
+                          styleClass="btn-cancelar-cliente"
                         />
                         <p-button
                           label="Guardar"
                           icon="pi pi-check"
                           (onClick)="guardarCambiosCliente()"
                           [loading]="guardandoCliente()"
-                          styleClass="flex-1"
+                          styleClass="btn-registrar-cliente btn-guardar-fixed"
                         />
                       </div>
                     </div>
@@ -669,9 +664,9 @@
               *ngIf="busquedaRealizada() && !clienteEncontrado() && !creandoCliente()"
               class="mt-3"
             >
-              <div class="monto-destacado-box" style="background: #fff3e0; border-color: #ff9800">
+              <div class="monto-destacado-box cliente-no-encontrado-box">
                 <i class="pi pi-exclamation-triangle" style="color: #ff9800"></i>
-                <span>Cliente no encontrado.</span>
+                <span>Cliente no encontrado: </span>
                 <p-button
                   label="Registrar nuevo cliente"
                   icon="pi pi-user-plus"
@@ -807,22 +802,21 @@
                     type="email"
                   />
                 </div>
-
-                <div class="form-field full-width flex gap-2">
+                <div class="botones-form-cliente">
                   <p-button
                     label="Cancelar"
                     icon="pi pi-times"
                     [outlined]="true"
                     severity="secondary"
                     (onClick)="creandoCliente.set(false); nombreDesdeReniec.set(false)"
-                    styleClass="flex-1"
+                    styleClass="btn-cancelar-cliente"
                   />
                   <p-button
                     label="Guardar Cliente"
                     icon="pi pi-check"
                     (onClick)="crearNuevoCliente()"
                     [loading]="guardandoCliente()"
-                    styleClass="flex-1 btn-registrar-cliente"
+                    styleClass="btn-registrar-cliente btn-guardar-fixed"
                   />
                 </div>
               </div>
@@ -968,7 +962,7 @@
             <div
               *ngIf="promocionAplicada()"
               class="monto-destacado-box mt-3"
-              style="background: #e8f5e9; border-color: #4caf50"
+              style="border-color: #4caf50"
             >
               <i class="pi pi-check-circle" style="color: #4caf50"></i>
               <span>
@@ -1042,7 +1036,26 @@
                 />
               </div>
               <div *ngIf="montoRecibido() >= total()" class="vuelto-display mt-3">
-                <span>Vuelto</span>
+                <span class="flex align-items-center gap-2">
+                  Vuelto
+                  <i
+                    class="pi pi-info-circle"
+                    style="font-size: 1rem; cursor: pointer"
+                    [pTooltip]="
+                      saldoCaja() !== null
+                        ? 'Saldo en caja: S/. ' +
+                          (saldoCaja() | number: '1.2-2') +
+                          (vuelto() > saldoCaja()!
+                            ? ' ⚠ Vuelto excede el saldo disponible'
+                            : ' ✓ Saldo suficiente')
+                        : 'No se pudo obtener el saldo de caja'
+                    "
+                    [style.color]="
+                      saldoCaja() !== null && vuelto() > saldoCaja()! ? '#ef4444' : '#d1fae5'
+                    "
+                    tooltipPosition="top"
+                  ></i>
+                </span>
                 <span class="vuelto-valor">S/. {{ vuelto() | number: '1.2-2' }}</span>
               </div>
             </div>
@@ -1285,7 +1298,6 @@
           </div>
         </div>
 
-        <!-- Comprobante generado exitosamente -->
         <div *ngIf="comprobanteGenerado()">
           <div class="step-header">
             <i class="pi pi-check-circle step-icon" style="color: #4caf50"></i>
@@ -1293,7 +1305,7 @@
           </div>
           <div class="content-centrado">
             <p-card class="resumen-venta">
-              <div class="text-center mb-4">
+              <div class="text-center mb-4" style="padding-top: 1.5rem">
                 <i class="pi pi-file-check" style="font-size: 3rem; color: #4caf50"></i>
                 <h4 class="mt-3">Comprobante: {{ comprobanteGenerado()!.numeroCompleto }}</h4>
                 <p class="text-600">
@@ -1301,7 +1313,8 @@
                 </p>
               </div>
 
-              <div class="resumen-grid mb-4">
+              <!-- resumen-grid: 7 items, el último centrado -->
+              <div class="resumen-grid-comprobante mb-4">
                 <div class="resumen-item">
                   <span class="label"><i class="pi pi-user"></i> Cliente:</span>
                   <strong class="resumen-value">{{ snapshotCliente()?.name }}</strong>
@@ -1332,7 +1345,8 @@
                     >S/. {{ comprobanteGenerado()!.igv | number: '1.2-2' }}</strong
                   >
                 </div>
-                <div class="resumen-item">
+                <!-- Total solo, centrado -->
+                <div class="resumen-item resumen-item-full">
                   <span class="label"><i class="pi pi-dollar"></i> Total:</span>
                   <strong
                     class="resumen-value"
@@ -1343,12 +1357,13 @@
                 </div>
               </div>
 
-              <div class="flex justify-content-center gap-3 mt-4 flex-wrap">
+              <!-- Botones: 1 por fila -->
+              <div class="botones-comprobante mt-4" style="padding-bottom: 1.5rem">
                 <p-button
                   label="Nueva Venta"
                   icon="pi pi-plus"
                   (onClick)="nuevaVenta()"
-                  styleClass="ventas-pill"
+                  styleClass="ventas-pill w-full"
                 />
                 <p-button
                   label="Ver Listado"
@@ -1356,7 +1371,7 @@
                   [outlined]="true"
                   severity="secondary"
                   (onClick)="verListado()"
-                  styleClass="ventas-pill"
+                  styleClass="ventas-pill w-full"
                 />
                 <p-button
                   label="Descargar PDF"
@@ -1368,9 +1383,7 @@
                       .descargarComprobantePdf(comprobanteGenerado()!.idComprobante)
                       .subscribe()
                   "
-                  pTooltip="Descargar comprobante en PDF"
-                  tooltipPosition="top"
-                  styleClass="ventas-pill"
+                  styleClass="ventas-pill w-full"
                 />
                 <p-button
                   label="Ver PDF"
@@ -1382,9 +1395,7 @@
                       .verComprobantePdfEnPestana(comprobanteGenerado()!.idComprobante)
                       .subscribe()
                   "
-                  pTooltip="Previsualizar PDF en nueva pestaña"
-                  tooltipPosition="top"
-                  styleClass="ventas-pill"
+                  styleClass="ventas-pill w-full"
                 />
               </div>
             </p-card>

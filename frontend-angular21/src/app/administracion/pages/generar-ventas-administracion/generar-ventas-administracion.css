@@ -1029,33 +1029,185 @@
   gap: 1.5rem;
 }
 
+:host ::ng-deep .buscar-cliente-section .p-select-overlay {
+  max-height: 220px !important;
+  overflow-y: auto !important;
+}
+
+:host-context(.app-dark) ::ng-deep .buscar-cliente-section .p-select.p-disabled {
+  background: #2d2d30 !important;
+  border-color: #52525b !important;
+  opacity: 0.6;
+}
+
+:host ::ng-deep .btn-cancelar-cliente {
+  width: 140px !important;
+  height: 42px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .btn-guardar-fixed {
+  width: 160px !important;
+  height: 42px !important;
+}
+.botones-form-cliente {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+:host ::ng-deep .botones-form-cliente .btn-cancelar-cliente {
+  width: 130px !important;
+  height: 42px !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .botones-form-cliente .btn-guardar-fixed {
+  width: 200px !important;
+  height: 42px !important;
+}
+
+
+:host-context(.app-dark) ::ng-deep .cliente-card-success {
+  background: #1e1e1e !important;
+  border-color: #3f3f46 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .cliente-card-success .p-card-body {
+  background: #1e1e1e !important;
+}
+
+:host-context(.app-dark) .cliente-content {
+  background: #1e1e1e !important;
+}
+
+:host-context(.app-dark) .cliente-nombre {
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) .info-badge {
+  background: #27272a !important;
+  border-color: #52525b !important;
+  color: #f1f5f9 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .resumen-venta {
+  background: #27272a !important;
+  border-color: #52525b !important;
+}
+
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-card-body,
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-card-content {
+  background: #27272a !important;
+}
+
+:host-context(.app-dark) .resumen-titulo {
+  color: #f1f5f9 !important;
+}
+
+/* Tabla dentro del resumen en dark mode */
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-datatable,
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-datatable-table {
+  background: #27272a !important;
+}
+
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-datatable-thead > tr > th {
+  background: #2d2d30 !important;
+  color: #f1f5f9 !important;
+  border-color: #52525b !important;
+}
+
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-datatable-tbody > tr > td {
+  background: #27272a !important;
+  color: #f1f5f9 !important;
+  border-color: #3f3f46 !important;
+}
+
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-datatable-tbody > tr:hover > td {
+  background: rgba(240, 208, 103, 0.08) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .resumen-venta .p-divider-horizontal {
+  border-color: #52525b !important;
+}
+
+.botones-comprobante {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+:host ::ng-deep .botones-comprobante .ventas-pill {
+  width: 100% !important;
+  justify-content: center !important;
+}
+.buscar-fila-1 {
+  display: grid;
+  grid-template-columns: 210px 1fr;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.buscar-fila-2 {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+:host ::ng-deep .buscar-fila-1 .p-select {
+  height: 42px !important;
+}
+
+:host ::ng-deep .buscar-fila-1 .p-select .p-select-label {
+  display: flex !important;
+  align-items: center !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+:host ::ng-deep .buscar-fila-1 input.p-inputtext {
+  height: 42px !important;
+}
+
+:host ::ng-deep .buscar-fila-2 .btn-buscar-cliente {
+  width: 200px !important;
+}
+
+:host-context(.app-dark) ::ng-deep .buscar-cliente-section .p-inputtext:disabled {
+  background: #2d2d30 !important;
+  border-color: #52525b !important;
+  color: #71717a !important;
+}
+
+
 :host ::ng-deep .tabla-carrito-productos {
-  border: 1px solid #e5e7eb;
+  border: 1px solid #e8d98a;
   border-radius: 8px;
   overflow: hidden;
 }
 
-:host ::ng-deep .tabla-carrito-productos .p-datatable-thead>tr>th {
-  background: #f9fafb;
-  color: #374151;
+:host ::ng-deep .tabla-carrito-productos .p-datatable-thead > tr > th {
+  background: #fcd61b;
+  color: #000000;
   font-weight: 600;
   font-size: 0.875rem;
   padding: 0.875rem 1rem;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid #f6e27a;
 }
 
-:host ::ng-deep .tabla-carrito-productos .p-datatable-tbody>tr {
+:host ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr {
   transition: all 0.2s ease;
 }
 
-:host ::ng-deep .tabla-carrito-productos .p-datatable-tbody>tr:hover {
-  background: #fff5e6;
-}
-
-:host ::ng-deep .tabla-carrito-productos .p-datatable-tbody>tr>td {
-  padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
-  font-size: 0.9rem;
+:host ::ng-deep .tabla-carrito-productos .p-datatable-tbody > tr:hover {
+  background: #f3e49c;
 }
 
 .codigo-tabla {
