@@ -1,0 +1,231 @@
+<div class="p-2">
+  <p-card styleClass="mb-4 shadow-1 border-round-xl">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+
+      <div class="flex align-items-center gap-3">
+        <div class="flex align-items-center justify-content-center border-round-lg"
+             style="width: 3.5rem; height: 3.5rem; background-color: var(--primary-color); color: var(--primary-color-text);">
+          <i class="pi pi-file-plus" style="font-size: 1.5rem;"></i>
+        </div>
+        <div class="flex flex-column justify-content-center">
+          <span class="text-sm font-semibold mb-1" style="color: var(--text-color-secondary); letter-spacing: 0.5px;">
+            VENTAS - NOTAS DE CRÉDITO
+          </span>
+          <h2 class="m-0 text-2xl font-bold" style="color: var(--text-color);">
+            Emitir Nota de Crédito
+          </h2>
+        </div>
+      </div>
+
+      <div class="flex gap-2">
+        <p-button
+          label="Volver al listado"
+          icon="pi pi-arrow-left"
+          [rounded]="true"
+          [outlined]="true"
+          severity="secondary"
+          (onClick)="volverListado()"
+        ></p-button>
+      </div>
+
+    </div>
+  </p-card>
+</div>
+
+<div class="p-2">
+  <div class="surface-card p-4 border-round-xl shadow-1 mb-4">
+    <h3 class="m-0 mb-4 text-lg font-semibold text-color">
+      <i class="pi pi-search text-primary mr-2"></i> 1. Buscar Comprobante de Referencia
+    </h3>
+
+    <div class="formgrid grid">
+      <div class="field col-12 md:col-3">
+        <label class="font-semibold text-sm text-color-secondary">Tipo de Comprobante</label>
+        <p-select
+          [(ngModel)]="tipoComprobanteRef"
+          [options]="tiposComprobante"
+          placeholder="Seleccione..."
+          styleClass="w-full mt-2"
+          [disabled]="ventaReferencia !== null"
+        ></p-select>
+      </div>
+
+      <div class="field col-12 md:col-4">
+        <label class="font-semibold text-sm text-color-secondary">Serie y Correlativo (Ej: F001-000123)</label>
+        <div class="p-inputgroup mt-2">
+          <input
+            pInputText
+            [(ngModel)]="serieCorrelativoRef"
+            placeholder="Ingrese serie y número..."
+            (keyup.enter)="buscarComprobante()"
+            [disabled]="ventaReferencia !== null"
+          />
+          <button
+            type="button"
+            pButton
+            icon="pi pi-search"
+            (click)="buscarComprobante()"
+            [disabled]="!serieCorrelativoRef || ventaReferencia !== null"
+          ></button>
+        </div>
+      </div>
+
+      <div class="field col-12 md:col-3 flex align-items-end" *ngIf="ventaReferencia">
+        <p-button
+          label="Cambiar Comprobante"
+          icon="pi pi-refresh"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="limpiarBuscador()"
+        ></p-button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="p-2" *ngIf="!ventaReferencia && !buscandoComprobante">
+  <div class="surface-ground border-round-xl p-5 flex flex-column align-items-center justify-content-center border surface-border border-dashed">
+    <i class="pi pi-receipt text-5xl text-color-secondary mb-3"></i>
+    <span class="text-color-secondary font-medium">Busque un comprobante para cargar los datos e iniciar la nota de crédito.</span>
+  </div>
+</div>
+
+<ng-container *ngIf="ventaReferencia">
+
+  <div class="p-2">
+    <div class="surface-card p-4 border-round-xl shadow-1 mb-4">
+      <h3 class="m-0 mb-4 text-lg font-semibold text-color">
+        <i class="pi pi-list text-primary mr-2"></i> 2. Datos de Emisión y Motivo
+      </h3>
+
+      <div class="surface-ground p-3 border-round mb-4 flex flex-wrap gap-4">
+        <div class="flex flex-column">
+          <span class="text-xs text-color-secondary mb-1">Cliente</span>
+          <span class="text-sm font-bold text-color">{{ ventaReferencia.clienteNombre }}</span>
+        </div>
+        <div class="flex flex-column">
+          <span class="text-xs text-color-secondary mb-1">Documento</span>
+          <span class="text-sm font-semibold text-color">{{ ventaReferencia.clienteDocumento }}</span>
+        </div>
+        <div class="flex flex-column">
+          <span class="text-xs text-color-secondary mb-1">Fecha Emisión Ref.</span>
+          <span class="text-sm font-semibold text-color">{{ ventaReferencia.fechaEmision | date: 'dd/MM/yyyy' }}</span>
+        </div>
+        <div class="flex flex-column">
+          <span class="text-xs text-color-secondary mb-1">Total Comprobante</span>
+          <span class="text-sm font-bold text-primary">S/. {{ ventaReferencia.total | number: '1.2-2' }}</span>
+        </div>
+      </div>
+
+      <div class="formgrid grid">
+        <div class="field col-12 md:col-6">
+          <label class="font-semibold text-sm text-color-secondary">Tipo de Nota de Crédito (Catálogo 09 SUNAT) <span class="text-red-500">*</span></label>
+          <p-select
+            [(ngModel)]="motivoSunatSeleccionado"
+            [options]="motivosSunat"
+            placeholder="Seleccione el motivo de emisión..."
+            styleClass="w-full mt-2"
+          ></p-select>
+        </div>
+
+        <div class="field col-12 md:col-6">
+          <label class="font-semibold text-sm text-color-secondary">Sustento / Descripción detallada <span class="text-red-500">*</span></label>
+          <input
+            pInputText
+            [(ngModel)]="sustentoDescripcion"
+            placeholder="Ej: Anulación de la operación por desistimiento del cliente"
+            class="w-full mt-2"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-2">
+    <div class="surface-card p-4 border-round-xl shadow-1 mb-4">
+      <h3 class="m-0 mb-3 text-lg font-semibold text-color">
+        <i class="pi pi-box text-primary mr-2"></i> 3. Detalle de Ítems
+      </h3>
+      <p class="text-sm text-color-secondary mb-4 mt-0">
+        Ítems vinculados al comprobante original. Verifique los montos antes de emitir la nota de crédito.
+      </p>
+
+      <p-table
+        [value]="ventaReferencia.items"
+        styleClass="p-datatable-sm p-datatable-striped"
+        [tableStyle]="{ 'min-width': '50rem' }"
+      >
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width: 5%">#</th>
+            <th style="width: 40%">Descripción del Producto</th>
+            <th class="text-center" style="width: 15%">Cantidad Original</th>
+            <th class="text-right" style="width: 15%">V. Unitario</th>
+            <th class="text-right" style="width: 10%">IGV</th>
+            <th class="text-right" style="width: 15%">Importe Total</th>
+          </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-item let-i="rowIndex">
+          <tr>
+            <td class="font-semibold text-color-secondary">{{ i + 1 }}</td>
+            <td class="text-sm font-medium">{{ item.descripcion }}</td>
+            <td class="text-center">
+              <p-tag severity="secondary" [value]="item.cantidad"></p-tag>
+            </td>
+            <td class="text-right text-sm">S/. {{ item.precioUnitario | number: '1.2-2' }}</td>
+            <td class="text-right text-sm text-color-secondary">S/. {{ item.igv | number: '1.2-2' }}</td>
+            <td class="text-right font-bold text-color">S/. {{ item.total | number: '1.2-2' }}</td>
+          </tr>
+        </ng-template>
+      </p-table>
+    </div>
+  </div>
+
+  <div class="p-2">
+    <div class="flex flex-column md:flex-row justify-content-end mb-4 gap-4">
+
+      <div class="surface-card p-4 border-round-xl shadow-1 w-full md:w-4">
+        <h4 class="m-0 mb-3 text-lg font-semibold text-color border-bottom-1 surface-border pb-2">Resumen Total</h4>
+
+        <div class="flex justify-content-between align-items-center mb-2 mt-3">
+          <span class="text-color-secondary text-sm">Gravada</span>
+          <span class="text-color font-medium">S/. {{ ventaReferencia.subTotal | number: '1.2-2' }}</span>
+        </div>
+        <div class="flex justify-content-between align-items-center mb-2">
+          <span class="text-color-secondary text-sm">IGV (18%)</span>
+          <span class="text-color font-medium">S/. {{ ventaReferencia.igvTotal | number: '1.2-2' }}</span>
+        </div>
+
+        <div class="flex justify-content-between align-items-center mt-3 pt-3 border-top-1 surface-border">
+          <span class="font-bold text-lg">Monto Total</span>
+          <strong class="text-2xl text-primary">S/. {{ ventaReferencia.total | number: '1.2-2' }}</strong>
+        </div>
+
+        <div class="flex flex-column gap-2 mt-4 pt-3">
+          <p-button
+            label="Emitir Nota de Crédito"
+            icon="pi pi-check-circle"
+            severity="success"
+            styleClass="w-full"
+            [loading]="guardandoNota"
+            [disabled]="!esFormularioValido()"
+            (onClick)="confirmarEmision()"
+          ></p-button>
+
+          <p-button
+            label="Cancelar"
+            severity="secondary"
+            [text]="true"
+            styleClass="w-full"
+            (onClick)="volverListado()"
+          ></p-button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</ng-container>
+
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>

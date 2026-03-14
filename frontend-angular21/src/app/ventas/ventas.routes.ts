@@ -42,6 +42,15 @@ export const VENTAS_ROUTES: Routes = [
     data: { permiso: 'VER_VENTAS' },
   },
   {
+    path: 'nota-credito',
+    canActivate: [roleGuard],
+    loadComponent: () =>
+      import('../administracion/pages/nota-credito/nota-credito').then(
+        (m) => m.NotasCreditoComponent
+      ),
+    data: { permiso: 'VER_NOTAS_CREDITO' },
+  },
+  {
     path: 'ver-detalle/:id',
     canActivate: [roleGuard, CashboxGuard],
     loadComponent: () =>

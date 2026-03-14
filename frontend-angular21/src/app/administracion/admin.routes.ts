@@ -148,7 +148,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'generar-ventas-administracion',
     loadComponent: () => import('./pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
-    canActivate: [roleGuard, CashboxAdminGuard], 
+    canActivate: [roleGuard, CashboxAdminGuard],
     data: { permiso: 'CREAR_VENTA_ADMIN' }
   },
   {
@@ -163,7 +163,15 @@ export const ADMIN_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { permiso: 'VER_VENTAS_ADMIN' }
   },
-
+  {
+    path: 'nota-credito',
+    loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent),
+    //canActivate: [roleGuard],
+    data: { permiso: 'CREAR_NOTA_CREDITO' },
+    children: [
+      { path: 'crear', loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent) }
+    ]
+  },
   {
     path: 'ventas-por-cobrar',
     canActivate: [roleGuard],

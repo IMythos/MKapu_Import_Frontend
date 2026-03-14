@@ -57,7 +57,6 @@ import { SharedTableContainerComponent } from '../../../../shared/components/tab
     DatePickerModule,
     DialogModule,
     AccionesComprobanteDialogComponent,
-    SharedTableContainerComponent,
     PaginadorComponent,
     LoadingOverlayComponent
   ],
