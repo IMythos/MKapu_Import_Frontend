@@ -1,4 +1,3 @@
-// src/app/core/services/role.service.ts
 import { Injectable } from '@angular/core';
 import { User } from '../interfaces/user.interface';
 
