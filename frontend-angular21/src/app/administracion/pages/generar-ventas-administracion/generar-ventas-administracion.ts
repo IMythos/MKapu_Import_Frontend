@@ -1080,7 +1080,12 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
         this.comprobanteGenerado.set(response);
         const numeroCompleto = response.numeroCompleto ?? `${response.serie}-${String(response.numero).padStart(8, '0')}`;
         this.messageService.add({ severity: 'success', summary: '¡Venta Exitosa!', detail: `Comprobante ${numeroCompleto} generado`, life: 5000 });
-
+        this.ventasService.verVoucherTermicoEnPestana(
+          response.idComprobante,
+          false, // false = Original
+        ).subscribe({
+          error: () => console.warn('No se pudo abrir el voucher térmico'),
+        });
         const almacenDespacho = this.almacenSeleccionado() ?? request.warehouseId ?? 0;
         if (response.idComprobante > 0 && almacenDespacho) {
           const direccion =

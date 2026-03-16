@@ -46,11 +46,9 @@ export class DetalleCotizacionComponent implements OnInit {
   igv      = computed(() => this.cotizacion()?.igv      ?? 0);
   total    = computed(() => this.cotizacion()?.total    ?? 0);
 
-  // ── NEW: computed helpers used in template ────────────────────────────────
   getCodigo = computed(() => {
     const c = this.cotizacion();
     if (!c) return '—';
-    // Use codigo from the quote if present, otherwise fall back to id
     return (c as any).codigo ?? `COT-${c.id_cotizacion ?? ''}`;
   });
 
@@ -75,6 +73,13 @@ export class DetalleCotizacionComponent implements OnInit {
     return c.almacen?.nombre ?? c.almacen_nombre ?? '—';
   });
 
+  // Computed para el tipo — evita castear (c as any) en cada lugar
+  tipoCotizacion = computed<'VENTA' | 'COMPRA'>(() => {
+    return (this.cotizacion() as any)?.tipo ?? 'VENTA';
+  });
+
+  esCompra = computed(() => this.tipoCotizacion() === 'COMPRA');
+
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -87,7 +92,11 @@ export class DetalleCotizacionComponent implements OnInit {
       },
       error: () => {
         this.loading.set(false);
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cargar la cotización.' });
+        this.messageService.add({
+          severity: 'error',
+          summary:  'Error',
+          detail:   'No se pudo cargar la cotización.',
+        });
       },
     });
   }
@@ -133,17 +142,27 @@ export class DetalleCotizacionComponent implements OnInit {
     if (!id) return;
     this.confirmationService.confirm({
       message: '¿Estás seguro de rechazar esta cotización?',
-      header: 'Confirmar rechazo', icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, rechazar', rejectLabel: 'Cancelar',
+      header:  'Confirmar rechazo',
+      icon:    'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, rechazar',
+      rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-danger',
       rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
       accept: () => {
         this.quoteService.updateQuoteStatus(id, 'RECHAZADA').subscribe({
           next: () => {
-            this.messageService.add({ severity: 'success', summary: 'Rechazada', detail: 'Cotización rechazada.' });
+            this.messageService.add({
+              severity: 'success',
+              summary:  'Rechazada',
+              detail:   'Cotización rechazada.',
+            });
             this.cotizacion.update(c => c ? { ...c, estado: 'RECHAZADA' } : c);
           },
-          error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo actualizar.' }),
+          error: () => this.messageService.add({
+            severity: 'error',
+            summary:  'Error',
+            detail:   'No se pudo actualizar.',
+          }),
         });
       },
     });
@@ -154,62 +173,112 @@ export class DetalleCotizacionComponent implements OnInit {
     if (!id) return;
     this.confirmationService.confirm({
       message: '¿Deseas reactivar esta cotización a PENDIENTE?',
-      header: 'Confirmar reactivación', icon: 'pi pi-refresh',
-      acceptLabel: 'Sí, reactivar', rejectLabel: 'Cancelar',
+      header:  'Confirmar reactivación',
+      icon:    'pi pi-refresh',
+      acceptLabel: 'Sí, reactivar',
+      rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-success',
       rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
       accept: () => {
         this.quoteService.updateQuoteStatus(id, 'PENDIENTE').subscribe({
           next: () => {
-            this.messageService.add({ severity: 'success', summary: 'Reactivada', detail: 'Cotización reactivada.' });
+            this.messageService.add({
+              severity: 'success',
+              summary:  'Reactivada',
+              detail:   'Cotización reactivada.',
+            });
             this.cotizacion.update(c => c ? { ...c, estado: 'PENDIENTE' } : c);
           },
-          error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo reactivar.' }),
+          error: () => this.messageService.add({
+            severity: 'error',
+            summary:  'Error',
+            detail:   'No se pudo reactivar.',
+          }),
         });
       },
     });
   }
 
   irAgregarVenta() {
-    const id = this.cotizacion()?.id_cotizacion;
-    this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'contado' } });
+    const id      = this.cotizacion()?.id_cotizacion;
+    const esComp  = this.esCompra();
+    if (!id) return;
+
+    const impacto = esComp
+      ? '<br><br><span style="color:#4ade80">↑ Sumará stock a los productos</span>'
+      : '<br><br><span style="color:#f87171">↓ Restará stock a los productos</span>';
+
+    this.confirmationService.confirm({
+      message:  `¿Confirmas generar una <strong>${esComp ? 'compra' : 'venta'} al contado</strong> a partir de esta cotización?${impacto}`,
+      header:   esComp ? 'Registrar Compra (Contado)' : 'Generar Venta (Contado)',
+      icon:     esComp ? 'pi pi-truck' : 'pi pi-shopping-cart',
+      acceptLabel: 'Sí, continuar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => {
+        this.router.navigate(
+          ['/admin/generar-ventas-administracion'],
+          { queryParams: { cotizacion: id, tipo: 'contado' } }
+        );
+      },
+    });
   }
 
+  irAgregarVentaPorCobrar() {
+    const id      = this.cotizacion()?.id_cotizacion;
+    const esComp  = this.esCompra();
+    if (!id) return;
+
+    const impacto = esComp
+      ? '<br><br><span style="color:#4ade80">↑ Sumará stock a los productos</span>'
+      : '<br><br><span style="color:#f87171">↓ Restará stock a los productos</span>';
+
+    this.confirmationService.confirm({
+      message:  `¿Confirmas generar una <strong>${esComp ? 'compra' : 'venta'} a crédito</strong> a partir de esta cotización?${impacto}`,
+      header:   esComp ? 'Registrar Compra (Crédito)' : 'Generar Venta (Crédito)',
+      icon:     esComp ? 'pi pi-truck' : 'pi pi-credit-card',
+      acceptLabel: 'Sí, continuar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => {
+        this.router.navigate(
+          ['/admin/generar-ventas-administracion'],
+          { queryParams: { cotizacion: id, tipo: 'credito' } }
+        );
+      },
+    });
+  }
 
   imprimir() {
     const id = this.cotizacion()?.id_cotizacion;
     if (!id) return;
     this.quoteService.exportPdf(id);
-    }
+  }
 
-    enviar() {
+  enviar() {
     const id = this.cotizacion()?.id_cotizacion;
     if (!id) return;
 
     this.messageService.add({
-        severity: 'info',
-        summary: 'Enviando...',
-        detail: 'Generando y enviando cotización por email.',
+      severity: 'info',
+      summary:  'Enviando...',
+      detail:   'Generando y enviando cotización por email.',
     });
 
     this.quoteService.sendByEmail(id).subscribe({
-        next: (res) => this.messageService.add({
+      next:  (res) => this.messageService.add({
         severity: 'success',
-        summary: 'Email enviado',
-        detail: `Cotización enviada a ${res.sentTo}`,
-        }),
-        error: () => this.messageService.add({
+        summary:  'Email enviado',
+        detail:   `Cotización enviada a ${res.sentTo}`,
+      }),
+      error: () => this.messageService.add({
         severity: 'error',
-        summary: 'Error',
-        detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.',
-        }),
+        summary:  'Error',
+        detail:   'No se pudo enviar. Verifique que el cliente tenga email registrado.',
+      }),
     });
-    }
-
-
-  irAgregarVentaPorCobrar() {
-    const id = this.cotizacion()?.id_cotizacion;
-    this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'credito' } });
   }
 
   volver() { this.router.navigate(['/admin/cotizaciones']); }

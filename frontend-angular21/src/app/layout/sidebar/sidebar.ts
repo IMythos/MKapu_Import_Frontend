@@ -100,7 +100,7 @@ export class Sidebar implements OnInit {
       items: [
         { path: '/admin/transferencia',      label: 'Transferencias', icon: 'pi pi-arrows-h',             permiso: 'CREAR_TRANSFERENCIA' },
         { path: '/admin/despacho-productos', label: 'Despacho',       icon: 'pi pi-truck',                permiso: 'CREAR_DESPACHO' },
-        { path: '/admin/usuarios',           label: 'Usuarios',       icon: 'pi pi-user-plus',            permiso: 'CREAR_USUARIOS' },
+        { path: '/admin/usuarios',           label: 'Empleados',      icon: 'pi pi-user-plus',            permiso: 'CREAR_USUARIOS' },
         { path: '/admin/roles-permisos',     label: 'Permisos',       icon: 'pi pi-key',                  permiso: 'ADMINISTRACION' },
         { path: '/admin/gestion-productos',  label: 'Productos',      icon: 'pi pi-tags',                 permiso: 'CREAR_PRODUCTOS' },
         { path: '/admin/categoria',          label: 'Categorías',     icon: 'pi pi-list',                 permiso: 'CREAR_CATEGORIAS' },

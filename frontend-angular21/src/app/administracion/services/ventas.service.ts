@@ -71,6 +71,41 @@ export class VentasAdminService {
     );
   }
 
+  descargarVoucherTermico(id: number, nombreArchivo?: string, esCopia = false): Observable<void> {
+    return this.http
+      .get(`${this.salesUrl}/receipts/${id}/thermal?copia=${esCopia}`, {
+        headers: this.headers,
+        responseType: 'blob',
+      })
+      .pipe(
+        map((blob: Blob) => {
+          const url    = URL.createObjectURL(blob);
+          const anchor = document.createElement('a');
+          anchor.href     = url;
+          anchor.download = nombreArchivo ?? `ticket-${id}.pdf`;
+          anchor.click();
+          URL.revokeObjectURL(url);
+        }),
+        catchError((err) => throwError(() => err)),
+      );
+  }
+
+  verVoucherTermicoEnPestana(id: number, esCopia = false): Observable<void> {
+    return this.http
+      .get(`${this.salesUrl}/receipts/${id}/thermal?copia=${esCopia}`, {
+        headers: this.headers,
+        responseType: 'blob',
+      })
+      .pipe(
+        map((blob: Blob) => {
+          const pdfBlob = new Blob([blob], { type: 'application/pdf' });
+          const url     = URL.createObjectURL(pdfBlob);
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 10_000);
+        }),
+        catchError((err) => throwError(() => err)),
+      );
+  }
   registrarVenta(request: RegistroVentaAdminRequest): Observable<RegistroVentaAdminResponse> {
     return this.http
       .post<RegistroVentaAdminResponse>(`${this.salesUrl}/receipts`, request, {

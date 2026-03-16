@@ -11,7 +11,9 @@ import { RouterModule } from '@angular/router';
 import { CommissionService, CommissionRule } from '../../services/commission.service';
 import { CategoriaService } from '../../services/categoria.service';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
+import { PaginadorComponent } from '../../../shared/components/paginador/paginador.components';
+import { SharedTableContainerComponent } from '../../../shared/components/table.componente/shared-table-container.component';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-comision',
@@ -20,8 +22,8 @@ import { PaginadorComponent } from '../../../shared/components/paginador/Paginad
     CommonModule, FormsModule, ButtonModule,
     InputTextModule, TableModule, TagModule,
     SelectModule, CardModule, RouterModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,
+    TooltipModule,                 
+    SharedTableContainerComponent,
   ],
   templateUrl: './comision.html',
   styleUrls: ['./comision.css'],

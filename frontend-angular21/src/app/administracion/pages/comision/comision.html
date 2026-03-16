@@ -17,12 +17,14 @@
           [outlined]="true"
           severity="secondary"
           styleClass="sedes-pill"
-          [routerLink]="['/admin/comision/comision-reportes']" />
+          [routerLink]="['/admin/comision/comision-reportes']">
+        </p-button>
         <p-button
           label="Crear Regla"
           icon="pi pi-plus"
           styleClass="sedes-pill"
-          [routerLink]="['/admin/comision/comision-regla']" />
+          [routerLink]="['/admin/comision/comision-regla']">
+        </p-button>
       </div>
     </div>
   </p-card>
@@ -32,7 +34,6 @@
 
   <!-- CONTADORES -->
   <div class="contadores-productos mb-4">
-
     <div class="contador-card" [class.contador-activo]="filtroActivo() === true"
       style="cursor:pointer" (click)="filtroActivo.set(true); paginaActual.set(1)">
       <i class="pi pi-check-circle"></i>
@@ -70,7 +71,6 @@
         <span class="contador-detalle"><i class="pi pi-th-large"></i> Por lote</span>
       </div>
     </div>
-
   </div>
 
   <!-- FILTROS -->
@@ -84,7 +84,7 @@
             [ngModel]="filtroBusqueda()"
             (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
             placeholder="Nombre de la regla..."
-            class="w-full" />
+            class="w-full">
         </div>
 
         <div class="flex flex-column w-12rem">
@@ -95,7 +95,8 @@
             (ngModelChange)="filtroActivo.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
-            class="w-full" />
+            class="w-full">
+          </p-select>
         </div>
 
         <div class="flex flex-column w-14rem">
@@ -108,7 +109,8 @@
             optionValue="value"
             placeholder="Todos"
             [showClear]="true"
-            class="w-full" />
+            class="w-full">
+          </p-select>
         </div>
 
         <div class="flex flex-column w-14rem">
@@ -121,13 +123,18 @@
             optionValue="value"
             placeholder="Todos"
             [showClear]="true"
-            class="w-full" />
+            class="w-full">
+          </p-select>
         </div>
 
         <div class="flex gap-2 align-items-center">
-          <p-button icon="pi pi-filter-slash" label="Limpiar"
-            severity="danger" size="small"
-            (onClick)="limpiarFiltros()" />
+          <p-button
+            icon="pi pi-filter-slash"
+            label="Limpiar"
+            severity="danger"
+            size="small"
+            (onClick)="limpiarFiltros()">
+          </p-button>
         </div>
 
       </div>
@@ -135,115 +142,109 @@
   </div>
 
   <!-- TABLA -->
-  <div class="mb-6">
-    <div style="position: relative">
-      <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-
-        <app-loading-overlay
-          [visible]="loading()"
-          mensaje="Cargando reglas de comisión..."
-          modo="inline">
-        </app-loading-overlay>
-
-        <div
-          [style.opacity]="loading() ? '0.3' : '1'"
-          style="transition: opacity 0.2s ease;">
-
-          <p-table
-            [value]="reglasPaginadas()"
-            [loading]="false"
-            [paginator]="false"
-            styleClass="productos-table-nativa productos-table-hover">
-
-            <ng-template pTemplate="header">
-              <tr>
-                <th style="width: 10%">ID</th>
-                <th style="width: 25%">NOMBRE</th>
-                <th style="width: 18%">FAMILIA</th>
-                <th style="width: 10%">TIPO</th>
-                <th style="width: 15%">CONDICIÓN</th>
-                <th style="width: 12%">COMISIÓN</th>
-                <th style="width: 10%">ACCIONES</th>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-r>
-              <tr>
-                <td>
-                  <span class="font-mono text-xs text-color-secondary">#{{ r.id }}</span>
-                </td>
-
-                <td>
-                  <div class="flex flex-column gap-1">
-                    <span class="font-semibold">{{ r.nombre }}</span>
-                    <small class="text-color-secondary" *ngIf="r.descripcion">
-                      {{ r.descripcion }}
-                    </small>
-                  </div>
-                </td>
-
-                <td>
-                  <div class="flex align-items-center gap-2">
-                    <i class="pi pi-box text-yellow-400"></i>
-                    <span>{{ r.familia }}</span>
-                  </div>
-                </td>
-
-                <td>
-                  <p-tag [value]="r.tipo" [severity]="r.tipoSeverity" />
-                </td>
-
-                <td>
-                  <span class="text-sm">{{ r.condicion }}</span>
-                </td>
-
-                <td>
-                  <span class="font-bold text-yellow-400">
-                    {{ r.recompensa === '%' ? '' : 'S/ ' }}{{ r.comision.toFixed(2) }}{{ r.recompensa === '%' ? '%' : '' }}
-                  </span>
-                </td>
-
-                <td>
-                  <div class="flex align-items-center gap-2">
-                    <p-button icon="pi pi-pencil" text severity="secondary"
-                      styleClass="productos-icon-btn productos-icon-warn" />
-                    <p-button
-                      [icon]="r.activo ? 'pi pi-eye-slash' : 'pi pi-eye'"
-                      text
-                      [severity]="r.activo ? 'danger' : 'success'"
-                      styleClass="productos-icon-btn"
-                      (onClick)="onToggleStatus(r.raw)" />
-                  </div>
-                </td>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="emptymessage">
-              <tr>
-                <td colspan="7" class="text-center py-6">
-                  <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
-                  <p class="text-900 font-medium mb-0">No se encontraron reglas</p>
-                  <p class="text-600 mt-2">Ajusta los filtros o crea una nueva regla</p>
-                </td>
-              </tr>
-            </ng-template>
-
-          </p-table>
-
-          <app-paginador
-            *ngIf="reglasFiltradas().length > 0"
-            [page]="paginaActual()"
-            [totalPages]="totalPaginas()"
-            [total]="reglasFiltradas().length"
-            [limit]="limitePagina()"
-            [limitOpciones]="[5, 10, 25, 50]"
-            (pageChange)="onPageChange($event)"
-            (limitChange)="onLimitChange($event)">
-          </app-paginador>
-
-        </div>
-      </div>
+  <app-shared-table-container
+      titulo="Reglas de Comisión"
+      iconoTitulo="pi pi-wallet"
+      mensajeCarga="Cargando reglas de comisión..."
+      [loading]="loading()"
+      [paginaActual]="paginaActual()"
+      [totalPaginas]="totalPaginas()"
+      [totalRegistros]="reglasFiltradas().length"
+      [limitePorPagina]="limitePagina()"
+      [mostrarExportar]="false"
+      (pageChange)="onPageChange($event)"
+      (limitChange)="onLimitChange($event)"
+    >
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones">
+      <p-tag
+        [value]="reglasFiltradas().length + ' reglas'"
+        [severity]="filtroActivo() === true  ? 'success'
+                  : filtroActivo() === false  ? 'danger' : 'info'">
+      </p-tag>
     </div>
-  </div>
+
+    <!-- Tabla -->
+    <p-table
+      [value]="reglasPaginadas()"
+      [paginator]="false"
+      styleClass="p-datatable-striped productos-table-hover">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:10%">ID</th>
+          <th style="width:25%">NOMBRE</th>
+          <th style="width:18%">FAMILIA</th>
+          <th style="width:10%">TIPO</th>
+          <th style="width:15%">CONDICIÓN</th>
+          <th style="width:12%">COMISIÓN</th>
+          <th style="width:10%" class="text-center">ACCIONES</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>
+            <span class="font-mono text-xs text-color-secondary">#{{ r.id }}</span>
+          </td>
+          <td>
+            <div class="flex flex-column gap-1">
+              <span class="font-semibold">{{ r.nombre }}</span>
+              <small class="text-color-secondary" *ngIf="r.descripcion">
+                {{ r.descripcion }}
+              </small>
+            </div>
+          </td>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <i class="pi pi-box text-yellow-400"></i>
+              <span>{{ r.familia }}</span>
+            </div>
+          </td>
+          <td>
+            <p-tag [value]="r.tipo" [severity]="r.tipoSeverity" />
+          </td>
+          <td>
+            <span class="text-sm">{{ r.condicion }}</span>
+          </td>
+          <td>
+            <span class="font-bold text-yellow-400">
+              {{ r.recompensa === '%' ? '' : 'S/ ' }}{{ r.comision.toFixed(2) }}{{ r.recompensa === '%' ? '%' : '' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar regla" tooltipPosition="top">
+              </p-button>
+              <p-button
+                [icon]="r.activo ? 'pi pi-eye-slash' : 'pi pi-eye'"
+                [rounded]="true" [text]="true"
+                [severity]="r.activo ? 'danger' : 'success'"
+                [pTooltip]="r.activo ? 'Desactivar' : 'Activar'"
+                tooltipPosition="top"
+                (onClick)="onToggleStatus(r.raw)">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron reglas</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+
+  </app-shared-table-container>
 
 </div>

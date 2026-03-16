@@ -45,7 +45,8 @@ export class ProductoService {
     idSede: number,
     page: number,
     size: number,
-    categoria?: string
+    categoria?: string,
+    activo?: boolean
   ): Observable<ProductoStockResponse> {
 
     let params = new HttpParams()
@@ -64,7 +65,11 @@ export class ProductoService {
     if (categoria) {
       params = params.set('categoria', categoria);
     }
-
+    
+    if (activo !== undefined && activo !== null) {
+      // HttpParams requiere strings o numbers, así que convertimos el boolean a string
+      params = params.set('activo', activo.toString()); 
+    }
 
     return this.http.get<ProductoStockResponse>(
       `${this.api}/logistics/products/productos_stock`,

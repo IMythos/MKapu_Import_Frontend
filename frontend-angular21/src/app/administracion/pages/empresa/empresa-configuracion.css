@@ -1,0 +1,261 @@
+/* ── Cabecera ─────────────────────────────────────────────── */
+.empresa-title-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f6af33, #e09520);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 14px rgba(246, 175, 51, 0.35);
+}
+
+.empresa-title-icon i {
+  color: #111;
+  font-size: 1.2rem;
+}
+
+.empresa-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-color-secondary);
+  margin: 0;
+}
+
+.empresa-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+  letter-spacing: 0.03em;
+}
+
+.empresa-pill {
+  border-radius: 20px !important;
+}
+
+.empresa-pill-primary {
+  background: linear-gradient(135deg, #f6af33, #e09520) !important;
+  border: none !important;
+  color: #111 !important;
+  font-weight: 600 !important;
+}
+
+/* ── Layout grid ──────────────────────────────────────────── */
+.empresa-grid {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .empresa-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Section cards ────────────────────────────────────────── */
+:host ::ng-deep .empresa-section-card.p-card {
+  border-radius: 14px !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+:host ::ng-deep .empresa-section-card .p-card-body {
+  padding: 1.25rem !important;
+}
+
+.empresa-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--surface-border);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-color-secondary);
+}
+
+.empresa-section-header i {
+  color: #f6af33;
+  font-size: 1rem;
+}
+
+/* ── Logo upload ──────────────────────────────────────────── */
+.logo-upload-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logo-preview-box {
+  width: 140px;
+  height: 140px;
+  border-radius: 16px;
+  border: 2px dashed var(--surface-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--surface-ground);
+  transition: border-color 0.2s;
+}
+
+.logo-preview-box:hover {
+  border-color: #f6af33;
+}
+
+.logo-preview-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 8px;
+}
+
+.logo-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-color-secondary);
+}
+
+.logo-placeholder i {
+  font-size: 2rem;
+  opacity: 0.4;
+}
+
+.logo-placeholder span {
+  font-size: 0.75rem;
+}
+
+.logo-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.logo-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #f6af33, #e09520);
+  color: #111;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.logo-upload-btn:hover { opacity: 0.85; }
+
+.logo-hint {
+  font-size: 0.72rem;
+  color: var(--text-color-secondary);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+}
+
+/* ── Vista previa ─────────────────────────────────────────── */
+.empresa-preview {
+  padding: 0.5rem 0;
+}
+
+.preview-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: var(--surface-ground);
+  border: 1px solid var(--surface-border);
+}
+
+.preview-logo {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: contain;
+}
+
+.preview-logo-placeholder {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f6af33, #e09520);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.preview-logo-placeholder i {
+  color: #111;
+  font-size: 1rem;
+}
+
+.preview-nombre {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.preview-ruc {
+  font-size: 0.72rem;
+  color: var(--text-color-secondary);
+}
+
+/* ── Formulario ───────────────────────────────────────────── */
+.empresa-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 600px) {
+  .empresa-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-field--full {
+  grid-column: 1 / -1;
+}
+
+.form-field label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.required {
+  color: #f87171;
+  margin-left: 2px;
+}
+
+/* ── Footer ───────────────────────────────────────────────── */
+.empresa-footer-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-bottom: 2rem;
+}

@@ -38,6 +38,22 @@ export interface ProductoStock {
   sede: string;
   stock: number;
 }
+interface DetalleItem {
+  id_prod_ref: number;
+  cod_prod:    string;
+  descripcion: string;
+  cantidad:    number;
+  precio:      number;
+  importe:     number;
+  uni_med:     string;
+  tipoPrecio:  'unitario' | 'mayor' | 'caja';
+  pre_unit:    number;
+  pre_may:     number;
+  pre_caja:    number;
+  // ── nuevo ──
+  almacen:     string;
+  stock:       number;
+}
 
 export interface ProductoStockResponse {
   data: ProductoStock[];

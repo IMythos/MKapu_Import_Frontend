@@ -10,6 +10,7 @@ export type CreateQuoteRequest = Omit<Quote, 'id_cotizacion' | 'cliente' | 'sede
 export interface LoadQuotesFilters {
   search?: string;
   estado?: string | null;
+  tipo?:    'VENTA' | 'COMPRA' | null; 
   id_sede?: number | null;
   page?: number;
   limit?: number;
@@ -41,35 +42,35 @@ export class QuoteService {
   readonly loading    = computed(() => this._loading());
   readonly error      = computed(() => this._error());
 
-  // ── Listar cotizaciones paginadas ─────────────────────────────────
+
   loadQuotes(filters?: LoadQuotesFilters): Observable<QuotePagedResponse> {
-    this._loading.set(true);
-    this._error.set(null);
+  this._loading.set(true);
+  this._error.set(null);
 
-    let params = new HttpParams();
-    if (filters?.search)  params = params.set('search',  filters.search);
-    if (filters?.estado)  params = params.set('estado',  filters.estado);
-    if (filters?.id_sede) params = params.set('id_sede', filters.id_sede.toString());
-    if (filters?.page)    params = params.set('page',    filters.page.toString());
-    if (filters?.limit)   params = params.set('limit',   filters.limit.toString());
+  let params = new HttpParams();
+  if (filters?.search)  params = params.set('search',  filters.search);
+  if (filters?.estado)  params = params.set('estado',  filters.estado);
+  if (filters?.tipo)    params = params.set('tipo',    filters.tipo);  
+  if (filters?.id_sede) params = params.set('id_sede', filters.id_sede.toString());
+  if (filters?.page)    params = params.set('page',    filters.page.toString());
+  if (filters?.limit)   params = params.set('limit',   filters.limit.toString());
 
-    // KPIs en paralelo — sin await para no bloquear el Observable principal
-    this._loadKpis();
+  this._loadKpis();
 
-    return this.http.get<QuotePagedResponse>(this.api, { params }).pipe(
-      tap((res) => {
-        this._quoteList.set(res.data);
-        this._total.set(res.total);
-        this._page.set(res.page);
-        this._totalPages.set(res.totalPages);
-      }),
-      catchError((err) => {
-        this._error.set('No se pudo cargar cotizaciones.');
-        return throwError(() => err);
-      }),
-      finalize(() => this._loading.set(false))
-    );
-  }
+  return this.http.get<QuotePagedResponse>(this.api, { params }).pipe(
+    tap((res) => {
+      this._quoteList.set(res.data);
+      this._total.set(res.total);
+      this._page.set(res.page);
+      this._totalPages.set(res.totalPages);
+    }),
+    catchError((err) => {
+      this._error.set('No se pudo cargar cotizaciones.');
+      return throwError(() => err);
+    }),
+    finalize(() => this._loading.set(false))
+  );
+}
 
   private _loadKpis(): void {
     const base = new HttpParams().set('page', '1').set('limit', '1');

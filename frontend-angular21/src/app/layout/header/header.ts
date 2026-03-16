@@ -8,10 +8,12 @@ import { RoleService } from '../../core/services/role.service';
 import { CashboxSocketService } from '../../ventas/services/cashbox-socket.service';
 import { ThemeService } from '../../core/services/theme.service';
 import { CommonModule } from '@angular/common';
+import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, ToolbarModule, ButtonModule, InputTextModule, RouterLink],
+  imports: [CommonModule, ToolbarModule, ButtonModule, InputTextModule, RouterLink, TooltipModule,
+],
   templateUrl: './header.html',
   styleUrl: './header.css',
   standalone: true,

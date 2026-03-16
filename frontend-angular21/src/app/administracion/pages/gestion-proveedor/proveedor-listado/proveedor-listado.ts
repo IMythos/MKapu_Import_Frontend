@@ -20,31 +20,22 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ProveedorService } from '../../../services/proveedor.service';
 import { SupplierResponse } from '../../../interfaces/supplier.interface';
+import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
+import { PaginadorComponent } from '../../../../shared/components/paginador/paginador.components';
 
 @Component({
   selector: 'app-proveedor-listado',
   standalone: true,
   imports: [
-    CommonModule,
-    FormsModule,
-    RouterModule,
-    RouterOutlet,
-    ButtonModule,
-    TableModule,
-    CardModule,
-    TagModule,
-    AutoCompleteModule,
-    SelectModule,
-    ToggleButtonModule,
-    InputTextModule,
-    TooltipModule,
-    ConfirmDialog,
-    DialogModule,
-    ToastModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,
+    CommonModule, FormsModule, RouterModule, RouterOutlet,
+    ButtonModule, TableModule, CardModule, TagModule,
+    AutoCompleteModule, SelectModule, ToggleButtonModule,
+    InputTextModule, TooltipModule, ConfirmDialog,
+    DialogModule, ToastModule,
+    LoadingOverlayComponent,      
+    PaginadorComponent,            
+    SharedTableContainerComponent,
   ],
   templateUrl: './proveedor-listado.html',
   styleUrl: './proveedor-listado.css',
@@ -53,7 +44,7 @@ import { PaginadorComponent } from '../../../../shared/components/paginador/Pagi
 export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   private destroy$ = new Subject<void>();
 
-  readonly pageSizeOptions = [10, 20, 50, 100];
+  readonly pageSizeOptions = [5, 10, 20, 50];
 
   private currentUrl = signal<string>('');
   esVistaEliminados  = signal(false);
@@ -69,7 +60,7 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   items       = signal<SupplierResponse[]>([]);
 
   paginaActual = signal<number>(1);
-  rows         = signal<number>(10);
+  rows         = signal<number>(5);
   totalRecords = signal<number>(0);
 
   totalPaginas = computed(() => Math.ceil(this.totalRecords() / this.rows()));
@@ -129,7 +120,8 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
   cargarProveedores(): void {
     this.loading.set(true);
     this.proveedorService
-      .listSuppliers({ estado: this.getEstadoFiltro(), search: this.buscarValue() || undefined })
+      //.listSuppliers({ estado: this.getEstadoFiltro(), search: this.buscarValue() || undefined })
+      .listSuppliers({ search: this.buscarValue() || undefined })
       .subscribe({
         next: response => {
           this.proveedores.set(response.suppliers);
@@ -225,7 +217,7 @@ export class ProveedorListado implements OnInit, OnDestroy, AfterViewInit {
 
   irDetalle(id: number): void { this.router.navigate(['/admin/proveedores/ver-detalle', id]); }
   irCrear():             void { this.router.navigate(['/admin/proveedores/crear']); }
-  irEditar(id: number):  void { this.router.navigate(['/admin/proveedores/editar']); }
+  irEditar(id: number):  void { this.router.navigate(['/admin/proveedores/editar', id]); }
 
   irEliminados(): void { this.esVistaEliminados.set(true);  this.paginaActual.set(1); this.cargarProveedores(); }
   irActivos():    void { this.esVistaEliminados.set(false); this.paginaActual.set(1); this.cargarProveedores(); }

@@ -18,10 +18,7 @@ import { SedeService } from '../../../services/sede.service';
 import { QuoteListItem } from '../../../interfaces/quote.interface';
 import { QuoteService } from '../../../services/quote.service';
 import { SedeAlmacenService } from '../../../services/sede-almacen.service';
-
-import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
-import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { getDomingoSemanaActualPeru, getHoyPeru, getLunesSemanaActualPeru } from '../../../../shared/utils/date-peru.utils';
+import { getDomingoSemanaActualPeru, getLunesSemanaActualPeru } from '../../../../shared/utils/date-peru.utils';
 import { AccionesComprobanteDialogComponent, AccionesComprobanteConfig, AccionComprobante } from '../../../../shared/components/acciones-comprobante-dialog/acciones-comprobante';
 import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
 
@@ -53,6 +50,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   buscarValue           = signal<string>('');
   cotizacionSugerencias = signal<QuoteListItem[]>([]);
   estadoSeleccionado    = signal<string | null>('PENDIENTE');
+  tipoSeleccionado      = signal<'VENTA' | 'COMPRA' | null>(null); 
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
   rows                  = signal<number>(5);
@@ -65,6 +63,12 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     { label: 'Aprobada',  value: 'APROBADA'  },
     { label: 'Rechazada', value: 'RECHAZADA' },
     { label: 'Vencida',   value: 'VENCIDA'   },
+  ];
+
+  tiposOptions = [
+    { label: 'Todos',   value: null     },
+    { label: 'Venta',   value: 'VENTA'  },
+    { label: 'Compra',  value: 'COMPRA' },
   ];
 
   sedesOptions = computed(() => this.sedeService.sedes().map(sede => ({
@@ -84,16 +88,29 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
 
   cotizaciones = computed(() => this.quoteService.quotes());
 
+
   cotizacionesFiltradas = computed(() => {
     const inicio = this.fechaInicio();
     const fin    = this.fechaFin();
-    if (!inicio && !fin) return this.cotizaciones();
-    return this.cotizaciones().filter(c => {
-      const fec = new Date(c.fec_emision);
-      if (inicio && fec < inicio) return false;
+    const tipo   = this.tipoSeleccionado();
+    let lista    = this.cotizaciones();
+
+    if (tipo) lista = lista.filter(c => c.tipo === tipo);
+
+    if (!inicio && !fin) return lista; // ← sin fechas, devuelve todo
+
+    return lista.filter(c => {
+      const fechaStr = c.fec_emision.substring(0, 10);
+      const [y, m, d] = fechaStr.split('-').map(Number);
+      const fecSolo = new Date(y, m - 1, d);
+
+      if (inicio) {
+        const iniSolo = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
+        if (fecSolo < iniSolo) return false;
+      }
       if (fin) {
-        const finDia = new Date(fin); finDia.setHours(23, 59, 59, 999);
-        if (fec > finDia) return false;
+        const finSolo = new Date(fin.getFullYear(), fin.getMonth(), fin.getDate());
+        if (fecSolo > finSolo) return false;
       }
       return true;
     });
@@ -103,20 +120,19 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   loading         = computed(() => this.quoteService.loading());
   totalAprobadas  = computed(() => this.quoteService.kpiAprobadas());
   totalPendientes = computed(() => this.quoteService.kpiPendientes());
-  totalRecords = computed(() => this.quoteService.kpiTotal());
-  // ── Dialog de acciones (shared) ──────────────────────────────────
+  totalRecords    = computed(() => this.quoteService.kpiTotal());
+
   accionesVisible  = false;
   accionCargando: string | null = null;
   accionesConfig: AccionesComprobanteConfig | null = null;
   private cotizacionAcciones: QuoteListItem | null = null;
 
-  // ── Dialog WhatsApp ───────────────────────────────────────────────
-  mostrarDialogWsp                   = false;
-  enviandoWsp                        = false;
-  wspReady                           = false;
-  wspQr: string | null               = null;
+  mostrarDialogWsp                    = false;
+  enviandoWsp                         = false;
+  wspReady                            = false;
+  wspQr: string | null                = null;
   cotizacionWsp: QuoteListItem | null = null;
-  private pollingInterval: any       = null;
+  private pollingInterval: any        = null;
 
   constructor(private router: Router) {}
 
@@ -147,6 +163,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   cargarCotizacion() {
     this.quoteService.loadQuotes({
       estado:  this.estadoSeleccionado(),
+      tipo:    this.tipoSeleccionado(),  
       id_sede: this.sedeSeleccionada(),
       search:  this.buscarValue() || undefined,
       page:    this.currentPage(),
@@ -166,6 +183,12 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     this.cargarCotizacion();
   }
 
+  onTipoChange(tipo: 'VENTA' | 'COMPRA' | null) {
+    this.tipoSeleccionado.set(tipo);
+    this.currentPage.set(1);
+    this.cargarCotizacion();
+  }
+
   onFechaChange() { /* filtro local */ }
 
   limpiarFiltros() {
@@ -175,20 +198,13 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     this.fechaFin.set(null);
     this.sedeSeleccionada.set(null);
     this.estadoSeleccionado.set(null);
+    this.tipoSeleccionado.set(null);    
     this.currentPage.set(1);
     this.cargarCotizacion();
   }
 
-  onPageChange(page: number) {
-    this.currentPage.set(page);
-    this.cargarCotizacion();
-  }
-
-  onLimitChange(limit: number) {
-    this.rows.set(limit);
-    this.currentPage.set(1);
-    this.cargarCotizacion();
-  }
+  onPageChange(page: number)   { this.currentPage.set(page); this.cargarCotizacion(); }
+  onLimitChange(limit: number) { this.rows.set(limit); this.currentPage.set(1); this.cargarCotizacion(); }
 
   searchCotizacion(event: any) {
     const query = event.query?.toLowerCase() ?? '';
@@ -268,14 +284,11 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     });
   }
 
-  // ── Acciones dialog ───────────────────────────────────────────────
   abrirAcciones(c: QuoteListItem): void {
     this.cotizacionAcciones = c;
     this.accionesConfig = {
-      titulo:    c.codigo,
-      subtitulo: c.cliente_nombre,
-      labelPdf:     'PDF Cotización',
-      labelVoucher: 'Voucher',
+      titulo: c.codigo, subtitulo: c.cliente_nombre,
+      labelPdf: 'PDF Cotización', labelVoucher: 'Voucher',
     };
     this.accionCargando  = null;
     this.accionesVisible = true;
@@ -283,36 +296,18 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
 
   onAccion(accion: AccionComprobante): void {
     const c = this.cotizacionAcciones!;
-
     switch (accion) {
-
       case 'wsp':
         this.accionesVisible = false;
         this.abrirDialogWsp(c);
         break;
-
       case 'email':
         this.accionCargando = 'email';
         this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
-          next: (res) => {
-            this.accionCargando  = null;
-            this.accionesVisible = false;
-            this.messageService.add({
-              severity: 'success', summary: 'Email enviado',
-              detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`, life: 4000,
-            });
-          },
-          error: () => {
-            this.accionCargando  = null;
-            this.accionesVisible = false;
-            this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.', life: 3000,
-            });
-          },
+          next: (res) => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`, life: 4000 }); },
+          error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.', life: 3000 }); },
         });
         break;
-
       case 'pdf-imprimir':
         this.accionCargando = 'pdf-imprimir';
         this.quoteService.printPdf(c.id_cotizacion).subscribe({
@@ -320,57 +315,31 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
           error: () => { this.accionCargando = null; this.accionesVisible = false; },
         });
         break;
-
       case 'pdf-descargar':
         this.accionCargando = 'pdf-descargar';
         this.quoteService.downloadPdf(c.id_cotizacion).subscribe({
           next: () => { this.accionCargando = null; this.accionesVisible = false; },
-          error: () => {
-            this.accionCargando  = null;
-            this.accionesVisible = false;
-            this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: 'No se pudo descargar el PDF', life: 3000,
-            });
-          },
+          error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo descargar el PDF', life: 3000 }); },
         });
         break;
-
       case 'voucher-imprimir':
         this.accionCargando = 'voucher-imprimir';
         this.quoteService.printThermalVoucher(c.id_cotizacion).subscribe({
           next: () => { this.accionCargando = null; this.accionesVisible = false; },
-          error: () => {
-            this.accionCargando  = null;
-            this.accionesVisible = false;
-            this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: 'No se pudo imprimir el voucher térmico.', life: 3000,
-            });
-          },
+          error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo imprimir el voucher térmico.', life: 3000 }); },
         });
         break;
-
       case 'voucher-descargar':
         this.accionCargando = 'voucher-descargar';
         this.quoteService.downloadThermalVoucher(c.id_cotizacion).subscribe({
           next: () => { this.accionCargando = null; this.accionesVisible = false; },
-          error: () => {
-            this.accionCargando  = null;
-            this.accionesVisible = false;
-            this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: 'No se pudo descargar el voucher térmico.', life: 3000,
-            });
-          },
+          error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo descargar el voucher térmico.', life: 3000 }); },
         });
         break;
     }
   }
 
-  imprimirCotizacion(c: QuoteListItem) {
-    this.quoteService.exportPdf(c.id_cotizacion);
-  }
+  imprimirCotizacion(c: QuoteListItem) { this.quoteService.exportPdf(c.id_cotizacion); }
 
   enviarCotizacion(c: QuoteListItem) {
     this.messageService.add({ severity: 'info', summary: 'Enviando...', detail: `Enviando cotización ${c.codigo} por email.` });
@@ -379,8 +348,6 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
       error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
     });
   }
-
-  // ── WhatsApp ──────────────────────────────────────────────────────────────
 
   abrirDialogWsp(c: QuoteListItem): void {
     this.cotizacionWsp    = c;
@@ -393,10 +360,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   cerrarDialogWsp(): void {
     this.mostrarDialogWsp = false;
     this.cotizacionWsp    = null;
-    if (this.pollingInterval) {
-      clearInterval(this.pollingInterval);
-      this.pollingInterval = null;
-    }
+    if (this.pollingInterval) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
   }
 
   private verificarEstadoWsp(): void {
@@ -404,53 +368,37 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.wspReady = res.ready;
         this.wspQr    = res.qr ?? null;
-
         if (!res.ready) {
-          // Polling cada 3s hasta que escaneen el QR
           this.pollingInterval = setInterval(() => {
             this.quoteService.getWhatsAppStatus().subscribe({
               next: (r) => {
                 this.wspReady = r.ready;
                 this.wspQr    = r.qr ?? null;
-                if (r.ready) {
-                  clearInterval(this.pollingInterval);
-                  this.pollingInterval = null;
-                }
+                if (r.ready) { clearInterval(this.pollingInterval); this.pollingInterval = null; }
               },
             });
           }, 3000);
         }
       },
-      error: () => this.messageService.add({
-        severity: 'error', summary: 'Error',
-        detail: 'No se pudo conectar con el servicio de WhatsApp.', life: 4000,
-      }),
+      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo conectar con el servicio de WhatsApp.', life: 4000 }),
     });
   }
 
   enviarPorWsp(): void {
     if (!this.cotizacionWsp) return;
-
     this.enviandoWsp = true;
     this.quoteService.sendByWhatsApp(this.cotizacionWsp.id_cotizacion).subscribe({
       next: (res) => {
         this.enviandoWsp = false;
         this.cerrarDialogWsp();
-        this.messageService.add({
-          severity: 'success', summary: '¡Enviado!',
-          detail: `Cotización ${this.cotizacionWsp?.codigo} enviada a ${res.sentTo}`,
-          life: 5000,
-        });
+        this.messageService.add({ severity: 'success', summary: '¡Enviado!', detail: `Cotización ${this.cotizacionWsp?.codigo} enviada a ${res.sentTo}`, life: 5000 });
       },
       error: (err) => {
         this.enviandoWsp = false;
-        const detalle = err?.error?.message ?? 'No se pudo enviar por WhatsApp.';
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: detalle, life: 5000 });
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message ?? 'No se pudo enviar por WhatsApp.', life: 5000 });
       },
     });
   }
-
-  // ── Helpers fechas ────────────────────────────────────────────────────────
 
   getDiasRestantes(fecVenc: string | Date | null): number {
     if (!fecVenc) return 0;

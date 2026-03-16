@@ -17,7 +17,8 @@ export class CashboxSocketService {
   private readonly _listeners = new Set<() => void>();
 
   constructor() {
-    this.socket = io(`${environment.apiUrl}/cashbox`, {
+    this.socket = io(`${environment.apiUrlSocket}/cashbox`, {
+      //path: '/socket.io',
       path: '/sales/socket.io',
       transports: ['polling', 'websocket'],
       withCredentials: false,
@@ -25,6 +26,8 @@ export class CashboxSocketService {
 
     this.socket.on('connect', () => {
       this._connected.set(true);
+      console.log('✅ [Roles Socket] Conectado exitosamente al backend!');
+      console.log("info:", this.socket); // Ver qué transporte se está usando
     });
 
     this.socket.on('disconnect',    () => this._connected.set(false));

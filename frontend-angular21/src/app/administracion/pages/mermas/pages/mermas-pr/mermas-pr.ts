@@ -19,8 +19,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
 import { CommonModule } from '@angular/common';
 
 import { WastageService, WastageResponseDto } from '../../../../services/wastage.service';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 interface WastageDetail {
   id_detalle: number;
@@ -57,8 +56,7 @@ type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast
     AutoCompleteModule, Select, ConfirmDialogModule, ToastModule, TableModule,
     TooltipModule, TagModule, DialogModule, InputNumberModule, SelectButtonModule,
     CommonModule,
-    LoadingOverlayComponent,
-    PaginadorComponent, 
+    SharedTableContainerComponent,
   ],
   templateUrl: './mermas-pr.html',
   styleUrl: './mermas-pr.css',

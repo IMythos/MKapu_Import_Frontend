@@ -17,6 +17,8 @@ import { take } from 'rxjs/operators';
 
 import { RoleService } from '../../../../../services/role.service';
 import { Role }        from '../../../../../interfaces/role-permission.interface';
+import { TooltipModule } from 'primeng/tooltip';
+import { SharedTableContainerComponent } from '../../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todos' | 'activos' | 'inactivos';
 
@@ -27,7 +29,9 @@ type ViewMode = 'todos' | 'activos' | 'inactivos';
     CommonModule, FormsModule, RouterModule,
     DialogModule, CardModule, ButtonModule,
     AutoCompleteModule, TableModule, TagModule,
-    ToastModule, ConfirmDialogModule, MessageModule, SelectModule,
+    ToastModule, ConfirmDialogModule, MessageModule,
+      SelectModule, TooltipModule,                
+    SharedTableContainerComponent,              
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './roles-listado.component.html',

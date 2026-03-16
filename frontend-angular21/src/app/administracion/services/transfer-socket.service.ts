@@ -32,8 +32,9 @@ export class TransferSocketService {
     this.connectionState.set('connecting');
     this.lastError.set(null);
 
-    const socket = io(`${environment.apiUrl}/transfers`, {
+    const socket = io(`${environment.apiUrlSocket}/transfers`, {
       path: '/logistics/socket.io',
+      //path: '/socket.io',
       transports: ['websocket', 'polling'],
       withCredentials: false,
       query: {

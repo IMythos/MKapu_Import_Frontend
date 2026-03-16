@@ -1,0 +1,218 @@
+<div class="p-2">
+
+  <!-- CABECERA -->
+  <p-card styleClass="empresa-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="empresa-title-icon"><i class="pi pi-building"></i></span>
+        <div>
+          <p class="empresa-kicker">ADMINISTRADOR · CONFIGURACIÓN</p>
+          <h2 class="empresa-title">PERSONALIZACIÓN DE EMPRESA</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Guardar Cambios"
+          icon="pi pi-save"
+          styleClass="empresa-pill empresa-pill-primary"
+          [loading]="guardando()"
+          (onClick)="guardar()">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <div style="position:relative">
+    <app-loading-overlay
+      [visible]="loading()"
+      mensaje="Cargando configuración..."
+      modo="inline">
+    </app-loading-overlay>
+
+    <div [style.opacity]="loading() ? '0.3' : '1'"
+         style="transition: opacity 0.2s ease;">
+
+      <div class="empresa-grid">
+
+        <!-- ══ COLUMNA IZQUIERDA — Logo ══ -->
+        <div class="empresa-col-logo">
+          <p-card styleClass="empresa-section-card">
+            <div class="empresa-section-header">
+              <i class="pi pi-image"></i>
+              <span>Logo de la Empresa</span>
+            </div>
+
+            <div class="logo-upload-area">
+              <div class="logo-preview-box">
+                <img
+                  *ngIf="logoPreview() || form.logo_url"
+                  [src]="logoPreview() || form.logo_url"
+                  alt="Logo empresa"
+                  class="logo-preview-img">
+                <div *ngIf="!logoPreview() && !form.logo_url" class="logo-placeholder">
+                  <i class="pi pi-image"></i>
+                  <span>Sin logo</span>
+                </div>
+              </div>
+
+              <div class="logo-actions">
+                <label for="logo-input" class="logo-upload-btn">
+                  <i class="pi pi-upload"></i>
+                  Subir Logo
+                </label>
+                <input
+                  id="logo-input"
+                  type="file"
+                  accept="image/*"
+                  style="display:none"
+                  (change)="onLogoChange($event)">
+
+                <p-button
+                  *ngIf="logoPreview() || form.logo_url"
+                  icon="pi pi-times"
+                  label="Quitar"
+                  severity="danger"
+                  [outlined]="true"
+                  size="small"
+                  (onClick)="quitarLogo()">
+                </p-button>
+              </div>
+
+              <p class="logo-hint">
+                <i class="pi pi-info-circle"></i>
+                PNG o JPG · Máx. 2MB · Recomendado 200×200px
+              </p>
+            </div>
+          </p-card>
+
+          <!-- Vista previa -->
+          <p-card styleClass="empresa-section-card mt-3">
+            <div class="empresa-section-header">
+              <i class="pi pi-eye"></i>
+              <span>Vista Previa</span>
+            </div>
+            <div class="empresa-preview">
+              <div class="preview-badge">
+                <img
+                  *ngIf="logoPreview() || form.logo_url"
+                  [src]="logoPreview() || form.logo_url"
+                  class="preview-logo">
+                <div *ngIf="!logoPreview() && !form.logo_url" class="preview-logo-placeholder">
+                  <i class="pi pi-building"></i>
+                </div>
+                <div>
+                  <div class="preview-nombre">{{ form.nombre || 'Nombre empresa' }}</div>
+                  <div class="preview-ruc">RUC: {{ form.ruc || '—' }}</div>
+                </div>
+              </div>
+            </div>
+          </p-card>
+        </div>
+
+        <!-- ══ COLUMNA DERECHA — Formulario ══ -->
+        <div class="empresa-col-form">
+
+          <!-- Sección: Identificación -->
+          <p-card styleClass="empresa-section-card mb-3">
+            <div class="empresa-section-header">
+              <i class="pi pi-id-card"></i>
+              <span>Identificación Fiscal</span>
+              <p-tag value="Requerido" severity="warn" styleClass="ml-auto"></p-tag>
+            </div>
+
+            <div class="empresa-form-grid">
+              <div class="form-field form-field--full">
+                <label>Nombre Comercial <span class="required">*</span></label>
+                <input pInputText [(ngModel)]="form.nombre"
+                  placeholder="Ej. Mkapu Import" class="w-full">
+              </div>
+
+              <div class="form-field form-field--full">
+                <label>Razón Social</label>
+                <input pInputText [(ngModel)]="form.razon_social"
+                  placeholder="Ej. Mkapu Import S.A.C." class="w-full">
+              </div>
+
+              <div class="form-field">
+                <label>RUC <span class="required">*</span></label>
+                <input pInputText [(ngModel)]="form.ruc"
+                  placeholder="20XXXXXXXXX" maxlength="11" class="w-full">
+              </div>
+
+              <div class="form-field">
+                <label>Sitio Web</label>
+                <input pInputText [(ngModel)]="form.web"
+                  placeholder="www.empresa.com" class="w-full">
+              </div>
+            </div>
+          </p-card>
+
+          <!-- Sección: Dirección -->
+          <p-card styleClass="empresa-section-card mb-3">
+            <div class="empresa-section-header">
+              <i class="pi pi-map-marker"></i>
+              <span>Dirección</span>
+            </div>
+
+            <div class="empresa-form-grid">
+              <div class="form-field form-field--full">
+                <label>Dirección</label>
+                <input pInputText [(ngModel)]="form.direccion"
+                  placeholder="Av. Principal 123, Urb. Los Pinos" class="w-full">
+              </div>
+
+              <div class="form-field">
+                <label>Ciudad</label>
+                <input pInputText [(ngModel)]="form.ciudad"
+                  placeholder="Lima" class="w-full">
+              </div>
+
+              <div class="form-field">
+                <label>Departamento</label>
+                <input pInputText [(ngModel)]="form.departamento"
+                  placeholder="Lima" class="w-full">
+              </div>
+            </div>
+          </p-card>
+
+          <!-- Sección: Contacto -->
+          <p-card styleClass="empresa-section-card">
+            <div class="empresa-section-header">
+              <i class="pi pi-phone"></i>
+              <span>Contacto</span>
+            </div>
+
+            <div class="empresa-form-grid">
+              <div class="form-field">
+                <label>Teléfono</label>
+                <input pInputText [(ngModel)]="form.telefono"
+                  placeholder="+51 987 654 321" class="w-full">
+              </div>
+
+              <div class="form-field">
+                <label>Email</label>
+                <input pInputText [(ngModel)]="form.email"
+                  placeholder="contacto@empresa.com" class="w-full">
+              </div>
+            </div>
+          </p-card>
+
+        </div>
+      </div>
+
+      <!-- Botón guardar inferior -->
+      <div class="empresa-footer-actions mt-4">
+        <p-button
+          label="Guardar Cambios"
+          icon="pi pi-save"
+          styleClass="empresa-pill empresa-pill-primary"
+          [loading]="guardando()"
+          (onClick)="guardar()">
+        </p-button>
+      </div>
+
+    </div>
+  </div>
+
+  <p-toast></p-toast>
+</div>

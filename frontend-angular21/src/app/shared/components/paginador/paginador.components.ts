@@ -9,7 +9,7 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './paginador.component.html',
-  styleUrls: ['./Paginador.component.css'],
+  styleUrls: ['./paginador.component.css'],
 })
 export class PaginadorComponent implements OnChanges {
   @Input() page        = 1;
