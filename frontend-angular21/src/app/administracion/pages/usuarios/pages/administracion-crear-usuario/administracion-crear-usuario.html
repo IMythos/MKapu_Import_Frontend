@@ -1,5 +1,6 @@
-<!-- HEADER -->
 <div class="p-2">
+
+  <!-- CABECERA -->
   <p-card class="usuarios-header-card">
     <div class="usuarios-header-row flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3">
       <div class="usuarios-header-title flex align-items-center gap-3 w-full md:w-auto">
@@ -37,12 +38,11 @@
             placeholder="Ingrese DNI (8 dígitos)..."
             [(ngModel)]="filtroDni"
             (input)="aplicarFiltros()"
-            class="w-full" />
+            class="w-full">
         </div>
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Estado</label>
           <p-select
@@ -92,133 +92,124 @@
             styleClass="btn-limpiar-filtros">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
 
   <!-- ERROR -->
-  <p-message *ngIf="!cargandoUsuarios && errorUsuarios" severity="error" [text]="errorUsuarios" class="mb-3 block"></p-message>
+  <p-message
+    *ngIf="!cargandoUsuarios && errorUsuarios"
+    severity="error" [text]="errorUsuarios"
+    class="mb-3 block">
+  </p-message>
 
   <!-- TABLA -->
-  <section class="wizard-content mt-4">
-    <div style="position: relative;">
-      <p-card>
+  <app-shared-table-container
+    titulo="Listado de Usuarios"
+    iconoTitulo="pi pi-users"
+    mensajeCarga="Cargando usuarios..."
+    [loading]="cargandoUsuarios"
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas"
+    [totalRegistros]="totalusers"
+    [limitePorPagina]="limitePagina()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
 
-        <app-loading-overlay
-          [visible]="cargandoUsuarios"
-          mensaje="Cargando usuarios..."
-          modo="inline">
-        </app-loading-overlay>
-
-        <div [style.opacity]="cargandoUsuarios ? '0.3' : '1'"
-             style="transition: opacity 0.2s ease;">
-
-          <div class="flex flex-column md:flex-row md:align-items-center md:justify-content-between gap-3 mb-3">
-            <div class="flex align-items-center gap-2">
-              <i class="pi pi-user"></i>
-              <strong>Usuarios</strong>
-              <p-tag
-                *ngIf="totalusers > 0"
-                [value]="totalusers + ' Usuarios'"
-                severity="info">
-              </p-tag>
-            </div>
-          </div>
-
-          <p-table
-            [value]="usuariosPaginados"
-            responsiveLayout="scroll"
-            class="p-datatable-sm usuarios-table--espaciada"
-            [paginator]="false">
-
-            <ng-template pTemplate="header">
-              <tr>
-                <th>Usuario</th>
-                <th>DNI</th>
-                <th>Celular</th>
-                <th>Rol</th>
-                <th>Sede</th>
-                <th>Estado</th>
-                <th class="text-center">Acciones</th>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="body" let-user>
-              <tr>
-                <td>
-                  <strong>{{ user.usu_nom }}</strong>
-                  <div class="helper-text">{{ user.ape_pat }} {{ user.ape_mat }}</div>
-                </td>
-                <td>{{ user.dni }}</td>
-                <td>{{ user.celular }}</td>
-                <td>{{ user.rolNombre || user.rol_nombre || user.rol || user.role || 'Sin rol' }}</td>
-                <td>{{ user.sedeNombre || 'N/A' }}</td>
-                <td>
-                  <p-tag
-                    [value]="user.activo ? 'Activo' : 'Inactivo'"
-                    [severity]="user.activo ? 'success' : 'danger'">
-                  </p-tag>
-                </td>
-                <td class="text-center">
-                  <p-button
-                    icon="pi pi-eye"
-                    text
-                    severity="secondary"
-                    styleClass="user-icon-btn"
-                    (click)="verDetalle(user)"
-                    title="Ver detalle">
-                  </p-button>
-                  <button
-                    pButton
-                    icon="pi pi-pencil"
-                    text
-                    styleClass="user-icon-btn"
-                    severity="secondary"
-                    class="p-button-text p-button-sm"
-                    [routerLink]="['/admin/usuarios/editar-usuario', user.id_usuario]">
-                  </button>
-                  <p-button
-                    [icon]="user.activo ? 'pi pi-times' : 'pi pi-check'"
-                    text
-                    [severity]="user.activo ? 'danger' : 'success'"
-                    styleClass="user-icon-btn user-action-status"
-                    (click)="confirmToggleStatus(user)"
-                    [title]="user.activo ? 'Desactivar usuario' : 'Activar usuario'">
-                  </p-button>
-                </td>
-              </tr>
-            </ng-template>
-
-            <ng-template pTemplate="emptymessage">
-              <tr>
-                <td colspan="8" class="text-center">No hay usuarios registrados</td>
-              </tr>
-            </ng-template>
-
-          </p-table>
-
-          <app-paginador
-            [page]="paginaActual()"
-            [totalPages]="totalPaginas"
-            [total]="totalusers"
-            [limit]="limitePagina()"
-            [limitOpciones]="[5, 10, 20, 50]"
-            (pageChange)="onPageChange($event)"
-            (limitChange)="onLimitChange($event)">
-          </app-paginador>
-
-          <p-confirmdialog />
-        </div>
-      </p-card>
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones">
+      <p-tag
+        *ngIf="totalusers > 0"
+        [value]="totalusers + ' usuarios'"
+        severity="info">
+      </p-tag>
     </div>
-  </section>
+
+    <!-- Tabla -->
+    <p-table
+      [value]="usuariosPaginados"
+      responsiveLayout="scroll"
+      styleClass="p-datatable-striped"
+      [paginator]="false">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Usuario</th>
+          <th>DNI</th>
+          <th>Celular</th>
+          <th>Rol</th>
+          <th>Sede</th>
+          <th>Estado</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-user>
+        <tr>
+          <td>
+            <strong>{{ user.usu_nom }}</strong>
+            <div class="helper-text">{{ user.ape_pat }} {{ user.ape_mat }}</div>
+          </td>
+          <td>{{ user.dni }}</td>
+          <td>{{ user.celular }}</td>
+          <td>{{ user.rolNombre || user.rol_nombre || user.rol || user.role || 'Sin rol' }}</td>
+          <td>{{ user.sedeNombre || 'N/A' }}</td>
+          <td>
+            <p-tag
+              [value]="user.activo ? 'Activo' : 'Inactivo'"
+              [severity]="user.activo ? 'success' : 'danger'">
+            </p-tag>
+          </td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver detalle" tooltipPosition="top"
+                (onClick)="verDetalle(user)">
+              </p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar usuario" tooltipPosition="top"
+                [routerLink]="['/admin/usuarios/editar-usuario', user.id_usuario]">
+              </p-button>
+              <p-button
+                [icon]="user.activo ? 'pi pi-times' : 'pi pi-check'"
+                [rounded]="true" [text]="true"
+                [severity]="user.activo ? 'danger' : 'success'"
+                [pTooltip]="user.activo ? 'Desactivar usuario' : 'Activar usuario'"
+                tooltipPosition="top"
+                (onClick)="confirmToggleStatus(user)">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="7" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No hay usuarios registrados</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+    </p-table>
+
+    <p-confirmdialog />
+
+  </app-shared-table-container>
 
   <!-- MODAL DETALLE USUARIO -->
   <p-dialog
     [(visible)]="dialogVisible"
-    [modal]="true"
-    [draggable]="false"
+    [modal]="true" [draggable]="false"
     [style]="{ width: '480px', 'border-radius': '16px', overflow: 'hidden' }"
     [contentStyle]="{ padding: '0' }"
     (onHide)="dialogVisible = false">
@@ -252,31 +243,33 @@
           <div class="usuario-info-item"><b>Dirección:</b> {{ u.direccion || '—' }}</div>
           <div class="usuario-info-item">
             <b>Estado:</b>
-            <p-tag [value]="u.activo ? 'Activo' : 'Inactivo'" [severity]="u.activo ? 'success' : 'danger'"></p-tag>
+            <p-tag
+              [value]="u.activo ? 'Activo' : 'Inactivo'"
+              [severity]="u.activo ? 'success' : 'danger'">
+            </p-tag>
           </div>
         </div>
 
         <div class="usuario-footer flex justify-content-end gap-2">
           <p-button
-            label="Cerrar"
-            icon="pi pi-times"
-            severity="secondary"
-            outlined="true"
+            label="Cerrar" icon="pi pi-times"
+            severity="secondary" [outlined]="true"
             class="user-btn-close"
             (onClick)="dialogVisible = false">
           </p-button>
           <p-button
-            label="Editar Usuario"
-            icon="pi pi-pencil"
+            label="Editar Usuario" icon="pi pi-pencil"
             class="user-btn-edit"
             [routerLink]="['/admin/usuarios/editar-usuario']"
             [queryParams]="{ id: u.id_usuario }"
             (onClick)="dialogVisible = false">
           </p-button>
         </div>
+
       </div>
     </ng-container>
   </p-dialog>
+
 </div>
 
 <p-toast></p-toast>

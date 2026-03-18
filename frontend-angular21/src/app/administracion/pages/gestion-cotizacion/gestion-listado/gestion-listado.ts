@@ -21,8 +21,9 @@ import { SedeAlmacenService } from '../../../services/sede-almacen.service';
 
 import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { getHoyPeru } from '../../../../shared/utils/date-peru.utils';
+import { getDomingoSemanaActualPeru, getHoyPeru, getLunesSemanaActualPeru } from '../../../../shared/utils/date-peru.utils';
 import { AccionesComprobanteDialogComponent, AccionesComprobanteConfig, AccionComprobante } from '../../../../shared/components/acciones-comprobante-dialog/acciones-comprobante';
+import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
 
 @Component({
   selector: 'app-gestion-cotizaciones',
@@ -31,9 +32,8 @@ import { AccionesComprobanteDialogComponent, AccionesComprobanteConfig, AccionCo
     CommonModule, FormsModule, TableModule, SelectModule, CardModule,
     ButtonModule, TagModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
     RouterModule, AutoComplete, TooltipModule, DatePickerModule,
-    LoadingOverlayComponent, PaginadorComponent,
     DialogModule,
-    AccionesComprobanteDialogComponent,
+    AccionesComprobanteDialogComponent, SharedTableContainerComponent,
   ],
   templateUrl: './gestion-listado.html',
   styleUrl: './gestion-listado.css',
@@ -56,8 +56,8 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
   rows                  = signal<number>(5);
-  fechaFin              = signal<Date | null>(null);
-  fechaInicio           = signal<Date | null>(getHoyPeru());
+  fechaFin              = signal<Date | null>(getDomingoSemanaActualPeru());
+  fechaInicio           = signal<Date | null>(getLunesSemanaActualPeru());
 
   estadosOptions = [
     { label: 'Todos',     value: null        },
@@ -484,9 +484,9 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     return 'var(--text-muted)';
   }
 
-  irCrear()             { this.router.navigate(['/admin/agregar-cotizaciones']); }
-  irEditar(id: number)  { this.router.navigate(['/admin/editar-cotizacion', id]); }
-  irDetalle(id: number) { this.router.navigate(['/admin/ver-detalle-cotizacion', id]); }
+  irCrear()             { this.router.navigate(['/admin/cotizaciones/agregar-cotizaciones']); }
+  irEditar(id: number)  { this.router.navigate(['/admin/cotizaciones/editar-cotizacion', id]); }
+  irDetalle(id: number) { this.router.navigate(['/admin/cotizaciones/ver-detalle-cotizacion', id]); }
 
   irAgregarVenta(id: number) {
     this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'contado' } });

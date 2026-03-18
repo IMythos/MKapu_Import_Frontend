@@ -19,6 +19,8 @@ import { CategoriaService } from '../../../../services/categoria.service';
 import { Categoria } from '../../../../interfaces/categoria.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { TooltipModule } from 'primeng/tooltip';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';
 
@@ -31,8 +33,8 @@ type ViewMode = 'todas' | 'activas' | 'inactivas';
     AutoCompleteModule, TableModule, TagModule,
     ToastModule, ConfirmDialogModule, MessageModule,
     SelectModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,  
+    SharedTableContainerComponent,
+    TooltipModule, 
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './categoria.html',

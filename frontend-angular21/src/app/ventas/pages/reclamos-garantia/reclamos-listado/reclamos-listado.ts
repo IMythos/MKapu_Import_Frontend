@@ -20,10 +20,7 @@ import {
   ClaimResponseDto,
   ClaimStatus,
 } from '../../../../core/services/claim.service';
-import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../shared/components/paginador/Paginador.component';
-
-
+import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
 import {  getLunesSemanaActualPeru,
   getDomingoSemanaActualPeru,
   formatFechaPeru } from '../../../../shared/utils/date-peru.utils';
@@ -44,8 +41,7 @@ import { AuthService } from '../../../../auth/services/auth.service';
     Tooltip,
     Toast,
     DatePicker,
-    LoadingOverlayComponent,
-    PaginadorComponent,
+    SharedTableContainerComponent
   ],
   providers: [MessageService],
   templateUrl: './reclamos-listado.html',

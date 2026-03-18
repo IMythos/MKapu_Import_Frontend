@@ -44,7 +44,9 @@
             <ng-template let-item pTemplate="item">
               <div class="flex flex-column gap-1">
                 <span class="font-medium">{{ item.displayName }}</span>
-                <small class="text-500">{{ getDocTypeLabel(item.documentTypeSunatCode) }}: {{ item.documentValue }}</small>
+                <small class="text-500">
+                  {{ getDocTypeLabel(item.documentTypeSunatCode) }}: {{ item.documentValue }}
+                </small>
               </div>
             </ng-template>
           </p-autoComplete>
@@ -52,7 +54,6 @@
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Tipo de Cliente</label>
           <p-select
@@ -77,213 +78,226 @@
             (click)="clearSearch()">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
 
   <!-- ERROR -->
-  <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e" class="mb-3 block"></p-message>
+  <p-message
+    *ngIf="!loading() && error() as e"
+    severity="error"
+    [text]="e"
+    class="mb-3 block">
+  </p-message>
 
   <!-- TABLA -->
-  <div style="position: relative;">
-    <p-card>
+  <app-shared-table-container
+    titulo="Listado de clientes"
+    iconoTitulo="pi pi-list"
+    mensajeCarga="Cargando clientes..."
+    [loading]="loading()"
+    [paginaActual]="page()"
+    [totalPaginas]="totalPaginas()"
+    [totalRegistros]="displayedList().length"
+    [limitePorPagina]="rows()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
 
-      <app-loading-overlay
-        [visible]="loading()"
-        mensaje="Cargando clientes..."
-        modo="inline">
-      </app-loading-overlay>
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones" class="flex align-items-center gap-2">
+      <p-tag
+        [value]="displayedList().length + ' clientes'"
+        [severity]="viewMode() === 'juridica' ? 'info'
+                  : viewMode() === 'natural'   ? 'warn' : 'info'">
+      </p-tag>
+    </div>
 
-      <div [style.opacity]="loading() ? '0.3' : '1'"
-           style="transition: opacity 0.2s ease;">
+    <!-- Estado vacío -->
+    <div *ngIf="displayedList().length === 0" class="mensaje-vacio">
+      <i class="pi pi-inbox"></i>
+      <p>No hay clientes con ese filtro</p>
+      <p-button
+        label="Limpiar filtros"
+        icon="pi pi-filter-slash"
+        severity="danger"
+        size="small"
+        type="button"
+        (click)="clearSearch()">
+      </p-button>
+    </div>
 
-        <div class="flex align-items-center justify-content-between mb-3">
-          <div class="flex align-items-center gap-2">
-            <span class="clientes-section-icon"><i class="pi pi-user"></i></span>
-            <span class="text-sm font-semibold">
-              {{
-                viewMode() === 'juridica' ? 'CLIENTES JURÍDICOS' :
-                viewMode() === 'natural'  ? 'CLIENTES NATURALES' : 'CLIENTES (TODOS)'
-              }}
-            </span>
+    <!-- Tabla -->
+    <p-table
+      *ngIf="displayedList().length > 0"
+      [value]="clientesPaginados()"
+      [paginator]="false"
+      [tableStyle]="{ 'min-width': '60rem' }"
+      styleClass="p-datatable-striped">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Documento</th>
+          <th>Tipo Doc.</th>
+          <th>Cliente / Razón Social</th>
+          <th>Teléfono</th>
+          <th class="text-center">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-cliente>
+        <tr>
+          <td><span class="doc-value">{{ cliente.documentValue }}</span></td>
+          <td>
             <p-tag
-              [value]="'[' + displayedList().length + '] Clientes'"
-              [severity]="viewMode() === 'juridica' ? 'info' : viewMode() === 'natural' ? 'warn' : 'info'">
+              [value]="getDocTypeLabel(cliente.documentTypeSunatCode)"
+              severity="secondary"
+              class="doc-tag">
             </p-tag>
-          </div>
-        </div>
-
-        <div *ngIf="displayedList().length === 0" class="sedes-empty-state">
-          <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
-          <div class="sedes-empty-title">No hay clientes con ese filtro</div>
-          <div class="sedes-empty-subtitle">
-            Prueba con otro término o limpia los filtros para ver todos los clientes.
-          </div>
-          <p-button label="Limpiar filtros" icon="pi pi-filter-slash"
-            severity="danger" styleClass="sedes-pill sedes-pill-danger"
-            type="button" (click)="clearSearch()">
-          </p-button>
-        </div>
-
-        <p-table
-          *ngIf="displayedList().length > 0"
-          [value]="clientesPaginados()"
-          [paginator]="false"
-          [tableStyle]="{ 'min-width': '60rem' }"
-          styleClass="p-datatable-sm p-datatable-striped clientes-table">
-
-          <ng-template pTemplate="header">
-            <tr>
-              <th>Documento</th>
-              <th>Tipo Doc.</th>
-              <th>Cliente / Razón Social</th>
-              <th>Teléfono</th>
-              <th>Acciones</th>
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="body" let-cliente>
-            <tr>
-              <td><span class="doc-value">{{ cliente.documentValue }}</span></td>
-              <td>
-                <p-tag [value]="getDocTypeLabel(cliente.documentTypeSunatCode)"
-                  severity="secondary" class="doc-tag">
-                </p-tag>
-              </td>
-              <td>
-                <div class="flex align-items-center gap-3">
-                  <i [class]="isCompany(cliente.documentTypeSunatCode, cliente.businessName) ? 'pi pi-building' : 'pi pi-user'"></i>
-                  <div class="flex flex-column">
-                    <span class="display-name">{{ getDisplayName(cliente) }}</span>
-                    <small class="type-label">{{ getCustomerTypeLabel(cliente) }}</small>
-                  </div>
-                </div>
-              </td>
-              <td><span class="phone-value">{{ getPhoneDisplay(cliente) }}</span></td>
-              <td>
-                <div class="flex align-items-center gap-2">
-                  <button pButton type="button" icon="pi pi-eye"
-                    class="p-button-text" (click)="openDetails(cliente)">
-                  </button>
-                  <a [routerLink]="['editar-cliente', cliente.customerId]"
-                    pButton type="button" icon="pi pi-pencil" class="p-button-text">
-                  </a>
-                  <button
-                    pButton type="button"
-                    class="p-button-text"
-                    (click)="confirmToggleStatus(cliente)"
-                    [attr.title]="cliente.status ? 'Desactivar cliente' : 'Activar cliente'"
-                    [icon]="cliente.status ? 'pi pi-times' : 'pi pi-check'"
-                    [ngStyle]="{ color: cliente.status ? '#ff5252' : '#38a169' }">
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-
-        </p-table>
-
-        <app-paginador
-          *ngIf="displayedList().length > 0"
-          [page]="page()"
-          [totalPages]="totalPaginas()"
-          [total]="displayedList().length"
-          [limit]="rows()"
-          [limitOpciones]="[5, 10, 20, 50]"
-          (pageChange)="onPageChange($event)"
-          (limitChange)="onLimitChange($event)">
-        </app-paginador>
-
-        <!-- DIALOG detalle -->
-        <p-dialog
-          [visible]="showDetails()"
-          [modal]="true"
-          [closable]="false"
-          [style]="{ width: '480px', 'border-radius': '16px', overflow: 'hidden' }"
-          [contentStyle]="{ padding: '0' }"
-          (onHide)="closeDetails()">
-
-          <ng-template pTemplate="header"><span></span></ng-template>
-
-          <ng-container *ngIf="selectedClient() as c">
-            <div class="cliente-detail-modal">
-
-              <div class="cdm-banner" [class.cdm-banner--empresa]="isCompany(c.documentTypeSunatCode, c.businessName)">
-                <div class="cdm-banner-icon">
-                  <i [class]="isCompany(c.documentTypeSunatCode, c.businessName) ? 'pi pi-building' : 'pi pi-user'"></i>
-                </div>
-                <div class="cdm-banner-info">
-                  <span class="cdm-tipo">{{ getCustomerTypeLabel(c) }}</span>
-                  <h3 class="cdm-nombre">{{ getDisplayName(c) }}</h3>
-                </div>
-                <button class="cdm-close-btn" (click)="closeDetails()">
-                  <i class="pi pi-times"></i>
-                </button>
+          </td>
+          <td>
+            <div class="flex align-items-center gap-3">
+              <i [class]="isCompany(cliente.documentTypeSunatCode, cliente.businessName)
+                ? 'pi pi-building' : 'pi pi-user'"></i>
+              <div class="flex flex-column">
+                <span class="display-name">{{ getDisplayName(cliente) }}</span>
+                <small class="type-label">{{ getCustomerTypeLabel(cliente) }}</small>
               </div>
-
-              <div class="cdm-doc-row">
-                <span class="cdm-doc-badge">
-                  <i class="pi pi-id-card"></i>
-                  {{ getDocTypeLabel(c.documentTypeSunatCode) }}
-                </span>
-                <span class="cdm-doc-value">{{ c.documentValue }}</span>
-                <span class="cdm-status-badge"
-                  [class.cdm-status--active]="c.status"
-                  [class.cdm-status--inactive]="!c.status">
-                  <span class="cdm-status-dot"></span>
-                  {{ c.status ? 'Activo' : 'Inactivo' }}
-                </span>
-              </div>
-
-              <div class="cdm-info-grid">
-                <div class="cdm-info-item" *ngIf="c.phone">
-                  <span class="cdm-info-icon"><i class="pi pi-phone"></i></span>
-                  <div class="cdm-info-content">
-                    <span class="cdm-info-label">Teléfono</span>
-                    <span class="cdm-info-value">{{ c.phone }}</span>
-                  </div>
-                </div>
-                <div class="cdm-info-item" *ngIf="c.email">
-                  <span class="cdm-info-icon"><i class="pi pi-envelope"></i></span>
-                  <div class="cdm-info-content">
-                    <span class="cdm-info-label">Email</span>
-                    <span class="cdm-info-value">{{ c.email }}</span>
-                  </div>
-                </div>
-                <div class="cdm-info-item cdm-info-item--full" *ngIf="c.address">
-                  <span class="cdm-info-icon"><i class="pi pi-map-marker"></i></span>
-                  <div class="cdm-info-content">
-                    <span class="cdm-info-label">Dirección</span>
-                    <span class="cdm-info-value">{{ c.address }}</span>
-                  </div>
-                </div>
-                <div class="cdm-empty" *ngIf="!c.phone && !c.email && !c.address">
-                  <i class="pi pi-info-circle"></i>
-                  <span>Sin información de contacto registrada</span>
-                </div>
-              </div>
-
-              <div class="cdm-footer">
-                <p-button label="Cerrar" icon="pi pi-times"
-                  severity="secondary" [outlined]="true"
-                  styleClass="cdm-btn-close"
-                  (onClick)="closeDetails()">
-                </p-button>
-                <p-button label="Editar Cliente" icon="pi pi-pencil"
-                  styleClass="cdm-btn-edit"
-                  [routerLink]="['editar-cliente', c.customerId]"
-                  (onClick)="closeDetails()">
-                </p-button>
-              </div>
-
             </div>
-          </ng-container>
-        </p-dialog>
+          </td>
+          <td><span class="phone-value">{{ getPhoneDisplay(cliente) }}</span></td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver detalle" tooltipPosition="top"
+                (onClick)="openDetails(cliente)">
+              </p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar cliente" tooltipPosition="top"
+                [routerLink]="['editar-cliente', cliente.customerId]">
+              </p-button>
+              <p-button
+                [icon]="cliente.status ? 'pi pi-times' : 'pi pi-check'"
+                [rounded]="true" [text]="true"
+                [severity]="cliente.status ? 'danger' : 'success'"
+                [pTooltip]="cliente.status ? 'Desactivar cliente' : 'Activar cliente'"
+                tooltipPosition="top"
+                (onClick)="confirmToggleStatus(cliente)">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <p-confirmDialog />
-      </div>
-    </p-card>
-  </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron clientes</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+    <!-- Dialog detalle -->
+    <p-dialog
+      [visible]="showDetails()"
+      [modal]="true"
+      [closable]="false"
+      [style]="{ width: '480px', 'border-radius': '16px', overflow: 'hidden' }"
+      [contentStyle]="{ padding: '0' }"
+      (onHide)="closeDetails()">
+
+      <ng-template pTemplate="header"><span></span></ng-template>
+
+      <ng-container *ngIf="selectedClient() as c">
+        <div class="cliente-detail-modal">
+
+          <div class="cdm-banner"
+            [class.cdm-banner--empresa]="isCompany(c.documentTypeSunatCode, c.businessName)">
+            <div class="cdm-banner-icon">
+              <i [class]="isCompany(c.documentTypeSunatCode, c.businessName)
+                ? 'pi pi-building' : 'pi pi-user'"></i>
+            </div>
+            <div class="cdm-banner-info">
+              <span class="cdm-tipo">{{ getCustomerTypeLabel(c) }}</span>
+              <h3 class="cdm-nombre">{{ getDisplayName(c) }}</h3>
+            </div>
+            <button class="cdm-close-btn" (click)="closeDetails()">
+              <i class="pi pi-times"></i>
+            </button>
+          </div>
+
+          <div class="cdm-doc-row">
+            <span class="cdm-doc-badge">
+              <i class="pi pi-id-card"></i>
+              {{ getDocTypeLabel(c.documentTypeSunatCode) }}
+            </span>
+            <span class="cdm-doc-value">{{ c.documentValue }}</span>
+            <span class="cdm-status-badge"
+              [class.cdm-status--active]="c.status"
+              [class.cdm-status--inactive]="!c.status">
+              <span class="cdm-status-dot"></span>
+              {{ c.status ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+
+          <div class="cdm-info-grid">
+            <div class="cdm-info-item" *ngIf="c.phone">
+              <span class="cdm-info-icon"><i class="pi pi-phone"></i></span>
+              <div class="cdm-info-content">
+                <span class="cdm-info-label">Teléfono</span>
+                <span class="cdm-info-value">{{ c.phone }}</span>
+              </div>
+            </div>
+            <div class="cdm-info-item" *ngIf="c.email">
+              <span class="cdm-info-icon"><i class="pi pi-envelope"></i></span>
+              <div class="cdm-info-content">
+                <span class="cdm-info-label">Email</span>
+                <span class="cdm-info-value">{{ c.email }}</span>
+              </div>
+            </div>
+            <div class="cdm-info-item cdm-info-item--full" *ngIf="c.address">
+              <span class="cdm-info-icon"><i class="pi pi-map-marker"></i></span>
+              <div class="cdm-info-content">
+                <span class="cdm-info-label">Dirección</span>
+                <span class="cdm-info-value">{{ c.address }}</span>
+              </div>
+            </div>
+            <div class="cdm-empty" *ngIf="!c.phone && !c.email && !c.address">
+              <i class="pi pi-info-circle"></i>
+              <span>Sin información de contacto registrada</span>
+            </div>
+          </div>
+
+          <div class="cdm-footer">
+            <p-button
+              label="Cerrar" icon="pi pi-times"
+              severity="secondary" [outlined]="true"
+              styleClass="cdm-btn-close"
+              (onClick)="closeDetails()">
+            </p-button>
+            <p-button
+              label="Editar Cliente" icon="pi pi-pencil"
+              styleClass="cdm-btn-edit"
+              [routerLink]="['editar-cliente', c.customerId]"
+              (onClick)="closeDetails()">
+            </p-button>
+          </div>
+
+        </div>
+      </ng-container>
+    </p-dialog>
+
+    <p-confirmDialog />
+
+  </app-shared-table-container>
 
 </div>

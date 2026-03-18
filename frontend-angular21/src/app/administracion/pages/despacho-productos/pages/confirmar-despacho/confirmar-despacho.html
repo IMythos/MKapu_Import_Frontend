@@ -1,0 +1,196 @@
+<div class="cd-page" [class.cd-animating]="animating()">
+
+  <ng-container *ngIf="state() as s; else sinDatos">
+
+    <!-- ══ HERO SUCCESS ══ -->
+    <div class="cd-hero">
+      <div class="cd-hero-check">
+        <div class="cd-check-ring cd-check-ring-3"></div>
+        <div class="cd-check-ring cd-check-ring-2"></div>
+        <div class="cd-check-ring cd-check-ring-1"></div>
+        <div class="cd-check-icon">
+          <i class="pi pi-check"></i>
+        </div>
+      </div>
+      <h1 class="cd-hero-title">¡Despacho Registrado Correctamente!</h1>
+      <p class="cd-hero-sub">
+        La operación ha sido procesada exitosamente. Se ha generado la guía de
+        remisión y el comprobante correspondiente.
+      </p>
+      <div class="cd-hero-badge">
+        <i class="pi pi-hashtag"></i>
+        Despacho #{{ s.id_despacho }} · <span class="cd-badge-estado">{{ estadoLabel() }}</span>
+      </div>
+    </div>
+
+    <!-- ══ CARDS GRID ══ -->
+    <div class="cd-grid">
+
+      <!-- RESUMEN COMPROBANTE -->
+      <div class="cd-card cd-card-comprobante">
+        <div class="cd-card-header">
+          <div class="cd-card-icon cd-icon-amber">
+            <i class="pi pi-file-edit"></i>
+          </div>
+          <h3 class="cd-card-title">Resumen del Comprobante</h3>
+        </div>
+
+        <div class="cd-row">
+          <span class="cd-row-label">Tipo de Comprobante</span>
+          <span class="cd-row-value">
+            {{ s.numeroComprobante.startsWith('F') ? 'Factura Electrónica' : 'Boleta Electrónica' }}
+          </span>
+        </div>
+        <div class="cd-row">
+          <span class="cd-row-label">Número</span>
+          <span class="cd-row-value cd-value-accent">{{ s.numeroComprobante }}</span>
+        </div>
+        <div class="cd-row">
+          <span class="cd-row-label">Fecha de Emisión</span>
+          <span class="cd-row-value">{{ fechaFormateada() }}</span>
+        </div>
+        <div class="cd-row">
+          <span class="cd-row-label">Sede Origen</span>
+          <span class="cd-row-value">{{ s.sedeNombre }}</span>
+        </div>
+
+        <div class="cd-divider"></div>
+
+        <div class="cd-cliente-block">
+          <span class="cd-cliente-label">CLIENTE</span>
+          <p class="cd-cliente-nombre">{{ s.clienteNombre }}</p>
+          <p class="cd-cliente-doc" *ngIf="s.clienteDoc">
+            <i class="pi pi-id-card mr-1"></i>{{ s.clienteDoc }}
+          </p>
+          <p class="cd-cliente-doc" *ngIf="s.clienteTelefono">
+            <i class="pi pi-phone mr-1"></i>{{ s.clienteTelefono }}
+          </p>
+        </div>
+      </div>
+
+      <!-- DETALLE ENVÍO -->
+      <div class="cd-card cd-card-envio">
+        <div class="cd-card-header">
+          <div class="cd-card-icon cd-icon-green">
+            <i class="pi pi-truck"></i>
+          </div>
+          <h3 class="cd-card-title">Detalle del Envío</h3>
+        </div>
+
+        <div class="cd-row">
+          <span class="cd-row-label">Estado</span>
+          <span [class]="'cd-envio-badge ' + getDetalleEstadoClass(s.estado)">
+            {{ estadoLabel() }}
+          </span>
+        </div>
+        <div class="cd-row">
+          <span class="cd-row-label">Total Productos</span>
+          <span class="cd-row-value">{{ s.productos.length }} ítem(s) · {{ totalUnidades() }} unidades</span>
+        </div>
+
+        <div class="cd-divider"></div>
+
+        <!-- Dirección + mapa -->
+        <div class="cd-direccion-block">
+          <span class="cd-cliente-label">DIRECCIÓN DE ENTREGA</span>
+          <p class="cd-cliente-nombre">{{ s.direccionEntrega }}</p>
+
+          <a *ngIf="mapUrl()" [href]="mapUrl()!" target="_blank" rel="noopener" class="cd-map-link">
+            <div class="cd-map-preview">
+              <div class="cd-map-pin-wrap">
+                <i class="pi pi-map-marker cd-map-pin"></i>
+              </div>
+              <div class="cd-map-text">
+                <span class="cd-map-label">Ver en Google Maps</span>
+                <span class="cd-map-addr">{{ s.direccionEntrega }}</span>
+              </div>
+              <i class="pi pi-external-link cd-map-ext"></i>
+            </div>
+          </a>
+        </div>
+
+        <div class="cd-divider" *ngIf="s.observacion"></div>
+        <div *ngIf="s.observacion" class="cd-row">
+          <span class="cd-row-label">Referencia</span>
+          <span class="cd-row-value cd-value-muted">{{ s.observacion }}</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ══ PRODUCTOS DESPACHADOS ══ -->
+    <div class="cd-productos-section">
+      <div class="cd-productos-header">
+        <div class="cd-productos-title-wrap">
+          <div class="cd-card-icon cd-icon-amber">
+            <i class="pi pi-box"></i>
+          </div>
+          <h3 class="cd-card-title">Productos Despachados</h3>
+        </div>
+        <span class="cd-total-badge">Total: {{ s.productos.length }} Ítems</span>
+      </div>
+
+      <div class="cd-productos-table">
+        <div class="cd-table-head">
+          <span class="cd-th cd-th-prod">Descripción del Producto</span>
+          <span class="cd-th cd-th-sku">SKU</span>
+          <span class="cd-th cd-th-qty">Cantidad</span>
+          <span class="cd-th cd-th-estado">Estado</span>
+        </div>
+
+        <div class="cd-table-body">
+          <div class="cd-table-row" *ngFor="let p of s.productos; let i = index"
+               [style.animation-delay]="(i * 80) + 'ms'">
+            <div class="cd-td cd-td-prod">
+              <div class="cd-prod-icon">
+                <i class="pi pi-box"></i>
+              </div>
+              <div class="cd-prod-info">
+                <span class="cd-prod-nombre">{{ p.nombre }}</span>
+                <span class="cd-prod-marca">{{ p.codigo }}</span>
+              </div>
+            </div>
+            <div class="cd-td cd-td-sku">
+              <span class="cd-sku-tag">{{ p.codigo }}</span>
+            </div>
+            <div class="cd-td cd-td-qty">
+              <span class="cd-qty-num">{{ p.cantidad_solicitada | number:'2.0-0' }}</span>
+            </div>
+            <div class="cd-td cd-td-estado">
+              <span [class]="'cd-det-badge ' + getDetalleEstadoClass(p.estado)">
+                {{ p.estado }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="cd-table-footer">
+          <span class="cd-footer-label">Total unidades despachadas</span>
+          <span class="cd-footer-total">{{ totalUnidades() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ ACCIONES ══ -->
+    <div class="cd-actions">
+      <button class="cd-btn cd-btn-print" (click)="imprimirGuia()">
+        <i class="pi pi-print"></i>
+        Imprimir Guía de Remisión
+      </button>
+      <button class="cd-btn cd-btn-historial" (click)="verHistorial()">
+        <i class="pi pi-list"></i>
+        Ver Historial de Despachos
+      </button>
+    </div>
+
+  </ng-container>
+
+  <ng-template #sinDatos>
+    <div class="cd-empty">
+      <i class="pi pi-inbox"></i>
+      <p>No hay datos de confirmación disponibles.</p>
+      <button class="cd-btn cd-btn-historial" (click)="verHistorial()">Volver al listado</button>
+    </div>
+  </ng-template>
+
+</div>

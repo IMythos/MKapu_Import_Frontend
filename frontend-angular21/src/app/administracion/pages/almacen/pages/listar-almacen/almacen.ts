@@ -14,11 +14,10 @@ import { ToastModule } from 'primeng/toast';
 import { SelectModule } from 'primeng/select';
 import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
-
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 import { AlmacenService } from '../../../../services/almacen.service';
 import { Headquarter } from '../../../../interfaces/almacen.interface';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { TooltipModule } from 'primeng/tooltip';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';
 
@@ -30,9 +29,8 @@ type ViewMode = 'todas' | 'activas' | 'inactivas';
     DialogModule, CardModule, ButtonModule,
     AutoCompleteModule, TableModule, TagModule,
     ToastModule, ConfirmDialogModule, MessageModule,
-    SelectModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,  
+    SelectModule,TooltipModule,
+    SharedTableContainerComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './almacen.html',

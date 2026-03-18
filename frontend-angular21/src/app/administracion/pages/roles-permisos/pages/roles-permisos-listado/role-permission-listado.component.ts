@@ -15,6 +15,8 @@ import { SelectModule }        from 'primeng/select';
 import { CheckboxModule }      from 'primeng/checkbox';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { take } from 'rxjs/operators';
+import { TooltipModule } from 'primeng/tooltip';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 import { RolePermissionService }          from '../../../../services/role-permission.service';
 import { PermissionService }              from '../../../../services/permission.service';
@@ -22,8 +24,6 @@ import {
   RoleWithPermissionsResponseDto,
   PermissionInRoleDto,
 }                                         from '../../../../interfaces/role-permission.interface';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
 
 type ViewMode = 'todos' | 'activos' | 'inactivos';
 
@@ -36,8 +36,8 @@ type ViewMode = 'todos' | 'activos' | 'inactivos';
     AutoCompleteModule, TableModule, TagModule,
     ToastModule, ConfirmDialogModule, MessageModule,
     SelectModule, CheckboxModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,
+    TooltipModule,
+    SharedTableContainerComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './role-permission-listado.html',

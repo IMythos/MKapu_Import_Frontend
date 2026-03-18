@@ -49,7 +49,6 @@
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Vista</label>
           <p-select
@@ -74,7 +73,6 @@
             (click)="clearSearch()">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
@@ -82,146 +80,149 @@
   <p-toast position="top-right" />
 
   <!-- ERROR -->
-  <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e" class="mb-3 block"></p-message>
+  <p-message
+    *ngIf="!loading() && error() as e"
+    severity="error" [text]="e"
+    class="mb-3 block">
+  </p-message>
 
   <!-- TABLA -->
-  <div style="position: relative;">
-    <p-card>
+  <app-shared-table-container
+    titulo="Listado de Sedes"
+    iconoTitulo="pi pi-building"
+    mensajeCarga="Cargando sedes..."
+    [loading]="loading()"
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    [totalRegistros]="filteredSedes().length"
+    [limitePorPagina]="limitePagina()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
 
-      <app-loading-overlay
-        [visible]="loading()"
-        mensaje="Cargando sedes..."
-        modo="inline">
-      </app-loading-overlay>
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones">
+      <p-tag
+        [value]="filteredSedes().length + ' sedes'"
+        [severity]="viewMode() === 'activas'   ? 'success'
+                  : viewMode() === 'inactivas'  ? 'danger' : 'info'">
+      </p-tag>
+    </div>
 
-      <div [style.opacity]="loading() ? '0.3' : '1'"
-           style="transition: opacity 0.2s ease;">
+    <!-- Estado vacío -->
+    <div *ngIf="filteredSedes().length === 0" class="mensaje-vacio">
+      <i class="pi pi-inbox"></i>
+      <p>No hay sedes con ese filtro</p>
+      <p-button
+        label="Limpiar filtros"
+        icon="pi pi-filter-slash"
+        severity="danger"
+        size="small"
+        type="button"
+        (click)="clearSearch()">
+      </p-button>
+    </div>
 
-        <div class="flex align-items-center justify-content-between mb-3">
-          <div class="flex align-items-center gap-2">
-            <span class="sedes-section-icon"><i class="pi pi-user"></i></span>
-            <span class="text-sm font-semibold text-700">
-              {{
-                viewMode() === 'activas'   ? 'SEDES ACTIVAS'   :
-                viewMode() === 'inactivas' ? 'SEDES INACTIVAS' : 'SEDES (TODAS)'
-              }}
+    <!-- Tabla -->
+    <p-table
+      *ngIf="filteredSedes().length > 0"
+      [value]="sedesPaginadas()"
+      styleClass="p-datatable-striped"
+      [paginator]="false"
+      [tableStyle]="{ 'min-width': '60rem' }">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th>CODIGO</th>
+          <th>NOMBRE</th>
+          <th>CIUDAD</th>
+          <th>ALMACENES</th>
+          <th>TELEFONO</th>
+          <th class="text-center">ACCIONES</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-sede>
+        <tr>
+          <td>{{ sede.codigo }}</td>
+          <td>{{ sede.nombre }}</td>
+          <td>
+            <span class="inline-flex align-items-center gap-2">
+              <i class="pi pi-map-marker text-500"></i>{{ sede.ciudad }}
             </span>
-            <p-tag
-              class="sedes-count-tag"
-              [value]="'[' + filteredSedes().length + '] Sedes'"
-              [severity]="viewMode() === 'activas' ? 'success' : viewMode() === 'inactivas' ? 'danger' : 'info'">
-            </p-tag>
-          </div>
-          <p-button icon="pi pi-id-card" text severity="secondary" styleClass="sedes-icon-btn"></p-button>
-        </div>
+          </td>
+          <td>
+            <span *ngIf="loadingAlmacenes() && !sede.almacenes">
+              <i class="pi pi-spin pi-spinner text-400"></i>
+            </span>
+            <span *ngIf="!loadingAlmacenes() && (!sede.almacenes || sede.almacenes.length === 0)"
+              class="text-400 text-sm">—</span>
+            <div *ngIf="sede.almacenes && sede.almacenes.length > 0" class="flex flex-wrap gap-1">
+              <span *ngFor="let alm of sede.almacenes.slice(0, 2)"
+                class="sedes-almacen-chip"
+                [class.sedes-almacen-chip--inactive]="!alm.activo"
+                [pTooltip]="alm.nombre + ' · ' + (alm.ciudad ?? '')"
+                tooltipPosition="top">
+                <i class="pi pi-warehouse" style="font-size: 0.65rem"></i>{{ alm.codigo }}
+              </span>
+              <span *ngIf="sede.almacenes.length > 2"
+                class="sedes-almacen-chip sedes-almacen-chip--more"
+                [pTooltip]="getAlmacenesRestantes(sede)"
+                tooltipPosition="top">
+                +{{ sede.almacenes.length - 2 }} más
+              </span>
+            </div>
+          </td>
+          <td>
+            <span class="inline-flex align-items-center gap-2">
+              <i class="pi pi-phone text-500"></i>{{ sede.telefono }}
+            </span>
+          </td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver detalle" tooltipPosition="top"
+                (onClick)="verDetalle(sede)">
+              </p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar sede" tooltipPosition="top"
+                [routerLink]="['/admin/sedes/editar-sede']"
+                [queryParams]="{ id: sede.id_sede }">
+              </p-button>
+              <p-button
+                [icon]="sede.activo ? 'pi pi-times' : 'pi pi-check'"
+                [rounded]="true" [text]="true"
+                [severity]="sede.activo ? 'danger' : 'success'"
+                [pTooltip]="sede.activo ? 'Desactivar sede' : 'Activar sede'"
+                tooltipPosition="top"
+                (onClick)="confirmToggleStatus(sede)">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <div *ngIf="filteredSedes().length === 0" class="sedes-empty-state">
-          <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
-          <div class="sedes-empty-title">No hay sedes con ese filtro</div>
-          <div class="sedes-empty-subtitle">Prueba con otro término o limpia los filtros para ver todas las sedes.</div>
-          <p-button label="Limpiar filtros" icon="pi pi-filter-slash"
-            severity="danger" styleClass="sedes-pill sedes-pill-danger"
-            type="button" (click)="clearSearch()">
-          </p-button>
-        </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="6" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron sedes</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <p-table
-          *ngIf="filteredSedes().length > 0"
-          [value]="sedesPaginadas()"
-          styleClass="sedes-table"
-          [paginator]="false"
-          [tableStyle]="{ 'min-width': '60rem' }">
+    </p-table>
 
-          <ng-template pTemplate="header">
-            <tr>
-              <th>CODIGO</th>
-              <th>NOMBRE</th>
-              <th>CIUDAD</th>
-              <th>ALMACENES</th>
-              <th>TELEFONO</th>
-              <th>ACCIONES</th>
-            </tr>
-          </ng-template>
+    <p-confirmdialog />
 
-          <ng-template pTemplate="body" let-sede>
-            <tr>
-              <td>{{ sede.codigo }}</td>
-              <td>{{ sede.nombre }}</td>
-              <td>
-                <span class="inline-flex align-items-center gap-2">
-                  <i class="pi pi-map-marker text-500"></i>{{ sede.ciudad }}
-                </span>
-              </td>
-
-              <td>
-                <span *ngIf="loadingAlmacenes() && !sede.almacenes">
-                  <i class="pi pi-spin pi-spinner text-400"></i>
-                </span>
-                <span *ngIf="!loadingAlmacenes() && (!sede.almacenes || sede.almacenes.length === 0)"
-                  class="text-400 text-sm">—</span>
-                <div *ngIf="sede.almacenes && sede.almacenes.length > 0" class="flex flex-wrap gap-1">
-                  <span *ngFor="let alm of sede.almacenes.slice(0, 2)"
-                    class="sedes-almacen-chip"
-                    [class.sedes-almacen-chip--inactive]="!alm.activo"
-                    [pTooltip]="alm.nombre + ' · ' + (alm.ciudad ?? '')"
-                    tooltipPosition="top">
-                    <i class="pi pi-warehouse" style="font-size: 0.65rem"></i>{{ alm.codigo }}
-                  </span>
-                  <span *ngIf="sede.almacenes.length > 2"
-                    class="sedes-almacen-chip sedes-almacen-chip--more"
-                    [pTooltip]="getAlmacenesRestantes(sede)" tooltipPosition="top">
-                    +{{ sede.almacenes.length - 2 }} más
-                  </span>
-                </div>
-              </td>
-
-              <td>
-                <span class="inline-flex align-items-center gap-2">
-                  <i class="pi pi-phone text-500"></i>{{ sede.telefono }}
-                </span>
-              </td>
-
-              <td>
-                <div class="flex align-items-center gap-2">
-                  <p-button icon="pi pi-eye" text severity="secondary"
-                    styleClass="sedes-icon-btn" title="Ver detalle"
-                    (click)="verDetalle(sede)">
-                  </p-button>
-                  <p-button icon="pi pi-pencil" text severity="secondary"
-                    styleClass="sedes-icon-btn sedes-action-edit"
-                    [routerLink]="['/admin/sedes/editar-sede']"
-                    [queryParams]="{ id: sede.id_sede }">
-                  </p-button>
-                  <p-button
-                    [icon]="sede.activo ? 'pi pi-times' : 'pi pi-check'"
-                    text [severity]="sede.activo ? 'danger' : 'success'"
-                    styleClass="sedes-icon-btn sedes-action-status"
-                    (click)="confirmToggleStatus(sede)"
-                    [title]="sede.activo ? 'Desactivar sede' : 'Activar sede'">
-                  </p-button>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-
-        </p-table>
-
-        <app-paginador
-          *ngIf="filteredSedes().length > 0"
-          [page]="paginaActual()"
-          [totalPages]="totalPaginas()"
-          [total]="filteredSedes().length"
-          [limit]="limitePagina()"
-          [limitOpciones]="[5, 10, 20, 50]"
-          (pageChange)="onPageChange($event)"
-          (limitChange)="onLimitChange($event)">
-        </app-paginador>
-
-        <p-confirmdialog />
-
-      </div>
-    </p-card>
-  </div>
+  </app-shared-table-container>
 
   <!-- MODAL DETALLE SEDE -->
   <p-dialog
@@ -303,9 +304,14 @@
                   style="background: var(--surface-100)">
                   <div class="flex flex-column gap-1">
                     <span class="font-semibold text-sm">{{ alm.nombre }}</span>
-                    <span class="text-400 text-xs">{{ alm.codigo }}<span *ngIf="alm.ciudad"> · {{ alm.ciudad }}</span></span>
+                    <span class="text-400 text-xs">
+                      {{ alm.codigo }}<span *ngIf="alm.ciudad"> · {{ alm.ciudad }}</span>
+                    </span>
                   </div>
-                  <p-tag [value]="alm.activo ? 'Activo' : 'Inactivo'" [severity]="alm.activo ? 'success' : 'danger'"></p-tag>
+                  <p-tag
+                    [value]="alm.activo ? 'Activo' : 'Inactivo'"
+                    [severity]="alm.activo ? 'success' : 'danger'">
+                  </p-tag>
                 </div>
               </div>
             </div>
@@ -313,11 +319,14 @@
         </div>
 
         <div class="sdm-footer">
-          <p-button label="Cerrar" icon="pi pi-times"
-            severity="secondary" [outlined]="true" styleClass="sdm-btn-close"
+          <p-button
+            label="Cerrar" icon="pi pi-times"
+            severity="secondary" [outlined]="true"
+            styleClass="sdm-btn-close"
             (onClick)="dialogVisible = false">
           </p-button>
-          <p-button label="Editar Sede" icon="pi pi-pencil"
+          <p-button
+            label="Editar Sede" icon="pi pi-pencil"
             styleClass="sdm-btn-edit"
             [routerLink]="['/admin/sedes/editar-sede']"
             [queryParams]="{ id: s.id_sede }"

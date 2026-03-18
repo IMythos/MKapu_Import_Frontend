@@ -49,7 +49,6 @@
       </div>
 
       <div class="filtros-linea-2">
-
         <div class="filtro-item filtro-compacto">
           <label>Vista</label>
           <p-select
@@ -74,7 +73,6 @@
             (click)="clearSearch()">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>
@@ -82,111 +80,118 @@
   <p-toast position="top-right" />
 
   <!-- ERROR -->
-  <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e" class="mb-3 block"></p-message>
+  <p-message
+    *ngIf="!loading() && error() as e"
+    severity="error" [text]="e"
+    class="mb-3 block">
+  </p-message>
 
   <!-- TABLA -->
-  <div style="position: relative;">
-    <p-card>
+  <app-shared-table-container
+    titulo="Listado de Categorías"
+    iconoTitulo="pi pi-tag"
+    mensajeCarga="Cargando categorías..."
+    [loading]="loading()"
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    [totalRegistros]="filteredCategorias().length"
+    [limitePorPagina]="limitePagina()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
 
-      <app-loading-overlay
-        [visible]="loading()"
-        mensaje="Cargando categorías..."
-        modo="inline">
-      </app-loading-overlay>
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones">
+      <p-tag
+        [value]="filteredCategorias().length + ' categorías'"
+        [severity]="viewMode() === 'activas'   ? 'success'
+                  : viewMode() === 'inactivas'  ? 'danger' : 'info'">
+      </p-tag>
+    </div>
 
-      <div [style.opacity]="loading() ? '0.3' : '1'"
-           style="transition: opacity 0.2s ease;">
+    <!-- Estado vacío -->
+    <div *ngIf="filteredCategorias().length === 0" class="mensaje-vacio">
+      <i class="pi pi-inbox"></i>
+      <p>No hay categorías con ese filtro</p>
+      <p-button
+        label="Limpiar filtros"
+        icon="pi pi-filter-slash"
+        severity="danger"
+        size="small"
+        type="button"
+        (click)="clearSearch()">
+      </p-button>
+    </div>
 
-        <div class="flex align-items-center justify-content-between mb-3">
-          <div class="flex align-items-center gap-2">
-            <span class="sedes-section-icon"><i class="pi pi-tag"></i></span>
-            <span class="text-sm font-semibold text-700">
-              {{
-                viewMode() === 'activas'   ? 'CATEGORÍAS ACTIVAS'   :
-                viewMode() === 'inactivas' ? 'CATEGORÍAS INACTIVAS' : 'CATEGORÍAS (TODAS)'
-              }}
-            </span>
+    <!-- Tabla -->
+    <p-table
+      *ngIf="filteredCategorias().length > 0"
+      [value]="categoriasPaginadas()"
+      styleClass="p-datatable-striped"
+      [paginator]="false"
+      [tableStyle]="{ 'min-width': '100%' }">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:60%">NOMBRE</th>
+          <th style="width:20%">ESTADO</th>
+          <th style="width:20%" class="text-center">ACCIONES</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-cat>
+        <tr>
+          <td>{{ cat.nombre }}</td>
+          <td>
             <p-tag
-              class="sedes-count-tag"
-              [value]="'[' + filteredCategorias().length + '] Categorías'"
-              [severity]="viewMode() === 'activas' ? 'success' : viewMode() === 'inactivas' ? 'danger' : 'info'">
+              [value]="cat.activo ? 'Activo' : 'Inactivo'"
+              [severity]="cat.activo ? 'success' : 'danger'">
             </p-tag>
-          </div>
-        </div>
+          </td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver detalle" tooltipPosition="top"
+                (onClick)="verDetalle(cat)">
+              </p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar categoría" tooltipPosition="top"
+                [routerLink]="['/admin/categoria/editar-categoria', cat.id_categoria]">
+              </p-button>
+              <p-button
+                [icon]="cat.activo ? 'pi pi-times' : 'pi pi-check'"
+                [rounded]="true" [text]="true"
+                [severity]="cat.activo ? 'danger' : 'success'"
+                [pTooltip]="cat.activo ? 'Desactivar' : 'Activar'"
+                tooltipPosition="top"
+                (onClick)="confirmToggleStatus(cat)">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <div *ngIf="filteredCategorias().length === 0" class="sedes-empty-state">
-          <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
-          <div class="sedes-empty-title">No hay categorías con ese filtro</div>
-          <div class="sedes-empty-subtitle">Prueba con otro término o limpia los filtros para ver todas las categorías.</div>
-          <p-button label="Limpiar filtros" icon="pi pi-filter-slash"
-            severity="danger" styleClass="sedes-pill sedes-pill-danger"
-            type="button" (click)="clearSearch()">
-          </p-button>
-        </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="3" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron categorías</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <p-table
-          *ngIf="filteredCategorias().length > 0"
-          [value]="categoriasPaginadas()"
-          styleClass="sedes-table"
-          [paginator]="false"
-          [tableStyle]="{ 'min-width': '100%' }">
+    </p-table>
 
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width:60%">NOMBRE</th>
-              <th style="width:20%">ESTADO</th>
-              <th style="width:20%">ACCIONES</th>
-            </tr>
-          </ng-template>
+    <p-confirmdialog />
 
-          <ng-template pTemplate="body" let-cat>
-            <tr>
-              <td>{{ cat.nombre }}</td>
-              <td>
-                <p-tag [value]="cat.activo ? 'Activo' : 'Inactivo'"
-                  [severity]="cat.activo ? 'success' : 'danger'">
-                </p-tag>
-              </td>
-              <td>
-                <div class="flex align-items-center gap-2">
-                  <p-button icon="pi pi-eye" text severity="secondary"
-                    styleClass="sedes-icon-btn" title="Ver detalle"
-                    (click)="verDetalle(cat)">
-                  </p-button>
-                  <p-button icon="pi pi-pencil" text severity="secondary"
-                    styleClass="sedes-icon-btn" title="Editar"
-                    [routerLink]="['/admin/categoria/editar-categoria', cat.id_categoria]">
-                  </p-button>
-                  <p-button
-                    [icon]="cat.activo ? 'pi pi-times' : 'pi pi-check'"
-                    text [severity]="cat.activo ? 'danger' : 'success'"
-                    styleClass="sedes-icon-btn"
-                    (click)="confirmToggleStatus(cat)"
-                    [title]="cat.activo ? 'Desactivar' : 'Activar'">
-                  </p-button>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-
-        </p-table>
-
-        <app-paginador
-          *ngIf="filteredCategorias().length > 0"
-          [page]="paginaActual()"
-          [totalPages]="totalPaginas()"
-          [total]="filteredCategorias().length"
-          [limit]="limitePagina()"
-          [limitOpciones]="[5, 10, 20, 50]"
-          (pageChange)="onPageChange($event)"
-          (limitChange)="onLimitChange($event)">
-        </app-paginador>
-
-        <p-confirmdialog />
-
-      </div>
-    </p-card>
-  </div>
+  </app-shared-table-container>
 
   <!-- MODAL DETALLE -->
   <p-dialog
@@ -213,7 +218,9 @@
         </div>
 
         <div class="adm-code-row">
-          <span class="adm-code-badge"><i class="pi pi-hashtag"></i> ID: {{ c.id_categoria }}</span>
+          <span class="adm-code-badge">
+            <i class="pi pi-hashtag"></i> ID: {{ c.id_categoria }}
+          </span>
           <span class="adm-status-badge"
             [class.adm-status--active]="c.activo"
             [class.adm-status--inactive]="!c.activo">
@@ -240,11 +247,14 @@
         </div>
 
         <div class="adm-footer">
-          <p-button label="Cerrar" icon="pi pi-times"
-            severity="secondary" [outlined]="true" styleClass="adm-btn-close"
+          <p-button
+            label="Cerrar" icon="pi pi-times"
+            severity="secondary" [outlined]="true"
+            styleClass="adm-btn-close"
             (onClick)="dialogVisible = false">
           </p-button>
-          <p-button label="Editar" icon="pi pi-pencil"
+          <p-button
+            label="Editar" icon="pi pi-pencil"
             styleClass="adm-btn-edit"
             [routerLink]="['/admin/categoria/editar-categoria', c.id_categoria]"
             (onClick)="dialogVisible = false">

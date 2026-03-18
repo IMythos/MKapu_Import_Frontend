@@ -21,6 +21,7 @@ import { SedeService } from '../../../../services/sede.service';
 import { Headquarter } from '../../../../interfaces/sedes.interface';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';
 
@@ -33,8 +34,7 @@ type ViewMode = 'todas' | 'activas' | 'inactivas';
     AutoCompleteModule, TableModule, TagModule,
     ToastModule, ConfirmDialogModule, MessageModule,
     SelectModule, TooltipModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,  
+    SharedTableContainerComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './sedes.html',

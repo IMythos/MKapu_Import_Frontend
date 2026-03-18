@@ -100,119 +100,120 @@
   <p-toast position="top-right" />
 
   <!-- ERROR -->
-  <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e" class="mb-3 block"></p-message>
+  <p-message
+    *ngIf="!loading() && error() as e"
+    severity="error" [text]="e"
+    class="mb-3 block">
+  </p-message>
 
   <!-- TABLA -->
-  <div style="position: relative;">
-    <p-card>
+  <app-shared-table-container
+    titulo="Listado de Roles"
+    iconoTitulo="pi pi-shield"
+    mensajeCarga="Cargando roles..."
+    [loading]="loading()"
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    [totalRegistros]="filteredRoles().length"
+    [limitePorPagina]="limitePagina()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
 
-      <app-loading-overlay
-        [visible]="loading()"
-        mensaje="Cargando roles..."
-        modo="inline">
-      </app-loading-overlay>
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones">
+      <p-tag
+        [value]="filteredRoles().length + ' roles'"
+        [severity]="viewMode() === 'activos'   ? 'success'
+                  : viewMode() === 'inactivos'  ? 'danger' : 'info'">
+      </p-tag>
+    </div>
 
-      <div [style.opacity]="loading() ? '0.3' : '1'"
-           style="transition: opacity 0.2s ease;">
+    <!-- Estado vacío -->
+    <div *ngIf="!loading() && filteredRoles().length === 0" class="mensaje-vacio">
+      <i class="pi pi-inbox"></i>
+      <p>No hay roles con ese filtro</p>
+      <p-button
+        label="Limpiar filtros"
+        icon="pi pi-filter-slash"
+        severity="danger"
+        size="small"
+        (click)="clearSearch()">
+      </p-button>
+    </div>
 
-        <div class="flex align-items-center justify-content-between mb-3">
-          <div class="flex align-items-center gap-2">
-            <span class="sedes-section-icon"><i class="pi pi-shield"></i></span>
-            <span class="text-sm font-semibold text-700">
-              {{
-                viewMode() === 'activos'   ? 'ROLES ACTIVOS'   :
-                viewMode() === 'inactivos' ? 'ROLES INACTIVOS' : 'ROLES (TODOS)'
-              }}
-            </span>
+    <!-- Tabla -->
+    <p-table
+      *ngIf="filteredRoles().length > 0"
+      [value]="rolesPaginados()"
+      styleClass="p-datatable-striped"
+      [paginator]="false"
+      [tableStyle]="{ 'min-width': '100%' }">
+
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:30%">ROL</th>
+          <th style="width:25%">DESCRIPCIÓN</th>
+          <th style="width:15%">PERMISOS</th>
+          <th style="width:10%">ESTADO</th>
+          <th style="width:20%" class="text-center">ACCIONES</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-rol>
+        <tr>
+          <td class="font-medium">{{ rol.nombre }}</td>
+          <td class="text-600">{{ rol.descripcion || '—' }}</td>
+          <td>
             <p-tag
-              class="sedes-count-tag"
-              [value]="'[' + filteredRoles().length + '] Roles'"
-              [severity]="viewMode() === 'activos' ? 'success' :
-                          viewMode() === 'inactivos' ? 'danger' : 'info'">
+              [value]="getPermisosLabel(rol.permisos.length)"
+              [severity]="getPermisosTagSeverity(rol.permisos.length)">
             </p-tag>
-          </div>
-        </div>
+          </td>
+          <td>
+            <p-tag
+              [value]="rol.activo ? 'Activo' : 'Inactivo'"
+              [severity]="rol.activo ? 'success' : 'danger'">
+            </p-tag>
+          </td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver permisos" tooltipPosition="top"
+                (onClick)="verDetalle(rol)">
+              </p-button>
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar rol" tooltipPosition="top"
+                [routerLink]="['/admin/roles-permisos/editar-roles-permisos/', rol.id_rol]">
+              </p-button>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <div *ngIf="!loading() && filteredRoles().length === 0" class="sedes-empty-state">
-          <div class="sedes-empty-icon"><i class="pi pi-search"></i></div>
-          <div class="sedes-empty-title">No hay roles con ese filtro</div>
-          <div class="sedes-empty-subtitle">
-            Prueba con otro término o limpia los filtros para ver todos los roles.
-          </div>
-          <p-button label="Limpiar filtros" icon="pi pi-filter-slash"
-            severity="danger" styleClass="sedes-pill sedes-pill-danger"
-            (click)="clearSearch()">
-          </p-button>
-        </div>
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron roles</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-        <p-table
-          *ngIf="filteredRoles().length > 0"
-          [value]="rolesPaginados()"
-          styleClass="sedes-table"
-          [paginator]="false"
-          [tableStyle]="{ 'min-width': '100%' }">
+    </p-table>
 
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width:30%">ROL</th>
-              <th style="width:25%">DESCRIPCIÓN</th>
-              <th style="width:15%">PERMISOS</th>
-              <th style="width:10%">ESTADO</th>
-              <th style="width:20%" class="text-center">ACCIONES</th>
-            </tr>
-          </ng-template>
+    <p-confirmdialog />
 
-          <ng-template pTemplate="body" let-rol>
-            <tr>
-              <td class="font-medium">{{ rol.nombre }}</td>
-              <td class="text-600">{{ rol.descripcion || '—' }}</td>
-              <td>
-                <p-tag
-                  [value]="getPermisosLabel(rol.permisos.length)"
-                  [severity]="getPermisosTagSeverity(rol.permisos.length)">
-                </p-tag>
-              </td>
-              <td>
-                <p-tag
-                  [value]="rol.activo ? 'Activo' : 'Inactivo'"
-                  [severity]="rol.activo ? 'success' : 'danger'">
-                </p-tag>
-              </td>
-              <td>
-                <div class="flex align-items-center justify-content-center gap-1">
-                  <p-button icon="pi pi-eye" text severity="secondary"
-                    styleClass="sedes-icon-btn" title="Ver permisos"
-                    (click)="verDetalle(rol)">
-                  </p-button>
-                  <p-button icon="pi pi-pencil" text severity="secondary"
-                    styleClass="sedes-icon-btn" title="Editar rol"
-                    [routerLink]="['/admin/roles-permisos/editar-roles-permisos/', rol.id_rol]">
-                  </p-button>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
+  </app-shared-table-container>
 
-        </p-table>
-
-        <app-paginador
-          *ngIf="filteredRoles().length > 0"
-          [page]="paginaActual()"
-          [totalPages]="totalPaginas()"
-          [total]="filteredRoles().length"
-          [limit]="limitePagina()"
-          [limitOpciones]="[5, 10, 20, 50]"
-          (pageChange)="onPageChange($event)"
-          (limitChange)="onLimitChange($event)">
-        </app-paginador>
-
-        <p-confirmdialog />
-
-      </div>
-    </p-card>
-  </div>
-
-  <!-- ═══════ DIALOG DETALLE ═══════ -->
+  <!-- DIALOG DETALLE -->
   <p-dialog
     [(visible)]="dialogDetalleVisible"
     [modal]="true" [draggable]="false"
@@ -307,12 +308,14 @@
         </div>
 
         <div class="adm-footer">
-          <p-button label="Cerrar" icon="pi pi-times"
+          <p-button
+            label="Cerrar" icon="pi pi-times"
             severity="secondary" [outlined]="true"
             styleClass="adm-btn-close"
             (onClick)="dialogDetalleVisible = false">
           </p-button>
-          <p-button label="Asignar Permisos" icon="pi pi-key"
+          <p-button
+            label="Asignar Permisos" icon="pi pi-key"
             styleClass="adm-btn-edit"
             (onClick)="abrirAsignar(r)">
           </p-button>

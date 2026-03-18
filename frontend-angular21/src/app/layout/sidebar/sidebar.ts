@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core'; // 👈 Importamos ChangeDetectorRef
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -54,12 +54,9 @@ export class Sidebar implements OnInit {
   username: string = '';
 
   private cashboxSocket = inject(CashboxSocketService);
-
-  // ================= SECCIONES DEL SIDEBAR =================
+  private cdr = inject(ChangeDetectorRef);
 
   private readonly SIDEBAR_ROUTES: MenuSection[] = [
-
-    // ================= VENTAS (ADMIN) =================
     {
       label: 'VENTAS',
       icon: 'pi pi-shopping-cart',
@@ -67,8 +64,8 @@ export class Sidebar implements OnInit {
       items: [
         { path: '/admin/dashboard-admin',                 label: 'Dashboard',                  icon: 'pi pi-home',               permiso: 'VER_DASHBOARD_ADMIN' },
         { path: '/admin/caja',                            label: 'Caja',                       icon: 'pi pi-money-bill',         permiso: 'VER_CAJA' },
-        { path: '/admin/generar-ventas-administracion',   label: 'Crear Venta Administración', icon: 'pi pi-plus-circle',        permiso: 'CREAR_VENTA_ADMIN' },
-        { path: '/admin/historial-ventas-administracion', label: 'Historial Ventas Admin',     icon: 'pi pi-list',               permiso: 'VER_VENTAS_ADMIN' },
+        { path: '/admin/generar-ventas-administracion',   label: 'Crear Venta', icon: 'pi pi-plus-circle',        permiso: 'CREAR_VENTA_ADMIN' },
+        { path: '/admin/historial-ventas-administracion', label: 'Historial Ventas',     icon: 'pi pi-list',               permiso: 'VER_VENTAS_ADMIN' },
         { path: '/admin/nota-credito',                    label: 'Notas de Crédito',           icon: 'pi pi-credit-card',        permiso: 'CREAR_NC' },
         { path: '/admin/descuentos',                      label: 'Descuentos',                 icon: 'pi pi-tag',                permiso: 'CREAR_DESCUENTO' },
         { path: '/admin/promociones',                     label: 'Promociones',                icon: 'pi pi-percentage',         permiso: 'CREAR_PROMOCION' },
@@ -134,7 +131,6 @@ export class Sidebar implements OnInit {
         { path: '/logistica/movimiento-inventario',       label: 'Movimientos',       icon: 'pi pi-book',               permiso: 'VER_MOVIMIENTOS' },
       ]
     },
-
   ];
 
   // ================= CONSTRUCTOR =================
@@ -152,13 +148,25 @@ export class Sidebar implements OnInit {
   ngOnInit(): void {
     this.loadUserInfo();
     this.loadMenu();
+    this.iniciarSuscripcionReactiva();
+  }
+
+  
+  private iniciarSuscripcionReactiva(): void {
+    this.authService.permisosActualizados$.subscribe(() => {
+      console.log('🔄 Sidebar detectó nuevos permisos. Redibujando menú...');
+      this.loadUserInfo();
+      this.loadMenu();
+      this.cdr.detectChanges();
+    });
   }
 
   // ================= CARGAR USUARIO =================
 
   private loadUserInfo(): void {
-    const user = this.roleService.getCurrentUser();
-    if (user) {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      const user = JSON.parse(userStr);
       this.username = user.username;
       this.roleName = user.roleName ?? 'Invitado';
     }
@@ -167,18 +175,21 @@ export class Sidebar implements OnInit {
   // ================= CARGAR MENU =================
 
   private loadMenu(): void {
-    const permisos = this.roleService.getPermisos();
-    const roleName = this.roleService.getCurrentUser()?.roleName ?? '';
+    const userStr = localStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    
+    const permisos = user?.permisos || [];
+    const roleName = user?.roleName || 'Invitado';
 
     if (!permisos.length) {
       console.warn('⚠️ No hay permisos activos');
+      this.menuSections = [];
       return;
     }
 
     this.menuSections = this.SIDEBAR_ROUTES
       .map(section => ({
         ...section,
-        // Sección PRINCIPAL muestra el nombre del rol dinámicamente
         label: section.permisoSeccion === 'PRINCIPAL' ? roleName : section.label,
         items: section.items.filter(item => permisos.includes(item.permiso))
       }))
@@ -186,8 +197,6 @@ export class Sidebar implements OnInit {
         permisos.includes(section.permisoSeccion) && section.items.length > 0
       );
   }
-
-  // ================= ABRIR / CERRAR MENU =================
 
   toggleMenu(menu: string): void {
     this.activeMenu = this.activeMenu === menu ? null : menu;
@@ -223,6 +232,7 @@ export class Sidebar implements OnInit {
   // ================= LOGOUT =================
 
   confirm2(event: Event): void {
+    // ... tu código original del confirm2 ...
     this.confirmationService.confirm({
       target: event.target as EventTarget,
       message: '¿Estás seguro de que deseas cerrar sesión?',

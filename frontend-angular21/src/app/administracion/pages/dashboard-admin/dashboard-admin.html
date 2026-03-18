@@ -345,6 +345,13 @@
                 <div class="flex-1">
                   <div class="font-semibold text-sm mb-1">{{ actividad.titulo }}</div>
                   <div class="text-500 text-sm mb-1">{{ actividad.detalle }}</div>
+                  <!-- Sede badge -->
+                  @if (actividad.sede) {
+                    <div class="flex align-items-center gap-1 mb-1">
+                      <i class="pi pi-building text-xs" style="color: #ffa726"></i>
+                      <span class="text-xs font-medium" style="color: #ffa726">{{ actividad.sede }}</span>
+                    </div>
+                  }
                   <div class="text-500 text-xs italic">{{ actividad.tiempo }}</div>
                 </div>
               </div>

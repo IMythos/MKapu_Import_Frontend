@@ -12,11 +12,10 @@ import { ToastModule } from 'primeng/toast';
 import { SelectModule } from 'primeng/select';
 import { AutoCompleteModule } from 'primeng/autocomplete';
 import { ConfirmationService, MessageService } from 'primeng/api';
-
+import { TooltipModule } from 'primeng/tooltip';
 import { DiscountService } from '../../../../services/discount.service';
 import { Discount } from '../../../../interfaces/discount.interface';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todas' | 'activas' | 'inactivas';
 
@@ -27,8 +26,7 @@ type ViewMode = 'todas' | 'activas' | 'inactivas';
     CommonModule, FormsModule, RouterModule,
     CardModule, ButtonModule, AutoCompleteModule, TableModule,
     TagModule, ToastModule, ConfirmDialogModule, MessageModule, SelectModule,
-    LoadingOverlayComponent,
-    PaginadorComponent,  
+    SharedTableContainerComponent, TooltipModule,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './descuento.html',

@@ -48,3 +48,26 @@ body {
 .flex-1.overflow-auto::-webkit-scrollbar-thumb:hover {
   background-color: #d97706;
 }
+
+.mensaje-vacio {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+.mensaje-vacio i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  display: block;
+  opacity: 0.5;
+}
+
+.mensaje-vacio p {
+  margin: 0;
+  font-size: 1rem;
+}
+.acciones-tabla {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}

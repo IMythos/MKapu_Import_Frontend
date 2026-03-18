@@ -274,10 +274,10 @@ export class VentasAdminService {
     if (idSede != null) params = params.set('id_sede', String(idSede));
     if (idCategoria != null) params = params.set('id_categoria', String(idCategoria));
 
-    return this.http.get<ProductoStockAdminResponse>(
-      `${this.logisticsUrl}/products/ventas/stock`,
-      { headers: this.headers, params },
-    );
+    return this.http.get<ProductoStockAdminResponse>(`${this.logisticsUrl}/products/ventas/stock`, {
+      headers: this.headers,
+      params,
+    });
   }
 
   buscarProductosVentas(
@@ -433,5 +433,22 @@ export class VentasAdminService {
       `${this.salesUrl}/receipts/${id}/detalle`,
       { headers: this.headers, params },
     );
+  }
+
+  generarVoucher(id: number, esCopia = false): Observable<void> {
+    const params = esCopia ? '?copia=true' : '';
+    return this.http
+      .get(`${this.salesUrl}/receipts/${id}/thermal${params}`, {
+        headers: this.headers,
+        responseType: 'blob',
+      })
+      .pipe(
+        map((blob: Blob) => {
+          const url = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+          window.open(url, '_blank');
+          setTimeout(() => URL.revokeObjectURL(url), 10_000);
+        }),
+        catchError((err) => throwError(() => err)),
+      );
   }
 }

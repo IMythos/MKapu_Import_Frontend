@@ -19,6 +19,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { ClienteService, Customer } from '../../../../services/cliente.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todas' | 'juridica' | 'natural';
 
@@ -40,8 +41,7 @@ type ViewMode = 'todas' | 'juridica' | 'natural';
     SelectModule,
     TooltipModule,
     DialogModule,
-    LoadingOverlayComponent,
-    PaginadorComponent, 
+    SharedTableContainerComponent, 
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './clientes.html',

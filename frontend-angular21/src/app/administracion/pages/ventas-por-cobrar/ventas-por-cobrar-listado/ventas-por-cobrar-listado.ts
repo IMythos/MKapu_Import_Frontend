@@ -35,6 +35,7 @@ import {
   AccionesComprobanteConfig,
   AccionComprobante,
 } from '../../../../shared/components/acciones-comprobante-dialog/acciones-comprobante';
+import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
 
 @Component({
   selector: 'app-ventas-por-cobrar-listado',
@@ -53,11 +54,11 @@ import {
     RouterModule,
     AutoComplete,
     TooltipModule,
-    LoadingOverlayComponent,
     DatePickerModule,
-    PaginadorComponent,
     DialogModule,
-    AccionesComprobanteDialogComponent, // ← shared dialog
+    AccionesComprobanteDialogComponent,
+    PaginadorComponent,
+    LoadingOverlayComponent
   ],
   templateUrl: './ventas-por-cobrar-listado.html',
   styleUrl: './ventas-por-cobrar-listado.css',
@@ -80,7 +81,7 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
   sedeSeleccionada   = signal<number | null>(null);
   rows               = signal<number>(5);
   fechaInicio        = signal<Date | null>(getLunesSemanaActualPeru());
-  fechaFin           = signal<Date | null>(null);
+  fechaFin           = signal<Date | null>(getDomingoSemanaActualPeru());
   paginaActual       = signal<number>(1);
 
   totalPaginas = computed(() => {
@@ -443,8 +444,8 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
     return new Date(iso).toLocaleDateString('es-PE');
   }
 
-  irAgregarVentaPorCobrar(id: number) { this.router.navigate(['/admin/pagar-ventas-por-cobrar', id]); }
-  verDetalle(id: number)               { this.router.navigate(['/admin/detalles-ventas-por-cobrar', id]); }
+  irAgregarVentaPorCobrar(id: number) { this.router.navigate(['/admin/ventas-por-cobrar/pagar-ventas-por-cobrar', id]); }
+  verDetalle(id: number)               { this.router.navigate(['/admin/ventas-por-cobrar/detalles-ventas-por-cobrar', id]); }
 
   rechazarCotizacion(id: number) {
     const cuenta = this.arService.accounts().find((a) => a.id === id);

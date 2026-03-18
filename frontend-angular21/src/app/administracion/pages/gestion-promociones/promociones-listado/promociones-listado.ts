@@ -15,6 +15,7 @@ import { TableModule }         from 'primeng/table';
 import { TagModule }           from 'primeng/tag';
 import { TooltipModule }       from 'primeng/tooltip';
 import { ConfirmationService, MessageService } from 'primeng/api';
+import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
 
 import { PromotionsService, Promotion } from '../../../services/promotions.service';
 import { LoadingOverlayComponent } from '../../../../shared/components/loading-overlay/loading-overlay.component';
@@ -42,8 +43,7 @@ interface Filtros {
     TableModule,
     TagModule,
     TooltipModule,
-    LoadingOverlayComponent,
-    PaginadorComponent
+    SharedTableContainerComponent
   ],
   templateUrl: './promociones-listado.html',
   styleUrl: './promociones-listado.css',

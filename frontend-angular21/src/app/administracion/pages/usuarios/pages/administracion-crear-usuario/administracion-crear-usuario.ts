@@ -19,8 +19,8 @@ import { ToastModule } from 'primeng/toast';
 import { MessageModule } from 'primeng/message';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { TooltipModule } from 'primeng/tooltip';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 interface SelectOption {
   label: string;
@@ -44,8 +44,8 @@ interface SelectOption {
     MessageModule,
     ConfirmDialogModule,
     DialogModule,
-    LoadingOverlayComponent,
-    PaginadorComponent, 
+    TooltipModule,
+    SharedTableContainerComponent 
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './administracion-crear-usuario.html',

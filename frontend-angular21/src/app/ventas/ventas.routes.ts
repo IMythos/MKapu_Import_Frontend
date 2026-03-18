@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { CashboxGuard } from './guards/cashbox.guard';
+import { roleGuard } from '../core/guards/role.guard';
 
 export const VENTAS_ROUTES: Routes = [
   {
@@ -7,32 +8,53 @@ export const VENTAS_ROUTES: Routes = [
     redirectTo: 'caja',
     pathMatch: 'full',
   },
-
+  {
+    path: 'dashboard-ventas',
+    loadComponent: () =>
+      import('../administracion/pages/dashboard-admin/dashboard-admin').then(
+        (m) => m.DashboardAdmin,
+      ),
+    canActivate: [roleGuard],
+    data: { permiso: 'VER_DASHBOARD_VENTAS' },
+  },
+  {
+    path: 'caja',
+    loadComponent: () => import('./pages/caja/caja.page').then((m) => m.CajaPage),
+    canActivate: [roleGuard],
+    data: { permiso: 'VER_CAJA' },
+  },
   {
     path: 'generar-ventas',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
     loadComponent: () =>
-      import('../administracion/pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
+      import('../administracion/pages/generar-ventas-administracion/generar-ventas-administracion').then(
+        (m) => m.GenerarVentasAdministracion,
+      ),
+    data: { permiso: 'CREAR_VENTA' },
   },
   {
     path: 'historial-ventas',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
     loadComponent: () =>
-      import('../administracion/pages/historial-ventas-administracion/historial-ventas-administracion').then((m) => m.HistorialVentasAdministracion),
+      import('../administracion/pages/historial-ventas-administracion/historial-ventas-administracion').then(
+        (m) => m.HistorialVentasAdministracion,
+      ),
+    data: { permiso: 'VER_VENTAS' },
   },
   {
     path: 'ver-detalle/:id',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
     loadComponent: () =>
-      import('../administracion/shared/detalles-ventas-administracion/detalles-ventas-administracion').then((m) => m.DetallesVentasAdministracion),
+      import('../administracion/shared/detalles-ventas-administracion/detalles-ventas-administracion').then(
+        (m) => m.DetallesVentasAdministracion,
+      ),
+    data: { permiso: 'VER_VENTAS' },
   },
-  
 
-  /* =======================
-      VENTAS POR COBRAR
-  ======================= */
   {
     path: 'ventas-por-cobrar',
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_VENTA_POR_COBRAR' },
     children: [
       {
         path: '',
@@ -64,9 +86,11 @@ export const VENTAS_ROUTES: Routes = [
       },
     ],
   },
+
   {
     path: 'reclamos-listado',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
+    data: { permiso: 'CREAR_RECLAMO' },
     children: [
       {
         path: '',
@@ -99,13 +123,10 @@ export const VENTAS_ROUTES: Routes = [
     ],
   },
 
-
-
-  /* =======================
-      COTIZACIONES
-  ======================= */
   {
     path: 'cotizaciones',
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_COTIZACIONES' },
     children: [
       {
         path: '',
@@ -130,36 +151,44 @@ export const VENTAS_ROUTES: Routes = [
       },
     ],
   },
-  { path: 'agregar-cotizaciones',        redirectTo: 'cotizaciones/agregar',        pathMatch: 'full' },
-  { path: 'ver-detalle-cotizacion/:id',  redirectTo: 'cotizaciones/ver-detalle/:id', pathMatch: 'full' },
+  { path: 'agregar-cotizaciones', redirectTo: 'cotizaciones/agregar', pathMatch: 'full' },
+  {
+    path: 'ver-detalle-cotizacion/:id',
+    redirectTo: 'cotizaciones/ver-detalle/:id',
+    pathMatch: 'full',
+  },
 
-  
   {
     path: 'movimiento-inventario',
-    loadComponent: () => import('../logistica/pages/movimientos-inventario/movimientos-inventario').then((m) => m.MovimientosInventario)
+    loadComponent: () =>
+      import('../logistica/pages/movimientos-inventario/movimientos-inventario').then(
+        (m) => m.MovimientosInventario,
+      ),
+    canActivate: [roleGuard],
+    data: { permiso: 'VER_MOVIMIENTOS' },
   },
   {
     path: 'movimientos-inventario/detalle/:id',
-    loadComponent: () => import('../logistica/pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(m => m.DetalleMovimientoInventario)
+    loadComponent: () =>
+      import('../logistica/pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(
+        (m) => m.DetalleMovimientoInventario,
+      ),
+    canActivate: [roleGuard],
+    data: { permiso: 'VER_MOVIMIENTOS' },
   },
+
 
   {
     path: 'promociones',
-    loadComponent: () =>
-      import('./pages/promociones/promociones').then((m) => m.Promociones),
+    loadComponent: () => import('./pages/promociones/promociones').then((m) => m.Promociones),
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_PROMOCION' },
   },
-
-
-  {
-    path: 'caja',
-    loadComponent: () => import('./pages/caja/caja.page').then((m) => m.CajaPage),
-  },
-
-
 
   {
     path: 'remates',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
+    data: { permiso: 'CREAR_REMATES' },
     children: [
       {
         path: '',
@@ -178,38 +207,27 @@ export const VENTAS_ROUTES: Routes = [
     ],
   },
 
-
-
-  /* =======================
-  GESTIÓN DE Conteos
-======================= */
   {
     path: 'conteo-inventario',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
+    data: { permiso: 'CONTEO_INVENTARIO' },
     loadComponent: () =>
-      import('../logistica/pages/conteo-inventario/conteoinventario')
-        .then((m) => m.ConteoInventarios),
+      import('../logistica/pages/conteo-inventario/conteoinventario').then(
+        (m) => m.ConteoInventarios,
+      ),
   },
-
   {
     path: 'conteo-crear',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
+    data: { permiso: 'CONTEO_INVENTARIO' },
     loadComponent: () =>
-      import('../logistica/pages/conteo-crear/conteocrear')
-        .then((m) => m.ConteoCrear),
+      import('../logistica/pages/conteo-crear/conteocrear').then((m) => m.ConteoCrear),
   },
   {
     path: 'conteo-detalle',
-    canActivate: [CashboxGuard],
+    canActivate: [roleGuard, CashboxGuard],
+    data: { permiso: 'CONTEO_INVENTARIO' },
     loadComponent: () =>
-      import('../logistica/pages/conteo-detalle/conteodetalle')
-        .then((m) => m.ConteoDetalle),
+      import('../logistica/pages/conteo-detalle/conteodetalle').then((m) => m.ConteoDetalle),
   },
-
-
-
-
-
-
-
 ];
