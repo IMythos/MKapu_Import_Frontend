@@ -292,6 +292,12 @@ export const ADMIN_ROUTES: Routes = [
     data: { permiso: 'CREAR_DESPACHO' }
   },
   {
+    path: 'despacho-productos/confirmar-despacho',
+    loadComponent: () => import('./pages/despacho-productos/pages/confirmar-despacho/confirmar-despacho').then((m) => m.ConfirmarDespacho),
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_DESPACHO' }
+  },
+  {
     path: 'despacho-productos/editar-despacho/:id',
     loadComponent: () => import('./pages/despacho-productos/pages/editar-despacho/editar-despacho').then((m) => m.EditarDespacho),
     canActivate: [roleGuard],
