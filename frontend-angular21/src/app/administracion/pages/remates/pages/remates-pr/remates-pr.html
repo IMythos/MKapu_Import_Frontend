@@ -48,31 +48,51 @@
   </div>
 
   <!-- FILTROS -->
-  <p-card styleClass="filtros-card mb-4">
-    <div class="grid">
-      <div class="col-12 md:col-8">
-        <label class="filter-label">Buscar Remate</label>
-        <input
-          pInputText
-          type="text"
-          placeholder="Buscar por código o producto..."
-          class="w-full"
-          [ngModel]="busqueda()"
-          (ngModelChange)="busqueda.set($event)">
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Remate</label>
+          <input
+            pInputText
+            type="text"
+            placeholder="Buscar por código o producto..."
+            class="w-full"
+            [ngModel]="busqueda()"
+            (ngModelChange)="onBusquedaChange($event)">
+        </div>
       </div>
-      <div class="col-12 md:col-4">
-        <label class="filter-label" style="visibility:hidden">Acción</label>
-        <p-button
-          label="Limpiar Filtros"
-          icon="pi pi-filter-slash"
-          [outlined]="true"
-          severity="danger"
-          styleClass="w-full"
-          (onClick)="busqueda.set('')">
-        </p-button>
+
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
+          <p-select
+            [options]="estadoOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="estadoFiltro()"
+            (ngModelChange)="onEstadoChange($event)"
+            placeholder="Todos"
+            styleClass="w-full">
+          </p-select>
+        </div>
+
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros"
+            icon="pi pi-filter-slash"
+            severity="danger"
+            styleClass="btn-limpiar-filtros"
+            type="button"
+            (click)="limpiarFiltros()">
+          </p-button>
+        </div>
       </div>
     </div>
-  </p-card>
+  </div>
 
   <!-- TABLA -->
   <app-shared-table-container
@@ -89,16 +109,16 @@
     (limitChange)="onLimitChange($event)"
   >
 
-    <!-- Tag contador en slot de acciones -->
     <div slot="acciones">
       <p-tag
         *ngIf="productosFiltrados().length > 0"
         [value]="productosFiltrados().length + ' remates'"
-        severity="info">
+        [severity]="estadoFiltro() === 'ACTIVO'      ? 'success'
+                  : estadoFiltro() === 'FINALIZADO'  ? 'secondary'
+                  : estadoFiltro() === 'CANCELADO'   ? 'danger' : 'info'">
       </p-tag>
     </div>
 
-    <!-- Tabla -->
     <p-table
       [value]="rematesPaginados()"
       [tableStyle]="{ 'min-width': '100%' }"
@@ -161,7 +181,7 @@
                 icon="pi pi-eye"
                 [rounded]="true" [text]="true" severity="info"
                 pTooltip="Ver detalle" tooltipPosition="top"
-                (onClick)="editarProducto(remate)">
+                (onClick)="verDetalle(remate)">
               </p-button>
             </div>
           </td>
@@ -183,5 +203,123 @@
 
   </app-shared-table-container>
 
+  <!-- MODAL DETALLE REMATE -->
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [modal]="true" [draggable]="false"
+    [style]="{ width: '520px', 'border-radius': '16px', overflow: 'hidden' }"
+    [contentStyle]="{ padding: '0' }"
+    (onHide)="cerrarModalDetalle()">
+
+    <ng-template pTemplate="header"><span></span></ng-template>
+
+    <ng-container *ngIf="remateSeleccionado() as r">
+      <div class="remate-detail-modal">
+
+        <!-- Banner superior -->
+        <div class="rdm-banner">
+          <div class="rdm-banner-icon"><i class="pi pi-tag"></i></div>
+          <div class="rdm-banner-info">
+            <span class="rdm-kicker">REMATE</span>
+            <h3 class="rdm-nombre">{{ r.nombre }}</h3>
+          </div>
+          <button class="rdm-close-btn" (click)="cerrarModalDetalle()">
+            <i class="pi pi-times"></i>
+          </button>
+        </div>
+
+        <!-- Código + estado -->
+        <div class="rdm-code-row">
+          <span class="rdm-code-badge"><i class="pi pi-barcode"></i>{{ r.codigo }}</span>
+          <span class="rdm-status-badge"
+            [class.rdm-status--activo]="r.estado === 'ACTIVO'"
+            [class.rdm-status--finalizado]="r.estado === 'FINALIZADO'"
+            [class.rdm-status--cancelado]="r.estado === 'CANCELADO'">
+            <span class="rdm-status-dot"></span>
+            {{ r.estado }}
+          </span>
+        </div>
+
+        <!-- Grilla de datos -->
+        <div class="rdm-info-grid">
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-calendar"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Fecha inicio</span>
+              <span class="rdm-info-value">{{ r.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-calendar-times"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Fecha fin</span>
+              <span class="rdm-info-value">{{ r.fechaFin | date:'dd/MM/yyyy HH:mm' }}</span>
+            </div>
+          </div>
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-box"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Cantidad</span>
+              <span class="rdm-info-value">{{ r.cantidad }} unidades</span>
+            </div>
+          </div>
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-percentage"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Descuento</span>
+              <span class="rdm-info-value text-green-600 font-bold">-{{ r.descuento }}%</span>
+            </div>
+          </div>
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-wallet"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Precio original</span>
+              <span class="rdm-info-value">S/ {{ r.precioOriginal | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-dollar"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Precio remate</span>
+              <span class="rdm-info-value font-bold text-primary">S/ {{ r.precioRemate | number:'1.2-2' }}</span>
+            </div>
+          </div>
+          <div class="rdm-info-item rdm-info-item--full" *ngIf="r.observacion">
+            <span class="rdm-info-icon"><i class="pi pi-comment"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Observación</span>
+              <span class="rdm-info-value">{{ r.observacion }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer con acciones -->
+        <div class="rdm-footer">
+          <p-button
+            label="Cerrar" icon="pi pi-times"
+            severity="secondary" [outlined]="true"
+            styleClass="rdm-btn-close"
+            (onClick)="cerrarModalDetalle()">
+          </p-button>
+          <p-button
+            *ngIf="r.estado === 'ACTIVO'"
+            label="Finalizar Remate" icon="pi pi-check"
+            severity="danger" [outlined]="true"
+            styleClass="rdm-btn-toggle"
+            (onClick)="confirmarCambioEstado(r)">
+          </p-button>
+          <p-button
+            label="Editar Remate" icon="pi pi-pencil"
+            styleClass="rdm-btn-edit"
+            (onClick)="editarRemate(r)">
+          </p-button>
+        </div>
+
+      </div>
+    </ng-container>
+
+  </p-dialog>
+
+  <p-confirmdialog />
   <p-toast></p-toast>
 </div>

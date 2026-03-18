@@ -5,11 +5,13 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { ToastModule } from 'primeng/toast';
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 import { TagModule } from 'primeng/tag';
 import { DialogModule } from 'primeng/dialog';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SelectModule } from 'primeng/select';
 import { CommonModule } from '@angular/common';
 
 import { AuctionService, AuctionResponseDto } from '../../../../services/auction.service';
@@ -30,6 +32,7 @@ interface RemateUI {
   descuento: number;
 }
 
+type EstadoFiltro = 'TODOS' | 'ACTIVO' | 'FINALIZADO' | 'CANCELADO';
 type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
 
 @Component({
@@ -46,59 +49,73 @@ type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast
     TooltipModule,
     TagModule,
     DialogModule,
+    ConfirmDialogModule,
+    SelectModule,
     CommonModule,
     SharedTableContainerComponent
   ],
   templateUrl: './remates-pr.html',
   styleUrl: './remates-pr.css',
-  providers: [MessageService]
+  providers: [MessageService, ConfirmationService]
 })
 export class RematesPr implements OnInit {
 
-  private readonly auctionService = inject(AuctionService);
-  private readonly messageService = inject(MessageService);
-  private readonly router = inject(Router);
+  private readonly auctionService      = inject(AuctionService);
+  private readonly messageService      = inject(MessageService);
+  private readonly confirmationService = inject(ConfirmationService);
+  private readonly router              = inject(Router);
 
   cargando = this.auctionService.loading;
 
-  busqueda = signal('');
+  /** FILTROS */
+  busqueda     = signal('');
+  estadoFiltro = signal<EstadoFiltro>('TODOS');
 
   /** PAGINACIÓN */
-  page = signal(1);
+  page  = signal(1);
   limit = signal(5);
 
   /** MODAL */
-  mostrarModalDetalle = signal(false);
-  remateSeleccionado = signal<RemateUI | null>(null);
+  dialogVisible        = false;
+  remateSeleccionado   = signal<RemateUI | null>(null);
+
+  /** OPCIONES DE ESTADO */
+  readonly estadoOptions: { label: string; value: EstadoFiltro }[] = [
+    { label: 'Todos',      value: 'TODOS'      },
+    { label: 'Activo',     value: 'ACTIVO'     },
+    { label: 'Finalizado', value: 'FINALIZADO' },
+    { label: 'Cancelado',  value: 'CANCELADO'  },
+  ];
 
   /** REMATES DESDE API */
   remates = computed(() =>
     this.auctionService.auctions().map(a => this.mapToUI(a))
   );
 
-  /** FILTRO DE BÚSQUEDA */
+  /** FILTRO POR ESTADO */
+  private rematesPorEstado = computed(() => {
+    const estado = this.estadoFiltro();
+    const todos  = this.remates();
+    if (estado === 'TODOS') return todos;
+    return todos.filter(r => r.estado === estado);
+  });
+
+  /** FILTRO POR BÚSQUEDA */
   productosFiltrados = computed(() => {
-
     const busquedaStr = this.busqueda().toLowerCase().trim();
-
-    if (!busquedaStr) return this.remates();
-
-    return this.remates().filter(r =>
-      r.codigo.toLowerCase().includes(busquedaStr) ||
-      r.nombre.toLowerCase().includes(busquedaStr) ||
+    if (!busquedaStr) return this.rematesPorEstado();
+    return this.rematesPorEstado().filter(r =>
+      r.codigo.toLowerCase().includes(busquedaStr)     ||
+      r.nombre.toLowerCase().includes(busquedaStr)     ||
       r.responsable.toLowerCase().includes(busquedaStr)
     );
   });
 
   /** PAGINACIÓN LOCAL */
   rematesPaginados = computed(() => {
-
-    const data = this.productosFiltrados();
-
+    const data  = this.productosFiltrados();
     const start = (this.page() - 1) * this.limit();
-    const end = start + this.limit();
-
-    return data.slice(start, end);
+    return data.slice(start, start + this.limit());
   });
 
   totalPages = computed(() =>
@@ -118,17 +135,12 @@ export class RematesPr implements OnInit {
 
   /** MAPEO DTO → UI */
   private mapToUI(auction: AuctionResponseDto): RemateUI {
-
-    const detalle = auction.detalles?.[0];
-
-    const cantidad = detalle?.stock_remate ?? 0;
+    const detalle       = auction.detalles?.[0];
+    const cantidad      = detalle?.stock_remate  ?? 0;
     const precioOriginal = detalle?.pre_original ?? 0;
-    const precioRemate = detalle?.pre_remate ?? 0;
-
-    const descuento =
-      precioOriginal > 0
-        ? Math.round(((precioOriginal - precioRemate) / precioOriginal) * 100)
-        : 0;
+    const precioRemate  = detalle?.pre_remate    ?? 0;
+    const descuento     = precioOriginal > 0
+      ? Math.round(((precioOriginal - precioRemate) / precioOriginal) * 100) : 0;
 
     return {
       id_remate: auction.id_remate,
@@ -139,97 +151,100 @@ export class RematesPr implements OnInit {
       precioOriginal,
       responsable: 'Sin asignar',
       fechaRegistro: auction.fec_inicio ? new Date(auction.fec_inicio) : new Date(),
-      fechaFin: auction.fec_fin ? new Date(auction.fec_fin) : new Date(),
-      estado: auction.estado ?? 'ACTIVO',
-      observacion: '',
+      fechaFin:      auction.fec_fin    ? new Date(auction.fec_fin)    : new Date(),
+      estado:        auction.estado ?? 'ACTIVO',
+      observacion:   '',
       descuento
     };
   }
 
-  /** CARGA DE REMATES */
+  /** CARGA */
   cargarRemates(): void {
-
     this.auctionService.loadAuctions(1, 50).subscribe({
-
-      next: () => {
-        console.log(`✅ ${this.remates().length} remates cargados`);
-      },
-
+      next: () => console.log(`✅ ${this.remates().length} remates cargados`),
       error: () => {
         this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudieron cargar los remates',
-          life: 3000
+          severity: 'error', summary: 'Error',
+          detail: 'No se pudieron cargar los remates', life: 3000
         });
       }
-
     });
   }
 
+  /** FILTROS */
+  onBusquedaChange(value: string): void { this.busqueda.set(value);    this.page.set(1); }
+  onEstadoChange(value: EstadoFiltro):  void { this.estadoFiltro.set(value); this.page.set(1); }
+  limpiarFiltros(): void { this.busqueda.set(''); this.estadoFiltro.set('TODOS'); this.page.set(1); }
+
   /** PAGINADOR */
-  onPageChange(page: number) {
-    this.page.set(page);
+  onPageChange(page: number):   void { this.page.set(page); }
+  onLimitChange(limit: number): void { this.limit.set(limit); this.page.set(1); }
+
+  /** MODAL */
+  verDetalle(remate: RemateUI): void {
+    this.remateSeleccionado.set({ ...remate });
+    this.dialogVisible = true;
   }
 
-  onLimitChange(limit: number) {
-    this.limit.set(limit);
-    this.page.set(1);
+  cerrarModalDetalle(): void {
+    this.dialogVisible = false;
+    this.remateSeleccionado.set(null);
   }
 
-  /** ACCIONES */
+  /** EDITAR → navegar a ruta de edición */
+  editarRemate(remate: RemateUI): void {
+    this.cerrarModalDetalle();
+    this.router.navigate(['/admin', 'remates', 'editar-remate', remate.id_remate]);
+  }
+
+  /** CONFIRMAR CAMBIO DE ESTADO */
+  confirmarCambioEstado(remate: RemateUI): void {
+    const esActivo = remate.estado === 'ACTIVO';
+    this.confirmationService.confirm({
+      header:      'Confirmación',
+      message:     `¿Deseas ${esActivo ? 'finalizar' : 'reactivar'} el remate <strong>${remate.codigo}</strong>?`,
+      icon:        'pi pi-exclamation-triangle',
+      acceptLabel: esActivo ? 'Finalizar' : 'Reactivar',
+      rejectLabel: 'Cancelar',
+      acceptButtonProps: { severity: (esActivo ? 'danger' : 'success') as any },
+      rejectButtonProps: { severity: 'secondary', outlined: true },
+      accept: () => this.cambiarEstado(remate)
+    });
+  }
+
+  private cambiarEstado(remate: RemateUI): void {
+    // Si el servicio sólo tiene finalizar, se invoca directamente.
+    // Amplía este método cuando el backend soporte más transiciones.
+    this.auctionService.finalizeAuction(remate.id_remate).subscribe({
+      next: () => {
+        this.messageService.add({
+          severity: 'success', summary: 'Estado actualizado',
+          detail: `El remate ${remate.codigo} fue finalizado.`, life: 3000
+        });
+        this.cerrarModalDetalle();
+        this.cargarRemates();
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'error', summary: 'Error',
+          detail: 'No se pudo cambiar el estado del remate.', life: 3000
+        });
+      }
+    });
+  }
+
+  /** NAVEGACIÓN RÁPIDA */
   abrirRegistro(): void {
     this.router.navigate(['/admin', 'remates', 'registro-remate']);
   }
 
-  editarProducto(remate: RemateUI): void {
-    this.remateSeleccionado.set({ ...remate });
-    this.mostrarModalDetalle.set(true);
-  }
-
-  cerrarModalDetalle(): void {
-    this.mostrarModalDetalle.set(false);
-    this.remateSeleccionado.set(null);
-  }
-
-  finalizarRemate(id: number): void {
-
-    this.auctionService.finalizeAuction(id).subscribe({
-
-      next: () => {
-
-        this.messageService.add({
-          severity: 'success',
-          summary: 'Remate finalizado',
-          detail: 'El remate ha sido finalizado exitosamente',
-          life: 3000
-        });
-
-        this.cerrarModalDetalle();
-        this.cargarRemates();
-      },
-
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary: 'Error',
-          detail: 'No se pudo finalizar el remate',
-          life: 3000
-        });
-      }
-
-    });
-  }
-
   /** COLOR DE ESTADO */
   getEstadoSeverity(estado: string): Severity {
-
     const map: { [key: string]: Severity } = {
-      ACTIVO: 'success',
+      ACTIVO:     'success',
       FINALIZADO: 'secondary',
-      CANCELADO: 'danger'
+      CANCELADO:  'danger'
     };
-
     return map[estado] || 'info';
   }
 }

@@ -1,6 +1,6 @@
 import {
   Component, OnInit, OnDestroy,
-  inject, signal, computed, effect
+  inject, signal, computed, effect, NgZone
 } from '@angular/core';
 import { CajaService }          from '../../services/caja.service';
 import { RoleService }          from '../../../core/services/role.service';
@@ -16,9 +16,9 @@ import { RouterModule }         from '@angular/router';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { ToastModule }          from 'primeng/toast';
 import { DialogModule }         from 'primeng/dialog';
-import { TableModule }          from 'primeng/table';   // ← agregado
-import { TagModule }            from 'primeng/tag';      // ← agregado
-import { TooltipModule }        from 'primeng/tooltip';  // ← agregado (pTooltip en historial)
+import { TableModule }          from 'primeng/table';
+import { TagModule }            from 'primeng/tag';
+import { TooltipModule }        from 'primeng/tooltip';
 
 @Component({
   selector: 'app-caja',
@@ -30,9 +30,7 @@ import { TooltipModule }        from 'primeng/tooltip';  // ← agregado (pToolt
     CardModule, ButtonModule, InputNumberModule,
     ConfirmDialogModule, RouterModule,
     LoadingOverlayComponent, ToastModule, DialogModule,
-    TableModule,   // ← p-table
-    TagModule,     // ← p-tag
-    TooltipModule, // ← pTooltip
+    TableModule, TagModule, TooltipModule,
   ],
   providers: [ConfirmationService, MessageService],
 })
@@ -40,6 +38,8 @@ export class CajaPage implements OnInit, OnDestroy {
   private roleService     = inject(RoleService);
   private cashboxService  = inject(CajaService);
   private confirmService  = inject(ConfirmationService);
+  private messageService  = inject(MessageService);
+  private ngZone          = inject(NgZone);
   protected cashboxSocket = inject(CashboxSocketService);
 
   readonly caja         = this.cashboxSocket.caja;
@@ -65,24 +65,31 @@ export class CajaPage implements OnInit, OnDestroy {
 
   readonly idSede: number | undefined;
 
+  // ── Socket listener: corre dentro de NgZone para que Angular detecte cambios ──
   private cajaListener = () => {
-    this.loading.set(false);
-    if (this.cashboxSocket.caja()) {
-      this.cargarCajaDesdeDB();
-    } else {
-      this.cajaDetalle.set(null);
-      this.isLoading.set(false);
-    }
-    if (this.idSede) this.cargarResumen();
+    this.ngZone.run(() => {
+      if (this.cashboxSocket.caja()) {
+        this.cargarCajaDesdeDB();
+      } else {
+        this.cajaDetalle.set(null);
+        this.chartInstance?.destroy();
+        this.chartInstance = null;
+        this.isLoading.set(false);
+      }
+      if (this.idSede) this.cargarResumen();
+      this.loading.set(false);
+    });
   };
 
   constructor() {
     this.idSede = this.roleService.getCurrentUser()?.idSede;
 
     effect(() => {
-      const r = this.resumen();
+      const r     = this.resumen();
       const horas = r?.ventasPorHora ?? this.generarHorasVacias();
-      setTimeout(() => this.renderChart(horas), 0);
+      if (this.caja()) {
+        setTimeout(() => this.renderChart(horas), 50);
+      }
     });
   }
 
@@ -132,12 +139,31 @@ export class CajaPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── ABRIR: espera next() del backend ANTES de verificar sesión ──
   abrirCaja(): void {
     if (!this.idSede) return;
     this.loading.set(true);
+
     this.cashboxService.openCashbox(this.idSede, this.montoInicial() ?? undefined).subscribe({
-      next:  () => this.montoInicial.set(null),
-      error: () => this.loading.set(false),
+      next: () => {
+        this.montoInicial.set(null);
+        // ✅ checkActiveSession DENTRO del next() — secuencial, no paralelo
+        this.cashboxSocket.checkActiveSession(this.idSede!).then(() => {
+          if (this.cashboxSocket.caja()) {
+            this.cargarCajaDesdeDB();
+          }
+          this.cargarResumen();
+          this.loading.set(false);
+        }).catch(() => this.loading.set(false));
+      },
+      error: (err) => {
+        this.loading.set(false);
+        this.messageService.add({
+          severity: 'error', summary: 'Error al abrir caja',
+          detail: err?.error?.message ?? 'No se pudo abrir la caja.',
+          life: 4000,
+        });
+      },
     });
   }
 
@@ -153,23 +179,35 @@ export class CajaPage implements OnInit, OnDestroy {
     });
   }
 
+  // ── CERRAR: espera next() del backend ANTES de limpiar estado ──
   private cerrarCaja(): void {
     const detalle = this.cajaDetalle() ?? this.caja();
     if (!detalle) return;
     this.loading.set(true);
+
     this.cashboxService.closeCashbox(detalle.id_caja).subscribe({
       next: () => {
-        if (this.idSede) {
-        }
+        // ✅ Limpieza DENTRO del next() — solo cuando el backend confirma
+        this.cajaDetalle.set(null);
+        this.chartInstance?.destroy();
+        this.chartInstance = null;
+
+        this.cashboxSocket.checkActiveSession(this.idSede!).then(() => {
+          this.cargarResumen();
+          this.loading.set(false);
+        }).catch(() => this.loading.set(false));
       },
       error: (err) => {
-        alert(err.error?.message || 'No se pudo cerrar la caja');
         this.loading.set(false);
+        this.messageService.add({
+          severity: 'error', summary: 'Error al cerrar caja',
+          detail: err?.error?.message ?? 'No se pudo cerrar la caja.',
+          life: 4000,
+        });
       },
     });
   }
 
-  // ── Imprimir resumen de la caja actualmente abierta ───────────────
   imprimirResumenActual(): void {
     if (!this.idSede) return;
     this.cashboxService.printResumenThermal(this.idSede).subscribe({
@@ -256,7 +294,7 @@ export class CajaPage implements OnInit, OnDestroy {
         },
       });
     }).catch(() => {
-      console.warn('Chart.js no está disponible. Instálalo con: npm install chart.js');
+      console.warn('Chart.js no está disponible.');
     });
   }
 }

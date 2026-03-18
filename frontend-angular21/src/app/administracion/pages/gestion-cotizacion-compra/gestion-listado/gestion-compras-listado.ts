@@ -74,6 +74,8 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
     value: sede.id_sede,
   })));
 
+  // ── FIX error 2339: usa quotes() mientras el servicio nuevo no esté reemplazado ──
+  // Una vez reemplaces quote.service.ts cambia a: this.quoteService.quotesCompra()
   cotizaciones = computed(() => this.quoteService.quotes());
 
   cotizacionesFiltradas = computed(() => {
@@ -83,7 +85,7 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
 
     if (!inicio && !fin) return lista;
 
-    return lista.filter(c => {
+    return lista.filter((c: QuoteListItem) => {
       const fechaStr  = c.fec_emision.substring(0, 10);
       const [y, m, d] = fechaStr.split('-').map(Number);
       const fecSolo   = new Date(y, m - 1, d);
@@ -102,33 +104,32 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
 
   totalPages      = computed(() => this.quoteService.totalPages());
   loading         = computed(() => this.quoteService.loading());
+  // ── FIX KPIs: usa los compatibles con el servicio actual ──
+  // Una vez reemplaces quote.service.ts cambia a: kpiTotalCompra(), kpiAprobadasCompra(), kpiPendientesCompra()
+  totalRecords    = computed(() => this.quoteService.kpiTotal());
   totalAprobadas  = computed(() => this.quoteService.kpiAprobadas());
   totalPendientes = computed(() => this.quoteService.kpiPendientes());
-  totalRecords    = computed(() => this.quoteService.kpiTotal());
 
-  // ── Resuelve el nombre del proveedor con fallbacks ────────────────────────
+  // ── FIX error 2339: getNombreProveedor definido en el componente ──
   getNombreProveedor(c: QuoteListItem): string {
-    // 1. El backend ya envía proveedor_nombre (fix definitivo pendiente)
-    if ((c as any).proveedor_nombre) return (c as any).proveedor_nombre;
-
-    // 2. Mapa local — convierte cliente_nombre a número si es un id numérico
-    const idNumerico = Number(c.cliente_nombre);
-    if (!isNaN(idNumerico) && idNumerico > 0) {
-      const nombre = this.proveedoresMap().get(idNumerico);
+    // 1. El backend ya envía proveedor_nombre
+    if (c.proveedor_nombre) return c.proveedor_nombre;
+    // 2. Mapa local
+    if (c.id_proveedor) {
+      const nombre = this.proveedoresMap().get(c.id_proveedor);
       if (nombre) return nombre;
-      return `Proveedor #${idNumerico}`;
+      return `Proveedor #${c.id_proveedor}`;
     }
-
-    // 3. cliente_nombre ya es un nombre real (cotizaciones de venta o backend corregido)
+    // 3. Fallback
     return c.cliente_nombre || '—';
   }
 
-  // Contador de proveedores únicos basado en getNombreProveedor
+  // ── FIX error 7006 línea 113-114: tipo explícito en proveedoresUnicos ──
   proveedoresUnicos = computed(() => {
     const nombres = new Set(
       this.cotizacionesFiltradas()
-        .map(c => this.getNombreProveedor(c))
-        .filter(n => n !== '—')
+        .map((c: QuoteListItem) => this.getNombreProveedor(c))
+        .filter((n: string) => n !== '—')
     );
     return nombres.size;
   });
@@ -220,7 +221,7 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
   onPageChange(page: number)   { this.currentPage.set(page); this.cargarCotizacion(); }
   onLimitChange(limit: number) { this.rows.set(limit); this.currentPage.set(1); this.cargarCotizacion(); }
 
-  searchCotizacion(event: any) {
+  searchCotizacion(event: { query: string }) {
     const query = event.query?.toLowerCase() ?? '';
     if (!query || query.length < 2) { this.cotizacionSugerencias.set([]); return; }
     this.quoteService.loadQuotes({ search: query, tipo: this.TIPO_FIJO, limit: 6 }).subscribe({
@@ -228,8 +229,8 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
     });
   }
 
-  seleccionarCotizacionBusqueda(event: any) {
-    const c = event.value as QuoteListItem;
+  seleccionarCotizacionBusqueda(event: { value: QuoteListItem }) {
+    const c = event.value;
     this.buscarValue.set(c.codigo);
     this.irDetalle(c.id_cotizacion);
   }
@@ -336,7 +337,7 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
     this.cotizacionAcciones = c;
     this.accionesConfig = {
       titulo:       c.codigo,
-      subtitulo:    this.getNombreProveedor(c),   // ← nombre correcto
+      subtitulo:    this.getNombreProveedor(c),
       labelPdf:     'PDF Cotización',
       labelVoucher: 'Voucher',
     };
@@ -433,7 +434,7 @@ export class GestionComprasComponent implements OnInit, OnDestroy {
         this.cerrarDialogWsp();
         this.messageService.add({ severity: 'success', summary: '¡Enviado!', detail: `Enviado a ${res.sentTo}`, life: 5000 });
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.enviandoWsp = false;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message ?? 'No se pudo enviar.', life: 5000 });
       },

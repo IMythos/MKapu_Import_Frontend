@@ -17,7 +17,6 @@ import { DatePickerModule } from 'primeng/datepicker';
 import { SedeService } from '../../../services/sede.service';
 import { QuoteListItem } from '../../../interfaces/quote.interface';
 import { QuoteService } from '../../../services/quote.service';
-import { SedeAlmacenService } from '../../../services/sede-almacen.service';
 import { getDomingoSemanaActualPeru, getLunesSemanaActualPeru } from '../../../../shared/utils/date-peru.utils';
 import { AccionesComprobanteDialogComponent, AccionesComprobanteConfig, AccionComprobante } from '../../../../shared/components/acciones-comprobante-dialog/acciones-comprobante';
 import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
@@ -71,6 +70,8 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     value: sede.id_sede,
   })));
 
+  // ── FIX error 2339: usa quotes() mientras no esté el servicio nuevo ──
+  // Una vez reemplaces quote.service.ts cambia a: this.quoteService.quotesVenta()
   cotizaciones = computed(() => this.quoteService.quotes());
 
   cotizacionesFiltradas = computed(() => {
@@ -80,7 +81,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
 
     if (!inicio && !fin) return lista;
 
-    return lista.filter(c => {
+    return lista.filter((c: QuoteListItem) => {
       const fechaStr      = c.fec_emision.substring(0, 10);
       const [y, m, d]     = fechaStr.split('-').map(Number);
       const fecSolo       = new Date(y, m - 1, d);
@@ -99,9 +100,11 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
 
   totalPages      = computed(() => this.quoteService.totalPages());
   loading         = computed(() => this.quoteService.loading());
+  // ── FIX KPIs: usa kpiTotal/kpiAprobadas/kpiPendientes (compatibles con servicio actual)
+  // Una vez reemplaces quote.service.ts cambia a: kpiTotalVenta(), kpiAprobadasVenta(), kpiPendientesVenta()
+  totalRecords    = computed(() => this.quoteService.kpiTotal());
   totalAprobadas  = computed(() => this.quoteService.kpiAprobadas());
   totalPendientes = computed(() => this.quoteService.kpiPendientes());
-  totalRecords    = computed(() => this.quoteService.kpiTotal());
 
   accionesVisible  = false;
   accionCargando: string | null = null;
@@ -180,7 +183,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   onPageChange(page: number)   { this.currentPage.set(page); this.cargarCotizacion(); }
   onLimitChange(limit: number) { this.rows.set(limit); this.currentPage.set(1); this.cargarCotizacion(); }
 
-  searchCotizacion(event: any) {
+  searchCotizacion(event: { query: string }) {
     const query = event.query?.toLowerCase() ?? '';
     if (!query || query.length < 2) { this.cotizacionSugerencias.set([]); return; }
     this.quoteService.loadQuotes({ search: query, tipo: this.TIPO_FIJO, limit: 6 }).subscribe({
@@ -188,8 +191,8 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     });
   }
 
-  seleccionarCotizacionBusqueda(event: any) {
-    const c = event.value as QuoteListItem;
+  seleccionarCotizacionBusqueda(event: { value: QuoteListItem }) {
+    const c = event.value;
     this.buscarValue.set(c.codigo);
     this.irDetalle(c.id_cotizacion);
   }
@@ -359,7 +362,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
         this.cerrarDialogWsp();
         this.messageService.add({ severity: 'success', summary: '¡Enviado!', detail: `Cotización ${this.cotizacionWsp?.codigo} enviada a ${res.sentTo}`, life: 5000 });
       },
-      error: (err) => {
+      error: (err: { error?: { message?: string } }) => {
         this.enviandoWsp = false;
         this.messageService.add({ severity: 'error', summary: 'Error', detail: err?.error?.message ?? 'No se pudo enviar por WhatsApp.', life: 5000 });
       },
@@ -409,7 +412,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   irDetalle(id: number) { this.router.navigate(['/admin/cotizaciones-venta/ver-detalle-cotizacion', id]); }
 
   irAgregarVenta(id: number) {
-    const c       = this.cotizacionesFiltradas().find(x => x.id_cotizacion === id);
+    const c       = this.cotizacionesFiltradas().find((x: QuoteListItem) => x.id_cotizacion === id);
     const tipoCot = c?.tipo ?? 'VENTA';
     const impacto = '<br><br><span style="color:#f87171">↓ Restará stock a los productos</span>';
 
@@ -431,7 +434,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   }
 
   irAgregarVentaPorCobrar(id: number) {
-    const c       = this.cotizacionesFiltradas().find(x => x.id_cotizacion === id);
+    const c       = this.cotizacionesFiltradas().find((x: QuoteListItem) => x.id_cotizacion === id);
     const tipoCot = c?.tipo ?? 'VENTA';
     const impacto = '<br><br><span style="color:#f87171">↓ Restará stock a los productos</span>';
 

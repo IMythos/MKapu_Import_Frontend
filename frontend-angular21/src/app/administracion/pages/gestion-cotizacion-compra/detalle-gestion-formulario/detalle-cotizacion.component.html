@@ -31,25 +31,6 @@
             (onClick)="enviar()">
           </p-button>
 
-          <ng-container *ngIf="c.estado === 'PENDIENTE'">
-            <p-button
-              [label]="esCompra() ? 'Registrar Compra' : 'Agregar Venta'"
-              [icon]="esCompra() ? 'pi pi-truck' : 'pi pi-shopping-cart'"
-              styleClass="cotizaciones-pill accion-btn--venta"
-              (onClick)="irAgregarVenta()">
-            </p-button>
-            <p-button
-              [label]="esCompra() ? 'Compra por Pagar' : 'Venta por Cobrar'"
-              [icon]="esCompra() ? 'pi pi-truck' : 'pi pi-credit-card'"
-              styleClass="cotizaciones-pill accion-btn--cobrar"
-              (onClick)="irAgregarVentaPorCobrar()">
-            </p-button>
-            <p-button label="Rechazar" icon="pi pi-times"
-              styleClass="cotizaciones-pill"
-              severity="danger"
-              (onClick)="rechazar()">
-            </p-button>
-          </ng-container>
 
           <ng-container *ngIf="c.estado === 'RECHAZADA'">
             <p-button label="Reactivar" icon="pi pi-refresh"
