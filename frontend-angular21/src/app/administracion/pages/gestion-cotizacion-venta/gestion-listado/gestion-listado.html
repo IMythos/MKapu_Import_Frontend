@@ -1,0 +1,375 @@
+<div class="p-2">
+  <p-card class="cotizaciones-header-card mb-4 cotizaciones-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="cotizaciones-title-icon"><i [class]="iconoCabecera"></i></span>
+        <div>
+          <p class="cotizaciones-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="cotizaciones-title mb-0">{{ subtituloKicker }}</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-button
+          label="Agregar Cotización"
+          icon="pi pi-plus"
+          styleClass="cotizaciones-pill cotizaciones-pill-warning"
+          (onClick)="irCrear()">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<div class="p-2">
+
+  <!-- CONTADORES -->
+  <div class="contadores-cotizaciones mb-4">
+    <div class="contador-card">
+      <i class="pi pi-check-circle"></i>
+      <div>
+        <span class="contador-label">Total Cotizaciones</span>
+        <span class="contador-valor">{{ totalRecords() }}</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-check"></i>
+      <div>
+        <span class="contador-label">Aprobadas</span>
+        <span class="contador-valor">{{ totalAprobadas() }}</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-clock"></i>
+      <div>
+        <span class="contador-label">Pendientes</span>
+        <span class="contador-valor">{{ totalPendientes() }}</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-building"></i>
+      <div>
+        <span class="contador-label">Sedes</span>
+        <span class="contador-valor">{{ sedesOptions().length }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Cotización</label>
+          <p-autocomplete
+            [ngModel]="buscarValue()"
+            (ngModelChange)="buscarValue.set($event)"
+            [suggestions]="cotizacionSugerencias()"
+            (completeMethod)="searchCotizacion($event)"
+            (onSelect)="seleccionarCotizacionBusqueda($event)"
+            (onClear)="limpiarBusquedaCotizacion()"
+            placeholder="Cliente, código o fecha..."
+            field="codigo"
+            [showClear]="true"
+            styleClass="w-full">
+            <ng-template let-item pTemplate="item">
+              <div class="autocomplete-item-custom p-2">
+                <div class="flex flex-column gap-1">
+                  <span class="font-bold text-900">{{ item.codigo }}</span>
+                  <small class="text-600 flex align-items-center gap-2">
+                    <span><i class="pi pi-user mr-1 text-primary"></i>{{ item.cliente_nombre }}</span>
+                    <span><i class="pi pi-calendar mr-1 text-primary"></i>{{ item.fec_emision | date:'shortDate' }}</span>
+                    <span><i class="pi pi-money-bill mr-1 text-primary"></i>{{ item.total | currency:'PEN' }}</span>
+                  </small>
+                </div>
+              </div>
+            </ng-template>
+          </p-autocomplete>
+        </div>
+
+        <div class="filtro-item filtro-grupo-fechas">
+          <label>Rango de Fechas (Emisión)</label>
+          <div class="fechas-con-guion">
+            <p-datepicker
+              [ngModel]="fechaInicio()"
+              (ngModelChange)="fechaInicio.set($event)"
+              dateFormat="dd/mm/yy" placeholder="Fecha Inicio"
+              (onSelect)="onFechaChange()" (onClear)="onFechaChange()"
+              [showClear]="true" [showIcon]="true" styleClass="w-full">
+            </p-datepicker>
+            <span class="fecha-separador">—</span>
+            <p-datepicker
+              [ngModel]="fechaFin()"
+              (ngModelChange)="fechaFin.set($event)"
+              dateFormat="dd/mm/yy" placeholder="Fecha Fin"
+              (onSelect)="onFechaChange()" (onClear)="onFechaChange()"
+              [showClear]="true" [showIcon]="true" styleClass="w-full">
+            </p-datepicker>
+          </div>
+        </div>
+      </div>
+
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>Sede</label>
+          <p-select
+            [options]="sedesOptions()"
+            [ngModel]="sedeSeleccionada()"
+            (ngModelChange)="onSedeChange($event)"
+            optionLabel="label" optionValue="value"
+            placeholder="Todas" [showClear]="true" styleClass="w-full">
+          </p-select>
+        </div>
+
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
+          <p-select
+            [options]="estadosOptions"
+            [ngModel]="estadoSeleccionado()"
+            (ngModelChange)="onEstadoChange($event)"
+            optionLabel="label" optionValue="value"
+            placeholder="Todos" [showClear]="true" styleClass="w-full">
+          </p-select>
+        </div>
+
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros"
+            icon="pi pi-filter-slash"
+            (onClick)="limpiarFiltros()"
+            severity="danger"
+            styleClass="btn-limpiar-filtros">
+          </p-button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA -->
+  <app-shared-table-container
+    titulo="Listado de Cotizaciones"
+    iconoTitulo="pi pi-list"
+    mensajeCarga="Cargando cotizaciones..."
+    [loading]="loading()"
+    [paginaActual]="currentPage()"
+    [totalPaginas]="totalPages()"
+    [totalRegistros]="totalRecords()"
+    [limitePorPagina]="rows()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)"
+  >
+
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones" class="flex align-items-center gap-2">
+      <p-tag
+        [value]="totalRecords() + ' cotizaciones'"
+        [severity]="estadoSeleccionado() === 'APROBADA' ? 'success'
+                  : estadoSeleccionado() === 'RECHAZADA' ? 'danger'
+                  : estadoSeleccionado() === 'PENDIENTE' ? 'warn' : 'info'">
+      </p-tag>
+    </div>
+
+    <!-- Tabla -->
+    <p-table
+      [value]="cotizacionesFiltradas()"
+      [paginator]="false"
+      styleClass="p-datatable-striped"
+      [tableStyle]="{ 'min-width': '55rem' }"
+    >
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:10%">Código</th>
+          <th style="width:17%">Cliente</th>
+          <th style="width:15%">Fechas</th>
+          <th style="width:10%">Sede</th>
+          <th style="width:9%">Estado</th>
+          <th style="width:8%">Tipo</th>
+          <th style="width:9%">Total</th>
+          <th style="width:30%" class="text-center">Acciones</th>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="body" let-c>
+        <tr>
+          <td class="font-semibold">{{ c.codigo }}</td>
+          <td>{{ c.cliente_nombre }}</td>
+          <td>
+            <div class="flex flex-column gap-1">
+              <div class="flex align-items-center gap-1">
+                <i class="pi pi-calendar-plus" style="font-size:0.7rem; color:var(--text-muted)"></i>
+                <span style="font-size:0.78rem; color:var(--text-muted)">
+                  {{ c.fec_emision | date:'dd/MM/yy' }}
+                </span>
+              </div>
+              <div class="flex align-items-center gap-1">
+                <i class="pi pi-calendar-times" style="font-size:0.7rem;"
+                  [style.color]="getDiasColor(c.fec_venc)"></i>
+                <span style="font-size:0.78rem; font-weight:600;"
+                  [style.color]="getDiasColor(c.fec_venc)">
+                  {{ c.fec_venc | date:'dd/MM/yy' }}
+                </span>
+                <span class="dias-badge" [ngClass]="getDiasBadgeClass(c.fec_venc)"
+                  [pTooltip]="'Vence: ' + (c.fec_venc | date:'dd/MM/yyyy')"
+                  tooltipPosition="top">
+                  {{ getDiasLabel(c.fec_venc) }}
+                </span>
+              </div>
+            </div>
+          </td>
+          <td>{{ c.sede_nombre }}</td>
+          <td>
+            <p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)" />
+          </td>
+          <td>
+            <p-tag
+              [value]="c.tipo"
+              [severity]="c.tipo === 'VENTA' ? 'info' : 'warn'"
+              [pTooltip]="c.tipo === 'VENTA' ? 'Cotización de venta al cliente' : 'Cotización de compra a proveedor'"
+              tooltipPosition="top">
+            </p-tag>
+          </td>
+          <td>{{ c.total | currency:'PEN':'symbol' }}</td>
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver Detalles" tooltipPosition="top"
+                (onClick)="irDetalle(c.id_cotizacion)">
+              </p-button>
+
+              <p-button
+                icon="pi pi-file-pdf"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Documentos" tooltipPosition="top"
+                (onClick)="abrirAcciones(c)">
+              </p-button>
+
+              <ng-container *ngIf="c.estado === 'PENDIENTE'">
+                <p-button
+                  icon="pi pi-shopping-cart"
+                  [rounded]="true" [text]="true" severity="success"
+                  pTooltip="Agregar Venta" tooltipPosition="top"
+                  (onClick)="irAgregarVenta(c.id_cotizacion)">
+                </p-button>
+                <p-button
+                  icon="pi pi-credit-card"
+                  [rounded]="true" [text]="true" severity="info"
+                  pTooltip="Venta por Cobrar" tooltipPosition="top"
+                  (onClick)="irAgregarVentaPorCobrar(c.id_cotizacion)">
+                </p-button>
+                <p-button
+                  icon="pi pi-times"
+                  [rounded]="true" [text]="true" severity="danger"
+                  pTooltip="Rechazar cotización" tooltipPosition="top"
+                  (onClick)="rechazarCotizacion(c.id_cotizacion)">
+                </p-button>
+              </ng-container>
+
+              <ng-container *ngIf="c.estado === 'RECHAZADA'">
+                <p-button
+                  icon="pi pi-refresh"
+                  [rounded]="true" [text]="true" severity="warn"
+                  pTooltip="Reactivar a Pendiente" tooltipPosition="top"
+                  (onClick)="reactivarCotizacion(c.id_cotizacion)">
+                </p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  [rounded]="true" [text]="true" severity="danger"
+                  pTooltip="Eliminar permanentemente" tooltipPosition="top"
+                  (onClick)="eliminarCotizacion(c.id_cotizacion)">
+                </p-button>
+              </ng-container>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron cotizaciones</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+  </app-shared-table-container>
+
+</div>
+
+<!-- DIALOG ACCIONES -->
+<app-acciones-comprobante-dialog
+  [(visible)]="accionesVisible"
+  [config]="accionesConfig"
+  [accionCargando]="accionCargando"
+  (accion)="onAccion($event)"
+  (cerrar)="accionesVisible = false">
+</app-acciones-comprobante-dialog>
+
+<!-- DIALOG WHATSAPP -->
+<p-dialog
+  [(visible)]="mostrarDialogWsp"
+  [modal]="true"
+  [closable]="!enviandoWsp"
+  [style]="{ width: '420px' }"
+  [draggable]="false"
+  (onHide)="cerrarDialogWsp()"
+  header="Enviar Cotización por WhatsApp">
+
+  <div class="flex flex-column align-items-center gap-4 py-3">
+    <ng-container *ngIf="!wspReady && !wspQr">
+      <i class="pi pi-spin pi-spinner" style="font-size:2.5rem; color:var(--gold)"></i>
+      <p style="color:var(--text-muted); font-size:0.9rem">Iniciando WhatsApp...</p>
+    </ng-container>
+    <ng-container *ngIf="!wspReady && wspQr">
+      <p style="color:var(--text-muted); font-size:0.88rem; text-align:center; line-height:1.6">
+        Escanea este QR con WhatsApp en tu teléfono.<br>
+        <strong>Solo una vez</strong> — la sesión queda guardada.
+      </p>
+      <img [src]="wspQr" alt="QR WhatsApp"
+           style="width:200px; height:200px; border-radius:8px; border:2px solid var(--gold)" />
+      <div style="display:flex; align-items:center; gap:6px; color:var(--text-muted); font-size:0.8rem">
+        <i class="pi pi-spin pi-spinner"></i>
+        Esperando que escanees...
+      </div>
+    </ng-container>
+    <ng-container *ngIf="wspReady">
+      <i class="pi pi-check-circle" style="font-size:3rem; color:#25D366"></i>
+      <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; line-height:1.6">
+        WhatsApp conectado ✅<br>
+        <ng-container *ngIf="cotizacionWsp">
+          Se enviará la cotización <strong>{{ cotizacionWsp.codigo }}</strong><br>
+          con el PDF adjunto al número del cliente.
+        </ng-container>
+      </p>
+    </ng-container>
+  </div>
+
+  <ng-template pTemplate="footer">
+    <div class="flex justify-content-end gap-2">
+      <p-button
+        label="Cancelar" icon="pi pi-times"
+        severity="secondary" [outlined]="true"
+        [disabled]="enviandoWsp"
+        (onClick)="cerrarDialogWsp()">
+      </p-button>
+      <p-button
+        [label]="enviandoWsp ? 'Enviando...' : 'Enviar por WhatsApp'"
+        [icon]="enviandoWsp ? 'pi pi-spin pi-spinner' : 'pi pi-send'"
+        severity="success"
+        [disabled]="!wspReady || enviandoWsp"
+        (onClick)="enviarPorWsp()">
+      </p-button>
+    </div>
+  </ng-template>
+</p-dialog>
+
+<p-toast></p-toast>
+<p-confirmdialog></p-confirmdialog>

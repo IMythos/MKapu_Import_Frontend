@@ -74,7 +74,8 @@ export class Sidebar implements OnInit {
         { path: '/admin/promociones',                     label: 'Promociones',                icon: 'pi pi-percentage',         permiso: 'CREAR_PROMOCION' },
         { path: '/admin/ventas-por-cobrar',               label: 'Ventas por Cobrar',          icon: 'pi pi-wallet',             permiso: 'CREAR_VENTA_POR_COBRAR' },
         { path: '/admin/clientes',                        label: 'Clientes',                   icon: 'pi pi-users',              permiso: 'CREAR_CLIENTE' },
-        { path: '/admin/cotizaciones',                    label: 'Cotizaciones',               icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
+        { path: '/admin/cotizaciones-venta',              label: 'Cotizaciones Venta',         icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
+        { path: '/admin/cotizaciones-compra',             label: 'Cotizaciones Compra',        icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
         { path: '/admin/reclamos-listado',                label: 'Reclamos',                   icon: 'pi pi-exclamation-circle', permiso: 'CREAR_RECLAMO' },
         { path: '/admin/notas-credito',                   label: 'Notas de Credito',           icon: 'pi pi-id-card',            permiso: 'VER_NOTAS_CREDITO' } // CAMBIAR ICONO
       ]
@@ -153,8 +154,16 @@ export class Sidebar implements OnInit {
     this.loadUserInfo();
     this.loadMenu();
     this.iniciarSuscripcionReactiva();
+    this.cargarEmpresa(); 
+
   }
 
+  private cargarEmpresa(): void {
+    this.empresaService.getEmpresa().subscribe({
+      next: () => {},
+      error: (err) => console.error('Error cargando empresa en sidebar:', err)
+    });
+  }
 
   private iniciarSuscripcionReactiva(): void {
     this.authService.permisosActualizados$.subscribe(() => {

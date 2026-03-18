@@ -33,9 +33,11 @@ export type QuoteTipo = 'VENTA' | 'COMPRA';
 // Para el detalle completo (GET /quote/:id)
 export interface Quote {
   id_cotizacion?: number;
-  id_cliente:     string;
-  tipo:           QuoteTipo;   
-  cliente?:       QuoteCliente;
+  id_cliente:     string | null;    
+  id_proveedor?:  string | null;  
+  tipo:           QuoteTipo;
+  cliente?:       QuoteCliente | null;
+  proveedor?:     QuoteProveedor | null;   
   id_sede?:       number;
   sede?:          QuoteSede;
   fec_emision:    string;
@@ -48,19 +50,29 @@ export interface Quote {
   detalles:       QuoteDetail[];
 }
 
+export interface QuoteProveedor {
+  id:           string;
+  razon_social: string;
+  ruc:          string;
+  contacto:     string | null;
+  email:        string | null;
+  telefono:     string | null;
+}
 // Para el listado paginado (GET /quote)
 export interface QuoteListItem {
-  id_cotizacion: number;
-  codigo:        string;
-  cliente_nombre: string;
-  fec_emision:   string;
-  fec_venc:      string;
-  id_sede:       number;
-  sede_nombre:   string;
-  estado:        string;
-  tipo:          QuoteTipo;   
-  total:         number;
-  activo:        boolean;
+  id_cotizacion:    number;
+  codigo:           string;
+  cliente_nombre:   string;
+  proveedor_nombre?: string;  
+  id_proveedor?:    number;   
+  fec_emision:      string;
+  fec_venc:         string;
+  id_sede:          number;
+  sede_nombre:      string;
+  estado:           string;
+  tipo:             QuoteTipo;
+  total:            number;
+  activo:           boolean;
 }
 
 export interface QuotePagedResponse {

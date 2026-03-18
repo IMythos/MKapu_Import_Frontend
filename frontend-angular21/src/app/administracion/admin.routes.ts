@@ -204,15 +204,27 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'pagar-ventas-por-cobrar/:id', redirectTo: 'ventas-por-cobrar/pagar/:id', pathMatch: 'full' },
 
   {
-    path: 'cotizaciones',
+    path: 'cotizaciones-compra',
     canActivate: [roleGuard],
     data: { permiso: 'CREAR_COTIZACIONES' },
     children: [
-      { path: '', loadComponent: () => import('./pages/gestion-cotizacion/gestion-listado/gestion-listado').then((m) => m.GestionCotizacionesComponent) },
-      { path: 'agregar-cotizaciones', loadComponent: () => import('./pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then((m) => m.CotizacionFormulario) },
-      { path: 'ver-detalle-cotizacion/:id', loadComponent: () => import('./pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then((m) => m.DetalleCotizacionComponent) },
+      { path: '', loadComponent: () => import('./pages/gestion-cotizacion-compra/gestion-listado/gestion-compras-listado').then((m) => m.GestionComprasComponent) },
+      { path: 'agregar-cotizaciones', loadComponent: () => import('./pages/gestion-cotizacion-compra/gestion-formulario/cotizacion-compra-formulario').then((m) => m.CotizacionCompraFormulario) },
+      { path: 'ver-detalle-cotizacion/:id', loadComponent: () => import('./pages/gestion-cotizacion-compra/detalle-gestion-formulario/detalle-cotizacion-formulario').then((m) => m.DetalleCotizacionComponent) },
     ],
   },
+  {
+    path: 'cotizaciones-venta',
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_COTIZACIONES' },
+    children: [
+      { path: '', loadComponent: () => import('./pages/gestion-cotizacion-venta/gestion-listado/gestion-listado').then((m) => m.GestionCotizacionesComponent) },
+      { path: 'agregar-cotizaciones', loadComponent: () => import('./pages/gestion-cotizacion-venta/gestion-formulario/cotizacion-formulario').then((m) => m.CotizacionFormulario) },
+      { path: 'ver-detalle-cotizacion/:id', loadComponent: () => import('./pages/gestion-cotizacion-venta/detalle-gestion-formulario/detalle-cotizacion-formulario').then((m) => m.DetalleCotizacionComponent) },
+    ],
+  },
+
+
   { path: 'agregar-cotizaciones', redirectTo: 'cotizaciones/agregar', pathMatch: 'full' },
   { path: 'ver-detalle-cotizacion/:id', redirectTo: 'cotizaciones/ver-detalle-cotizacion/:id', pathMatch: 'full' },
 

@@ -37,20 +37,21 @@ import { SharedTableContainerComponent } from '../../../../shared/components/tab
   providers: [MessageService, ConfirmationService]
 })
 export class GestionCotizacionesComponent implements OnInit, OnDestroy {
-  public iconoCabecera   = 'pi pi-wallet';
+  public iconoCabecera   = 'pi pi-shopping-cart';
   public tituloKicker    = 'ADMINISTRACIÓN';
-  public subtituloKicker = 'GESTIÓN DE COTIZACIONES';
+  public subtituloKicker = 'GESTIÓN DE COTIZACIONES DE VENTA';
 
-  private sedeService               = inject(SedeService);
-  private quoteService              = inject(QuoteService);
-  private readonly sedeAlmacenService = inject(SedeAlmacenService);
-  private confirmationService       = inject(ConfirmationService);
-  private messageService            = inject(MessageService);
+  // ── Tipo fijo para esta vista ─────────────────────────────────────
+  private readonly TIPO_FIJO: 'VENTA' | 'COMPRA' = 'VENTA';
+
+  private sedeService         = inject(SedeService);
+  private quoteService        = inject(QuoteService);
+  private confirmationService = inject(ConfirmationService);
+  private messageService      = inject(MessageService);
 
   buscarValue           = signal<string>('');
   cotizacionSugerencias = signal<QuoteListItem[]>([]);
   estadoSeleccionado    = signal<string | null>('PENDIENTE');
-  tipoSeleccionado      = signal<'VENTA' | 'COMPRA' | null>(null); 
   sedeSeleccionada      = signal<number | null>(null);
   currentPage           = signal<number>(1);
   rows                  = signal<number>(5);
@@ -65,44 +66,24 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     { label: 'Vencida',   value: 'VENCIDA'   },
   ];
 
-  tiposOptions = [
-    { label: 'Todos',   value: null     },
-    { label: 'Venta',   value: 'VENTA'  },
-    { label: 'Compra',  value: 'COMPRA' },
-  ];
-
   sedesOptions = computed(() => this.sedeService.sedes().map(sede => ({
     label: sede.nombre,
     value: sede.id_sede,
   })));
 
-  private getHoyPeru(): Date {
-    const ahora       = new Date();
-    const offsetPeru  = -5 * 60;
-    const offsetLocal = ahora.getTimezoneOffset();
-    const diferencia  = (offsetLocal - offsetPeru) * 60 * 1000;
-    const horaPeruana = new Date(ahora.getTime() + diferencia);
-    horaPeruana.setHours(0, 0, 0, 0);
-    return horaPeruana;
-  }
-
   cotizaciones = computed(() => this.quoteService.quotes());
-
 
   cotizacionesFiltradas = computed(() => {
     const inicio = this.fechaInicio();
     const fin    = this.fechaFin();
-    const tipo   = this.tipoSeleccionado();
-    let lista    = this.cotizaciones();
+    const lista  = this.cotizaciones();
 
-    if (tipo) lista = lista.filter(c => c.tipo === tipo);
-
-    if (!inicio && !fin) return lista; // ← sin fechas, devuelve todo
+    if (!inicio && !fin) return lista;
 
     return lista.filter(c => {
-      const fechaStr = c.fec_emision.substring(0, 10);
-      const [y, m, d] = fechaStr.split('-').map(Number);
-      const fecSolo = new Date(y, m - 1, d);
+      const fechaStr      = c.fec_emision.substring(0, 10);
+      const [y, m, d]     = fechaStr.split('-').map(Number);
+      const fecSolo       = new Date(y, m - 1, d);
 
       if (inicio) {
         const iniSolo = new Date(inicio.getFullYear(), inicio.getMonth(), inicio.getDate());
@@ -163,7 +144,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   cargarCotizacion() {
     this.quoteService.loadQuotes({
       estado:  this.estadoSeleccionado(),
-      tipo:    this.tipoSeleccionado(),  
+      tipo:    this.TIPO_FIJO,
       id_sede: this.sedeSeleccionada(),
       search:  this.buscarValue() || undefined,
       page:    this.currentPage(),
@@ -183,12 +164,6 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     this.cargarCotizacion();
   }
 
-  onTipoChange(tipo: 'VENTA' | 'COMPRA' | null) {
-    this.tipoSeleccionado.set(tipo);
-    this.currentPage.set(1);
-    this.cargarCotizacion();
-  }
-
   onFechaChange() { /* filtro local */ }
 
   limpiarFiltros() {
@@ -198,7 +173,6 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     this.fechaFin.set(null);
     this.sedeSeleccionada.set(null);
     this.estadoSeleccionado.set(null);
-    this.tipoSeleccionado.set(null);    
     this.currentPage.set(1);
     this.cargarCotizacion();
   }
@@ -209,7 +183,7 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   searchCotizacion(event: any) {
     const query = event.query?.toLowerCase() ?? '';
     if (!query || query.length < 2) { this.cotizacionSugerencias.set([]); return; }
-    this.quoteService.loadQuotes({ search: query, limit: 6 }).subscribe({
+    this.quoteService.loadQuotes({ search: query, tipo: this.TIPO_FIJO, limit: 6 }).subscribe({
       next: () => this.cotizacionSugerencias.set(this.quoteService.quotes()),
     });
   }
@@ -287,8 +261,10 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
   abrirAcciones(c: QuoteListItem): void {
     this.cotizacionAcciones = c;
     this.accionesConfig = {
-      titulo: c.codigo, subtitulo: c.cliente_nombre,
-      labelPdf: 'PDF Cotización', labelVoucher: 'Voucher',
+      titulo:       c.codigo,
+      subtitulo:    c.cliente_nombre,
+      labelPdf:     'PDF Cotización',
+      labelVoucher: 'Voucher',
     };
     this.accionCargando  = null;
     this.accionesVisible = true;
@@ -304,49 +280,39 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
       case 'email':
         this.accionCargando = 'email';
         this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
-          next: (res) => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`, life: 4000 }); },
-          error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.', life: 3000 }); },
+          next:  (res) => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cotización ${c.codigo} enviada a ${res.sentTo}`, life: 4000 }); },
+          error: ()    => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.', life: 3000 }); },
         });
         break;
       case 'pdf-imprimir':
         this.accionCargando = 'pdf-imprimir';
         this.quoteService.printPdf(c.id_cotizacion).subscribe({
-          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          next:  () => { this.accionCargando = null; this.accionesVisible = false; },
           error: () => { this.accionCargando = null; this.accionesVisible = false; },
         });
         break;
       case 'pdf-descargar':
         this.accionCargando = 'pdf-descargar';
         this.quoteService.downloadPdf(c.id_cotizacion).subscribe({
-          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          next:  () => { this.accionCargando = null; this.accionesVisible = false; },
           error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo descargar el PDF', life: 3000 }); },
         });
         break;
       case 'voucher-imprimir':
         this.accionCargando = 'voucher-imprimir';
         this.quoteService.printThermalVoucher(c.id_cotizacion).subscribe({
-          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          next:  () => { this.accionCargando = null; this.accionesVisible = false; },
           error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo imprimir el voucher térmico.', life: 3000 }); },
         });
         break;
       case 'voucher-descargar':
         this.accionCargando = 'voucher-descargar';
         this.quoteService.downloadThermalVoucher(c.id_cotizacion).subscribe({
-          next: () => { this.accionCargando = null; this.accionesVisible = false; },
+          next:  () => { this.accionCargando = null; this.accionesVisible = false; },
           error: () => { this.accionCargando = null; this.accionesVisible = false; this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo descargar el voucher térmico.', life: 3000 }); },
         });
         break;
     }
-  }
-
-  imprimirCotizacion(c: QuoteListItem) { this.quoteService.exportPdf(c.id_cotizacion); }
-
-  enviarCotizacion(c: QuoteListItem) {
-    this.messageService.add({ severity: 'info', summary: 'Enviando...', detail: `Enviando cotización ${c.codigo} por email.` });
-    this.quoteService.sendByEmail(c.id_cotizacion).subscribe({
-      next:  (res) => this.messageService.add({ severity: 'success', summary: 'Email enviado', detail: `Cotización ${c.codigo} enviada a ${res.sentTo}` }),
-      error: ()    => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo enviar. Verifique que el cliente tenga email registrado.' }),
-    });
   }
 
   abrirDialogWsp(c: QuoteListItem): void {
@@ -432,15 +398,57 @@ export class GestionCotizacionesComponent implements OnInit, OnDestroy {
     return 'var(--text-muted)';
   }
 
-  irCrear()             { this.router.navigate(['/admin/cotizaciones/agregar-cotizaciones']); }
-  irEditar(id: number)  { this.router.navigate(['/admin/cotizaciones/editar-cotizacion', id]); }
-  irDetalle(id: number) { this.router.navigate(['/admin/cotizaciones/ver-detalle-cotizacion', id]); }
+  irCrear() {
+    this.router.navigate(
+      ['/admin/cotizaciones-venta/agregar-cotizaciones'],
+      { queryParams: { tipo: 'VENTA' } }
+    );
+  }
+
+  irEditar(id: number)  { this.router.navigate(['/admin/cotizaciones-venta/editar-cotizacion', id]); }
+  irDetalle(id: number) { this.router.navigate(['/admin/cotizaciones-venta/ver-detalle-cotizacion', id]); }
 
   irAgregarVenta(id: number) {
-    this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'contado' } });
+    const c       = this.cotizacionesFiltradas().find(x => x.id_cotizacion === id);
+    const tipoCot = c?.tipo ?? 'VENTA';
+    const impacto = '<br><br><span style="color:#f87171">↓ Restará stock a los productos</span>';
+
+    this.confirmationService.confirm({
+      message:  `¿Confirmas generar una <strong>venta al contado</strong> a partir de esta cotización?${impacto}`,
+      header:   'Generar Venta (Contado)',
+      icon:     'pi pi-shopping-cart',
+      acceptLabel: 'Sí, continuar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => {
+        this.router.navigate(
+          ['/admin/cotizaciones-venta/generar-ventas-administracion'],
+          { queryParams: { cotizacion: id, tipo: 'contado', tipoCot } }
+        );
+      },
+    });
   }
 
   irAgregarVentaPorCobrar(id: number) {
-    this.router.navigate(['/admin/generar-ventas-administracion'], { queryParams: { cotizacion: id, tipo: 'credito' } });
+    const c       = this.cotizacionesFiltradas().find(x => x.id_cotizacion === id);
+    const tipoCot = c?.tipo ?? 'VENTA';
+    const impacto = '<br><br><span style="color:#f87171">↓ Restará stock a los productos</span>';
+
+    this.confirmationService.confirm({
+      message:  `¿Confirmas generar una <strong>venta a crédito</strong> a partir de esta cotización?${impacto}`,
+      header:   'Generar Venta (Crédito)',
+      icon:     'pi pi-credit-card',
+      acceptLabel: 'Sí, continuar',
+      rejectLabel: 'Cancelar',
+      acceptButtonStyleClass: 'p-button-success',
+      rejectButtonStyleClass: 'p-button-secondary p-button-outlined',
+      accept: () => {
+        this.router.navigate(
+          ['/admin/generar-ventas-administracion'],
+          { queryParams: { cotizacion: id, tipo: 'credito', tipoCot } }
+        );
+      },
+    });
   }
 }

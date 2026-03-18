@@ -4,6 +4,8 @@ import { environment } from '../../../enviroments/enviroment';
 import { Observable, throwError, firstValueFrom } from 'rxjs';
 import { finalize, tap, catchError } from 'rxjs/operators';
 import { Quote, QuoteListItem, QuotePagedResponse } from '../interfaces/quote.interface';
+import { ProveedorService } from '../services/proveedor.service';
+import { SupplierResponse, CreateSupplierRequest } from '../interfaces/supplier.interface';
 
 export type CreateQuoteRequest = Omit<Quote, 'id_cotizacion' | 'cliente' | 'sede'>;
 
@@ -19,8 +21,9 @@ export interface LoadQuotesFilters {
 @Injectable({ providedIn: 'root' })
 export class QuoteService {
   private readonly http = inject(HttpClient);
+  private proveedorService = inject(ProveedorService);
   private readonly api = `${environment.apiUrl}/sales/quote`;
-
+  proveedoresMap               = signal<Map<number, string>>(new Map());
   private readonly _quoteList  = signal<QuoteListItem[]>([]);
   private readonly _total      = signal<number>(0);
   private readonly _page       = signal<number>(1);
@@ -34,6 +37,10 @@ export class QuoteService {
   readonly kpiAprobadas  = signal<number>(0);
   readonly kpiPendientes = signal<number>(0);
 
+  proveedorEncontrado   = signal<SupplierResponse | null>(null);
+  busquedaProvSinResult = signal(false);
+  cargandoProveedor     = signal(false);
+
   readonly quotes     = computed(() => this._quoteList());
   readonly total      = computed(() => this._total());
   readonly page       = computed(() => this._page());
@@ -42,7 +49,14 @@ export class QuoteService {
   readonly loading    = computed(() => this._loading());
   readonly error      = computed(() => this._error());
 
-
+  getNombreContraparte(c: QuoteListItem): string {
+    if (c.proveedor_nombre) return c.proveedor_nombre;
+    if (c.id_proveedor) {
+      return this.proveedoresMap().get(c.id_proveedor) ?? `Proveedor #${c.id_proveedor}`;
+    }
+    return c.cliente_nombre || '-';
+  }
+  
   loadQuotes(filters?: LoadQuotesFilters): Observable<QuotePagedResponse> {
   this._loading.set(true);
   this._error.set(null);
