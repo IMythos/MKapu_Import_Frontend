@@ -151,7 +151,7 @@ export class Sidebar implements OnInit {
     this.iniciarSuscripcionReactiva();
   }
 
-  
+
   private iniciarSuscripcionReactiva(): void {
     this.authService.permisosActualizados$.subscribe(() => {
       console.log('🔄 Sidebar detectó nuevos permisos. Redibujando menú...');
@@ -177,7 +177,7 @@ export class Sidebar implements OnInit {
   private loadMenu(): void {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
-    
+
     const permisos = user?.permisos || [];
     const roleName = user?.roleName || 'Invitado';
 
