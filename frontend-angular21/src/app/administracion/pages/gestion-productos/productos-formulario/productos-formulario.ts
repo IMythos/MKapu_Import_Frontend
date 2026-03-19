@@ -56,6 +56,9 @@ export class ProductosFormulario implements OnInit {
   sedes = this.sedeService.sedes;
   almacenes = this.almacenService.sedes;
   
+  // SIGNAL PARA ALMACENCES FILTRADOS POR SEDE
+  almacenesFiltrados = signal<any[]>([]);
+
   // SIGNALS MODO EDICIÓN
   esModoEdicion = signal<boolean>(false);
   idProductoActual = signal<number | null>(null);
@@ -97,6 +100,21 @@ export class ProductosFormulario implements OnInit {
       this.stockAgregado.set(valor || 0);
     });
 
+    this.productoForm.get('sede')?.valueChanges.subscribe((idSede) => {
+  if (!idSede) return;
+
+  this.sedeService.loadAlmacenesParaSede(idSede).subscribe({
+    next: (rel) => {
+      const almacenes = rel.almacenes.map(a => a.almacen);
+      this.almacenesFiltrados.set(almacenes);
+
+      // limpiar selección anterior
+      this.productoForm.patchValue({ almacen: null });
+    },
+    error: (err) => console.error('Error cargando almacenes', err)
+  });
+});
+
     this.productoForm.get('almacen')?.valueChanges.subscribe(v => {
   console.log('ALMACEN VALUE:', v, typeof v);
 
@@ -125,19 +143,28 @@ export class ProductosFormulario implements OnInit {
 
   }
 
-  private setSedePorDefecto() {
-    const userStorage = localStorage.getItem('user');
-    if (userStorage) {
-      try {
-        const user = JSON.parse(userStorage);
-        if (user && user.idSede) {
-          this.productoForm.patchValue({ sede: user.idSede });
-        }
-      } catch (error) {
-        console.error('Error parseando usuario', error);
+private setSedePorDefecto() {
+  const userStorage = localStorage.getItem('user');
+  if (userStorage) {
+    try {
+      const user = JSON.parse(userStorage);
+      if (user && user.idSede) {
+        this.productoForm.patchValue({ sede: user.idSede });
+
+        // 🔥 CARGAR ALMACENES INMEDIATAMENTE
+        this.sedeService.loadAlmacenesParaSede(user.idSede).subscribe({
+          next: (rel) => {
+            const almacenes = rel.almacenes.map(a => a.almacen);
+            this.almacenesFiltrados.set(almacenes);
+          },
+          error: (err) => console.error(err)
+        });
       }
+    } catch (error) {
+      console.error('Error parseando usuario', error);
     }
   }
+}
 
   private verificarModoEdicion() {
     const idParam = this.route.snapshot.paramMap.get('id');

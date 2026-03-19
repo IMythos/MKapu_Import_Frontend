@@ -533,44 +533,45 @@ export class HistorialVentasAdministracion implements OnInit, OnDestroy {
         });
         break;
       }
-        
+
       case 'voucher-imprimir':
-        this.ventasService.verVoucherTermicoEnPestana(comprobante.idComprobante,true).subscribe({
+
+        this.ventasService.generarVoucher(comprobante.idComprobante, true).subscribe({
           next: () => {
             this.dialogAccionCargando = null;
-            this.dialogVisible        = false;
             this.cdr.markForCheck();
           },
           error: () => {
             this.dialogAccionCargando = null;
             this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: 'No se pudo abrir el voucher térmico', life: 3000,
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo abrir el voucher',
+              life: 3000,
             });
             this.cdr.markForCheck();
           },
         });
         break;
 
-        case 'voucher-descargar': {
-        const nombreTicket = `ticket-${comprobante.serie}-${String(comprobante.numero).padStart(8, '0'),true}.pdf`;
-        this.ventasService.descargarVoucherTermico(comprobante.idComprobante, nombreTicket).subscribe({
+      case 'voucher-descargar':
+        this.ventasService.generarVoucher(comprobante.idComprobante, true).subscribe({
           next: () => {
             this.dialogAccionCargando = null;
-            this.dialogVisible        = false;
             this.cdr.markForCheck();
           },
           error: () => {
             this.dialogAccionCargando = null;
             this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: 'No se pudo descargar el voucher térmico', life: 3000,
+              severity: 'error',
+              summary: 'Error',
+              detail: 'No se pudo descargar el voucher',
+              life: 3000,
             });
             this.cdr.markForCheck();
           },
         });
         break;
-      }
     }
   }
 

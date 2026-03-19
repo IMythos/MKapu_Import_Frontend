@@ -202,7 +202,9 @@
                   pTooltip="Ver Detalle" (onClick)="verDetalle(d)"></p-button>
                 <p-button icon="pi pi-pencil" [text]="true" severity="secondary"
                   styleClass="despacho-icon-btn despacho-icon-warn"
-                  pTooltip="Editar Despacho"></p-button>
+                  [disabled]="d.estado !== 'EN_PREPARACION' && d.estado !== 'EN_TRANSITO'"
+                  [pTooltip]="d.estado === 'GENERADO' ? 'Confirmar salida primero' : (d.estado === 'ENTREGADO' || d.estado === 'CANCELADO') ? 'Estado final' : 'Cambiar Estado'"
+                  (onClick)="abrirCambioEstado(d)"></p-button>
                 <p-button icon="pi pi-ban" [text]="true" severity="danger"
                   styleClass="despacho-icon-btn despacho-icon-danger"
                   pTooltip="Cancelar Despacho" (onClick)="cancelar(d)"></p-button>
@@ -411,6 +413,62 @@
 
     </ng-container>
   </ng-container>
+</p-dialog>
+
+<!-- ══════════════════════════════════════════
+     DIALOG CAMBIO DE ESTADO
+══════════════════════════════════════════ -->
+<p-dialog
+  [visible]="cambioEstadoVisible()"
+  (visibleChange)="cambioEstadoVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '380px' }"
+  header="Cambiar Estado del Despacho"
+  styleClass="estado-dialog">
+
+  <ng-container *ngIf="despachoParaCambio() as d">
+    <div class="estado-dialog-body">
+
+      <div class="estado-info mb-4">
+        <span class="estado-info-label">Despacho</span>
+        <span class="estado-info-value">#{{ d.id_despacho }}</span>
+        <span class="estado-info-label ml-3">Estado actual</span>
+        <p-tag [value]="getEstadoLabel(d.estado)" [severity]="getEstadoSeverity(d.estado)" styleClass="ml-2"></p-tag>
+      </div>
+
+      <p class="estado-dialog-pregunta">Selecciona el nuevo estado:</p>
+
+      <div class="estado-opciones">
+        <!-- Entregado -->
+        <button class="estado-opcion estado-opcion-entregado"
+          (click)="aplicarCambioEstado('ENTREGADO')">
+          <i class="pi pi-check-circle"></i>
+          <div>
+            <span class="estado-opcion-titulo">Entregado</span>
+            <span class="estado-opcion-desc">Marcar como entregado al cliente</span>
+          </div>
+        </button>
+
+        <!-- Cancelado -->
+        <button class="estado-opcion estado-opcion-cancelado"
+          (click)="aplicarCambioEstado('CANCELADO')">
+          <i class="pi pi-times-circle"></i>
+          <div>
+            <span class="estado-opcion-titulo">Cancelado</span>
+            <span class="estado-opcion-desc">Cancelar este despacho</span>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cerrar" icon="pi pi-times" severity="secondary"
+      [outlined]="true" (onClick)="cambioEstadoVisible.set(false)"></p-button>
+  </ng-template>
 </p-dialog>
 
 <p-toast position="bottom-right"></p-toast>

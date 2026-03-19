@@ -282,6 +282,7 @@ export const ADMIN_ROUTES: Routes = [
     children: [
       { path: '', loadComponent: () => import('./pages/remates/pages/remates-pr/remates-pr').then((m) => m.RematesPr) },
       { path: 'registro-remate', loadComponent: () => import('./pages/remates/pages/remates-registro/remates-registro').then((m) => m.RematesRegistro) },
+      { path: 'editar-remate/:id', loadComponent: () => import('./pages/remates/pages/remates-list/editar-remate').then((m) => m.EditarRemateComponent) },
     ],
   },
 

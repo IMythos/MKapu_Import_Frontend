@@ -425,3 +425,78 @@
     cursor: pointer; transition: all 0.2s; letter-spacing: 0.02em;
   }
   .dm-btn-copia:hover { background: rgba(245,166,35,0.08); border-color: #f5a623; }
+  
+  /* ── DIALOG CAMBIO DE ESTADO ────────────────────────────── */
+  .estado-dialog-body { padding: 0.5rem 0; }
+  
+  .estado-info {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+  }
+  .estado-info-label { color: var(--text-color-secondary); }
+  .estado-info-value { font-weight: 700; color: var(--text-color); }
+  
+  .estado-dialog-pregunta {
+    font-size: 0.9rem;
+    color: var(--text-color-secondary);
+    margin-bottom: 0.75rem;
+  }
+  
+  .estado-opciones {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+  
+  .estado-opcion {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    border: 1.5px solid transparent;
+    cursor: pointer;
+    transition: all 0.18s;
+    background: transparent;
+    text-align: left;
+    width: 100%;
+  }
+  .estado-opcion i { font-size: 1.5rem; flex-shrink: 0; }
+  .estado-opcion-titulo {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .estado-opcion-desc {
+    display: block;
+    font-size: 0.78rem;
+    margin-top: 1px;
+    opacity: 0.75;
+  }
+  
+  /* Entregado */
+  .estado-opcion-entregado {
+    border-color: rgba(34,197,94,0.25);
+    background: rgba(34,197,94,0.06);
+    color: #22c55e;
+  }
+  .estado-opcion-entregado:hover {
+    background: rgba(34,197,94,0.15);
+    border-color: #22c55e;
+    transform: translateY(-1px);
+  }
+  
+  /* Cancelado */
+  .estado-opcion-cancelado {
+    border-color: rgba(239,68,68,0.25);
+    background: rgba(239,68,68,0.06);
+    color: #ef4444;
+  }
+  .estado-opcion-cancelado:hover {
+    background: rgba(239,68,68,0.15);
+    border-color: #ef4444;
+    transform: translateY(-1px);
+  }

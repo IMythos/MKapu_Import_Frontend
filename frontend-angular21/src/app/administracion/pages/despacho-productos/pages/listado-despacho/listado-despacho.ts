@@ -103,15 +103,17 @@ export class ListadoDespacho {
   fechaHasta    = signal<Date | null>((() => { const d = new Date(); d.setHours(23,59,59,999); return d; })());
   empleados     = signal<Empleado[]>([]);
 
-  // ── Cache enriquecida de ventas (para tabla) ───────────────────
-  // ventaId → { numeroCompleto, clienteNombre, clienteDoc, sedeNombre }
   ventaCache = signal<Record<number, VentaCacheItem>>({});
   loadingCache = signal(false);
 
-  // ── Modal ──────────────────────────────────────────────────────
   modalVisible         = signal(false);
   despachoSeleccionado = signal<Dispatch | null>(null);
   loadingDetalle       = signal(false);
+
+  cambioEstadoVisible = signal(false);
+  despachoParaCambio  = signal<Dispatch | null>(null);
+
+ 
   productosMap         = signal<Record<string, ProductoMapItem>>({});
   productosCodigoMap   = signal<Record<number, string>>({});
   clienteInfo          = signal<{ nombre: string; documento: string; tipo_documento?: string; telefono: string; direccion?: string; } | null>(null);
@@ -147,7 +149,6 @@ export class ListadoDespacho {
     });
   }
 
-  // Enriquece solo los despachos visibles (filtrados por hoy por defecto = pocos)
   private enriquecerTabla(): void {
     const lista = this.dispatches();
     if (!lista.length) return;
@@ -158,7 +159,6 @@ export class ListadoDespacho {
 
     if (!idsUnicos.length) return;
 
-    // Todos en paralelo, cada uno actualiza su fila en cuanto llega
     idsUnicos.forEach(id => {
       this.http.get<ReceiptDetalle>(
         `${environment.apiUrl}/sales/receipts/${id}/detalle`
@@ -330,7 +330,6 @@ export class ListadoDespacho {
     this.productosMap.set({});
   }
 
-  // ── Acciones de estado ────────────────────────────────────────
   iniciarPreparacion(): void {
     const d = this.despachoSeleccionado();
     if (!d) return;
@@ -353,23 +352,34 @@ export class ListadoDespacho {
       this.navegarAConfirmacion(despacho, 'EN_TRANSITO');
     };
 
-    const hacerTransito = (despacho: Dispatch) => {
-      this.dispatchService.iniciarTransito(despacho.id_despacho, { fecha_salida: new Date() }).subscribe({
-        next: (u) => guardarYNavegar(u),
-        error: () => {
-          // Si transito falla pero preparacion ok, navegar igual con lo que tenemos
-          guardarYNavegar(despacho);
-        },
+    const iniciarTransito = (despacho: Dispatch) => {
+      this.dispatchService.iniciarTransito(despacho.id_despacho, { fecha_salida: new Date() })
+        .subscribe({ next: (u) => guardarYNavegar(u), error: () => guardarYNavegar(despacho) });
+    };
+
+    const marcarYTransitar = (despacho: Dispatch) => {
+      const pendientes = (despacho.detalles ?? []).filter(det => det.estado === 'PENDIENTE');
+      if (!pendientes.length) { iniciarTransito(despacho); return; }
+
+      let ok = 0;
+      pendientes.forEach(det => {
+        this.dispatchService.marcarDetallePreparado(
+          det.id_detalle_despacho!,
+          { cantidad_despachada: det.cantidad_solicitada }
+        ).subscribe({
+          next: () => { ok++; if (ok === pendientes.length) iniciarTransito(despacho); },
+          error: () => iniciarTransito(despacho) // intenta transito igual si falla marcado
+        });
       });
     };
 
     if (d.estado === 'GENERADO') {
       this.dispatchService.iniciarPreparacion(d.id_despacho).subscribe({
-        next: (u) => hacerTransito(u),
-        error: () => hacerTransito(d),
+        next: (u) => marcarYTransitar(u),
+        error: () => marcarYTransitar(d),
       });
     } else if (d.estado === 'EN_PREPARACION') {
-      hacerTransito(d);
+      marcarYTransitar(d);
     } else {
       guardarYNavegar(d);
     }
@@ -397,12 +407,10 @@ export class ListadoDespacho {
     const prodCodigoMap = { ...this.productosCodigoMap() };
     const receipt       = this.receiptDetalleActual();
 
-    // Tipo de entrega: si la dirección contiene "tienda" o "recojo" es tienda
     const dirLower = (despacho.direccion_entrega ?? '').toLowerCase();
     const tipoEntrega: 'tienda' | 'delivery' =
       dirLower.includes('tienda') || dirLower.includes('recojo') ? 'tienda' : 'delivery';
 
-    // Tipo comprobante legible
     const numComp = cache?.numeroCompleto ?? '';
     let tipoComprobante = 'Comprobante';
     if (numComp.startsWith('F')) tipoComprobante = 'Factura Electrónica';
@@ -455,10 +463,121 @@ export class ListadoDespacho {
     });
   }
 
-  // Desde el modal siempre es copia
+  abrirCambioEstado(despacho: Dispatch): void {
+    const estadosNoEditables: string[] = ['GENERADO', 'ENTREGADO', 'CANCELADO'];
+    if (estadosNoEditables.includes(despacho.estado)) {
+      const msgs: Record<string, string> = {
+        GENERADO:  'Debes confirmar la salida primero desde el modal de detalle.',
+        ENTREGADO: `El despacho #${despacho.id_despacho} ya fue entregado y no puede modificarse.`,
+        CANCELADO: `El despacho #${despacho.id_despacho} está cancelado y no puede modificarse.`,
+      };
+      this.messageService.add({
+        severity: 'info',
+        summary: 'No permitido',
+        detail: msgs[despacho.estado],
+        life: 3500
+      });
+      return;
+    }
+    this.despachoParaCambio.set(despacho);
+    this.cambioEstadoVisible.set(true);
+  }
+
+  aplicarCambioEstado(nuevoEstado: 'ENTREGADO' | 'CANCELADO'): void {
+    const d = this.despachoParaCambio();
+    if (!d) return;
+
+    const onSuccess = () => {
+      this.cambioEstadoVisible.set(false);
+      this.despachoParaCambio.set(null);
+      this.messageService.add({
+        severity: 'success',
+        summary: nuevoEstado === 'ENTREGADO' ? '¡Entregado!' : 'Cancelado',
+        detail: `Despacho #${d.id_despacho} marcado como ${nuevoEstado === 'ENTREGADO' ? 'entregado' : 'cancelado'}.`,
+        life: 3000
+      });
+      this.dispatchService.loadDispatches().subscribe({
+        next: () => requestAnimationFrame(() => this.enriquecerTabla())
+      });
+    };
+
+    const onError = () => this.messageService.add({
+      severity: 'error', summary: 'Error',
+      detail: 'No se pudo cambiar el estado.', life: 3000
+    });
+
+    if (nuevoEstado === 'CANCELADO') {
+      // Cancelar se puede desde cualquier estado
+      this.dispatchService.cancelarDespacho(d.id_despacho).subscribe({
+        next: onSuccess, error: onError
+      });
+      return;
+    }
+
+    const hacerEntrega = (despacho: Dispatch) => {
+      this.dispatchService.confirmarEntrega(despacho.id_despacho, { fecha_entrega: new Date() })
+        .subscribe({ next: onSuccess, error: onError });
+    };
+
+    const marcarDetallesYTransitar = (despacho: Dispatch) => {
+      const detallesPendientes = (despacho.detalles ?? []).filter(
+        det => det.estado === 'PENDIENTE'
+      );
+
+      if (!detallesPendientes.length) {
+        this.dispatchService.iniciarTransito(despacho.id_despacho, { fecha_salida: new Date() })
+          .subscribe({ next: (u) => hacerEntrega(u), error: onError });
+        return;
+      }
+
+      let completados = 0;
+      detallesPendientes.forEach(det => {
+        this.dispatchService.marcarDetallePreparado(
+          det.id_detalle_despacho!,
+          { cantidad_despachada: det.cantidad_solicitada }
+        ).subscribe({
+          next: () => {
+            completados++;
+            if (completados === detallesPendientes.length) {
+              this.dispatchService.iniciarTransito(despacho.id_despacho, { fecha_salida: new Date() })
+                .subscribe({ next: (u) => hacerEntrega(u), error: onError });
+            }
+          },
+          error: onError
+        });
+      });
+    };
+
+    const hacerTransito = (despacho: Dispatch) => {
+      marcarDetallesYTransitar(despacho);
+    };
+
+    const hacerPreparacion = (despacho: Dispatch) => {
+      this.dispatchService.iniciarPreparacion(despacho.id_despacho)
+        .subscribe({ next: (u) => hacerTransito(u), error: onError });
+    };
+
+    switch (d.estado) {
+      case 'GENERADO':
+        hacerPreparacion(d);
+        break;
+      case 'EN_PREPARACION':
+        hacerTransito(d);
+        break;
+      case 'EN_TRANSITO':
+        hacerEntrega(d);
+        break;
+      default:
+        this.cambioEstadoVisible.set(false);
+        this.messageService.add({
+          severity: 'info', summary: 'Sin cambios',
+          detail: `El despacho ya está en estado ${d.estado}.`, life: 3000
+        });
+    }
+  }
+
   esCopiaDespacho(_id: number): boolean { return true; }
 
-  // Imprime boleta/copia DIRECTO desde el modal sin navegar
   imprimirCopia(): void {
     const d = this.despachoSeleccionado();
     if (!d) return;
@@ -521,12 +640,10 @@ export class ListadoDespacho {
       }),
     } as any;
 
-    // Marcar como impresa y generar ticket
     localStorage.setItem(`guia_impresa_${d.id_despacho}`, '1');
     this.generarTicketDirecto(data);
   }
 
-  // Genera e imprime el ticket 80mm sin navegar
   generarTicketDirecto(s: any): void {
     const fecha = s.fechaEmision
       ? new Date(s.fechaEmision).toLocaleString('es-PE', {
@@ -539,7 +656,6 @@ export class ListadoDespacho {
     const totalStr = Number(s.total ?? 0).toFixed(2);
     const descStr  = Number(s.descuento ?? 0).toFixed(2);
 
-    // Filas productos — usando concat en lugar de template literal anidado
     const filasProd = (s.productos ?? []).map((p: any) => {
       const pu  = Number(p.precio_unit ?? 0) > 0 ? 'S/ ' + Number(p.precio_unit).toFixed(2) : '';
       const tot = Number(p.total_item  ?? 0) > 0 ? 'S/ ' + Number(p.total_item).toFixed(2)  : '';
