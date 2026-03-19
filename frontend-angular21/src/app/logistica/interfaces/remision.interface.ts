@@ -4,14 +4,21 @@ export enum TransportMode { PUBLICO = 0, PRIVADO = 1 }
 export interface CreateRemissionDto {
   id_comprobante_ref: number;
   id_almacen_origen: number;
-  id_sede_origen: string;
-  id_usuario: number;
-  tipo_guia: RemissionType;
-  modalidad: TransportMode;
-  fecha_inicio_traslado: string;
+  id_sede_origen: string;   // NestJS exige este nombre como string
+  id_usuario: number;       // NestJS exige este campo como número
+  tipo_guia: number;        // NestJS exige número (0 o 1)
+  modalidad: number;        // NestJS exige número (0 o 1)
+  fecha_inicio_traslado: string; // NestJS exige este nombre
   motivo_traslado: string;
+  peso_bruto_total: number; // NestJS exige este nombre
   unidad_peso: string;
-  peso_bruto_total: number;
+  
+  // Campos opcionales que tu backend mapeará internamente
+  descripcion?: string;
+  observaciones?: string;
+  cantidad?: number; 
+  razon_social?: string; 
+  
   datos_traslado: any;
   datos_transporte: any;
   items: RemissionItemDto[];
