@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -23,6 +24,7 @@ import { TransferStore } from '../../../../services/transfer.store';
 import {
   ApproveTransferDto,
   ConfirmReceiptTransferDto,
+  TransferHeadquarterDto,
   TransferListResponseDto,
   TransferSocketEventDto,
   TransferStatus,
@@ -32,6 +34,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TransferUserContextService } from '../../../../services/transfer-user-context.service';
 import { SedeService } from '../../../../services/sede.service';
 import { TransferSocketService } from '../../../../services/transfer-socket.service';
+import { AuthService } from '../../../../../auth/services/auth.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
 import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.components';
 
@@ -50,6 +53,12 @@ interface TransferenciaRow {
   estado: TransferStatus;
   fechaEnvio: string;
   fechaLlegada: string;
+}
+
+interface ActiveHeadquarterContext {
+  id: string | null;
+  code: string;
+  name: string;
 }
 
 @Component({
@@ -82,6 +91,59 @@ export class Transferencia {
   private readonly transferUserContext = inject(TransferUserContextService);
   private readonly sedeService = inject(SedeService);
   private readonly transferSocket = inject(TransferSocketService);
+  private readonly authService = inject(AuthService, { optional: true });
+
+  private readonly headquarterCatalogSig = computed(() => {
+    const nameById = new Map<string, string>();
+    const nameByCode = new Map<string, string>();
+    const codeById = new Map<string, string>();
+
+    for (const sede of this.sedeService.sedes()) {
+      const normalizedId = this.normalizeId(sede.id_sede);
+      const normalizedCode = String(sede.codigo ?? '').trim().toUpperCase();
+      const normalizedName = String(sede.nombre ?? '').trim();
+
+      if (normalizedId && normalizedName) {
+        nameById.set(normalizedId, normalizedName);
+      }
+
+      if (normalizedCode) {
+        if (normalizedName) {
+          nameByCode.set(normalizedCode, normalizedName);
+        }
+        if (normalizedId) {
+          codeById.set(normalizedId, normalizedCode);
+        }
+      }
+    }
+
+    return { nameById, nameByCode, codeById };
+  });
+
+  private readonly activeHeadquarterContextSig = computed<ActiveHeadquarterContext>(() => {
+    const catalog = this.headquarterCatalogSig();
+    const currentUser = this.authService?.getCurrentUser();
+    const rawId = this.normalizeId(this.transferUserContext.getCurrentHeadquarterId());
+    const rawName = String(currentUser?.sedeNombre ?? '').trim();
+    const normalizedRawName = rawName.toLowerCase();
+
+    for (const sede of this.sedeService.sedes()) {
+      const sedeName = String(sede.nombre ?? '').trim();
+      if (rawName && sedeName && sedeName.toLowerCase() === normalizedRawName) {
+        return {
+          id: this.normalizeId(sede.id_sede),
+          code: String(sede.codigo ?? '').trim().toUpperCase(),
+          name: sedeName,
+        };
+      }
+    }
+
+    return {
+      id: rawId,
+      code: rawId ? catalog.codeById.get(rawId) ?? '' : '',
+      name: rawId ? catalog.nameById.get(rawId) ?? rawName : rawName,
+    };
+  });
 
   private readonly searchTermSig      = signal('');
   private readonly estadoFilterSig    = signal<TransferStatus | null>(null);
@@ -92,7 +154,10 @@ export class Transferencia {
   private readonly paginationSig = this.transferStore.pagination;
 
   readonly transferenciasSig = computed(() =>
-    this.transferStore.transfers().map((t) => this.mapTransferencia(t)),
+    this.transferStore
+      .transfers()
+      .filter((transfer) => this.belongsToCurrentHeadquarter(transfer))
+      .map((transfer) => this.mapTransferencia(transfer)),
   );
 
   readonly filteredTransferenciasSig = computed(() => {
@@ -171,7 +236,9 @@ export class Transferencia {
         return;
       }
 
-      this.handleRealtimeEvent('new_transfer_request', realtimeEvent, true);
+      untracked(() => {
+        this.handleRealtimeEvent('new_transfer_request', realtimeEvent, true);
+      });
     });
 
     effect(() => {
@@ -180,33 +247,33 @@ export class Transferencia {
         return;
       }
 
-      this.handleRealtimeEvent('transfer_status_updated', realtimeEvent, false);
+      untracked(() => {
+        this.handleRealtimeEvent('transfer_status_updated', realtimeEvent, false);
+      });
     });
   }
 
   ngOnInit(): void {
-    const currentHeadquarterId = this.transferUserContext.getCurrentHeadquarterId();
-    if (currentHeadquarterId) {
-      this.transferSocket.connect(currentHeadquarterId);
-    }
-
     this.destroyRef.onDestroy(() => {
-      this.transferSocket.disconnect();
+      this.transferSocket.disconnect('transfer-page');
     });
+
+    const initialPagination = this.paginationSig();
 
     this.sedeService
       .loadSedes()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
+        next: () => {
+          this.connectRealtimeForCurrentHeadquarter();
+          this.loadTransfersPage(initialPagination.page, initialPagination.pageSize);
+        },
         error: () => {
           // Si falla este catalogo, la tabla sigue operando con el fallback actual.
+          this.connectRealtimeForCurrentHeadquarter();
+          this.loadTransfersPage(initialPagination.page, initialPagination.pageSize);
         },
       });
-
-    this.transferStore.loadAll({
-      page:     this.paginationSig().page,
-      pageSize: this.paginationSig().pageSize,
-    });
   }
 
   // ── Getters / setters ─────────────────────────────────────────────────────
@@ -244,11 +311,11 @@ export class Transferencia {
   }
 
   onPaginadorPageChange(page: number): void {
-    this.transferStore.loadAll({ page, pageSize: this.paginationSig().pageSize });
+    this.loadTransfersPage(page, this.paginationSig().pageSize);
   }
 
   onPaginadorLimitChange(limit: number): void {
-    this.transferStore.loadAll({ page: 1, pageSize: limit });
+    this.loadTransfersPage(1, limit);
   }
 
   clearSearch(): void {
@@ -377,10 +444,10 @@ export class Transferencia {
 
   private refreshTransfers(resetToFirstPage: boolean): void {
     const pagination = this.paginationSig();
-    this.transferStore.loadAll({
-      page: resetToFirstPage ? 1 : pagination.page,
-      pageSize: pagination.pageSize,
-    });
+    this.loadTransfersPage(
+      resetToFirstPage ? 1 : pagination.page,
+      pagination.pageSize,
+    );
   }
 
   private buildRealtimeEventKey(
@@ -481,8 +548,14 @@ export class Transferencia {
       destinationHeadquartersId: String(transferencia.destinationHeadquartersId ?? transferencia.destination?.id_sede ?? transferencia.destination?.id ?? ''),
       approveUserId:             this.getApproveUserId(transferencia),
       producto:                  this.getProductName(transferencia),
-      origen:                    transferencia.origin?.nomSede || this.normalizeId(transferencia.originHeadquartersId) || '-',
-      destino:                   transferencia.destination?.nomSede || this.normalizeId(transferencia.destinationHeadquartersId) || '-',
+      origen:                    this.resolveHeadquarterDisplayName(
+        transferencia.origin,
+        transferencia.originHeadquartersId,
+      ),
+      destino:                   this.resolveHeadquarterDisplayName(
+        transferencia.destination,
+        transferencia.destinationHeadquartersId,
+      ),
       cantidad:                  transferencia.totalQuantity ?? this.getTotalQuantityFromItems(transferencia),
       solicitud:                 `${solicitudTipo}: ${transferencia.observation?.trim() || '-'}`,
       responsable:               this.getFullUserName(
@@ -600,28 +673,117 @@ export class Transferencia {
     return null;
   }
 
-  /*
-  private resolveHeadquarterName(
-    headquarterId: string | number | null | undefined,
-  ): string | null {
-    const normalizedId = this.normalizeId(headquarterId);
-    if (!normalizedId) {
-      return null;
+  private loadTransfersPage(page: number, pageSize: number): void {
+    const headquartersId = this.activeHeadquarterContextSig().id ?? this.transferUserContext.getCurrentHeadquarterId();
+    this.transferStore.loadAll({
+      headquartersId: headquartersId ?? undefined,
+      page,
+      pageSize,
+    });
+  }
+
+  private connectRealtimeForCurrentHeadquarter(): void {
+    const headquartersId = this.activeHeadquarterContextSig().id ?? this.transferUserContext.getCurrentHeadquarterId();
+    if (headquartersId) {
+      this.transferSocket.connect(headquartersId, 'transfer-page');
+      return;
     }
 
-    return this.headquarterNameMapSig().get(normalizedId) ?? null;
+    this.transferSocket.disconnect('transfer-page');
   }
-  */
 
-  
+  private belongsToCurrentHeadquarter(transfer: TransferListResponseDto): boolean {
+    const context = this.activeHeadquarterContextSig();
+    const normalizedOriginId = this.normalizeId(
+      transfer.originHeadquartersId ?? transfer.origin?.id_sede ?? transfer.origin?.id,
+    );
+    const normalizedDestinationId = this.normalizeId(
+      transfer.destinationHeadquartersId ?? transfer.destination?.id_sede ?? transfer.destination?.id,
+    );
+    const normalizedOriginCode = String(transfer.origin?.codigo ?? '').trim().toUpperCase();
+    const normalizedDestinationCode = String(transfer.destination?.codigo ?? '').trim().toUpperCase();
+
+    if (
+      context.code &&
+      (normalizedOriginCode === context.code || normalizedDestinationCode === context.code)
+    ) {
+      return true;
+    }
+
+    if (
+      context.id &&
+      (normalizedOriginId === context.id || normalizedDestinationId === context.id)
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private resolveHeadquarterDisplayName(
+    headquarter: TransferHeadquarterDto | null | undefined,
+    headquarterId: string | number | null | undefined,
+  ): string {
+    const catalog = this.headquarterCatalogSig();
+    const normalizedId = this.normalizeId(headquarterId);
+    const normalizedCode = String(headquarter?.codigo ?? '').trim().toUpperCase();
+    const currentUser = this.authService?.getCurrentUser();
+    const currentUserHeadquarterId = this.normalizeId(currentUser?.idSede);
+    const currentUserHeadquarterName = String(currentUser?.sedeNombre ?? '').trim();
+    const currentUserHeadquarterCode = currentUserHeadquarterId
+      ? catalog.codeById.get(currentUserHeadquarterId) ?? ''
+      : '';
+
+    if (
+      currentUserHeadquarterName &&
+      normalizedCode &&
+      currentUserHeadquarterCode &&
+      normalizedCode === currentUserHeadquarterCode
+    ) {
+      return currentUserHeadquarterName;
+    }
+
+    if (normalizedCode) {
+      const mappedByCode = catalog.nameByCode.get(normalizedCode);
+      if (mappedByCode) {
+        return mappedByCode;
+      }
+    }
+
+    if (
+      currentUserHeadquarterName &&
+      normalizedId &&
+      currentUserHeadquarterId &&
+      normalizedId === currentUserHeadquarterId
+    ) {
+      return currentUserHeadquarterName;
+    }
+
+    if (normalizedId) {
+      const mappedById = catalog.nameById.get(normalizedId);
+      if (mappedById) {
+        return mappedById;
+      }
+    }
+
+    return (
+      String(
+        headquarter?.nomSede ??
+          headquarter?.nombre ??
+          normalizedId ??
+          '-',
+      ).trim() || '-'
+    );
+  }
+
   private isUserFromTransferOrigin(originHeadquartersId: string | number | null | undefined): boolean {
-    const userHq = this.transferUserContext.getCurrentHeadquarterId();
+    const userHq = this.activeHeadquarterContextSig().id ?? this.transferUserContext.getCurrentHeadquarterId();
     if (!userHq || originHeadquartersId === null || originHeadquartersId === undefined) return false;
     return String(originHeadquartersId).trim() === String(userHq).trim();
   }
 
   private isUserFromTransferDestination(destinationHeadquartersId: string | number | null | undefined): boolean {
-    const userHq = this.transferUserContext.getCurrentHeadquarterId();
+    const userHq = this.activeHeadquarterContextSig().id ?? this.transferUserContext.getCurrentHeadquarterId();
     if (!userHq || destinationHeadquartersId === null || destinationHeadquartersId === undefined) return false;
     return String(destinationHeadquartersId).trim() === String(userHq).trim();
   }

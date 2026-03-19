@@ -67,15 +67,12 @@
             <div class="col-12 md:col-6 md:pr-3 flex flex-column gap-2">
               <label class="font-bold text-sm text-color">Fecha Inicio de Traslado <span class="text-red-500">*</span></label>
               <p-datepicker
-                formControlName="fecha_inicio_traslado"
+                formControlName="fecha_inicio"
                 [showIcon]="true"
                 appendTo="body"
                 styleClass="w-full"
-                [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('fecha_inicio_traslado')?.invalid && remissionForm.get('fecha_inicio_traslado')?.touched }"
+                [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('fecha_inicio')?.invalid && remissionForm.get('fecha_inicio')?.touched }"
               ></p-datepicker>
-              @if (remissionForm.get('fecha_inicio_traslado')?.invalid && remissionForm.get('fecha_inicio_traslado')?.touched) {
-                <small class="text-red-500 font-medium">Seleccione una fecha válida</small>
-              }
             </div>
 
             <div class="col-12 md:col-6 md:pl-3 flex flex-column gap-2">
@@ -105,16 +102,21 @@
                 <div class="flex flex-column gap-2 mt-2">
                   <label class="text-sm font-bold text-color">Dirección Exacta <span class="text-red-500">*</span></label>
                   <input pInputText formControlName="direccion_destino" placeholder="Ej: Av. Los Libertadores 456, Urb. San Carlos" class="w-full" [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_traslado.direccion_destino')?.invalid && remissionForm.get('datos_traslado.direccion_destino')?.touched }" />
-                  @if (remissionForm.get('datos_traslado.direccion_destino')?.invalid && remissionForm.get('datos_traslado.direccion_destino')?.touched) {
-                    <small class="text-red-500 font-medium"><i class="pi pi-exclamation-circle mr-1"></i>Obligatorio</small>
-                  }
                 </div>
 
                 <div class="flex flex-column gap-1">
                   <label class="text-sm font-bold text-color">Ubigeo (6 dígitos) <span class="text-red-500">*</span></label>
                   <div class="custom-input-group">
                     <span class="custom-addon custom-addon-left"><i class="pi pi-map"></i></span>
-                    <input pInputText formControlName="ubigeo_destino" placeholder="Ej: 150101" class="w-full custom-input-right" maxlength="6" [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_traslado.ubigeo_destino')?.invalid && remissionForm.get('datos_traslado.ubigeo_destino')?.touched }" />
+                    <input 
+                      pInputText 
+                      formControlName="ubigeo_destino" 
+                      placeholder="Ej: 150101" 
+                      class="w-full custom-input-right" 
+                      maxlength="6"
+                      (input)="allowOnlyNumbers($event, 'datos_traslado.ubigeo_destino')"
+                      [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_traslado.ubigeo_destino')?.invalid && remissionForm.get('datos_traslado.ubigeo_destino')?.touched }" 
+                    />
                   </div>
                   @if (remissionForm.get('datos_traslado.ubigeo_destino')?.invalid && remissionForm.get('datos_traslado.ubigeo_destino')?.touched) {
                     <small class="text-red-500 font-medium"><i class="pi pi-exclamation-circle mr-1"></i>Requiere 6 dígitos numéricos</small>
@@ -138,35 +140,83 @@
                 </div>
 
                 <div formGroupName="datos_transporte" class="flex flex-column gap-4 mt-2 h-full justify-content-center">
+                  
                   @if (remissionForm.get('modalidad')?.value === 1) {
                     <div class="flex flex-column gap-2 fadein">
+                      <label class="text-sm font-bold text-color">Documento (DNI/RUC) <span class="text-red-500">*</span></label>
+                      <input 
+                        pInputText 
+                        formControlName="numero_documento" 
+                        class="w-full" 
+                        placeholder="DNI o RUC del transportista" 
+                        maxlength="11"
+                        (input)="allowOnlyNumbers($event, 'datos_transporte.numero_documento')"
+                        [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.numero_documento')?.invalid && remissionForm.get('datos_transporte.numero_documento')?.touched }" 
+                      />
+                    </div>
+
+                    <div class="flex flex-column gap-2 fadein mt-2">
                       <label class="text-sm font-bold text-color">Conductor Asignado <span class="text-red-500">*</span></label>
                       <div class="custom-input-group">
                         <span class="custom-addon custom-addon-left"><i class="pi pi-user"></i></span>
-                        <input pInputText formControlName="nombre_completo" class="w-full custom-input-right" placeholder="Nombre y Apellidos" [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.nombre_completo')?.invalid && remissionForm.get('datos_transporte.nombre_completo')?.touched }" />
+                        <input 
+                          pInputText 
+                          formControlName="nombre_completo" 
+                          class="w-full custom-input-right" 
+                          placeholder="Nombre y Apellidos" 
+                          (input)="forceUppercase($event, 'datos_transporte.nombre_completo')"
+                          [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.nombre_completo')?.invalid && remissionForm.get('datos_transporte.nombre_completo')?.touched }" 
+                        />
                       </div>
                     </div>
-                    <div class="grid p-0 m-0 gap-3 md:gap-0 fadein">
+
+                    <div class="grid p-0 m-0 gap-3 md:gap-0 fadein mt-2">
                       <div class="col-12 md:col-6 md:pr-2 pl-0 flex flex-column gap-2">
                         <label class="text-sm font-bold text-color">Placa <span class="text-red-500">*</span></label>
-                        <input pInputText formControlName="placa" class="w-full font-bold text-center uppercase" placeholder="ABC-123" [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.placa')?.invalid && remissionForm.get('datos_transporte.placa')?.touched }" />
+                        <input 
+                          pInputText 
+                          formControlName="placa" 
+                          class="w-full font-bold text-center uppercase" 
+                          placeholder="ABC-123" 
+                          maxlength="7"
+                          (input)="formatPlaca($event)"
+                          [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.placa')?.invalid && remissionForm.get('datos_transporte.placa')?.touched }" 
+                        />
                       </div>
                       <div class="col-12 md:col-6 md:pl-2 pr-0 flex flex-column gap-2">
                         <label class="text-sm font-bold text-color">Licencia</label>
-                        <input pInputText formControlName="licencia" class="w-full uppercase" placeholder="Opcional" />
+                        <input 
+                          pInputText 
+                          formControlName="licencia" 
+                          class="w-full uppercase" 
+                          placeholder="Opcional" 
+                          maxlength="15"
+                          (input)="forceUppercase($event, 'datos_transporte.licencia')"
+                        />
                       </div>
                     </div>
                   } @else {
                     <div class="flex flex-column gap-2 fadein">
                       <label class="text-sm font-bold text-color">RUC Empresa de Transporte <span class="text-red-500">*</span></label>
                       <div class="custom-input-group">
-                        <input pInputText formControlName="ruc" class="w-full font-bold custom-input-left" maxlength="11" placeholder="Ingrese RUC (11 dígitos)" (keyup.enter)="buscarRucTransportista()" (blur)="buscarRucTransportista()" [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.ruc')?.invalid && remissionForm.get('datos_transporte.ruc')?.touched }" />
+                        <input 
+                          pInputText 
+                          formControlName="ruc" 
+                          class="w-full font-bold custom-input-left" 
+                          maxlength="11" 
+                          placeholder="Ingrese RUC (11 dígitos)" 
+                          (input)="allowOnlyNumbers($event, 'datos_transporte.ruc')"
+                          (keyup.enter)="buscarRucTransportista()" 
+                          (blur)="buscarRucTransportista()" 
+                          [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.ruc')?.invalid && remissionForm.get('datos_transporte.ruc')?.touched }" 
+                        />
                         <p-button icon="pi pi-search" [loading]="buscandoRuc()" (onClick)="buscarRucTransportista()" styleClass="border-top-left-radius-none border-bottom-left-radius-none"></p-button>
                       </div>
                       @if (remissionForm.get('datos_transporte.ruc')?.invalid && remissionForm.get('datos_transporte.ruc')?.touched) {
-                        <small class="text-red-500 font-medium">RUC inválido</small>
+                        <small class="text-red-500 font-medium">Debe ingresar exactamente 11 dígitos numéricos</small>
                       }
                     </div>
+
                     <div class="flex flex-column gap-2 fadein mt-2">
                       <label class="text-sm font-bold text-color">Razón Social Transportista <span class="text-red-500">*</span></label>
                       <input pInputText formControlName="razon_social" class="w-full surface-200 text-color" readonly placeholder="Autocompletado automático" [ngClass]="{ 'ng-invalid ng-dirty': remissionForm.get('datos_transporte.razon_social')?.invalid && remissionForm.get('datos_transporte.razon_social')?.touched }" />

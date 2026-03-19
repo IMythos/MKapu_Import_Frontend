@@ -150,22 +150,38 @@
           <tr>
             <!-- Comprobante -->
             <td>
-              <span class="font-semibold text-primary block">{{ getNumeroComprobante(d.id_venta_ref) }}</span>
+              <ng-container *ngIf="getNumeroComprobante(d.id_venta_ref) !== '#' + d.id_venta_ref; else skelComp">
+                <span class="font-semibold text-primary block">{{ getNumeroComprobante(d.id_venta_ref) }}</span>
+              </ng-container>
+              <ng-template #skelComp>
+                <span class="dm-skel dm-skel-comp"></span>
+              </ng-template>
               <span class="text-xs text-500">#Despacho {{ d.id_despacho }}</span>
             </td>
             <!-- Cliente -->
             <td>
-              <span class="font-semibold block">{{ getClienteNombre(d.id_venta_ref) }}</span>
-              <span class="text-xs text-500" *ngIf="getClienteDoc(d.id_venta_ref)">
-                <i class="pi pi-id-card mr-1"></i>{{ getClienteDoc(d.id_venta_ref) }}
-              </span>
+              <ng-container *ngIf="getClienteNombre(d.id_venta_ref) !== '—'; else skelCliente">
+                <span class="font-semibold block">{{ getClienteNombre(d.id_venta_ref) }}</span>
+                <span class="text-xs text-500" *ngIf="getClienteDoc(d.id_venta_ref)">
+                  <i class="pi pi-id-card mr-1"></i>{{ getClienteDoc(d.id_venta_ref) }}
+                </span>
+              </ng-container>
+              <ng-template #skelCliente>
+                <span class="dm-skel dm-skel-nombre"></span>
+                <span class="dm-skel dm-skel-doc"></span>
+              </ng-template>
             </td>
             <!-- Sede -->
             <td>
-              <span class="flex align-items-center gap-1">
-                <i class="pi pi-building text-400 text-xs"></i>
-                {{ getSede(d.id_venta_ref) }}
-              </span>
+              <ng-container *ngIf="getSede(d.id_venta_ref) !== '—'; else skelSede">
+                <span class="flex align-items-center gap-1">
+                  <i class="pi pi-building text-400 text-xs"></i>
+                  {{ getSede(d.id_venta_ref) }}
+                </span>
+              </ng-container>
+              <ng-template #skelSede>
+                <span class="dm-skel dm-skel-sede"></span>
+              </ng-template>
             </td>
             <!-- Dirección -->
             <td>
@@ -186,7 +202,9 @@
                   pTooltip="Ver Detalle" (onClick)="verDetalle(d)"></p-button>
                 <p-button icon="pi pi-pencil" [text]="true" severity="secondary"
                   styleClass="despacho-icon-btn despacho-icon-warn"
-                  pTooltip="Editar Despacho"></p-button>
+                  [disabled]="d.estado !== 'EN_PREPARACION' && d.estado !== 'EN_TRANSITO'"
+                  [pTooltip]="d.estado === 'GENERADO' ? 'Confirmar salida primero' : (d.estado === 'ENTREGADO' || d.estado === 'CANCELADO') ? 'Estado final' : 'Cambiar Estado'"
+                  (onClick)="abrirCambioEstado(d)"></p-button>
                 <p-button icon="pi pi-ban" [text]="true" severity="danger"
                   styleClass="despacho-icon-btn despacho-icon-danger"
                   pTooltip="Cancelar Despacho" (onClick)="cancelar(d)"></p-button>
@@ -255,7 +273,7 @@
       <div class="dm-info-grid">
 
         <!-- Cliente -->
-        <div class="dm-info-card" *ngIf="clienteInfo()">
+        <div class="dm-info-card dm-info-card-cliente" *ngIf="clienteInfo()">
           <span class="dm-info-label"><i class="pi pi-user mr-1"></i>Cliente</span>
           <p class="dm-info-value">{{ clienteInfo()!.nombre }}</p>
           <p class="dm-info-obs mt-1" *ngIf="clienteInfo()!.documento">
@@ -265,19 +283,38 @@
             <i class="pi pi-phone mr-1"></i>{{ clienteInfo()!.telefono }}
           </p>
         </div>
+        <!-- Cliente vacío si no hay info (para que la grid no colapse) -->
+        <div class="dm-info-card dm-info-card-cliente" *ngIf="!clienteInfo()">
+          <span class="dm-info-label"><i class="pi pi-user mr-1"></i>Cliente</span>
+          <p class="dm-info-obs" style="margin:0;">—</p>
+        </div>
 
-        <!-- Dirección de entrega -->
-        <div class="dm-info-card dm-info-address">
+        <!-- ── DIRECCIÓN + MAPA EMBEBIDO ── -->
+        <div class="dm-info-card dm-info-card-direccion">
           <span class="dm-info-label"><i class="pi pi-map-marker mr-1"></i>Dirección de Entrega</span>
-          <p class="dm-info-value">{{ d.direccion_entrega }}</p>
-          <a [href]="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(d.direccion_entrega + ', Lima, Perú')"
-             target="_blank" rel="noopener" class="dm-map-link">
-            <i class="pi pi-map-marker mr-1"></i> Ver en Google Maps
+          <p class="dm-info-value mb-2">{{ d.direccion_entrega }}</p>
+
+          <!-- Link externo -->
+          <a [href]="'https://www.google.com/maps/search/?api=1&query=' + encodeAddress(d.direccion_entrega)"
+             target="_blank" rel="noopener" class="dm-map-link-ext">
+            <i class="pi pi-external-link mr-1"></i> Ver en Google Maps
           </a>
+
+          <!-- Mapa embebido: ocupa el espacio restante de la card -->
+          <div class="dm-map-embed-wrap">
+            <iframe
+              [src]="getMapEmbedUrl(d.direccion_entrega)"
+              class="dm-map-iframe"
+              style="border:0;"
+              allowfullscreen
+              loading="lazy"
+              referrerpolicy="no-referrer-when-downgrade">
+            </iframe>
+          </div>
         </div>
 
         <!-- Sede de origen -->
-        <div class="dm-info-card">
+        <div class="dm-info-card dm-info-card-sede">
           <span class="dm-info-label"><i class="pi pi-building mr-1"></i>Sede Origen</span>
           <p class="dm-info-value">{{ sedeNombreModal() }}</p>
         </div>
@@ -362,6 +399,12 @@
       <div class="dm-footer">
         <p-button label="Cerrar" icon="pi pi-times" severity="secondary" [outlined]="true" (onClick)="cerrarModal()"></p-button>
 
+        <!-- Imprimir copia desde el modal (siempre es copia) -->
+        <button *ngIf="d.estado !== 'GENERADO' && d.estado !== 'CANCELADO'"
+          class="dm-btn-copia" (click)="imprimirCopia()">
+          <i class="pi pi-print mr-2"></i>Imprimir Copia
+        </button>
+
         <button *ngIf="d.estado === 'GENERADO'"
           class="dm-btn-salida" (click)="confirmarSalida()">
           <i class="pi pi-send mr-2"></i>Confirmar y Registrar Salida
@@ -370,6 +413,62 @@
 
     </ng-container>
   </ng-container>
+</p-dialog>
+
+<!-- ══════════════════════════════════════════
+     DIALOG CAMBIO DE ESTADO
+══════════════════════════════════════════ -->
+<p-dialog
+  [visible]="cambioEstadoVisible()"
+  (visibleChange)="cambioEstadoVisible.set($event)"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '380px' }"
+  header="Cambiar Estado del Despacho"
+  styleClass="estado-dialog">
+
+  <ng-container *ngIf="despachoParaCambio() as d">
+    <div class="estado-dialog-body">
+
+      <div class="estado-info mb-4">
+        <span class="estado-info-label">Despacho</span>
+        <span class="estado-info-value">#{{ d.id_despacho }}</span>
+        <span class="estado-info-label ml-3">Estado actual</span>
+        <p-tag [value]="getEstadoLabel(d.estado)" [severity]="getEstadoSeverity(d.estado)" styleClass="ml-2"></p-tag>
+      </div>
+
+      <p class="estado-dialog-pregunta">Selecciona el nuevo estado:</p>
+
+      <div class="estado-opciones">
+        <!-- Entregado -->
+        <button class="estado-opcion estado-opcion-entregado"
+          (click)="aplicarCambioEstado('ENTREGADO')">
+          <i class="pi pi-check-circle"></i>
+          <div>
+            <span class="estado-opcion-titulo">Entregado</span>
+            <span class="estado-opcion-desc">Marcar como entregado al cliente</span>
+          </div>
+        </button>
+
+        <!-- Cancelado -->
+        <button class="estado-opcion estado-opcion-cancelado"
+          (click)="aplicarCambioEstado('CANCELADO')">
+          <i class="pi pi-times-circle"></i>
+          <div>
+            <span class="estado-opcion-titulo">Cancelado</span>
+            <span class="estado-opcion-desc">Cancelar este despacho</span>
+          </div>
+        </button>
+      </div>
+
+    </div>
+  </ng-container>
+
+  <ng-template pTemplate="footer">
+    <p-button label="Cerrar" icon="pi pi-times" severity="secondary"
+      [outlined]="true" (onClick)="cambioEstadoVisible.set(false)"></p-button>
+  </ng-template>
 </p-dialog>
 
 <p-toast position="bottom-right"></p-toast>

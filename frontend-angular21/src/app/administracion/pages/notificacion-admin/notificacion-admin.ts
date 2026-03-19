@@ -4,7 +4,6 @@ import {
   Component,
   computed,
   inject,
-  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -72,7 +71,7 @@ const STATUS_OPTIONS: NotificationOption<NotificationStatusFilter>[] = [
   styleUrl: './notificacion-admin.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotificacionAdmin implements OnInit, OnDestroy {
+export class NotificacionAdmin implements OnInit {
   private readonly router = inject(Router);
   private readonly notificationService = inject(TransferNotificationService);
   private readonly userContext = inject(TransferUserContextService);
@@ -204,9 +203,6 @@ export class NotificacionAdmin implements OnInit, OnDestroy {
     this.notificationService.start();
   }
 
-  ngOnDestroy(): void {
-    this.notificationService.stop();
-  }
 
   setView(view: NotificationView): void {
     this.view.set(view);

@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { Injectable, computed, effect, inject, signal, untracked } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type {
   StoredTransferNotification,
@@ -13,7 +13,10 @@ import { TransferUserContextService } from './transfer-user-context.service';
 import { TransferApiService } from './transferencia.service';
 
 const STORAGE_PREFIX = 'transfer_notifications';
+const NOTIFICATION_COUNT_STORAGE_KEY = 'transferencia_notif_count';
+const NOTIFICATION_COUNT_EVENT = 'transfer-notification-count-updated';
 const SEVEN_DAYS_IN_MS = 7 * 24 * 60 * 60 * 1000;
+const SOCKET_OWNER = 'transfer-notifications';
 const RELEVANT_STATUSES: ReadonlySet<TransferNotificationStatus> = new Set([
   'SOLICITADA',
   'APROBADA',
@@ -30,10 +33,12 @@ export class TransferNotificationService {
   private readonly currentRole = signal<TransferRole>('JEFE DE ALMACEN');
   private readonly storageKey = signal<string | null>(null);
   private readonly socketFingerprints = new Set<string>();
+  private hasLoadedOnce = false;
 
   readonly notifications = signal<StoredTransferNotification[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
+  readonly lastRealtimeNotification = signal<StoredTransferNotification | null>(null);
   readonly canConsume = computed(
     () => this.currentRole() === 'ADMINISTRADOR' && !!this.currentHeadquartersId(),
   );
@@ -41,20 +46,34 @@ export class TransferNotificationService {
   constructor() {
     effect(() => {
       const event = this.transferSocket.lastNewRequest();
-      if (!event || !this.active() || !this.canConsume() || !this.isRelevantSocketEvent(event)) {
+      if (
+        !event ||
+        !this.active() ||
+        !this.canConsume() ||
+        !this.isRelevantSocketEvent(event)
+      ) {
         return;
       }
 
-      void this.refreshFromSocket(event);
+      untracked(() => {
+        void this.refreshFromSocket(event);
+      });
     });
 
     effect(() => {
       const event = this.transferSocket.lastStatusUpdate();
-      if (!event || !this.active() || !this.canConsume() || !this.isRelevantSocketEvent(event)) {
+      if (
+        !event ||
+        !this.active() ||
+        !this.canConsume() ||
+        !this.isRelevantSocketEvent(event)
+      ) {
         return;
       }
 
-      void this.refreshFromSocket(event);
+      untracked(() => {
+        void this.refreshFromSocket(event);
+      });
     });
   }
 
@@ -63,27 +82,39 @@ export class TransferNotificationService {
     const role = this.userContext.getCurrentRole();
     const storageKey = this.buildStorageKey(headquartersId, role);
 
+    const contextChanged =
+      this.currentHeadquartersId() !== headquartersId ||
+      this.currentRole() !== role ||
+      this.storageKey() !== storageKey;
+
     this.currentHeadquartersId.set(headquartersId);
     this.currentRole.set(role);
     this.storageKey.set(storageKey);
     this.error.set(null);
-    this.socketFingerprints.clear();
 
-    const storedNotifications = this.pruneExpired(
-      storageKey ? this.readFromStorage(storageKey) : [],
-    );
-    this.notifications.set(this.sortNotifications(storedNotifications));
-    this.persistCurrentState();
+    if (contextChanged) {
+      this.socketFingerprints.clear();
+      this.lastRealtimeNotification.set(null);
+      const storedNotifications = this.pruneExpired(
+        storageKey ? this.readFromStorage(storageKey) : [],
+      );
+      this.notifications.set(this.sortNotifications(storedNotifications));
+      this.persistCurrentState();
+      this.hasLoadedOnce = false;
+    }
 
     if (role !== 'ADMINISTRADOR' || !headquartersId) {
       this.active.set(false);
-      this.transferSocket.disconnect();
+      this.transferSocket.disconnect(SOCKET_OWNER);
       return;
     }
 
     this.active.set(true);
-    this.transferSocket.connect(headquartersId);
-    void this.refresh();
+    this.transferSocket.connect(headquartersId, SOCKET_OWNER);
+
+    if (contextChanged || !this.hasLoadedOnce) {
+      void this.refresh();
+    }
   }
 
   stop(): void {
@@ -91,13 +122,11 @@ export class TransferNotificationService {
     this.loading.set(false);
     this.error.set(null);
     this.socketFingerprints.clear();
-    this.transferSocket.disconnect();
+    this.transferSocket.disconnect(SOCKET_OWNER);
   }
 
   async refresh(): Promise<void> {
-    const headquartersId = this.currentHeadquartersId();
-    const role = this.currentRole();
-    if (!this.canConsume() || !headquartersId) {
+    if (!this.canConsume()) {
       return;
     }
 
@@ -105,12 +134,10 @@ export class TransferNotificationService {
     this.error.set(null);
 
     try {
-      const response = await firstValueFrom(
-        this.transferApi.listNotifications({ headquartersId, role }),
-      );
-      const merged = this.mergeNotifications(response);
+      const merged = await this.fetchMergedNotifications();
       this.notifications.set(merged);
       this.persistCurrentState();
+      this.hasLoadedOnce = true;
     } catch (error: unknown) {
       this.error.set(this.resolveErrorMessage(error));
     } finally {
@@ -159,7 +186,7 @@ export class TransferNotificationService {
   private async refreshFromSocket(event: TransferSocketEventDto): Promise<void> {
     const transferId = Number(event.transfer?.id ?? 0);
     const status = String(event.transfer?.status ?? '').trim().toUpperCase();
-    const emittedAt = String(event.emittedAt ?? '');
+    const emittedAt = String(event.emittedAt ?? '').trim();
     const fingerprint = `${transferId}:${status}:${emittedAt}`;
 
     if (this.socketFingerprints.has(fingerprint)) {
@@ -167,14 +194,44 @@ export class TransferNotificationService {
     }
 
     this.socketFingerprints.add(fingerprint);
+    const previousMap = new Map(
+      this.notifications().map((item) => [item.transferId, item]),
+    );
 
     try {
-      await this.refresh();
+      const merged = await this.fetchMergedNotifications();
+      this.notifications.set(merged);
+      this.persistCurrentState();
+
+      const changedNotification = this.resolveChangedNotification(
+        previousMap,
+        merged,
+        transferId,
+      );
+      if (changedNotification) {
+        this.lastRealtimeNotification.set(changedNotification);
+      }
+    } catch (error: unknown) {
+      this.error.set(this.resolveErrorMessage(error));
     } finally {
       queueMicrotask(() => {
         this.socketFingerprints.delete(fingerprint);
       });
     }
+  }
+
+  private async fetchMergedNotifications(): Promise<StoredTransferNotification[]> {
+    const headquartersId = this.currentHeadquartersId();
+    const role = this.currentRole();
+    if (!this.canConsume() || !headquartersId) {
+      return this.sortNotifications(this.pruneExpired(this.notifications()));
+    }
+
+    const response = await firstValueFrom(
+      this.transferApi.listNotifications({ headquartersId, role }),
+    );
+
+    return this.mergeNotifications(response);
   }
 
   private mergeNotifications(
@@ -240,6 +297,33 @@ export class TransferNotificationService {
     };
   }
 
+  private resolveChangedNotification(
+    previousMap: Map<number, StoredTransferNotification>,
+    merged: StoredTransferNotification[],
+    transferId: number,
+  ): StoredTransferNotification | null {
+    const current = merged.find(
+      (notification) =>
+        notification.transferId === transferId && notification.deletedAt === null,
+    );
+    if (!current) {
+      return null;
+    }
+
+    const previous = previousMap.get(transferId);
+    if (!previous) {
+      return current;
+    }
+
+    const samePayload =
+      previous.status === current.status &&
+      previous.title === current.title &&
+      previous.message === current.message &&
+      previous.deletedAt === current.deletedAt;
+
+    return samePayload ? null : current;
+  }
+
   private pruneExpired(
     notifications: StoredTransferNotification[],
   ): StoredTransferNotification[] {
@@ -295,15 +379,27 @@ export class TransferNotificationService {
   }
 
   private persistCurrentState(): void {
+    const persistedNotifications = this.pruneExpired(this.notifications());
     const storageKey = this.storageKey();
-    if (!storageKey) {
-      return;
+    if (storageKey) {
+      localStorage.setItem(storageKey, JSON.stringify(persistedNotifications));
     }
 
+    const unreadVisibleCount = persistedNotifications.filter(
+      (item) => item.deletedAt === null && !item.read,
+    ).length;
     localStorage.setItem(
-      storageKey,
-      JSON.stringify(this.pruneExpired(this.notifications())),
+      NOTIFICATION_COUNT_STORAGE_KEY,
+      String(unreadVisibleCount),
     );
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent<number>(NOTIFICATION_COUNT_EVENT, {
+          detail: unreadVisibleCount,
+        }),
+      );
+    }
   }
 
   private isStoredNotification(
@@ -360,4 +456,3 @@ export class TransferNotificationService {
     return 'No se pudo actualizar la bandeja de transferencias.';
   }
 }
-
