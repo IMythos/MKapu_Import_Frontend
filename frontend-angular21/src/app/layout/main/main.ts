@@ -17,6 +17,7 @@ export class Main implements OnInit {
   private roleSocket = inject(RoleSocketService);
   private authService = inject(AuthService);
   private themeService = inject(ThemeService);
+
   toggleTheme(): void {
     this.themeService.toggleTheme();
   }

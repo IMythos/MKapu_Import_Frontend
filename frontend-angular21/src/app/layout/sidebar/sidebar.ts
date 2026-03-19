@@ -67,8 +67,8 @@ export class Sidebar implements OnInit {
       items: [
         { path: '/admin/dashboard-admin',                 label: 'Dashboard',                  icon: 'pi pi-home',               permiso: 'VER_DASHBOARD_ADMIN' },
         { path: '/admin/caja',                            label: 'Caja',                       icon: 'pi pi-money-bill',         permiso: 'VER_CAJA' },
-        { path: '/admin/generar-ventas-administracion',   label: 'Crear Venta Administración', icon: 'pi pi-plus-circle',        permiso: 'CREAR_VENTA_ADMIN' },
-        { path: '/admin/historial-ventas-administracion', label: 'Historial Ventas Admin',     icon: 'pi pi-list',               permiso: 'VER_VENTAS_ADMIN' },
+        { path: '/admin/generar-ventas-administracion',   label: 'Crear Venta', icon: 'pi pi-plus-circle',        permiso: 'CREAR_VENTA_ADMIN' },
+        { path: '/admin/historial-ventas-administracion', label: 'Historial Ventas',     icon: 'pi pi-list',               permiso: 'VER_VENTAS_ADMIN' },
         { path: '/admin/nota-credito',                    label: 'Notas de Crédito',           icon: 'pi pi-credit-card',        permiso: 'CREAR_NC' },
         { path: '/admin/descuentos',                      label: 'Descuentos',                 icon: 'pi pi-tag',                permiso: 'CREAR_DESCUENTO' },
         { path: '/admin/promociones',                     label: 'Promociones',                icon: 'pi pi-percentage',         permiso: 'CREAR_PROMOCION' },
@@ -191,6 +191,7 @@ export class Sidebar implements OnInit {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
 
+
     const permisos = user?.permisos || [];
     const roleName = user?.roleName || 'Invitado';
 
@@ -278,3 +279,4 @@ export class Sidebar implements OnInit {
     });
   }
 }
+
