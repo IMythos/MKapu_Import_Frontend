@@ -178,6 +178,7 @@ export class DocumentoContador implements OnInit {
   cantidadNotasCredito = 0;
 
   // ── Paginación ───────────────────────────────────────────────────
+  //comentario
   paginaActual    = 1;
   limitePorPagina = 10;
   totalRegistros  = 0;
