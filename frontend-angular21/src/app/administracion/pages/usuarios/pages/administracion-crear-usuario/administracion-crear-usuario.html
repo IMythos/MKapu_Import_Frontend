@@ -9,7 +9,7 @@
         </span>
         <div>
           <p class="usuarios-kicker">ADMINISTRACIÓN · ADMINISTRACIÓN - USUARIOS</p>
-          <h2 class="usuarios-title">LISTADO DE USUARIOS</h2>
+          <h2 class="usuarios-title">LISTADO DE EMPLEADOS</h2>
         </div>
       </div>
       <div class="usuarios-header-actions flex w-full md:w-auto md:justify-content-end">
@@ -19,6 +19,7 @@
           styleClass="usuarios-pill w-full md:w-auto"
           (onClick)="nuevoUsuario()">
         </p-button>
+
       </div>
     </div>
   </p-card>
@@ -175,6 +176,12 @@
                 [rounded]="true" [text]="true" severity="secondary"
                 pTooltip="Editar usuario" tooltipPosition="top"
                 [routerLink]="['/admin/usuarios/editar-usuario', user.id_usuario]">
+              </p-button>
+              <p-button
+                icon="pi pi-chart-line"
+                [rounded]="true" [text]="true" severity="info"
+                pTooltip="Ver seguimiento" tooltipPosition="top"
+                [routerLink]="['/admin/empleados', user.id_usuario, 'seguimiento']">
               </p-button>
               <p-button
                 [icon]="user.activo ? 'pi pi-times' : 'pi pi-check'"

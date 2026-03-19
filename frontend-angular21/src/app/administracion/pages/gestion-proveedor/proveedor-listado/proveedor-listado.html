@@ -149,101 +149,119 @@
 <!-- ══ TEMPLATE LISTA PROVEEDORES ══════════════════════════════════════ -->
 <ng-template #listaProveedores>
 
-  <!-- Vista tabla -->
+  <!-- Vista tabla con SharedTableContainer -->
   <div *ngIf="vistaLista()" class="mb-6">
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden" style="position: relative;">
+    <app-shared-table-container
+      titulo="Listado de Proveedores"
+      iconoTitulo="pi pi-building"
+      mensajeCarga="Cargando proveedores..."
+      [loading]="loading()"
+      [paginaActual]="paginaActual()"
+      [totalPaginas]="totalPaginas()"
+      [totalRegistros]="totalRecords()"
+      [limitePorPagina]="rows()"
+      [mostrarExportar]="false"
+      (pageChange)="onPageChange($event)"
+      (limitChange)="onLimitChange($event)"
+    >
 
-      <app-loading-overlay
-        [visible]="loading()"
-        mensaje="Cargando proveedores..."
-        modo="inline">
-      </app-loading-overlay>
-
-      <div [style.opacity]="loading() ? '0.3' : '1'" style="transition: opacity 0.2s ease;">
-
-        <p-table
-          *ngIf="proveedoresPaginados().length > 0"
-          [value]="proveedoresPaginados()"
-          dataKey="id_proveedor"
-          [loading]="false"
-          [paginator]="false"
-          styleClass="proveedores-table-nativa proveedores-table-hover">
-
-          <ng-template pTemplate="header">
-            <tr>
-              <th style="width: 15%">RUC</th>
-              <th style="width: 30%">Razón Social</th>
-              <th style="width: 15%">Contacto</th>
-              <th style="width: 20%">Email</th>
-              <th style="width: 10%">Estado</th>
-              <th style="width: 10%">Acciones</th>
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="body" let-p>
-            <tr>
-              <td class="font-semibold">{{ p.ruc }}</td>
-              <td>{{ p.razon_social }}</td>
-              <td>{{ p.contacto || '-' }}</td>
-              <td>{{ p.email || '-' }}</td>
-              <td>
-                <p-tag
-                  [value]="p.estado ? 'Activo' : 'Inactivo'"
-                  [severity]="p.estado ? 'success' : 'danger'"
-                  styleClass="font-bold">
-                </p-tag>
-              </td>
-              <td>
-                <div class="flex align-items-center gap-2">
-                  <p-button icon="pi pi-eye" text severity="secondary"
-                    styleClass="proveedores-icon-btn proveedores-icon-soft"
-                    pTooltip="Ver Detalles"
-                    (onClick)="irDetalle(p.id_proveedor)">
-                  </p-button>
-                  <p-button icon="pi pi-pencil" text severity="secondary"
-                    styleClass="proveedores-icon-btn proveedores-icon-warn"
-                    pTooltip="Editar Proveedor"
-                    (onClick)="irEditar(p.id_proveedor)">
-                  </p-button>
-                  <p-button icon="pi pi-trash" text
-                    [severity]="p.estado ? 'danger' : 'success'"
-                    styleClass="proveedores-icon-btn proveedores-icon-danger"
-                    [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
-                    (onClick)="toggleStatus(p)">
-                  </p-button>
-                </div>
-              </td>
-            </tr>
-          </ng-template>
-
-          <ng-template pTemplate="emptymessage">
-            <tr>
-              <td colspan="6" class="text-center py-6">
-                <i class="pi pi-inbox text-4xl text-400 mb-3 block"></i>
-                <p class="text-900 font-medium mb-0">No se encontraron proveedores</p>
-                <p class="text-600 mt-2">Ajusta los filtros arriba</p>
-              </td>
-            </tr>
-          </ng-template>
-
-        </p-table>
-
-        <app-paginador
-          *ngIf="proveedoresPaginados().length > 0"
-          [page]="paginaActual()"
-          [totalPages]="totalPaginas()"
-          [total]="totalRecords()"
-          [limit]="rows()"
-          [limitOpciones]="pageSizeOptions"
-          (pageChange)="onPageChange($event)"
-          (limitChange)="onLimitChange($event)">
-        </app-paginador>
-
+      <!-- Tag contador en slot de acciones -->
+      <div slot="acciones">
+        <p-tag
+          [value]="totalRecords() + ' proveedores'"
+          [severity]="esVistaEliminados() ? 'danger' : 'success'">
+        </p-tag>
       </div>
-    </div>
+
+      <!-- Estado vacío -->
+      <div *ngIf="proveedoresPaginados().length === 0 && !loading()" class="mensaje-vacio">
+        <i class="pi pi-inbox"></i>
+        <p>No se encontraron proveedores</p>
+        <p-button
+          label="Limpiar filtros"
+          icon="pi pi-filter-slash"
+          severity="danger"
+          size="small"
+          (onClick)="limpiarFiltros()">
+        </p-button>
+      </div>
+
+      <!-- Tabla -->
+      <p-table
+        *ngIf="proveedoresPaginados().length > 0"
+        [value]="proveedoresPaginados()"
+        dataKey="id_proveedor"
+        [paginator]="false"
+        styleClass="p-datatable-striped proveedores-table-hover">
+
+        <ng-template pTemplate="header">
+          <tr>
+            <th style="width:15%">RUC</th>
+            <th style="width:30%">Razón Social</th>
+            <th style="width:15%">Contacto</th>
+            <th style="width:20%">Email</th>
+            <th style="width:10%">Estado</th>
+            <th style="width:10%" class="text-center">Acciones</th>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-p>
+          <tr>
+            <td class="font-semibold">{{ p.ruc }}</td>
+            <td>{{ p.razon_social }}</td>
+            <td>{{ p.contacto || '-' }}</td>
+            <td>{{ p.email || '-' }}</td>
+            <td>
+              <p-tag
+                [value]="p.estado ? 'Activo' : 'Inactivo'"
+                [severity]="p.estado ? 'success' : 'danger'"
+                styleClass="font-bold">
+              </p-tag>
+            </td>
+            <td class="text-center">
+              <div class="acciones-tabla">
+                <p-button
+                  icon="pi pi-eye"
+                  [rounded]="true" [text]="true" severity="secondary"
+                  pTooltip="Ver Detalles" tooltipPosition="top"
+                  (onClick)="irDetalle(p.id_proveedor)">
+                </p-button>
+                <p-button
+                  icon="pi pi-pencil"
+                  [rounded]="true" [text]="true" severity="secondary"
+                  pTooltip="Editar Proveedor" tooltipPosition="top"
+                  (onClick)="irEditar(p.id_proveedor)">
+                </p-button>
+                <p-button
+                  icon="pi pi-trash"
+                  [rounded]="true" [text]="true"
+                  [severity]="p.estado ? 'danger' : 'success'"
+                  [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
+                  tooltipPosition="top"
+                  (onClick)="toggleStatus(p)">
+                </p-button>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="6" class="text-center">
+              <div class="mensaje-vacio">
+                <i class="pi pi-inbox"></i>
+                <p>No se encontraron proveedores</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
+
+      </p-table>
+
+    </app-shared-table-container>
   </div>
 
-  <!-- Vista tarjetas -->
+  <!-- Vista tarjetas — mantiene su propio layout sin shared component -->
   <div *ngIf="!vistaLista()" class="mb-6">
     <div style="position: relative;">
 
@@ -283,19 +301,22 @@
               </div>
               <div class="flex-1"></div>
               <div class="flex align-items-center justify-content-center gap-2 pt-2">
-                <p-button icon="pi pi-eye" text severity="secondary"
-                  styleClass="proveedores-icon-btn proveedores-icon-soft"
+                <p-button
+                  icon="pi pi-eye" [text]="true" severity="secondary"
+                  styleClass="proveedores-icon-btn"
                   pTooltip="Ver Detalles"
                   (onClick)="irDetalle(p.id_proveedor)">
                 </p-button>
-                <p-button icon="pi pi-pencil" text severity="secondary"
-                  styleClass="proveedores-icon-btn proveedores-icon-warn"
+                <p-button
+                  icon="pi pi-pencil" [text]="true" severity="secondary"
+                  styleClass="proveedores-icon-btn"
                   pTooltip="Editar Proveedor"
                   (onClick)="irEditar(p.id_proveedor)">
                 </p-button>
-                <p-button icon="pi pi-trash" text
+                <p-button
+                  icon="pi pi-trash" [text]="true"
                   [severity]="p.estado ? 'danger' : 'success'"
-                  styleClass="proveedores-icon-btn proveedores-icon-danger"
+                  styleClass="proveedores-icon-btn"
                   [pTooltip]="p.estado ? 'Enviar a eliminados' : 'Restaurar a activos'"
                   (onClick)="toggleStatus(p)">
                 </p-button>
@@ -316,34 +337,34 @@
       (pageChange)="onPageChange($event)"
       (limitChange)="onLimitChange($event)">
     </app-paginador>
-  </div>
 
-  <!-- Estado vacío -->
-  <div
-    *ngIf="proveedoresPaginados().length === 0 && !loading()"
-    class="surface-card p-8 text-center py-12 border-round-xl">
-    <div class="flex flex-column align-items-center gap-4">
-      <i class="pi pi-inbox text-7xl text-400 mb-4"></i>
-      <h2 class="text-3xl font-bold text-900 mb-3">Sin Proveedores</h2>
-      <p class="text-xl text-600 mb-6 max-w-30rem">
-        No hay proveedores activos con los filtros aplicados
-      </p>
-      <div class="flex gap-4 flex-wrap justify-content-center">
-        <p-button
-          icon="pi pi-filter-slash"
-          label="Limpiar Filtros"
-          severity="danger"
-          styleClass="proveedores-pill"
-          size="large"
-          (onClick)="limpiarFiltros()">
-        </p-button>
-        <p-button
-          label="Agregar Primer Proveedor"
-          icon="pi pi-plus"
-          severity="success"
-          size="large"
-          (click)="irCrear()">
-        </p-button>
+    <!-- Estado vacío tarjetas -->
+    <div
+      *ngIf="proveedoresPaginados().length === 0 && !loading()"
+      class="surface-card p-8 text-center py-12 border-round-xl">
+      <div class="flex flex-column align-items-center gap-4">
+        <i class="pi pi-inbox text-7xl text-400 mb-4"></i>
+        <h2 class="text-3xl font-bold text-900 mb-3">Sin Proveedores</h2>
+        <p class="text-xl text-600 mb-6 max-w-30rem">
+          No hay proveedores activos con los filtros aplicados
+        </p>
+        <div class="flex gap-4 flex-wrap justify-content-center">
+          <p-button
+            icon="pi pi-filter-slash"
+            label="Limpiar Filtros"
+            severity="danger"
+            styleClass="proveedores-pill"
+            size="large"
+            (onClick)="limpiarFiltros()">
+          </p-button>
+          <p-button
+            label="Agregar Primer Proveedor"
+            icon="pi pi-plus"
+            severity="success"
+            size="large"
+            (click)="irCrear()">
+          </p-button>
+        </div>
       </div>
     </div>
   </div>

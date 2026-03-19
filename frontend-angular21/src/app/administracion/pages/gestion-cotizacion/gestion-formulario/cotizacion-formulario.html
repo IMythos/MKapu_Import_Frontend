@@ -1,22 +1,145 @@
 <div class="p-2">
-  <p-card styleClass="cotizacion-header-card mb-4">
+  <p-card class="cotizaciones-header-card mb-4 cotizaciones-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <span class="cotizacion-title-icon"><i class="pi pi-file-edit"></i></span>
+        <span class="cotizaciones-title-icon"><i [class]="iconoCabecera"></i></span>
         <div>
-          <p class="cotizacion-kicker mb-0">Administración · Cotizaciones</p>
-          <h2 class="cotizacion-title mb-0">
-            {{ esModoEdicion() ? 'Editar Cotización' : 'Nueva Cotización' }}
-          </h2>
+          <p class="cotizaciones-kicker mb-0">{{ tituloKicker }}</p>
+          <h2 class="cotizaciones-title mb-0">{{ subtituloKicker }}</h2>
         </div>
       </div>
-      <p-button label="Volver" icon="pi pi-arrow-left" (click)="cancelar()"
-        styleClass="ventas-pill" severity="secondary" />
+      <div class="flex gap-2">
+        <p-button 
+        label="Volver" 
+        icon="pi pi-arrow-left" 
+        (click)="cancelar()"
+        styleClass="ventas-pill" 
+        severity="secondary" />
+      </div>
     </div>
   </p-card>
 </div>
 
 <div class="p-2">
+
+  <!-- ══ STEPPER — solo en modo creación ══ -->
+  <ng-container *ngIf="!esModoEdicion()">
+    <p-stepper [value]="pasoActual()" styleClass="mb-4">
+
+      <!-- Paso 1: Tipo -->
+      <p-step-item [value]="0">
+        <p-step>Tipo de Cotización</p-step>
+        <p-step-panel>
+          <ng-template pTemplate="content" let-activateCallback="activateCallback">
+
+            <div class="tipo-seleccion-container">
+              <p class="tipo-seleccion-desc">
+                Selecciona si esta cotización es para una <strong>venta al cliente</strong>
+                o una <strong>compra a proveedor</strong>.
+              </p>
+
+              <div class="tipo-opciones">
+
+                <!-- VENTA -->
+                <div
+                  class="tipo-card"
+                  [class.tipo-card--selected]="tipoCotizacion() === 'VENTA'"
+                  (click)="tipoCotizacion.set('VENTA')">
+                  <div class="tipo-card-icon tipo-card-icon--venta">
+                    <i class="pi pi-shopping-cart"></i>
+                  </div>
+                  <div class="tipo-card-body">
+                    <span class="tipo-card-titulo">Venta</span>
+                    <span class="tipo-card-desc">
+                      Cotización dirigida a un cliente.<br>
+                      Resta stock al aprobarse.
+                    </span>
+                  </div>
+                  <div class="tipo-card-check" *ngIf="tipoCotizacion() === 'VENTA'">
+                    <i class="pi pi-check-circle"></i>
+                  </div>
+                </div>
+
+                <!-- COMPRA -->
+                <div
+                  class="tipo-card"
+                  [class.tipo-card--selected]="tipoCotizacion() === 'COMPRA'"
+                  (click)="tipoCotizacion.set('COMPRA')">
+                  <div class="tipo-card-icon tipo-card-icon--compra">
+                    <i class="pi pi-truck"></i>
+                  </div>
+                  <div class="tipo-card-body">
+                    <span class="tipo-card-titulo">Compra</span>
+                    <span class="tipo-card-desc">
+                      Cotización dirigida a un proveedor.<br>
+                      Suma stock al aprobarse.
+                    </span>
+                  </div>
+                  <div class="tipo-card-check" *ngIf="tipoCotizacion() === 'COMPRA'">
+                    <i class="pi pi-check-circle"></i>
+                  </div>
+                </div>
+
+              </div>
+
+              <div class="flex justify-content-end mt-4">
+                <p-button
+                  label="Continuar"
+                  icon="pi pi-arrow-right"
+                  iconPos="right"
+                  styleClass="ventas-pill ventas-pill-warning"
+                  [disabled]="!tipoCotizacion()"
+                  (onClick)="pasoActual.set(1); activateCallback(1)">
+                </p-button>
+              </div>
+            </div>
+
+          </ng-template>
+        </p-step-panel>
+      </p-step-item>
+
+      <!-- Paso 2: Formulario -->
+      <p-step-item [value]="1">
+        <p-step>Datos de la Cotización</p-step>
+        <p-step-panel>
+          <ng-template pTemplate="content" let-activateCallback="activateCallback">
+
+            <!-- Badge tipo seleccionado -->
+            <div class="tipo-badge-activo mb-4">
+              <p-tag
+                [value]="'Cotización de ' + (tipoCotizacion() === 'VENTA' ? 'Venta' : 'Compra')"
+                [severity]="tipoCotizacion() === 'VENTA' ? 'info' : 'warn'"
+                [icon]="tipoCotizacion() === 'VENTA' ? 'pi pi-shopping-cart' : 'pi pi-truck'">
+              </p-tag>
+              <p-button
+                label="Cambiar tipo"
+                icon="pi pi-arrow-left"
+                severity="secondary"
+                [text]="true"
+                size="small"
+                (onClick)="pasoActual.set(0); activateCallback(0)">
+              </p-button>
+            </div>
+
+            <!-- Formulario completo -->
+            <ng-container *ngTemplateOutlet="formularioCompleto"></ng-container>
+
+          </ng-template>
+        </p-step-panel>
+      </p-step-item>
+
+    </p-stepper>
+  </ng-container>
+
+  <!-- ══ Modo edición — sin stepper ══ -->
+  <ng-container *ngIf="esModoEdicion()">
+    <ng-container *ngTemplateOutlet="formularioCompleto"></ng-container>
+  </ng-container>
+
+</div>
+
+<!-- ══ TEMPLATE FORMULARIO COMPLETO ══ -->
+<ng-template #formularioCompleto>
   <p-card styleClass="tarjeta-principal">
     <form [formGroup]="form" (ngSubmit)="guardar()" class="formgrid grid">
 
@@ -28,8 +151,6 @@
 
       <div class="col-12 mb-4">
         <p-card styleClass="cliente-buscador-card">
-
-          <!-- Buscador documento -->
           <div class="formgrid grid align-items-end">
             <div class="field col-12 md:col-5 mb-0 flex align-items-end gap-2">
               <div style="flex:1">
@@ -46,12 +167,10 @@
                 label="Buscar"
                 (click)="buscarClientePorDocumento()"
                 [disabled]="cargandoCliente()"
-                styleClass="p-button-secondary ml-2"
-              />
+                styleClass="p-button-secondary ml-2" />
             </div>
           </div>
 
-          <!-- Cliente encontrado -->
           <div *ngIf="clienteEncontrado()" class="mt-3">
             <p-card styleClass="cliente-info-card">
               <div class="flex align-items-center gap-2 mb-3">
@@ -91,7 +210,6 @@
             </p-card>
           </div>
 
-          <!-- Cliente no encontrado → formulario registro -->
           <div *ngIf="busquedaSinResultado()" class="mt-3">
             <p-card styleClass="cliente-nuevo-card">
               <div class="flex align-items-center gap-2 mb-3">
@@ -100,104 +218,53 @@
                   Cliente no encontrado — Registrar
                 </span>
               </div>
-
               <div class="grid" [formGroup]="nuevoClienteForm">
-
                 <div class="field col-12 md:col-4">
                   <label class="form-label">Tipo Documento <span class="text-red-400">*</span></label>
-                  <p-select
-                    formControlName="documentTypeId"
-                    [options]="tiposDocumento()"
-                    optionLabel="description"
-                    optionValue="documentTypeId"
-                    placeholder="Seleccionar tipo"
-                    (ngModelChange)="onTipoDocumentoChange($event)"
-                    class="w-full"
-                  />
+                  <p-select formControlName="documentTypeId"
+                    [options]="tiposDocumento()" optionLabel="description" optionValue="documentTypeId"
+                    placeholder="Seleccionar tipo" (ngModelChange)="onTipoDocumentoChange($event)" class="w-full" />
                 </div>
-
                 <div class="field col-12 md:col-4">
-                  <label class="form-label">
-                    N° Documento
-                    <span *ngIf="nuevoClienteForm.get('documentTypeId')?.value"
-                      style="font-size:0.68rem; color:var(--text-muted); font-weight:400;">
-                      (máx. {{ getMaxLengthDoc() }} dígitos)
-                    </span>
-                  </label>
-                  <input pInputText
-                    [value]="form.get('documento')?.value"
-                    placeholder="N° Documento"
-                    readonly
-                    class="w-full"
-                  />
+                  <label class="form-label">N° Documento</label>
+                  <input pInputText [value]="form.get('documento')?.value" readonly class="w-full" />
                 </div>
-
                 <div class="field col-12 md:col-4">
                   <label class="form-label">Email <span class="text-red-400">*</span></label>
-                  <input pInputText formControlName="email"
-                    placeholder="correo@ejemplo.com" class="w-full" />
-                  <small *ngIf="nuevoClienteForm.get('email')?.invalid && nuevoClienteForm.get('email')?.touched"
-                    style="font-size:0.72rem; color:#f87171;">
-                    Email válido requerido.
-                  </small>
+                  <input pInputText formControlName="email" placeholder="correo@ejemplo.com" class="w-full" />
                 </div>
-
                 <ng-container *ngIf="esRuc()">
                   <div class="field col-12 md:col-8">
                     <label class="form-label">Razón Social <span class="text-red-400">*</span></label>
-                    <input pInputText formControlName="razon_social"
-                      placeholder="Razón social de la empresa" class="w-full" />
-                    <small *ngIf="nuevoClienteForm.get('razon_social')?.invalid && nuevoClienteForm.get('razon_social')?.touched"
-                      style="font-size:0.72rem; color:#f87171;">
-                      La razón social es requerida.
-                    </small>
+                    <input pInputText formControlName="razon_social" placeholder="Razón social" class="w-full" />
                   </div>
                 </ng-container>
-
                 <ng-container *ngIf="!esRuc()">
                   <div class="field col-12 md:col-4">
                     <label class="form-label">Nombres <span class="text-red-400">*</span></label>
-                    <input pInputText formControlName="name"
-                      placeholder="Nombres" class="w-full" />
-                    <small *ngIf="nuevoClienteForm.get('name')?.invalid && nuevoClienteForm.get('name')?.touched"
-                      style="font-size:0.72rem; color:#f87171;">
-                      Los nombres son requeridos.
-                    </small>
+                    <input pInputText formControlName="name" placeholder="Nombres" class="w-full" />
                   </div>
                   <div class="field col-12 md:col-4">
                     <label class="form-label">Apellidos <span class="text-red-400">*</span></label>
-                    <input pInputText formControlName="apellidos"
-                      placeholder="Apellidos" class="w-full" />
-                    <small *ngIf="nuevoClienteForm.get('apellidos')?.invalid && nuevoClienteForm.get('apellidos')?.touched"
-                      style="font-size:0.72rem; color:#f87171;">
-                      Los apellidos son requeridos.
-                    </small>
+                    <input pInputText formControlName="apellidos" placeholder="Apellidos" class="w-full" />
                   </div>
                 </ng-container>
-
                 <div class="field col-12 md:col-4">
                   <label class="form-label">Teléfono</label>
-                  <input pInputText formControlName="phone"
-                    placeholder="Teléfono" maxlength="10"
-                    (keydown)="soloNumeros($event)"
-                    class="w-full" />
+                  <input pInputText formControlName="phone" placeholder="Teléfono" maxlength="10"
+                    (keydown)="soloNumeros($event)" class="w-full" />
                 </div>
-
                 <div class="field col-12 md:col-8">
                   <label class="form-label">Dirección</label>
-                  <input pInputText formControlName="address"
-                    placeholder="Dirección" class="w-full" />
+                  <input pInputText formControlName="address" placeholder="Dirección" class="w-full" />
                 </div>
-
               </div>
-
               <div class="flex justify-content-end mt-3">
                 <p-button label="Registrar Cliente" icon="pi pi-user-plus"
                   styleClass="ventas-pill" severity="success" (click)="registrarNuevoCliente()" />
               </div>
             </p-card>
           </div>
-
         </p-card>
       </div>
 
@@ -209,90 +276,31 @@
 
       <div class="field col-12 md:col-6 mb-4">
         <label class="form-label">Fecha de Emisión</label>
-        <p-datepicker
-          formControlName="fec_emision"
-          dateFormat="dd/mm/yy"
-          [disabled]="true"
-          [showIcon]="true"
-          appendTo="body"
-          class="w-full"
-          styleClass="w-full"
-        />
+        <p-datepicker formControlName="fec_emision" dateFormat="dd/mm/yy"
+          [disabled]="true" [showIcon]="true" appendTo="body" class="w-full" styleClass="w-full" />
       </div>
 
       <div class="field col-12 md:col-6 mb-4">
         <label class="form-label">Fecha de Vencimiento <span class="text-red-400">*</span></label>
-        <p-datepicker
-          formControlName="fec_venc"
-          [minDate]="manana"
-          dateFormat="dd/mm/yy"
-          placeholder="Seleccionar fecha límite"
-          [showIcon]="true"
-          appendTo="body"
-          class="w-full"
-          styleClass="w-full"
-        />
-        <small *ngIf="form.get('fec_venc')?.invalid && form.get('fec_venc')?.touched"
-          style="font-size:0.72rem; color:#f87171;">
-          <i class="pi pi-exclamation-circle mr-1"></i>La fecha de vencimiento es requerida.
-        </small>
+        <p-datepicker formControlName="fec_venc" [minDate]="manana" dateFormat="dd/mm/yy"
+          placeholder="Seleccionar fecha límite" [showIcon]="true" appendTo="body"
+          class="w-full" styleClass="w-full" />
       </div>
 
-      <!-- ══ SEDE · ALMACÉN · ESTADO ═══════════════════════════════ -->
+      <!-- ══ SEDE ══════════════════════════════════════════════════ -->
       <div class="col-12 mb-2">
-        <h3 class="form-section-title"><i class="pi pi-building"></i> Sede y Almacén</h3>
+        <h3 class="form-section-title"><i class="pi pi-building"></i> Sede</h3>
         <div class="section-divider"></div>
       </div>
 
-      <!-- Sede -->
-      <div class="field col-12 md:col-4 mb-4">
+      <div class="field col-12 md:col-6 mb-4">
         <label class="form-label">Sede <span class="text-red-400">*</span></label>
-        <p-select
-          formControlName="sede"
-          [options]="sedes()"
-          optionLabel="nombre"
-          optionValue="id_sede"
-          placeholder="Seleccionar sede"
-          class="w-full"
-        />
-        <small *ngIf="form.get('sede')?.invalid && form.get('sede')?.touched"
-          style="font-size:0.72rem; color:#f87171;">
-          La sede es requerida.
-        </small>
+        <p-select formControlName="sede" [options]="sedes()"
+          optionLabel="nombre" optionValue="id_sede"
+          placeholder="Seleccionar sede" class="w-full" />
       </div>
 
-      <!-- Almacén -->
-      <div class="field col-12 md:col-4 mb-4">
-        <label class="form-label">
-          Almacén
-          <span *ngIf="almacenesLoading()" class="ml-1">
-            <i class="pi pi-spin pi-spinner" style="font-size:0.75rem"></i>
-          </span>
-        </label>
-        <p-select
-          formControlName="id_almacen"
-          [options]="almacenesOptions()"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Seleccione un almacén"
-          [loading]="almacenesLoading()"
-          [showClear]="true"
-          [disabled]="!sedeSeleccionada() || almacenesLoading()"
-          class="w-full"
-          (ngModelChange)="almacenSeleccionado.set($event)"
-        />
-        <small *ngIf="!form.get('sede')?.value" style="font-size:0.72rem; color:var(--text-muted)">
-          Selecciona una sede primero.
-        </small>
-        <small *ngIf="sedeSeleccionada() && almacenesOptions().length === 0 && !almacenesLoading()"
-          style="font-size:0.72rem; color:#facc15;">
-          <i class="pi pi-exclamation-triangle mr-1"></i>
-          No hay almacenes disponibles para esta sede.
-        </small>
-      </div>
-
-      <!-- Estado -->
-      <div class="field col-12 md:col-4 mb-4">
+      <div class="field col-12 md:col-6 mb-4">
         <label class="form-label">Estado</label>
         <p-select *ngIf="esModoEdicion()" formControlName="estado"
           [options]="estadoOptions" optionLabel="label" optionValue="value"
@@ -300,12 +308,10 @@
         <div *ngIf="!esModoEdicion()" class="flex align-items-center gap-2">
           <input pInputText class="w-full" readonly value="Pendiente" />
           <i class="pi pi-lock lock-icon"
-             pTooltip="Las cotizaciones nuevas inician en Pendiente"
-             tooltipPosition="top"></i>
+             pTooltip="Las cotizaciones nuevas inician en Pendiente" tooltipPosition="top"></i>
         </div>
       </div>
 
-      <!-- Detalle sede -->
       <div *ngIf="sedeSeleccionada()" class="col-12 mb-4">
         <p-card styleClass="cliente-info-card">
           <div class="flex align-items-center gap-2 mb-3">
@@ -317,8 +323,7 @@
           <div class="grid">
             <div class="field col-12 md:col-4">
               <label class="form-label">Nombre</label>
-              <input pInputText class="w-full" readonly
-                [value]="sedeSeleccionada().nombre || sedeSeleccionada().nombre_sede || '-'" />
+              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().nombre || '-'" />
             </div>
             <div class="field col-12 md:col-4">
               <label class="form-label">Código</label>
@@ -327,18 +332,6 @@
             <div class="field col-12 md:col-4">
               <label class="form-label">Ciudad</label>
               <input pInputText class="w-full" readonly [value]="sedeSeleccionada().ciudad || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Departamento</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().departamento || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Dirección</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().direccion || '-'" />
-            </div>
-            <div class="field col-12 md:col-4">
-              <label class="form-label">Teléfono</label>
-              <input pInputText class="w-full" readonly [value]="sedeSeleccionada().telefono || '-'" />
             </div>
           </div>
         </p-card>
@@ -352,8 +345,6 @@
 
       <div class="col-12 mb-4">
         <p-card styleClass="cliente-buscador-card">
-
-          <!-- Buscador -->
           <div class="formgrid grid mb-3">
             <div class="field col-12 md:col-6 mb-0">
               <label class="form-label">Buscar Producto</label>
@@ -375,7 +366,6 @@
             </div>
           </div>
 
-          <!-- Resultados autocomplete -->
           <div *ngIf="productosAutoComplete().length > 0" class="mb-3">
             <p-card styleClass="surface-card">
               <div class="flex flex-column gap-1">
@@ -383,30 +373,28 @@
                   class="prod-row flex align-items-center justify-content-between p-2 cursor-pointer"
                   (click)="agregarProducto(prod)">
                   <div class="flex flex-column gap-1">
-                    <span style="font-size:0.88rem; font-weight:600; color:var(--text-main)">{{ prod.nombre }}</span>
+                    <span style="font-size:0.88rem; font-weight:600;">{{ prod.nombre }}</span>
                     <span style="font-size:0.75rem; color:var(--text-muted)">{{ prod.codigo }}</span>
                   </div>
                   <div class="flex align-items-center gap-3">
-                    <span style="font-size:0.75rem; color:var(--text-muted)">
-                      Stock: <strong style="color:var(--text-main)">{{ prod.stock }}</strong>
-                    </span>
-                    <p-button icon="pi pi-plus"
-                      styleClass="p-button-rounded p-button-sm" severity="success"
-                      pTooltip="Agregar" tooltipPosition="left"
-                      (click)="agregarProducto(prod); $event.stopPropagation()" />
+                    <p-tag [value]="'Stock: ' + prod.stock"
+                      [severity]="prod.stock > 10 ? 'success' : prod.stock > 0 ? 'warn' : 'danger'"
+                      icon="pi pi-box" />
+                    <p-button icon="pi pi-plus" styleClass="p-button-rounded p-button-sm"
+                      severity="success" (click)="agregarProducto(prod); $event.stopPropagation()" />
                   </div>
                 </div>
               </div>
             </p-card>
           </div>
 
-          <!-- Tabla detalles -->
           <ng-container *ngIf="detalles().length > 0; else sinDetalles">
             <p-table [value]="detalles()" [showGridlines]="true" styleClass="p-datatable-sm">
               <ng-template pTemplate="header">
                 <tr>
                   <th style="width:90px">Código</th>
                   <th>Descripción</th>
+                  <th style="width:140px" class="text-center">Almacén / Stock</th>
                   <th style="width:70px" class="text-center">U.M.</th>
                   <th style="width:220px" class="text-center">Tipo Precio</th>
                   <th style="width:130px" class="text-center">Cantidad</th>
@@ -419,34 +407,35 @@
                 <tr>
                   <td style="font-family:monospace; font-size:0.8rem; color:var(--text-muted)">{{ item.cod_prod }}</td>
                   <td style="font-weight:500">{{ item.descripcion }}</td>
+                  <td class="text-center">
+                    <div class="flex flex-column align-items-center gap-1">
+                      <small style="font-size:0.72rem; color:var(--text-muted);">
+                        <i class="pi pi-warehouse mr-1"></i>{{ item.almacen || '—' }}
+                      </small>
+                      <p-tag [value]="'Stock: ' + item.stock"
+                        [severity]="item.stock > 10 ? 'success' : item.stock > 0 ? 'warn' : 'danger'"
+                        styleClass="text-xs" />
+                    </div>
+                  </td>
                   <td class="text-center" style="font-size:0.78rem; color:var(--text-muted)">{{ item.uni_med || '-' }}</td>
                   <td>
-                    <p-select
-                      [ngModel]="item.tipoPrecio"
-                      [ngModelOptions]="{ standalone: true }"
+                    <p-select [ngModel]="item.tipoPrecio" [ngModelOptions]="{ standalone: true }"
                       (ngModelChange)="cambiarTipoPrecio(i, $event)"
                       [options]="tipoPrecioOpciones(item)"
-                      optionLabel="label" optionValue="value"
-                      appendTo="body" class="w-full" styleClass="w-full"
-                    />
+                      optionLabel="label" optionValue="value" appendTo="body"
+                      class="w-full" styleClass="w-full" />
                   </td>
                   <td>
-                    <p-inputNumber
-                      [ngModel]="item.cantidad" [ngModelOptions]="{ standalone: true }"
+                    <p-inputNumber [ngModel]="item.cantidad" [ngModelOptions]="{ standalone: true }"
                       (ngModelChange)="actualizarCantidad(i, $event)"
-                      [min]="1" [showButtons]="true" buttonLayout="horizontal"
+                      [min]="1" [max]="item.stock" [showButtons]="true" buttonLayout="horizontal"
                       incrementButtonIcon="pi pi-plus" decrementButtonIcon="pi pi-minus"
-                      styleClass="w-full"
-                    />
+                      styleClass="w-full" />
                   </td>
                   <td>
-                    <p-inputNumber
-                      [ngModel]="item.precio"
-                      [ngModelOptions]="{ standalone: true }"
-                      [readonly]="true"
-                      [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2"
-                      styleClass="w-full"
-                    />
+                    <p-inputNumber [ngModel]="item.precio" [ngModelOptions]="{ standalone: true }"
+                      [readonly]="true" [min]="0" [minFractionDigits]="2" [maxFractionDigits]="2"
+                      styleClass="w-full" />
                   </td>
                   <td class="text-right" style="font-weight:700; color:var(--gold)">
                     S/ {{ item.importe | number:'1.2-2' }}
@@ -459,17 +448,10 @@
               </ng-template>
             </p-table>
 
-            <!-- Totales -->
             <div class="flex justify-content-end mt-4">
               <div class="totales-box">
-                <div class="totales-row">
-                  <span>Subtotal</span>
-                  <span>S/ {{ subtotal | number:'1.2-2' }}</span>
-                </div>
-                <div class="totales-row">
-                  <span>IGV (18%)</span>
-                  <span>S/ {{ igv | number:'1.2-2' }}</span>
-                </div>
+                <div class="totales-row"><span>Subtotal</span><span>S/ {{ subtotal | number:'1.2-2' }}</span></div>
+                <div class="totales-row"><span>IGV (18%)</span><span>S/ {{ igv | number:'1.2-2' }}</span></div>
                 <div class="totales-divider"></div>
                 <div class="totales-total">
                   <span class="label">Total</span>
@@ -485,7 +467,6 @@
               <span>Busca y agrega productos a la cotización</span>
             </div>
           </ng-template>
-
         </p-card>
       </div>
 
@@ -502,7 +483,7 @@
 
     </form>
   </p-card>
-</div>
+</ng-template>
 
 <p-toast />
 <p-confirmDialog />

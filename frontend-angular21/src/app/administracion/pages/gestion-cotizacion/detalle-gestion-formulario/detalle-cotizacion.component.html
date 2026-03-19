@@ -27,15 +27,20 @@
 
           <p-button label="Enviar" icon="pi pi-send"
             styleClass="cotizaciones-pill"
-            severity="secondary">
+            severity="secondary"
+            (onClick)="enviar()">
           </p-button>
 
           <ng-container *ngIf="c.estado === 'PENDIENTE'">
-            <p-button label="Agregar Venta" icon="pi pi-shopping-cart"
+            <p-button
+              [label]="c.tipo === 'COMPRA' ? 'Registrar Compra' : 'Agregar Venta'"
+              [icon]="c.tipo === 'COMPRA' ? 'pi pi-truck' : 'pi pi-shopping-cart'"
               styleClass="cotizaciones-pill accion-btn--venta"
               (onClick)="irAgregarVenta()">
             </p-button>
-            <p-button label="Venta por Cobrar" icon="pi pi-credit-card"
+            <p-button
+              [label]="c.tipo === 'COMPRA' ? 'Compra por Pagar' : 'Venta por Cobrar'"
+              [icon]="c.tipo === 'COMPRA' ? 'pi pi-truck' : 'pi pi-credit-card'"
               styleClass="cotizaciones-pill accion-btn--cobrar"
               (onClick)="irAgregarVentaPorCobrar()">
             </p-button>
@@ -96,6 +101,23 @@
                 <span class="detalle-info-label">Código</span>
                 <span class="detalle-info-value font-bold" style="font-family:monospace">
                   {{ getCodigo() }}
+                </span>
+              </div>
+              <div class="detalle-info-row">
+                <span class="detalle-info-label">Tipo</span>
+                <p-tag
+                  [value]="c.tipo === 'COMPRA' ? 'Compra' : 'Venta'"
+                  [severity]="c.tipo === 'COMPRA' ? 'warn' : 'info'"
+                  [icon]="c.tipo === 'COMPRA' ? 'pi pi-truck' : 'pi pi-shopping-cart'">
+                </p-tag>
+              </div>
+              <div class="detalle-info-row">
+                <span class="detalle-info-label">Impacto Stock</span>
+                <span class="detalle-info-value flex align-items-center gap-1"
+                  [style.color]="c.tipo === 'COMPRA' ? '#4ade80' : '#f87171'">
+                  <i [class]="c.tipo === 'COMPRA' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
+                     style="font-size:0.75rem"></i>
+                  {{ c.tipo === 'COMPRA' ? 'Suma stock al aprobarse' : 'Resta stock al aprobarse' }}
                 </span>
               </div>
               <div class="detalle-info-row">
@@ -257,7 +279,17 @@
       <!-- ── TABLA DE PRODUCTOS ───────────────────────────────────── -->
       <p-card styleClass="tarjeta-principal mb-4">
         <div class="flex flex-column gap-3">
-          <span class="detalle-section-label"><i class="pi pi-shopping-cart mr-2"></i>Productos Cotizados</span>
+          <div class="flex align-items-center justify-content-between">
+            <span class="detalle-section-label">
+              <i class="pi pi-shopping-cart mr-2"></i>Productos Cotizados
+            </span>
+            <p-tag
+              [value]="c.tipo === 'COMPRA' ? '↑ Suma stock al aprobar' : '↓ Resta stock al aprobar'"
+              [severity]="c.tipo === 'COMPRA' ? 'success' : 'danger'"
+              [icon]="c.tipo === 'COMPRA' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
+              styleClass="text-xs">
+            </p-tag>
+          </div>
           <p-divider styleClass="my-1"></p-divider>
 
           <ng-container *ngIf="detalles().length > 0; else sinProductos">
@@ -282,7 +314,14 @@
                     {{ d.cod_prod ?? '—' }}
                   </td>
                   <td style="font-weight:500">{{ d.descripcion }}</td>
-                  <td class="text-center">{{ d.cantidad }}</td>
+                  <td class="text-center">
+                    <span class="flex align-items-center justify-content-center gap-1">
+                      <i [class]="c.tipo === 'COMPRA' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
+                         [style.color]="c.tipo === 'COMPRA' ? '#4ade80' : '#f87171'"
+                         style="font-size:0.65rem"></i>
+                      {{ d.cantidad }}
+                    </span>
+                  </td>
                   <td class="text-right">S/. {{ d.precio | number:'1.2-2' }}</td>
                   <td class="text-right font-bold" style="color:var(--gold)">
                     S/. {{ (d.importe ?? (d.cantidad * d.precio)) | number:'1.2-2' }}

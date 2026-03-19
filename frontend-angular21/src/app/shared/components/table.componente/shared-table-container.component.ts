@@ -11,7 +11,7 @@ import { Card }                   from 'primeng/card';
 import { Button }                 from 'primeng/button';
 import { Tooltip }                from 'primeng/tooltip';
 import { LoadingOverlayComponent } from '../loading-overlay/loading-overlay.component';
-import { PaginadorComponent }      from '../paginador/Paginador.component';
+import { PaginadorComponent } from '../paginador/paginador.components';
 
 @Component({
   selector: 'app-shared-table-container',
@@ -30,7 +30,7 @@ import { PaginadorComponent }      from '../paginador/Paginador.component';
     <div style="position: relative">
         <p-card styleClass="shared-card tarjeta-principal">
 
-        <!-- Loading overlay sobre toda la card -->
+        <!-- Loading overlay sobre toda la card aaaaa-->
         <app-loading-overlay
           [visible]="loading"
           [mensaje]="mensajeCarga"

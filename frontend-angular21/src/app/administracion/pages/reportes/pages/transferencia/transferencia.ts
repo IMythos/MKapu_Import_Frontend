@@ -36,7 +36,7 @@ import { SedeService } from '../../../../services/sede.service';
 import { TransferSocketService } from '../../../../services/transfer-socket.service';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.components';
 
 interface TransferenciaRow {
   id: number;

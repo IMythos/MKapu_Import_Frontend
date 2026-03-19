@@ -14,7 +14,7 @@ import { MovimientoInventario } from '../../interfaces/movimiento-inventario.int
 import { TransferUserContextService } from '../../../administracion/services/transfer-user-context.service';
 import { CardModule } from 'primeng/card';
 import { DialogModule } from 'primeng/dialog';
-import { PaginadorComponent } from '../../../shared/components/paginador/Paginador.component';
+import { PaginadorComponent } from '../../../shared/components/paginador/paginador.components';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
 import { getLunesSemanaActualPeru, getDomingoSemanaActualPeru } from '../../../shared/utils/date-peru.utils';
 

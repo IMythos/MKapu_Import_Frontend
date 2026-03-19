@@ -190,7 +190,7 @@
                     </p-button>
 
                     <p-button icon="pi pi-trash" text severity="danger"
-                      styleClass="productos-icon-btn productos-icon-danger" pTooltip="Eliminar Producto">
+                      styleClass="productos-icon-btn productos-icon-danger" pTooltip="Eliminar Producto" (onClick)="confirmarEliminar(p.id_producto)">
                     </p-button>
                   </div>
                 </td>

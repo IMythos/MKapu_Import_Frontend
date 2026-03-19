@@ -123,6 +123,18 @@
         </div>
 
         <div class="filtro-item filtro-compacto">
+          <label>Tipo</label>
+          <p-select
+            [options]="tiposOptions"
+            [ngModel]="tipoSeleccionado()"
+            (ngModelChange)="onTipoChange($event)"
+            optionLabel="label" optionValue="value"
+            placeholder="Todos" [showClear]="true" styleClass="w-full">
+          </p-select>
+        </div>
+
+
+        <div class="filtro-item filtro-compacto">
           <label>Estado</label>
           <p-select
             [options]="estadosOptions"
@@ -186,6 +198,7 @@
           <th style="width:15%">Fechas</th>
           <th style="width:10%">Sede</th>
           <th style="width:9%">Estado</th>
+          <th style="width:8%">Tipo</th>
           <th style="width:9%">Total</th>
           <th style="width:30%" class="text-center">Acciones</th>
         </tr>
@@ -221,6 +234,14 @@
           <td>{{ c.sede_nombre }}</td>
           <td>
             <p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)" />
+          </td>
+          <td>
+            <p-tag
+              [value]="c.tipo"
+              [severity]="c.tipo === 'VENTA' ? 'info' : 'warn'"
+              [pTooltip]="c.tipo === 'VENTA' ? 'Cotización de venta al cliente' : 'Cotización de compra a proveedor'"
+              tooltipPosition="top">
+            </p-tag>
           </td>
           <td>{{ c.total | currency:'PEN':'symbol' }}</td>
           <td class="text-center">
@@ -281,7 +302,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center">
+          <td colspan="8" class="text-center">
             <div class="mensaje-vacio">
               <i class="pi pi-inbox"></i>
               <p>No se encontraron cotizaciones</p>

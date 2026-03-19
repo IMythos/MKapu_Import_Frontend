@@ -12,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { AuthService } from '../../auth/services/auth.service';
 import { RoleService } from '../../core/services/role.service';
 import { CashboxSocketService } from '../../ventas/services/cashbox-socket.service';
+import { EmpresaService } from '../../administracion/services/empresa.service';
 
 interface MenuItem {
   path: string;
@@ -55,6 +56,8 @@ export class Sidebar implements OnInit {
 
   private cashboxSocket = inject(CashboxSocketService);
   private cdr = inject(ChangeDetectorRef);
+  private empresaService = inject(EmpresaService);
+  empresa = this.empresaService.empresaActual;
 
   private readonly SIDEBAR_ROUTES: MenuSection[] = [
     {
@@ -73,6 +76,7 @@ export class Sidebar implements OnInit {
         { path: '/admin/clientes',                        label: 'Clientes',                   icon: 'pi pi-users',              permiso: 'CREAR_CLIENTE' },
         { path: '/admin/cotizaciones',                    label: 'Cotizaciones',               icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
         { path: '/admin/reclamos-listado',                label: 'Reclamos',                   icon: 'pi pi-exclamation-circle', permiso: 'CREAR_RECLAMO' },
+        { path: '/admin/notas-credito',                   label: 'Notas de Credito',           icon: 'pi pi-id-card',            permiso: 'VER_NOTAS_CREDITO' } // CAMBIAR ICONO
       ]
     },
 
@@ -99,7 +103,7 @@ export class Sidebar implements OnInit {
       items: [
         { path: '/admin/transferencia',      label: 'Transferencias', icon: 'pi pi-arrows-h',             permiso: 'CREAR_TRANSFERENCIA' },
         { path: '/admin/despacho-productos', label: 'Despacho',       icon: 'pi pi-truck',                permiso: 'CREAR_DESPACHO' },
-        { path: '/admin/usuarios',           label: 'Usuarios',       icon: 'pi pi-user-plus',            permiso: 'CREAR_USUARIOS' },
+        { path: '/admin/usuarios',           label: 'Empleados',      icon: 'pi pi-user-plus',            permiso: 'CREAR_USUARIOS' },
         { path: '/admin/roles-permisos',     label: 'Permisos',       icon: 'pi pi-key',                  permiso: 'ADMINISTRACION' },
         { path: '/admin/gestion-productos',  label: 'Productos',      icon: 'pi pi-tags',                 permiso: 'CREAR_PRODUCTOS' },
         { path: '/admin/categoria',          label: 'Categorías',     icon: 'pi pi-list',                 permiso: 'CREAR_CATEGORIAS' },

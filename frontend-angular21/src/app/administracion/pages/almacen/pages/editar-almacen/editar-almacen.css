@@ -18,10 +18,11 @@
   display: grid;
   place-items: center;
   border-radius: 999px;
-  background: #f5c34d;
-  color: #1f2937;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
   font-size: 18px;
 }
+
 
 .almacen-kicker {
   margin: 0;
@@ -30,6 +31,10 @@
   text-transform: uppercase;
   color: #94a3b8;
 }
+
+/* ── Dark mode ───────────────────��───────── */
+:host-context(.app-dark) .almacen-kicker { color: #94a3b8; }
+:host-context(.app-dark) .almacen-title  { color: #f8fafc; }
 
 .almacen-title {
   margin: 0;
@@ -107,3 +112,4 @@
     font-size: 1.2rem;
   }
 }
+

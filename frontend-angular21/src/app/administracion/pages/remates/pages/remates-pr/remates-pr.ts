@@ -13,8 +13,7 @@ import { DialogModule } from 'primeng/dialog';
 import { CommonModule } from '@angular/common';
 
 import { AuctionService, AuctionResponseDto } from '../../../../services/auction.service';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 interface RemateUI {
   id_remate: number;
@@ -48,8 +47,7 @@ type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast
     TagModule,
     DialogModule,
     CommonModule,
-    LoadingOverlayComponent,
-    PaginadorComponent
+    SharedTableContainerComponent
   ],
   templateUrl: './remates-pr.html',
   styleUrl: './remates-pr.css',
