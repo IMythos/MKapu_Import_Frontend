@@ -286,6 +286,13 @@ export const ADMIN_ROUTES: Routes = [
   },
 
   {
+    path: 'documento-contador',
+    loadComponent: () => import('./pages/contador/pages/documento-contador/documento-contador').then((m) => m.DocumentoContador),
+    canActivate: [roleGuard],
+    //data: { permiso: 'AGREGAR_DOCUMENTO' }
+  },
+
+  {
     path: 'despacho-productos',
     loadComponent: () => import('./pages/despacho-productos/pages/listado-despacho/listado-despacho').then((m) => m.ListadoDespacho),
     canActivate: [roleGuard],

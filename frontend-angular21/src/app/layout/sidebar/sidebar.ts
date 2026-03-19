@@ -113,6 +113,7 @@ export class Sidebar implements OnInit {
         { path: '/admin/mermas',             label: 'Mermas',         icon: 'pi pi-exclamation-triangle', permiso: 'CREAR_MERMAS' },
         { path: '/admin/remates',            label: 'Remates',        icon: 'pi pi-tag',                  permiso: 'CREAR_REMATES' },
         { path: '/admin/proveedores',        label: 'Proveedores',    icon: 'pi pi-truck',                permiso: 'CREAR_PROVEEDORES' },
+        { path: '/admin/documento-contador', label: 'Documentos', icon: 'pi pi-file',                 permiso: 'CREAR_PROVEEDORES' },
       ]
     },
 
