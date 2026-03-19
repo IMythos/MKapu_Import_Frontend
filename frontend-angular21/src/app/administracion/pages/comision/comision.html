@@ -74,33 +74,33 @@
   </div>
 
   <!-- FILTROS -->
-  <div class="surface-card border-round-xl shadow-1 mb-4">
-    <div class="p-3">
-      <div class="flex flex-wrap gap-3 align-items-end">
-
-        <div class="flex-1 p-fluid">
-          <label class="font-medium mb-2 block">Buscar Regla</label>
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Regla</label>
           <input pInputText
             [ngModel]="filtroBusqueda()"
             (ngModelChange)="filtroBusqueda.set($event); paginaActual.set(1)"
             placeholder="Nombre de la regla..."
             class="w-full">
         </div>
-
-        <div class="flex flex-column w-12rem">
-          <label class="font-medium mb-2 block">Estado</label>
+      </div>
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
           <p-select
             [options]="estadosFiltro"
             [ngModel]="filtroActivo()"
             (ngModelChange)="filtroActivo.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
-            class="w-full">
+            styleClass="w-full">
           </p-select>
         </div>
-
-        <div class="flex flex-column w-14rem">
-          <label class="font-medium mb-2 block">Tipo de Objetivo</label>
+        <div class="filtro-item filtro-compacto">
+          <label>Tipo de Objetivo</label>
           <p-select
             [options]="tiposObjetivo"
             [ngModel]="filtroTipo()"
@@ -109,12 +109,11 @@
             optionValue="value"
             placeholder="Todos"
             [showClear]="true"
-            class="w-full">
+            styleClass="w-full">
           </p-select>
         </div>
-
-        <div class="flex flex-column w-14rem">
-          <label class="font-medium mb-2 block">Tipo de Comisión</label>
+        <div class="filtro-item filtro-compacto">
+          <label>Tipo de Comisión</label>
           <p-select
             [options]="tiposRecompensa"
             [ngModel]="filtroRecompensa()"
@@ -123,20 +122,17 @@
             optionValue="value"
             placeholder="Todos"
             [showClear]="true"
-            class="w-full">
+            styleClass="w-full">
           </p-select>
         </div>
-
-        <div class="flex gap-2 align-items-center">
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
           <p-button
-            icon="pi pi-filter-slash"
-            label="Limpiar"
-            severity="danger"
-            size="small"
-            (onClick)="limpiarFiltros()">
+            label="Limpiar Filtros" icon="pi pi-filter-slash"
+            severity="danger" styleClass="btn-limpiar-filtros"
+            type="button" (click)="limpiarFiltros()">
           </p-button>
         </div>
-
       </div>
     </div>
   </div>

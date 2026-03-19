@@ -59,40 +59,57 @@
   </div>
 
   <!-- Filtros -->
-  <p-card styleClass="filtros-card mb-4">
-    <div class="grid">
-      <div class="col-12 md:col-6">
-        <label class="filter-label">Buscar Merma</label>
-        <input pInputText type="text"
-          placeholder="Buscar por código, motivo o responsable..."
-          class="w-full"
-          [ngModel]="busqueda()"
-          (ngModelChange)="busqueda.set($event); paginaActual.set(1)">
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Merma</label>
+          <input pInputText type="text"
+            placeholder="Buscar por código, motivo o responsable..."
+            class="w-full"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event); paginaActual.set(1)">
+        </div>
       </div>
-      <div class="col-12 md:col-3">
-        <label class="filter-label">Tipo de Merma</label>
-        <!-- ✅ Cargado desde el endpoint GET /catalog/wastage/tipos -->
-        <p-select
-          [options]="tiposMermaOpciones()"
-          [ngModel]="tipoMermaFiltro()"
-          (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
-          optionLabel="label"
-          optionValue="value"
-          placeholder="Todos los tipos"
-          styleClass="w-full"
-          [showClear]="true">
-        </p-select>
-      </div>
-      <div class="col-12 md:col-3">
-        <label class="filter-label" style="visibility:hidden">Acción</label>
-        <p-button
-          label="Limpiar Filtros" icon="pi pi-filter-slash"
-          [outlined]="true" severity="danger" styleClass="w-full"
-          (onClick)="limpiarFiltros()">
-        </p-button>
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>TIPO</label>
+          <p-select
+            [options]="tiposMermaOpciones()"
+            [ngModel]="tipoMermaFiltro()"
+            (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos los tipos"
+            styleClass="w-full"
+            [showClear]="true">
+          </p-select>
+        </div>
+        <div class="filtro-item filtro-compacto">
+          <label>SEDE</label>
+          <p-select
+            [options]="tiposMermaOpciones()"
+            [ngModel]="tipoMermaFiltro()"
+            (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos los tipos"
+            styleClass="w-full"
+            [showClear]="true">
+          </p-select>
+        </div>
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros" icon="pi pi-filter-slash"
+            severity="danger" styleClass="btn-limpiar-filtros"
+            type="button" (click)="limpiarFiltros()">
+          </p-button>
+        </div>
       </div>
     </div>
-  </p-card>
+  </div>
 
   <!-- TABLA -->
   <app-shared-table-container

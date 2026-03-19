@@ -55,7 +55,7 @@ export class RematesPr implements OnInit {
   cargando = this.auctionService.loading;
 
   busqueda     = signal('');
-  estadoFiltro = signal<EstadoFiltro>('TODOS');
+  estadoFiltro = signal<EstadoFiltro>('ACTIVO');
   page         = signal(1);
   limit        = signal(5);
 

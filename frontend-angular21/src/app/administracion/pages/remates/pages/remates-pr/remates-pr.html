@@ -63,6 +63,13 @@
             optionLabel="label" optionValue="value"
             [showClear]="true" styleClass="w-full" />
         </div>
+         <div class="filtro-item filtro-compacto">
+          <label>SEDE</label>
+          <p-select [ngModel]="estadoFiltro()" (ngModelChange)="onEstadoChange($event)"
+            [options]="estadoOptions" placeholder="Todos"
+            optionLabel="label" optionValue="value"
+            [showClear]="true" styleClass="w-full" />
+        </div>
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button label="Limpiar Filtros" icon="pi pi-filter-slash"
