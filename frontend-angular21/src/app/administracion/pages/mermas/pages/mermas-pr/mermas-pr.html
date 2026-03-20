@@ -11,11 +11,8 @@
         </div>
       </div>
       <div class="flex align-items-center gap-2">
-        <p-button
-          (onClick)="irRegistro()"
-          label="Registrar Merma"
-          icon="pi pi-plus"
-          styleClass="clientes-pill">
+        <p-button (onClick)="irRegistro()" label="Registrar Merma"
+          icon="pi pi-plus" styleClass="clientes-pill">
         </p-button>
       </div>
     </div>
@@ -62,40 +59,57 @@
   </div>
 
   <!-- Filtros -->
-  <p-card styleClass="filtros-card mb-4">
-    <div class="grid">
-      <div class="col-12 md:col-6">
-        <label class="filter-label">Buscar Merma</label>
-        <input pInputText type="text"
-          placeholder="Buscar por código, motivo o responsable..."
-          class="w-full"
-          [ngModel]="busqueda()"
-          (ngModelChange)="busqueda.set($event); paginaActual.set(1)">
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Merma</label>
+          <input pInputText type="text"
+            placeholder="Buscar por código, motivo o responsable..."
+            class="w-full"
+            [ngModel]="busqueda()"
+            (ngModelChange)="busqueda.set($event); paginaActual.set(1)">
+        </div>
       </div>
-      <div class="col-12 md:col-3">
-        <label class="filter-label">Tipo de Merma</label>
-        <p-select
-          [options]="tiposMerma"
-          [ngModel]="tipoMermaFiltro()"
-          (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
-          placeholder="Todos los tipos"
-          styleClass="w-full"
-          [showClear]="true">
-        </p-select>
-      </div>
-      <div class="col-12 md:col-3">
-        <label class="filter-label" style="visibility:hidden">Acción</label>
-        <p-button
-          label="Limpiar Filtros"
-          icon="pi pi-filter-slash"
-          [outlined]="true"
-          severity="danger"
-          styleClass="w-full"
-          (onClick)="limpiarFiltros()">
-        </p-button>
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>TIPO</label>
+          <p-select
+            [options]="tiposMermaOpciones()"
+            [ngModel]="tipoMermaFiltro()"
+            (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos los tipos"
+            styleClass="w-full"
+            [showClear]="true">
+          </p-select>
+        </div>
+        <div class="filtro-item filtro-compacto">
+          <label>SEDE</label>
+          <p-select
+            [options]="tiposMermaOpciones()"
+            [ngModel]="tipoMermaFiltro()"
+            (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos los tipos"
+            styleClass="w-full"
+            [showClear]="true">
+          </p-select>
+        </div>
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros" icon="pi pi-filter-slash"
+            severity="danger" styleClass="btn-limpiar-filtros"
+            type="button" (click)="limpiarFiltros()">
+          </p-button>
+        </div>
       </div>
     </div>
-  </p-card>
+  </div>
 
   <!-- TABLA -->
   <app-shared-table-container
@@ -109,25 +123,16 @@
     [limitePorPagina]="limitePagina()"
     [mostrarExportar]="false"
     (pageChange)="onPageChange($event)"
-    (limitChange)="onLimitChange($event)"
-  >
+    (limitChange)="onLimitChange($event)">
 
-    <!-- Tag contador en slot de acciones -->
     <div slot="acciones">
-      <p-tag
-        *ngIf="mermasFiltradas().length > 0"
-        [value]="mermasFiltradas().length + ' registros'"
-        severity="warn">
+      <p-tag *ngIf="mermasFiltradas().length > 0"
+        [value]="mermasFiltradas().length + ' registros'" severity="warn">
       </p-tag>
     </div>
 
-    <!-- Tabla -->
-    <p-table
-      [value]="mermasPaginadas()"
-      [tableStyle]="{ 'min-width': '100%' }"
-      styleClass="p-datatable-striped"
-      [paginator]="false"
-      [loading]="false">
+    <p-table [value]="mermasPaginadas()" [tableStyle]="{ 'min-width': '100%' }"
+      styleClass="p-datatable-striped" [paginator]="false">
 
       <ng-template pTemplate="header">
         <tr>
@@ -154,16 +159,14 @@
             </div>
           </td>
           <td>
-            <div *ngIf="merma.detalles && merma.detalles.length > 0"
-                 class="flex flex-column gap-1">
-              <div *ngFor="let d of merma.detalles"
-                   class="flex align-items-center gap-1">
+            <div *ngIf="merma.detalles && merma.detalles.length > 0" class="flex flex-column gap-1">
+              <div *ngFor="let d of merma.detalles" class="flex align-items-center gap-1">
                 <span class="codigo-producto" style="font-size:0.72rem">{{ d.cod_prod }}</span>
                 <span class="text-700" style="font-size:0.82rem">{{ d.desc_prod }}</span>
               </div>
             </div>
             <span *ngIf="!merma.detalles || merma.detalles.length === 0"
-                  class="text-400 text-sm">—</span>
+              class="text-400 text-sm">—</span>
           </td>
           <td>
             <p-tag
@@ -180,9 +183,7 @@
           </td>
           <td class="text-center">
             <div class="acciones-tabla">
-              <p-button
-                icon="pi pi-eye"
-                [rounded]="true" [text]="true" severity="info"
+              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info"
                 pTooltip="Ver detalle" tooltipPosition="top"
                 (onClick)="verDetalleMerma(merma)">
               </p-button>
@@ -201,9 +202,7 @@
           </td>
         </tr>
       </ng-template>
-
     </p-table>
-
   </app-shared-table-container>
 
   <!-- DIALOG DETALLE -->
@@ -221,9 +220,7 @@
       <div class="merma-detail-modal">
 
         <div class="mdm-banner">
-          <div class="mdm-banner-icon">
-            <i class="pi pi-exclamation-triangle"></i>
-          </div>
+          <div class="mdm-banner-icon"><i class="pi pi-exclamation-triangle"></i></div>
           <div class="mdm-banner-info">
             <span class="mdm-kicker">MERMA</span>
             <h3 class="mdm-nombre">{{ ms.codigo }}</h3>
@@ -235,12 +232,10 @@
 
         <div class="mdm-code-row">
           <span class="mdm-code-badge">
-            <i class="pi pi-tag"></i>
-            {{ getTipoMermaLabel(ms.tipoMerma) }}
+            <i class="pi pi-tag"></i>{{ getTipoMermaLabel(ms.tipoMerma) }}
           </span>
           <span class="mdm-cantidad-badge">
-            <i class="pi pi-box"></i>
-            {{ ms.cantidad }} unidades
+            <i class="pi pi-box"></i>{{ ms.cantidad }} unidades
           </span>
         </div>
 
@@ -263,9 +258,7 @@
             <span class="mdm-info-icon"><i class="pi pi-calendar"></i></span>
             <div class="mdm-info-content">
               <span class="mdm-info-label">Fecha</span>
-              <span class="mdm-info-value">
-                {{ ms.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}
-              </span>
+              <span class="mdm-info-value">{{ ms.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}</span>
             </div>
           </div>
           <div class="mdm-info-item mdm-info-item--full" *ngIf="ms.observacion">
@@ -304,11 +297,9 @@
         </div>
 
         <div class="mdm-footer">
-          <p-button
-            label="Cerrar" icon="pi pi-times"
+          <p-button label="Cerrar" icon="pi pi-times"
             severity="secondary" [outlined]="true"
-            styleClass="mdm-btn-close"
-            (onClick)="cerrarModalDetalle()">
+            styleClass="mdm-btn-close" (onClick)="cerrarModalDetalle()">
           </p-button>
         </div>
 
@@ -318,5 +309,4 @@
 
   <p-toast></p-toast>
   <p-confirmDialog></p-confirmDialog>
-
 </div>

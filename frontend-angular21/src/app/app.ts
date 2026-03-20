@@ -3,7 +3,6 @@ import { RouterOutlet } from '@angular/router';
 import { ButtonModule } from 'primeng/button';
 import { ThemeService } from './core/services/theme.service';
 
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -19,5 +18,4 @@ export class App implements OnInit{
   ngOnInit(): void {
     this.themeService.initTheme();
   }
-  
 }

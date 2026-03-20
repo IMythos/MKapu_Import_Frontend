@@ -54,8 +54,7 @@ export class EditarCliente implements OnInit {
   cliente = {
     nro_documento:         '',
     razon_social:          '',
-    nombres:               '',
-    apellidos:             '',
+    nombre_completo:       '',
     direccion:             '',
     email:                 '',
     telefono:              null as number | null,
@@ -63,7 +62,6 @@ export class EditarCliente implements OnInit {
     documentTypeSunatCode: '',
   };
 
-  // ── Lifecycle ─────────────────────────────────────────────────────
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) { this.router.navigate(['/admin/clientes']); return; }
@@ -80,20 +78,19 @@ export class EditarCliente implements OnInit {
     });
   }
 
-  // ── Cargar cliente ────────────────────────────────────────────────
   loadCliente(id: string): void {
     this.clienteService.getCustomerById(id).subscribe({
       next: (data: Customer) => {
+        const esRuc = data.documentTypeSunatCode === '06';
         this.cliente = {
-          nro_documento:         data.documentValue              ?? '',
-          razon_social:          data.businessName               ?? '',
-          nombres:               data.name                       ?? '',
-          apellidos:             data.lastName                   ?? '',
-          direccion:             data.address                    ?? '',
-          email:                 data.email                      ?? '',
-          telefono:              data.phone ? Number(data.phone) : null,
+          nro_documento:         data.documentValue                              ?? '',
+          razon_social:          esRuc ? (data.businessName ?? data.name ?? '') : '',
+          nombre_completo:       !esRuc ? (data.name ?? '')                     : '',
+          direccion:             data.address                                    ?? '',
+          email:                 data.email                                      ?? '',
+          telefono:              data.phone ? Number(data.phone)                : null,
           customerId:            data.customerId,
-          documentTypeSunatCode: data.documentTypeSunatCode      ?? '',
+          documentTypeSunatCode: data.documentTypeSunatCode                      ?? '',
         };
         this.cdr.detectChanges();
       },
@@ -107,7 +104,6 @@ export class EditarCliente implements OnInit {
     });
   }
 
-  // ── Helpers ───────────────────────────────────────────────────────
   private getDocumentTypeId(sunatCode: string): number {
     const tipo = this.tiposDocumento().find(t => t.sunatCode === sunatCode);
     return tipo?.documentTypeId ?? 2;
@@ -126,7 +122,6 @@ export class EditarCliente implements OnInit {
     }
   }
 
-  // ── Teléfono ──────────────────────────────────────────────────────
   get telefonoDigitos(): number {
     return this.cliente.telefono ? String(this.cliente.telefono).length : 0;
   }
@@ -150,18 +145,13 @@ export class EditarCliente implements OnInit {
     if ((input.value?.replace(/\D/g, '') ?? '').length >= 9) event.preventDefault();
   }
 
-  // ── Tipo documento ────────────────────────────────────────────────
   onTipoDocumentoChange(): void {
-    this.cliente.nro_documento = '';
-    if (this.esRUC) {
-      this.cliente.nombres   = '';
-      this.cliente.apellidos = '';
-    } else {
-      this.cliente.razon_social = '';
-    }
+    this.cliente.nro_documento   = '';
+    this.cliente.nombre_completo = '';
+    this.cliente.razon_social    = '';
+    this.cliente.direccion       = '';
   }
 
-  // ── Keyboards ────────────────────────────────────────────────────
   soloLetras(event: KeyboardEvent): boolean {
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]$/;
     if (!regex.test(event.key) && event.key.length === 1) { event.preventDefault(); return false; }
@@ -181,24 +171,29 @@ export class EditarCliente implements OnInit {
     return true;
   }
 
-  // ── Sanitizers ────────────────────────────────────────────────────
-  sanitizarSoloLetras(campo: 'nombres' | 'apellidos' | 'razon_social'): void {
-    let val = String(this.cliente[campo] ?? '');
-    val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
-             .replace(/^\s+/, '')
-             .replace(/\s+/g, ' ')
-             .toUpperCase();
-    this.cliente[campo] = val;
+  sanitizarNombreCompleto(): void {
+    this.cliente.nombre_completo = this.cliente.nombre_completo
+      .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
+      .replace(/^\s+/, '')
+      .replace(/\s+/g, ' ')
+      .toUpperCase();
   }
 
-  sanitizarTexto(campo: 'direccion'): void {
-    let v = String((this.cliente as any)[campo] ?? '');
-    v = v.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.,#-]/g, '')
-         .replace(/^\s+/, '')
-         .replace(/\s+/g, ' ')
-         .trim()
-         .toUpperCase();
-    (this.cliente as any)[campo] = v;
+  sanitizarRazonSocial(): void {
+    this.cliente.razon_social = this.cliente.razon_social
+      .replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
+      .replace(/^\s+/, '')
+      .replace(/\s+/g, ' ')
+      .toUpperCase();
+  }
+
+  sanitizarTexto(): void {
+    this.cliente.direccion = this.cliente.direccion
+      .replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\.,#-]/g, '')
+      .replace(/^\s+/, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toUpperCase();
   }
 
   sanitizarDocumento(): void {
@@ -215,7 +210,6 @@ export class EditarCliente implements OnInit {
       .toLowerCase();
   }
 
-  // ── Validaciones ──────────────────────────────────────────────────
   get documentoValido(): boolean {
     const doc = this.cliente.nro_documento.trim();
     if (!doc) return false;
@@ -230,30 +224,31 @@ export class EditarCliente implements OnInit {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  get nombresValido():     boolean { return this.esRUC || this.cliente.nombres.trim().length >= 2; }
-  get apellidosValido():   boolean { return this.esRUC || this.cliente.apellidos.trim().length >= 2; }
-  get razonSocialValida(): boolean { return !this.esRUC || this.cliente.razon_social.trim().length >= 3; }
+  get nombreCompletoValido(): boolean {
+    return this.esRUC || this.cliente.nombre_completo.trim().length >= 2;
+  }
+
+  get razonSocialValida(): boolean {
+    return !this.esRUC || this.cliente.razon_social.trim().length >= 3;
+  }
 
   get formularioValido(): boolean {
     return (
       this.documentoValido &&
       this.emailValido &&
       this.telefonoValido &&
-      this.nombresValido &&
-      this.apellidosValido &&
+      this.nombreCompletoValido &&
       this.razonSocialValida &&
       this.cliente.direccion.trim().length >= 3
     );
   }
 
-  // ── Editar ────────────────────────────────────────────────────────
   editar(): void {
     this.submitted.set(true);
     this.sanitizarDocumento();
-    this.sanitizarSoloLetras('nombres');
-    this.sanitizarSoloLetras('apellidos');
-    this.sanitizarSoloLetras('razon_social');
-    this.sanitizarTexto('direccion');
+    this.sanitizarNombreCompleto();
+    this.sanitizarRazonSocial();
+    this.sanitizarTexto();
     this.sanitizarEmail();
 
     if (!this.formularioValido) {
@@ -267,9 +262,10 @@ export class EditarCliente implements OnInit {
     const payload: Partial<CreateCustomerRequest> = {
       documentTypeId: this.getDocumentTypeId(this.cliente.documentTypeSunatCode),
       documentValue:  this.cliente.nro_documento.trim(),
-      businessName:   this.esRUC  ? this.cliente.razon_social.trim() : undefined,
-      name:           !this.esRUC ? this.cliente.nombres.trim()      : undefined,
-      lastName:       !this.esRUC ? this.cliente.apellidos.trim()    : undefined,
+      name:           this.esRUC
+                        ? this.cliente.razon_social.trim()
+                        : this.cliente.nombre_completo.trim(),
+      businessName:   this.esRUC ? this.cliente.razon_social.trim() : undefined,
       address:        this.cliente.direccion.trim(),
       email:          this.cliente.email.trim() || undefined,
       phone:          this.cliente.telefono ? String(this.cliente.telefono) : undefined,
@@ -293,10 +289,8 @@ export class EditarCliente implements OnInit {
     });
   }
 
-  // ── Cancelar ──────────────────────────────────────────────────────
   confirmCancel(): void {
     if (!this.clienteForm?.dirty) { this.router.navigate(['/admin/clientes']); return; }
-
     this.confirmationService.confirm({
       header:       'Cambios sin guardar',
       message:      '¿Deseas descartar los cambios realizados?',

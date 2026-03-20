@@ -1,16 +1,15 @@
 <!-- terminos-condiciones.component.html -->
-<div class="terminos-page p-3">
+<div class="p-2">
 
   <!-- HEADER -->
   <p-card class="productos-header-card mb-4 productos-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <span class="productos-title-icon">
-          <i class="pi pi-file-edit"></i>
+        <span class="productos-title-icon"><i class="pi pi-file-edit"></i>
         </span>
         <div>
-          <p class="productos-kicker mb-0">LEGAL · EMPRESA</p>
-          <h2 class="productos-title mb-0">Términos y Condiciones</h2>
+          <p class="productos-kicker">LEGAL · EMPRESA</p>
+          <h2 class="productos-title">TERMINOS Y CONDICIONES</h2>
         </div>
       </div>
       <div class="flex align-items-center gap-2">
@@ -44,26 +43,6 @@
             </li>
           }
         </ul>
-      </div>
-
-      <!-- ACCIONES -->
-      <div class="terminos-acciones-card mt-3">
-        <p-button
-          label="Imprimir"
-          icon="pi pi-print"
-          styleClass="w-full productos-pill mb-2"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="imprimir()">
-        </p-button>
-        <p-button
-          label="Descargar PDF"
-          icon="pi pi-download"
-          styleClass="w-full productos-pill"
-          severity="secondary"
-          [outlined]="true"
-          (onClick)="descargarPDF()">
-        </p-button>
       </div>
     </div>
 

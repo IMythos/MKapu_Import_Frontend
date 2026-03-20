@@ -1,13 +1,17 @@
+:host {
+  display: block;
+}
+
 /* ── Cabecera ─────────────────────────────────────────────── */
 .empresa-title-icon {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #f6af33, #e09520);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 14px rgba(246, 175, 51, 0.35);
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+  font-size: 18px;
 }
 
 .empresa-title-icon i {
@@ -16,21 +20,24 @@
 }
 
 .empresa-kicker {
-  font-size: 0.68rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-color-secondary);
   margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
 }
 
+
 .empresa-title {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--text-color);
   margin: 0;
-  letter-spacing: 0.03em;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
 }
+
+:host-context(.app-dark) .empresa-kicker { color: #94a3b8; }
+:host-context(.app-dark) .empresa-title  { color: #f8fafc; }
+
 
 .empresa-pill {
   border-radius: 20px !important;

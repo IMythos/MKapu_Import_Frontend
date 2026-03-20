@@ -17,11 +17,10 @@ import { DialogModule } from 'primeng/dialog';
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { ClienteService, Customer } from '../../../../services/cliente.service';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.components';
 import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todas' | 'juridica' | 'natural';
+type StatusFilter = 'activos' | 'inactivos' | 'todos';
 
 @Component({
   selector: 'app-clientes',
@@ -41,84 +40,90 @@ type ViewMode = 'todas' | 'juridica' | 'natural';
     SelectModule,
     TooltipModule,
     DialogModule,
-    SharedTableContainerComponent, 
+    SharedTableContainerComponent,
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './clientes.html',
   styleUrl: './clientes.css',
 })
 export class Clientes implements OnInit {
-  private readonly clienteService      = inject(ClienteService);
+  private readonly clienteService = inject(ClienteService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly messageService      = inject(MessageService);
+  private readonly messageService = inject(MessageService);
 
   readonly loading = this.clienteService.loading;
-  readonly error   = this.clienteService.error;
+  readonly error = this.clienteService.error;
 
+  readonly page = signal<number>(1);
+  readonly rows = signal<number>(5);
   readonly searchTerm = signal<string>('');
-  readonly page       = signal<number>(1);
-  readonly rows       = signal<number>(5);
-  readonly autoTerm   = signal<string>('');
-  readonly customers  = computed(() => this.clienteService.customers());
+  readonly autoTerm = signal<string>('');
+  readonly viewMode = signal<ViewMode>('todas');
+  readonly statusFilter = signal<StatusFilter>('activos');
 
-  readonly suggestions = computed(() => {
-    const q = String(this.autoTerm() ?? '').trim().toLowerCase();
-    if (!q) return [];
-    return this.customers().filter(c =>
-      String(c.displayName ?? '').toLowerCase().includes(q) ||
-      String(c.documentValue ?? '').toLowerCase().includes(q)
-    ).slice(0, 5);
-  });
+  readonly customers = computed(() => this.clienteService.customers());
+  readonly totalItems = computed(() => this.clienteService.total());
+  readonly totalPaginas = computed(() => Math.ceil(this.totalItems() / this.rows()) || 1);
 
-  readonly viewMode    = signal<ViewMode>('todas');
   readonly viewOptions: { label: string; value: ViewMode }[] = [
-    { label: 'Todos',    value: 'todas'    },
+    { label: 'Todos', value: 'todas' },
     { label: 'Jurídica', value: 'juridica' },
-    { label: 'Natural',  value: 'natural'  },
+    { label: 'Natural', value: 'natural' },
   ];
 
-  readonly visibleClients = computed(() => {
-    const mode = this.viewMode();
-    const all  = this.customers();
-    if (mode === 'juridica') return all.filter(c =>  this.isCompany(c.documentTypeSunatCode, c.businessName));
-    if (mode === 'natural')  return all.filter(c => !this.isCompany(c.documentTypeSunatCode, c.businessName));
-    return all;
-  });
+  readonly statusOptions: { label: string; value: StatusFilter }[] = [
+    { label: 'Activos', value: 'activos' },
+    { label: 'Inactivos', value: 'inactivos' },
+    { label: 'Todos', value: 'todos' },
+  ];
 
-  readonly filteredClients = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    const base = this.visibleClients();
-    if (!term) return base;
-    return base.filter(c =>
-      [c.documentValue, c.businessName ?? '', c.name ?? '', c.lastName ?? '']
-        .some(f => String(f ?? '').toLowerCase().includes(term))
-    );
-  });
-
-  displayedClients = signal<Customer[] | null>(null);
-  readonly displayedList = computed(() => this.displayedClients() ?? this.filteredClients());
-
-  readonly totalPaginas = computed(() =>
-    Math.ceil(this.displayedList().length / this.rows())
-  );
-
-  readonly clientesPaginados = computed(() => {
-    const inicio = (this.page() - 1) * this.rows();
-    return this.displayedList().slice(inicio, inicio + this.rows());
+  readonly suggestions = computed(() => {
+    const q = this.autoTerm().trim().toLowerCase();
+    if (!q) return [];
+    return this.customers()
+      .filter(
+        (c) =>
+          String(c.displayName ?? '')
+            .toLowerCase()
+            .includes(q) ||
+          String(c.documentValue ?? '')
+            .toLowerCase()
+            .includes(q),
+      )
+      .slice(0, 5);
   });
 
   selectedClient = signal<Customer | null>(null);
-  showDetails    = signal<boolean>(false);
+  showDetails = signal<boolean>(false);
 
   ngOnInit(): void {
-    this.clienteService.loadCustomers({ limit: 1000 }, 'Administrador').subscribe();
+    this.cargar();
+  }
+
+  private cargar(): void {
+    const status = this.statusFilter();
+    this.clienteService
+      .loadCustomers({
+        page: this.page(),
+        limit: this.rows(),
+        search: this.searchTerm().trim() || undefined,
+        status: status === 'activos' ? true : status === 'inactivos' ? false : undefined,
+        tipo: this.viewMode() !== 'todas' ? this.viewMode() : undefined,
+      })
+      .subscribe();
   }
 
   private readonly docTypeMap: Record<string, string> = {
-    '00': 'OTROS', '01': 'DNI', '04': 'C.E.', '06': 'RUC', '07': 'PASAPORTE'
+    '00': 'OTROS',
+    '01': 'DNI',
+    '04': 'C.E.',
+    '06': 'RUC',
+    '07': 'PASAPORTE',
   };
 
-  getDocTypeLabel(code: string): string { return this.docTypeMap[code] ?? 'DOC'; }
+  getDocTypeLabel(code: string): string {
+    return this.docTypeMap[code] ?? 'DOC';
+  }
 
   isCompany(code?: string, businessName?: string | null): boolean {
     if (businessName && String(businessName).trim().length > 0) return true;
@@ -126,81 +131,97 @@ export class Clientes implements OnInit {
   }
 
   getDisplayName(c: Customer): string {
-    const bn = c.businessName ?? (c as any).razon_social ?? null;
+    const bn = c.businessName ?? (c as any).razonsocial ?? null;
     if (bn && String(bn).trim().length > 0) return String(bn).trim();
-    const name = c.name ?? (c as any).nombres ?? '';
-    const last = c.lastName ?? (c as any).apellidos ?? '';
-    const full = [name, last].filter(Boolean).join(' ').trim();
-    return full || c.documentValue || '—';
+    const name = c.name ?? '';
+    const last = c.lastName ?? '';
+    return [name, last].filter(Boolean).join(' ').trim() || c.documentValue || '—';
   }
 
-  getPhoneDisplay(c: Customer): string { return c.phone ?? '---'; }
+  getPhoneDisplay(c: Customer): string {
+    return c.phone ?? '---';
+  }
 
   getCustomerTypeLabel(c: Customer): string {
     return this.isCompany(c.documentTypeSunatCode, c.businessName) ? 'JURÍDICA' : 'NATURAL';
   }
 
   onAutoChange(value: unknown): void {
-    if (typeof value === 'string') { this.autoTerm.set(value); return; }
+    if (typeof value === 'string') {
+      this.autoTerm.set(value);
+      return;
+    }
     if (value && typeof value === 'object') {
-      const v = value as any;
-      this.autoTerm.set(String(v.displayName ?? v.documentValue ?? ''));
+      this.autoTerm.set(String((value as any).displayName ?? (value as any).documentValue ?? ''));
       return;
     }
     this.autoTerm.set('');
   }
 
-  onAutoComplete(event: { query: string } | any): void {
+  onAutoComplete(event: any): void {
     this.autoTerm.set(String(event?.query ?? ''));
   }
 
   onSelectCliente(event: any): void {
     const selected: Customer | undefined = event?.value;
     if (!selected) return;
-    if (selected.customerId) {
-      this.clienteService.getCustomerById(selected.customerId).subscribe({
-        next: (full) => {
-          this.displayedClients.set([full]);
-          this.autoTerm.set('');
-          this.page.set(1);
-        },
-        error: () => {
-          this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo obtener los datos del cliente.' });
-          this.displayedClients.set(null);
-        },
-      });
-      return;
-    }
-    this.searchTerm.set(selected.displayName ?? selected.documentValue ?? '');
-    this.page.set(1);
+    this.searchTerm.set(selected.documentValue ?? '');
     this.autoTerm.set('');
+    this.page.set(1);
+    this.cargar();
   }
 
   confirmAutoSearch(): void {
-    this.searchTerm.set(String(this.autoTerm()).trim());
+    this.searchTerm.set(this.autoTerm().trim());
+    this.autoTerm.set('');
     this.page.set(1);
-    this.displayedClients.set(null);
+    this.cargar();
   }
 
-  onViewModeChange(mode: ViewMode): void { this.viewMode.set(mode); this.page.set(1); }
+  onViewModeChange(mode: ViewMode): void {
+    this.viewMode.set(mode);
+    this.page.set(1);
+    this.cargar();
+  }
+
+  onStatusFilterChange(s: StatusFilter): void {
+    this.statusFilter.set(s);
+    this.page.set(1);
+    this.cargar();
+  }
+
+  onPageChange(page: number): void {
+    this.page.set(page);
+    this.cargar();
+  }
+
+  onLimitChange(limit: number): void {
+    this.rows.set(limit);
+    this.page.set(1);
+    this.cargar();
+  }
 
   clearSearch(): void {
     this.searchTerm.set('');
     this.autoTerm.set('');
     this.viewMode.set('todas');
+    this.statusFilter.set('activos');
     this.page.set(1);
-    this.displayedClients.set(null);
+    this.cargar();
   }
 
-  onPageChange(page: number): void   { this.page.set(page); }
-  onLimitChange(limit: number): void { this.rows.set(limit); this.page.set(1); }
-
-  openDetails(c: Customer)  { this.selectedClient.set(c); this.showDetails.set(true); }
-  closeDetails()             { this.selectedClient.set(null); this.showDetails.set(false); }
+  openDetails(c: Customer) {
+    this.selectedClient.set(c);
+    this.showDetails.set(true);
+  }
+  closeDetails() {
+    this.selectedClient.set(null);
+    this.showDetails.set(false);
+  }
 
   confirmToggleStatus(c: Customer): void {
-    const nextStatus  = !c.status;
-    const verb        = nextStatus ? 'activar' : 'desactivar';
+    const nextStatus = !c.status;
+    const verb = nextStatus ? 'activar' : 'desactivar';
     const acceptLabel = nextStatus ? 'Activar' : 'Desactivar';
 
     this.confirmationService.confirm({
@@ -213,29 +234,27 @@ export class Clientes implements OnInit {
       rejectButtonProps: { severity: 'secondary', outlined: true },
       accept: () => {
         this.clienteService.updateCustomerStatus(c.customerId, nextStatus).subscribe({
-          next: (updated) => {
-            const current = this.displayedClients();
-            if (current) {
-              const idx = current.findIndex(x => x.customerId === updated.customerId);
-              if (idx >= 0) { const copy = [...current]; copy[idx] = updated; this.displayedClients.set(copy); }
-            }
+          next: () => {
+            this.confirmationService.close();
             this.messageService.add({
-              severity: 'success',
+              severity: nextStatus ? 'success' : 'warn',
               summary: nextStatus ? 'Cliente activado' : 'Cliente desactivado',
-              detail: nextStatus
-                ? `Se activó el cliente ${this.getDisplayName(updated)}.`
-                : `Se desactivó el cliente ${this.getDisplayName(updated)}.`,
+              detail: `${this.getDisplayName(c)} fue ${nextStatus ? 'activado' : 'desactivado'}.`,
               life: 3000,
             });
+            this.cargar();
           },
           error: (err) => {
+            this.confirmationService.close();
             this.messageService.add({
-              severity: 'error', summary: 'Error',
-              detail: err?.error?.message ?? 'No se pudo cambiar el estado del cliente.',
+              severity: 'error',
+              summary: 'Error',
+              detail: err?.error?.message ?? 'No se pudo cambiar el estado.',
             });
           },
         });
       },
+      reject: () => this.confirmationService.close(),
     });
   }
 }

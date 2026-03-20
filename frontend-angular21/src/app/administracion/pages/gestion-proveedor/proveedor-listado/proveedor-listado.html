@@ -73,62 +73,80 @@
       </div>
     </div>
 
-    <!-- FILTROS -->
-    <div class="surface-card border-round-xl shadow-1 mb-4">
-      <div class="p-3">
-        <div class="flex flex-wrap gap-6 align-items-end h-full">
-          <div class="flex-1 p-fluid h-full">
-            <label class="font-medium mb-2 block">Buscar Proveedor</label>
-            <p-autocomplete
-              [ngModel]="buscarValue()"
-              (ngModelChange)="buscarValue.set($event)"
-              name="buscarProveedores"
-              [suggestions]="items()"
-              (completeMethod)="searchBuscar($event)"
-              (onSelect)="filtrarPorBusqueda($event)"
-              placeholder="Razón social, RUC o contacto..."
-              fluid
-              styleClass="autocomplete-proveedores">
-              <ng-template let-item pTemplate="item">
-                <div class="autocomplete-item-custom">
-                  <div class="flex flex-column">
-                    <span class="font-bold text-900 mb-1">{{ item.razon_social }}</span>
-                    <small class="text-600">
-                      <i class="pi pi-tag mr-1"></i>{{ item.ruc }}
-                      <span *ngIf="item.contacto">
-                        • <i class="pi pi-user ml-2 mr-1"></i>{{ item.contacto }}
-                      </span>
-                      <span *ngIf="item.email">
-                        • <i class="pi pi-envelope ml-2 mr-1"></i>{{ item.email }}
-                      </span>
-                    </small>
-                  </div>
+  <!-- FILTROS -->
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar Proveedor</label>
+          <p-autocomplete
+            [ngModel]="buscarValue()"
+            (ngModelChange)="buscarValue.set($event)"
+            name="buscarProveedores"
+            [suggestions]="items()"
+            (completeMethod)="searchBuscar($event)"
+            (onSelect)="filtrarPorBusqueda($event)"
+            placeholder="Razón social, RUC o contacto..."
+            fluid
+            styleClass="autocomplete-proveedores w-full">
+            <ng-template let-item pTemplate="item">
+              <div class="autocomplete-item-custom">
+                <div class="flex flex-column">
+                  <span class="font-bold text-900 mb-1">{{ item.razon_social }}</span>
+                  <small class="text-600">
+                    <i class="pi pi-tag mr-1"></i>{{ item.ruc }}
+                    <span *ngIf="item.contacto">
+                      • <i class="pi pi-user ml-2 mr-1"></i>{{ item.contacto }}
+                    </span>
+                    <span *ngIf="item.email">
+                      • <i class="pi pi-envelope ml-2 mr-1"></i>{{ item.email }}
+                    </span>
+                  </small>
                 </div>
-              </ng-template>
-            </p-autocomplete>
-          </div>
-
-          <div class="flex gap-3 align-items-center">
-            <p-toggleButton
-              [ngModel]="vistaLista()"
-              (ngModelChange)="vistaLista.set($event)"
-              name="vistaToggleProveedores"
-              [onLabel]="'Lista'"
-              [offLabel]="'Tarjetas'"
-              [onIcon]="'pi pi-table'"
-              [offIcon]="'pi pi-list'">
-            </p-toggleButton>
-            <p-button
-              icon="pi pi-filter-slash"
-              label="Limpiar"
-              severity="danger"
-              size="small"
-              (onClick)="limpiarFiltros()">
-            </p-button>
-          </div>
+              </div>
+            </ng-template>
+          </p-autocomplete>
+        </div>
+      </div>
+      <div class="filtros-linea-2">
+        <div class="filtro-item filtro-compacto">
+          <label>Vista</label>
+          <p-toggleButton
+            [ngModel]="vistaLista()"
+            (ngModelChange)="vistaLista.set($event)"
+            name="vistaToggleProveedores"
+            [onLabel]="'Lista'"
+            [offLabel]="'Tarjetas'"
+            [onIcon]="'pi pi-table'"
+            [offIcon]="'pi pi-list'"
+            styleClass="w-full">
+          </p-toggleButton>
+        </div>
+                <div class="filtro-item filtro-compacto">
+          <label>ESTADO</label>
+          <p-toggleButton
+            [ngModel]="vistaLista()"
+            (ngModelChange)="vistaLista.set($event)"
+            name="vistaToggleProveedores"
+            [onLabel]="'Lista'"
+            [offLabel]="'Tarjetas'"
+            [onIcon]="'pi pi-table'"
+            [offIcon]="'pi pi-list'"
+            styleClass="w-full">
+          </p-toggleButton>
+        </div>
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros" icon="pi pi-filter-slash"
+            severity="danger" styleClass="btn-limpiar-filtros"
+            type="button" (click)="limpiarFiltros()">
+          </p-button>
         </div>
       </div>
     </div>
+  </div>
 
     <div *ngIf="!esVistaEliminados()">
       <ng-container *ngTemplateOutlet="listaProveedores"></ng-container>

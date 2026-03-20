@@ -1041,3 +1041,2907 @@
 
   
 }
+.clientes-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.clientes-header-card .p-card-body {
+    padding: 1rem 1.25rem;
+}
+
+.clientes-header-card {
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.clientes-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+  font-size: 18px;
+}
+
+.clientes-kicker {
+    margin: 0;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.clientes-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.mermas-remates-page {
+    min-height: 100vh;
+    padding: 2rem 2.5rem;
+    background: #f5f5f5;
+}
+
+/* ===== HEADER CARD ===== */
+:host ::ng-deep .mermas-header-card .p-card-body {
+    padding: 1rem 1.5rem;
+}
+
+.mermas-header-card {
+    margin-bottom: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.mermas-title-icon {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    border-radius: 8px;
+    background: #f5c34d;
+    color: #1f2937;
+    font-size: 20px;
+}
+
+.mermas-kicker {
+    margin: 0;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    font-weight: 400;
+}
+
+.mermas-title {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1f2937;
+    letter-spacing: -0.02em;
+}
+
+/* ===== BOTONES PRINCIPALES ===== */
+:host ::ng-deep .mermas-btn-primary {
+    background: #f1a92b !important;
+    border: 1px solid #d98d1b !important;
+    color: #1a1a1a !important;
+    font-weight: 600 !important;
+    padding: 0.65rem 1.25rem !important;
+    border-radius: 8px !important;
+}
+
+:host ::ng-deep .mermas-btn-primary:hover {
+    background: #d98d1b !important;
+}
+
+/* ===== TARJETAS DE ESTADÍSTICAS ===== */
+.mermas-metrics {
+    margin: 0.75rem 0 1rem;
+    gap: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    background: #ffffff;
+}
+
+.mermas-metrics > [class*='col-'] {
+    padding: 0;
+}
+
+.mermas-metrics p-card {
+    height: 100%;
+    display: block;
+}
+
+.mermas-metrics p-card .p-card {
+    height: 100%;
+}
+
+:host ::ng-deep .stat-card {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+    background: #ffffff;
+    border-right: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+    border-radius: 0;
+}
+
+:host ::ng-deep .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #F6AF33 0%, #e8a424 100%);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+:host ::ng-deep .stat-card:hover::before {
+    transform: scaleX(1);
+}
+
+:host ::ng-deep .stat-card:hover {
+    background: #fefce8;
+    box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.1);
+}
+
+:host ::ng-deep .stat-card .p-card-body {
+    padding: 1.5rem;
+}
+
+.stat-card-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #9ca3af;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.stat-value {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0;
+    color: #1f2937;
+    line-height: 1;
+    letter-spacing: -0.02em;
+}
+
+.stat-change {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0;
+}
+
+.stat-icon {
+    font-size: 2.5rem;
+    color: #F6AF33;
+    transition: all 0.3s ease;
+}
+
+:host ::ng-deep .stat-card:hover .stat-icon {
+    transform: scale(1.1);
+    color: #e8a424;
+}
+
+
+.mermas-metrics > [class*='col-']:last-child :host ::ng-deep .stat-card,
+.mermas-metrics > [class*='col-']:last-child .stat-card {
+    border-right: none;
+}
+
+:host-context(.app-dark) .mermas-metrics {
+    background: #18181B;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+:host-context(.app-dark) :host ::ng-deep .stat-card {
+    background: #18181B;
+    border-right-color: #27272a;
+}
+
+:host-context(.app-dark) :host ::ng-deep .stat-card:hover {
+    background: #27272a;
+    box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.2);
+}
+
+:host-context(.app-dark) .stat-label {
+    color: #a1a1aa;
+}
+
+:host-context(.app-dark) .stat-value {
+    color: #ffffff;
+}
+
+:host-context(.app-dark) .stat-change {
+    color: #94a3b8;
+}
+
+:host-context(.app-dark) .stat-icon {
+    color: #F6AF33;
+}
+
+/* ===== FILTROS ===== */
+:host ::ng-deep .filtros-card {
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:host ::ng-deep .filtros-card .p-card-body {
+    padding: 1.25rem 1.5rem;
+}
+
+.filter-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+}
+
+:host ::ng-deep .filtros-card .p-inputtext {
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+}
+
+:host ::ng-deep .filtros-card .p-dropdown {
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+}
+
+:host ::ng-deep .filtros-card .p-inputtext:focus,
+:host ::ng-deep .filtros-card .p-dropdown:focus {
+    border-color: #f1a92b;
+    box-shadow: 0 0 0 3px rgba(241, 169, 43, 0.1);
+}
+
+:host ::ng-deep .filtros-card .p-button-outlined {
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+    border-radius: 6px !important;
+}
+
+:host ::ng-deep .filtros-card .p-button-outlined:hover {
+    background: #fee2e2 !important;
+}
+
+/* ===== TABS ===== */
+.tabs-container {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+:host ::ng-deep .tab-button {
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 0.85rem !important;
+    padding: 0.6rem 1rem !important;
+}
+
+:host ::ng-deep .tab-button.tab-active {
+    background: #f1a92b !important;
+    border-color: #d98d1b !important;
+    color: #1a1a1a !important;
+}
+
+:host ::ng-deep .tab-button:not(.tab-active) {
+    color: #6b7280 !important;
+    border-color: #d1d5db !important;
+    background: white !important;
+}
+
+:host ::ng-deep .tab-button:not(.tab-active):hover {
+    background: #f9fafb !important;
+    border-color: #9ca3af !important;
+}
+
+/* ===== TABLA ===== */
+:host ::ng-deep .tabla-card {
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:host ::ng-deep .tabla-card .p-card-body {
+    padding: 1.5rem;
+}
+
+.tabla-icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 6px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    font-size: 16px;
+}
+
+.tabla-title {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+}
+
+/* Estilos de la tabla */
+:host ::ng-deep .mermas-table .p-datatable-thead > tr > th {
+    background: #f8f9fa;
+    color: #6b7280;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid #e5e7eb;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr > td {
+    padding: 1.25rem 1rem;
+    vertical-align: middle;
+    border-bottom: 1px solid #f3f4f6;
+    font-size: 0.9rem;
+}
+
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr {
+    transition: background-color 0.2s;
+}
+
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr:hover {
+    background-color: #f9fafb;
+}
+
+/* Contenido de las celdas */
+.codigo-producto {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #1f2937;
+    display: block;
+    margin-bottom: 0.25rem;
+}
+
+.fecha-producto {
+    font-size: 0.7rem;
+    color: #9ca3af;
+}
+
+.producto-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.producto-nombre {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1f2937;
+}
+
+.producto-responsable {
+    font-size: 0.75rem;
+    color: #9ca3af;
+}
+
+.cantidad-badge {
+    display: inline-block;
+    padding: 0.35rem 0.75rem;
+    background: #f3f4f6;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: #4b5563;
+}
+
+.codigo-remate {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #10b981;
+}
+
+.precio-remate {
+    font-family: 'Courier New', monospace;
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: #059669;
+}
+
+/* Botones de acción */
+:host ::ng-deep .action-btn {
+    margin: 0 0.15rem;
+    padding: 0.5rem !important;
+}
+
+/* ===== MODAL ===== */
+:host ::ng-deep .mermas-dialog .p-dialog-header {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1.25rem 1.5rem;
+}
+
+:host ::ng-deep .mermas-dialog .p-dialog-header .p-dialog-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+:host ::ng-deep .mermas-dialog .p-dialog-content {
+    padding: 1.5rem;
+}
+
+.field-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #4b5563;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.required-asterisk {
+    color: #dc3545;
+    margin-left: 2px;
+}
+
+:host ::ng-deep .form-grid .p-inputtext,
+:host ::ng-deep .form-grid .p-dropdown {
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+}
+
+:host ::ng-deep .form-grid .p-inputtext {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+}
+
+:host ::ng-deep .form-grid .p-inputnumber input {
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+}
+
+:host ::ng-deep .form-grid .p-inputtext:focus,
+:host ::ng-deep .form-grid .p-dropdown:focus,
+:host ::ng-deep .form-grid .p-inputnumber:focus-within {
+    border-color: #f1a92b;
+    box-shadow: 0 0 0 3px rgba(241, 169, 43, 0.1);
+}
+
+:host ::ng-deep .mermas-dialog .p-dialog-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* ===== MENSAJES VACÍOS ===== */
+:host ::ng-deep .mermas-table .p-datatable-emptymessage > td {
+    padding: 3rem 1rem !important;
+    text-align: center;
+}
+
+/* ===== TAGS DE PRIMENG ===== */
+:host ::ng-deep .p-tag {
+    font-weight: 600;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.35rem 0.75rem;
+    border-radius: 4px;
+}
+
+:host ::ng-deep .p-tag.p-tag-danger {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-danger {
+    background: rgba(248, 113, 113, 0.2);
+    color: #fecaca;
+}
+
+:host ::ng-deep .p-tag-label {
+    color: #000000;
+}
+
+
+:host-context(.app-dark) :host ::ng-deep .p-tag-label {
+    color: #ffffff;
+}
+:host ::ng-deep .p-tag.p-tag-success {
+    background: #d1fae5;
+    color: #059669;
+}
+
+:host ::ng-deep .p-tag.p-tag-info {
+    background: #dbeafe;
+    color: #0369a1;
+}
+
+/* ===== TOOLTIPS ===== */
+:host ::ng-deep .p-tooltip .p-tooltip-text {
+    font-size: 0.8rem;
+    padding: 0.45rem 0.7rem;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .mermas-remates-page {
+        padding: 1.5rem 1rem;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+    }
+
+    .tabs-container {
+        flex-direction: column;
+    }
+
+    :host ::ng-deep .tab-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    :host ::ng-deep .mermas-table {
+        font-size: 0.85rem;
+    }
+}
+
+@media (max-width: 1200px) {
+    .mermas-metrics > [class*='col-']:nth-child(2) :host ::ng-deep .stat-card,
+    .mermas-metrics > [class*='col-']:nth-child(2) .stat-card {
+        border-right: none;
+    }
+
+    .mermas-metrics > [class*='col-']:nth-child(1) :host ::ng-deep .stat-card,
+    .mermas-metrics > [class*='col-']:nth-child(2) :host ::ng-deep .stat-card,
+    .mermas-metrics > [class*='col-']:nth-child(1) .stat-card,
+    .mermas-metrics > [class*='col-']:nth-child(2) .stat-card {
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    :host-context(.app-dark) .mermas-metrics > [class*='col-']:nth-child(1) :host ::ng-deep .stat-card,
+    :host-context(.app-dark) .mermas-metrics > [class*='col-']:nth-child(2) :host ::ng-deep .stat-card,
+    :host-context(.app-dark) .mermas-metrics > [class*='col-']:nth-child(1) .stat-card,
+    :host-context(.app-dark) .mermas-metrics > [class*='col-']:nth-child(2) .stat-card {
+        border-bottom-color: rgba(255, 255, 255, 0.12);
+    }
+}
+
+@media (max-width: 768px) {
+    .mermas-metrics > [class*='col-'] :host ::ng-deep .stat-card,
+    .mermas-metrics > [class*='col-'] .stat-card {
+        border-right: none;
+        border-bottom: 2px solid #e5e7eb;
+    }
+
+    .mermas-metrics > [class*='col-']:last-child :host ::ng-deep .stat-card,
+    .mermas-metrics > [class*='col-']:last-child .stat-card {
+        border-bottom: none;
+    }
+
+    :host-context(.app-dark) .mermas-metrics > [class*='col-'] :host ::ng-deep .stat-card,
+    :host-context(.app-dark) .mermas-metrics > [class*='col-'] .stat-card {
+        border-bottom-color: rgba(255, 255, 255, 0.12);
+    }
+}
+
+/* ===== AJUSTES ADICIONALES ===== */
+:host ::ng-deep .p-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+:host ::ng-deep .p-inputtext::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+/* Ajuste para el icono de búsqueda */
+:host ::ng-deep .p-input-icon-left > .p-inputtext {
+    padding-left: 2.5rem;
+}
+
+/* ===== DARK MODE GENERAL ===== */
+:host-context(.app-dark) .clientes-title {
+    color: #f8fafc;
+}
+
+:host-context(.app-dark) .clientes-kicker {
+    color: #a1a1aa;
+}
+
+:host-context(.app-dark) .clientes-title-icon {
+    background: #F6AF33;
+    color: #111827;
+}
+
+:host-context(.app-dark) :host ::ng-deep .clientes-header-card,
+:host-context(.app-dark) :host ::ng-deep .filtros-card,
+:host-context(.app-dark) :host ::ng-deep .tabla-card {
+    background: #18181B;
+    border-color: #27272a;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+:host-context(.app-dark) :host ::ng-deep .clientes-header-card .p-card-body,
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-card-body,
+:host-context(.app-dark) :host ::ng-deep .tabla-card .p-card-body {
+    background: #18181B;
+}
+
+:host-context(.app-dark) .filter-label {
+    color: #a1a1aa;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-inputtext,
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-dropdown {
+    background: #09090b;
+    border-color: #27272a;
+    color: #f8fafc;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-inputtext::placeholder {
+    color: #71717a;
+    font-style: normal;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-inputtext:focus,
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-dropdown:focus {
+    border-color: #F6AF33;
+    box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15);
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-button-outlined {
+    border-color: #ef4444 !important;
+    color: #fecaca !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtros-card .p-button-outlined:hover {
+    background: rgba(239, 68, 68, 0.12) !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .tab-button {
+    color: #e2e8f0 !important;
+    border-color: #27272a !important;
+    background: #18181B !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .tab-button:not(.tab-active):hover {
+    background: #1f2937 !important;
+    border-color: #3f3f46 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .tab-button.tab-active {
+    background: #F6AF33 !important;
+    border-color: #e8a424 !important;
+    color: #111827 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .tabla-title {
+    color: #f8fafc;
+}
+
+:host-context(.app-dark) :host ::ng-deep .tabla-icon {
+    background: #111827;
+    color: #F6AF33;
+}
+
+:host-context(.app-dark) :host ::ng-deep .mermas-table .p-datatable-thead > tr > th {
+    background: #12161b;
+    color: #cbd5f5;
+    border-bottom-color: #2f3540;
+}
+
+:host-context(.app-dark) :host ::ng-deep .mermas-table .p-datatable-tbody > tr > td {
+    color: #e2e8f0;
+    border-bottom-color: #2f3540;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-tag {
+    color: #0f172a;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-danger {
+    background: rgba(248, 113, 113, 0.2);
+    color: #fecaca;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-success {
+    background: rgba(52, 211, 153, 0.2);
+    color: #86efac;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-tag.p-tag-info {
+    background: rgba(56, 189, 248, 0.2);
+    color: #bae6fd;
+}
+
+:host-context(.app-dark) :host ::ng-deep .mermas-table .p-datatable-tbody > tr:hover {
+    background-color: #1f2937;
+}
+
+:host-context(.app-dark) .codigo-producto,
+:host-context(.app-dark) .producto-nombre {
+    color: #f8fafc;
+}
+
+:host-context(.app-dark) .fecha-producto,
+:host-context(.app-dark) .producto-responsable {
+    color: #94a3b8;
+}
+
+:host-context(.app-dark) .cantidad-badge {
+    background: #0f172a;
+    color: #e2e8f0;
+}
+
+:host-context(.app-dark) .codigo-remate {
+    color: #34d399;
+}
+
+:host-context(.app-dark) .precio-remate {
+    color: #10b981;
+}
+
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-header,
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-content,
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-footer {
+    background: #18181B;
+    border-color: #27272a;
+}
+
+:host-context(.app-dark) :host ::ng-deep .mermas-dialog .p-dialog-title,
+:host-context(.app-dark) .field-label {
+    color: #f8fafc;
+}
+
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-inputtext,
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-dropdown,
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-inputnumber input {
+    background: #09090b;
+    border-color: #27272a;
+    color: #f8fafc;
+}
+
+:host-context(.app-dark) :host ::ng-deep .form-grid .p-inputtext::placeholder {
+    color: #71717a;
+}
+
+:host ::ng-deep .p-input-icon-left > i:first-of-type {
+    left: 0.75rem;
+}
+
+/* ===== FIX GRID ESTADÍSTICAS ===== */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.25rem;
+    align-items: stretch;
+}
+
+@media (max-width: 768px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== CONTENIDO INTERNO DE STAT CARD ===== */
+:host ::ng-deep .stat-card .p-card-body {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+/* Texto */
+.stat-text {
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== FILTROS FULL WIDTH ===== */
+:host ::ng-deep .filtros-card .p-inputtext,
+:host ::ng-deep .filtros-card .p-dropdown {
+    width: 100%;
+}
+
+/* ===== GRID DE FILTROS ===== */
+.filtros-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    align-items: end;
+}
+
+@media (max-width: 768px) {
+    .filtros-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ===== BOTÓN LIMPIAR FILTROS ===== */
+.filtros-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-end;
+}
+
+/* ===== TABS CENTRADOS ===== */
+.tabs-container {
+    align-items: center;
+}
+
+/* ===== TABLA: AIRE VISUAL ===== */
+:host ::ng-deep .mermas-table .p-datatable-tbody > tr > td {
+    padding-top: 1.4rem;
+    padding-bottom: 1.4rem;
+}
+
+:host ::ng-deep .p-input-icon-left > i {
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+}
+
+/* Ajuste para el icono de búsqueda */
+:host ::ng-deep .p-input-icon-left > i:first-of-type {
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+:host ::ng-deep .p-input-icon-left > .p-inputtext {
+    padding-left: 2.5rem;
+}
+:host {
+  display: block;
+}
+
+.sedes-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sedes-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.sedes-title-icon {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+  font-size: 18px;
+}
+
+
+.sedes-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+}
+
+.sedes-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sedes-search-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sedes-search-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.sedes-filter-actions {
+  align-self: flex-end;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.sedes-pill {
+  border-radius: 999px;
+  padding: 0.35rem 1rem;
+  font-size: 0.75rem;
+}
+
+.sedes-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sedes-section-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: rgba(245, 195, 77, 0.12);
+  color: #f5c34d;
+  border: 1px solid rgba(245, 195, 77, 0.2);
+  font-size: 14px;
+}
+
+/* ── Tabla — igual que clientes (clases directas) ─── */
+.sedes-table .p-datatable-thead > tr > th {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: #94a3b8;
+  text-transform: uppercase;
+  background: #111827;
+  border-color: rgba(255,255,255,0.06);
+}
+
+.sedes-table .p-datatable-tbody > tr > td {
+  padding: 0.75rem 1rem;
+  color: #cbd5e1;
+  border-color: rgba(255,255,255,0.04);
+  background: #111827;
+}
+
+.sedes-table .p-datatable-tbody > tr:hover > td {
+  background: rgba(245, 195, 77, 0.04) !important;
+}
+
+.sedes-table .p-paginator {
+  background: #111827;
+  border-color: rgba(255,255,255,0.06);
+  color: #94a3b8;
+}
+
+/* ── Dark mode ───────────────────────────── */
+:host-context(.app-dark) .sedes-kicker { color: #94a3b8; }
+:host-context(.app-dark) .sedes-title  { color: #f8fafc; }
+
+/* ── Empty state ─────────────────────────── */
+.sedes-empty-state {
+  border: 1px dashed rgba(255,255,255,0.06);
+  border-radius: 12px;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  background: rgba(255,255,255,0.01);
+  color: #9aa0a6;
+}
+
+.sedes-empty-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+  color: #94a3b8;
+}
+
+.sedes-empty-title {
+  font-weight: 600;
+  color: #e6e6e6;
+}
+
+.sedes-empty-subtitle {
+  font-size: 0.85rem;
+  max-width: 360px;
+  color: #9aa0a6;
+}
+
+/* ── Autocomplete panel ──────────────────── */
+:host ::ng-deep .p-autocomplete-panel {
+  z-index: 2500 !important;
+  background: rgba(17, 24, 39, 0.98) !important;
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.04);
+}
+
+:host ::ng-deep .p-autocomplete-item {
+  color: #e6e6e6 !important;
+  padding: 0.6rem 0.8rem;
+}
+
+:host ::ng-deep .sedes-search-input:focus-within {
+  box-shadow: 0 0 0 2px rgba(247, 208, 83, 0.15);
+  border-color: rgba(247, 208, 83, 0.9) !important;
+}
+
+/* ── Select filtro ───────────────────────── */
+:host {
+  --sedes-filter-height: 42px;
+}
+
+:host ::ng-deep .sedes-filter-select {
+  display: inline-flex;
+  height: var(--sedes-filter-height);
+  min-width: 140px;
+}
+
+:host ::ng-deep .sedes-filter-select .p-select {
+  height: var(--sedes-filter-height);
+  border-radius: 8px !important;
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  background: rgba(17, 24, 39, 0.2) !important;
+}
+
+:host ::ng-deep .sedes-filter-select .p-select-label {
+  height: var(--sedes-filter-height);
+  line-height: calc(var(--sedes-filter-height) - 2px);
+  padding: 0 0.75rem !important;
+  background: transparent !important;
+  color: #e2e8f0 !important;
+}
+
+:host ::ng-deep .sedes-filter-select .p-select-trigger {
+  height: var(--sedes-filter-height);
+  width: 2.5rem;
+  border-radius: 0 8px 8px 0 !important;
+  color: #e2e8f0 !important;
+}
+
+/* ============================================
+   ALMACÉN DETAIL MODAL
+   ============================================ */
+
+:host ::ng-deep .p-dialog .p-dialog-content {
+  padding: 0 !important;
+  border-radius: 16px;
+  overflow: hidden;
+}
+:host ::ng-deep .p-dialog .p-dialog-header {
+  display: none !important;
+}
+:host ::ng-deep .p-dialog {
+  border-radius: 16px !important;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow: 0 32px 64px rgba(0,0,0,0.6) !important;
+}
+
+/* ── Contenedor principal ─────────────────── */
+.almacen-detail-modal {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* ── Banner superior ─────────────────────── */
+.adm-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem 1.5rem 1.25rem;
+  position: relative;
+}
+
+.adm-banner-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  flex-shrink: 0;
+}
+
+.adm-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.adm-kicker {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: #f59e0b;
+  margin-bottom: 0.2rem;
+}
+
+.adm-nombre {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.adm-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: #64748b;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.75rem;
+  transition: all 0.15s;
+}
+.adm-close-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: #f1f5f9;
+}
+
+/* ── Fila de código ────────────────────────── */
+.adm-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.adm-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  text-transform: uppercase;
+}
+
+.adm-code-value {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+.adm-status-badge {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+}
+
+.adm-status--active {
+  background: rgba(34, 197, 94, 0.1);
+  color: #4ade80;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.adm-status--inactive {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.adm-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* ── Info grid ────────────────────────────── */
+.adm-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 0.5rem 0;
+}
+
+.adm-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  transition: background 0.15s;
+}
+
+.adm-info-item:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+.adm-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.adm-info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.04);
+  color: #64748b;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+.adm-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.adm-info-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.adm-info-value {
+  font-size: 0.88rem;
+  color: #cbd5e1;
+  word-break: break-word;
+}
+
+/* ── Footer ───────────────────────────────── */
+.adm-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  background: rgba(255,255,255,0.02);
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+:host ::ng-deep .adm-btn-edit.p-button {
+  background: #f59e0b !important;
+  border-color: #f59e0b !important;
+  color: #111827 !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+:host ::ng-deep .adm-btn-edit.p-button:hover {
+  background: #d97706 !important;
+}
+
+:host ::ng-deep .adm-btn-close.p-button {
+  border-radius: 8px;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #94a3b8 !important;
+}
+
+:host ::ng-deep .adm-btn-close.p-button:hover {
+  background: rgba(255,255,255,0.06) !important;
+}
+
+.ventas-header-card .p-card-body {
+  padding: 1rem 1.25rem;
+}
+
+.ventas-title-icon {
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  font-size: 18px;
+}
+
+
+.contador-detalle {
+  font-size: 0.75rem;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.contador-detalle i {
+  font-size: 0.75rem;
+}
+
+
+.ventas-kicker {
+  margin: 0;
+  font-size: 0.65rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  font-weight: 600;
+}
+
+.ventas-title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.cabecera-pagina {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.tarjeta-principal {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+:host ::ng-deep .ventas-pill {
+  border-radius: 8px !important;
+  border: none !important;
+  padding: 0.5rem 1.5rem !important;
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  min-height: 42px !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08) !important;
+  transition: all 0.2s ease !important;
+}
+
+:host ::ng-deep .ventas-pill:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12) !important;
+  background-color: #F6AF33;
+}
+
+:host ::ng-deep .ventas-pill:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+:host ::ng-deep .ventas-pill-warning {
+  background: #F6AF33 !important;
+  color: #1f2937 !important;
+}
+
+.ventas-header-bordered {
+  border-radius: 12px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+  overflow: hidden;
+}
+
+.ventas-header-bordered .p-card-body {
+  padding: 0 !important;
+}
+
+.seccion-estadisticas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  margin: 0;
+  background: #ffffff;
+}
+
+.estadistica-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1.5rem;
+  background: #ffffff;
+  border-right: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.estadistica-card:last-child {
+  border-right: none;
+}
+
+.estadistica-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #F6AF33 0%, #e8a424 100%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.3s ease;
+}
+
+.estadistica-card:hover::before {
+  transform: scaleX(1);
+}
+
+.estadistica-card:hover {
+  background: #fefce8;
+  box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.1);
+}
+
+.estadistica-card i {
+  font-size: 2.5rem;
+  color: #F6AF33;
+  transition: all 0.3s ease;
+}
+
+.estadistica-card:hover i {
+  transform: scale(1.1);
+  color: #e8a424;
+}
+
+.estadistica-card > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  width: 100%;
+}
+
+.estadistica-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.estadistica-valor {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #929e20;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.filtros-container {
+  background: #ffffff;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.seccion-filtros h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #7c9636;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-bottom: 0.625rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.seccion-filtros h3 i {
+  color: #F6AF33;
+  font-size: 1.1rem;
+}
+
+.filtro-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.filtro-item label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  margin: 0;
+  white-space: nowrap;
+  line-height: 1;
+  min-height: 14px;
+}
+
+.filtros-linea-1 {
+  display: flex !important;
+  gap: 2rem !important;
+  margin-bottom: 0.875rem !important;
+  align-items: flex-end !important;
+}
+
+.filtro-cliente-50 {
+  flex: 1 !important;
+  min-width: 0 !important;
+  position: relative !important;
+}
+
+.filtro-cliente-50::after {
+  content: '';
+  position: absolute;
+  right: -1rem;
+  top: 50%;
+  transform: translateY(-40%);
+  width: 2px;
+  height: 55px;
+  background: linear-gradient(180deg, transparent 0%, #d1d5db 15%, #d1d5db 85%, transparent 100%);
+  opacity: 0.7;
+}
+
+.filtro-grupo-fechas {
+  flex: 0 0 auto !important;
+}
+
+.filtros-linea-1 .filtro-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+}
+
+.filtros-linea-1 .filtro-item label {
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
+  margin: 0 !important;
+  margin-bottom: 0.4rem !important;
+  white-space: nowrap !important;
+  line-height: 1 !important;
+  min-height: 14px !important;
+  display: block !important;
+}
+
+.filtros-linea-1 .p-autocomplete,
+.fechas-con-guion {
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.fechas-con-guion {
+  gap: 1rem !important;
+}
+
+.fecha-separador {
+  font-size: 1.125rem !important;
+  font-weight: 600 !important;
+  color: #6b7280 !important;
+  line-height: 38px !important;
+  height: 38px !important;
+  padding: 0 0.5rem !important;
+  user-select: none !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+:host ::ng-deep .filtro-cliente-50 .p-autocomplete {
+  width: 100% !important;
+  height: 38px !important;
+}
+
+:host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input {
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  border-radius: 6px 0 0 6px !important;
+  border: 1px solid #d1d5db !important;
+  padding: 0.5rem 0.75rem !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.3 !important;
+}
+
+:host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input:hover {
+  border-color: #F6AF33 !important;
+}
+
+:host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input:focus {
+  border-color: #F6AF33 !important;
+  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
+  outline: none !important;
+}
+
+:host ::ng-deep .filtro-cliente-50 .p-autocomplete-dropdown {
+  height: 38px !important;
+  border-radius: 0 6px 6px 0 !important;
+  border-left: none !important;
+  width: 2.5rem !important;
+}
+
+:host ::ng-deep .fechas-con-guion .p-datepicker {
+  width: 190px !important;
+  height: 38px !important;
+}
+
+:host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext {
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  border-radius: 6px 0 0 6px !important;
+  border: 1px solid #d1d5db !important;
+  padding: 0.5rem 0.75rem !important;
+  padding-right: 2.5rem !important;
+  font-size: 0.8125rem !important;
+  line-height: 1.3 !important;
+}
+
+:host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext:hover {
+  border-color: #F6AF33 !important;
+}
+
+:host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext:focus {
+  border-color: #F6AF33 !important;
+  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
+  outline: none !important;
+}
+
+:host ::ng-deep .fechas-con-guion .p-datepicker-input-icon-container {
+  position: absolute !important;
+  right: 0.5rem !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.filtros-linea-2 {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+}
+
+.filtro-compacto {
+  flex: 1;
+  min-width: 140px;
+}
+
+.filtro-boton-limpiar {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 155px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.filtro-boton-limpiar label {
+  visibility: hidden;
+  height: 14px;
+  margin-bottom: 0.4rem;
+}
+
+:host ::ng-deep .filtros-linea-2 .p-select,
+:host ::ng-deep .filtros-linea-2 .p-inputtext {
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  transition: all 0.2s ease !important;
+  font-size: 0.8125rem !important;
+  width: 100% !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
+  padding: 0.5rem 0.75rem !important;
+  line-height: 1.3 !important;
+}
+
+:host ::ng-deep .filtros-linea-2 .p-select:hover,
+:host ::ng-deep .filtros-linea-2 .p-inputtext:hover {
+  border-color: #F6AF33 !important;
+}
+
+:host ::ng-deep .filtros-linea-2 .p-select:focus,
+:host ::ng-deep .filtros-linea-2 .p-inputtext:focus {
+  border-color: #F6AF33 !important;
+  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
+  outline: none !important;
+}
+
+:host ::ng-deep .filtros-linea-2 .p-select {
+  display: flex !important;
+  align-items: center !important;
+}
+
+:host ::ng-deep .filtros-linea-2 .p-select .p-select-label {
+  padding: 0 !important;
+  line-height: 1.3 !important;
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+}
+
+:host ::ng-deep .btn-limpiar-filtros {
+  font-weight: 600 !important;
+  height: 38px !important;
+  width: 100% !important;
+  padding: 0 1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 0.5rem !important;
+  line-height: 1 !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+}
+
+:host ::ng-deep .btn-limpiar-filtros:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2) !important;
+}
+
+:host ::ng-deep .p-select .p-select-label.p-placeholder,
+:host ::ng-deep .p-inputtext::placeholder,
+:host ::ng-deep .p-autocomplete .p-autocomplete-input::placeholder {
+  color: #9ca3af !important;
+  opacity: 1 !important;
+}
+
+.seccion-tabla {
+  margin-top: 1rem;
+}
+
+.tabla-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.tabla-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.tipo-pago-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+:host ::ng-deep .tipo-pago-tag {
+  font-size: 0.85rem !important;
+  padding: 0.375rem 0.75rem !important;
+  font-weight: 600 !important;
+  border-radius: 6px !important;
+}
+
+.tipo-pago-cell i.pi-money-bill {
+  color: #10B981;
+}
+
+.tipo-pago-cell i.pi-credit-card {
+  color: #3B82F6;
+}
+
+.tipo-pago-cell i.pi-mobile {
+  color: #F59E0B;
+}
+
+.tipo-pago-cell i.pi-wallet {
+  color: #6B7280;
+}
+
+.acciones-tabla {
+  display: flex;
+  gap: 0.25rem;
+  justify-content: center;
+}
+
+.responsable-text {
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+.mensaje-vacio {
+  padding: 3rem;
+  text-align: center;
+  color: var(--text-color-secondary);
+}
+
+.mensaje-vacio i {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.mensaje-vacio p {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.ventas-icon-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.ventas-icon-soft {
+  background: #ecfdf3 !important;
+  color: #15803d !important;
+}
+
+.ventas-icon-soft:hover {
+  background: #d1fae5 !important;
+  color: #166534 !important;
+  transform: translateY(-2px);
+}
+
+.ventas-icon-warn {
+  background: #fff7ed !important;
+  color: #b45309 !important;
+}
+
+.ventas-icon-warn:hover {
+  background: #ffedd5 !important;
+  color: #9a3412 !important;
+  transform: translateY(-2px);
+}
+
+.ventas-icon-danger {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+}
+
+.ventas-icon-danger:hover:not(:disabled) {
+  background: #fecaca !important;
+  color: #991b1b !important;
+  transform: translateY(-2px);
+}
+
+.ventas-icon-danger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+:host ::ng-deep .p-paginator {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 1rem 1.25rem !important;
+  background: #ffffff !important;
+  border-top: 1px solid #e5e7eb !important;
+  border-radius: 0 0 10px 10px !important;
+  gap: 1rem !important;
+  position: relative !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-current {
+  flex: 0 0 auto !important;
+  order: 1 !important;
+  margin: 0 !important;
+  font-size: 0.875rem !important;
+  color: #64748b !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-first {
+  order: 2 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-400%) !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-prev {
+  order: 3 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-250%) !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-pages {
+  order: 4 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  flex-wrap: nowrap !important;
+  gap: 0.75rem !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-next {
+  order: 5 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(150%) !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-last {
+  order: 6 !important;
+  margin: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  position: absolute !important;
+  left: 50% !important;
+  transform: translateX(300%) !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-rpp-dropdown {
+  flex: 0 0 auto !important;
+  order: 7 !important;
+  margin-left: auto !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-page {
+  min-width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 6px !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-page:hover {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-page.p-highlight {
+  background: #F6AF33 !important;
+  color: #1f2937 !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown,
+:host ::ng-deep .p-paginator-rpp-dropdown .p-select {
+  border: 1px solid #d1d5db !important;
+  border-radius: 6px !important;
+  height: 2.5rem !important;
+  min-width: 70px !important;
+  max-width: 70px !important;
+  width: 70px !important;
+  transition: all 0.2s ease !important;
+  font-size: 0.875rem !important;
+}
+
+:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown:hover,
+:host ::ng-deep .p-paginator-rpp-dropdown .p-select:hover {
+  border-color: #F6AF33 !important;
+  box-shadow: 0 1px 3px rgba(246, 175, 51, 0.2) !important;
+}
+
+:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown:focus,
+:host ::ng-deep .p-paginator-rpp-dropdown .p-select:focus {
+  border-color: #F6AF33 !important;
+  box-shadow: 0 0 0 2px rgba(246, 175, 51, 0.15) !important;
+}
+
+:host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown .p-dropdown-label,
+:host ::ng-deep .p-paginator-rpp-dropdown .p-select .p-select-label {
+  font-size: 0.875rem !important;
+  padding: 0 0.5rem !important;
+  text-align: center !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-element {
+  min-width: 2.5rem !important;
+  height: 2.5rem !important;
+  border-radius: 6px !important;
+  color: #64748b !important;
+  transition: all 0.2s ease !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-shrink: 0 !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-element:not(:disabled):hover {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+:host ::ng-deep .p-paginator .p-paginator-element:disabled {
+  opacity: 0.4 !important;
+  cursor: not-allowed !important;
+}
+
+:host-context(.app-dark) .ventas-title {
+  color: #ffffff;
+}
+
+:host-context(.app-dark) .ventas-kicker {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .tarjeta-principal {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+:host-context(.app-dark) .seccion-estadisticas {
+  background: #18181B;
+}
+
+:host-context(.app-dark) .estadistica-card {
+  background: #18181B;
+  border-right-color: #27272a;
+}
+
+:host-context(.app-dark) .estadistica-card:hover {
+  background: #27272a;
+  box-shadow: inset 0 -2px 8px rgba(246, 175, 51, 0.2);
+}
+
+:host-context(.app-dark) .estadistica-label {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .estadistica-valor {
+  color: #ffffff;
+}
+
+:host-context(.app-dark) .filtros-container {
+  background: #18181B;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+:host-context(.app-dark) .seccion-filtros h3 {
+  color: #ffffff;
+  border-bottom-color: #27272a;
+}
+
+:host-context(.app-dark) .filtro-item label {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) .filtro-cliente-50::after {
+  background: linear-gradient(180deg, transparent 0%, #3f3f46 15%, #3f3f46 85%, transparent 100%);
+}
+
+:host-context(.app-dark) .fecha-separador {
+  color: #a1a1aa;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input,
+:host-context(.app-dark) :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext,
+:host-context(.app-dark) :host ::ng-deep .filtros-linea-2 .p-select,
+:host-context(.app-dark) :host ::ng-deep .filtros-linea-2 .p-inputtext {
+  background: #09090b !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input:hover,
+:host-context(.app-dark) :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext:hover,
+:host-context(.app-dark) :host ::ng-deep .filtros-linea-2 .p-select:hover,
+:host-context(.app-dark) :host ::ng-deep .filtros-linea-2 .p-inputtext:hover {
+  border-color: #F6AF33 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .filtro-cliente-50 .p-autocomplete-dropdown,
+:host-context(.app-dark) :host ::ng-deep .fechas-con-guion .p-datepicker-input-icon-container {
+  background: #09090b !important;
+  color: #a1a1aa !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-select .p-select-label.p-placeholder,
+:host-context(.app-dark) :host ::ng-deep .p-inputtext::placeholder,
+:host-context(.app-dark) :host ::ng-deep .p-autocomplete .p-autocomplete-input::placeholder {
+  color: #71717a !important;
+}
+
+:host-context(.app-dark) .responsable-text {
+  color: #E4E4E7;
+}
+
+:host-context(.app-dark) .tipo-pago-cell i.pi-money-bill {
+  color: #4ADE80;
+}
+
+:host-context(.app-dark) .tipo-pago-cell i.pi-credit-card {
+  color: #60A5FA;
+}
+
+:host-context(.app-dark) .tipo-pago-cell i.pi-mobile {
+  color: #FBBF24;
+}
+
+:host-context(.app-dark) .ventas-icon-soft {
+  background: #1a3d2b !important;
+  color: #4ade80 !important;
+}
+
+:host-context(.app-dark) .ventas-icon-soft:hover {
+  background: #22543d !important;
+  color: #86efac !important;
+}
+
+:host-context(.app-dark) .ventas-icon-warn {
+  background: #2a2218 !important;
+  color: #fbbf24 !important;
+}
+
+:host-context(.app-dark) .ventas-icon-warn:hover {
+  background: #3d2e1a !important;
+  color: #fcd34d !important;
+}
+
+:host-context(.app-dark) .ventas-icon-danger {
+  background: #3d1f1f !important;
+  color: #f87171 !important;
+}
+
+:host-context(.app-dark) .ventas-icon-danger:hover:not(:disabled) {
+  background: #4a2626 !important;
+  color: #fca5a5 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator {
+  background: #18181B !important;
+  border-top-color: #27272a !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-current {
+  color: #a1a1aa !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-page {
+  color: #ffffff !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-page:hover {
+  background: #27272a !important;
+  color: #F6AF33 !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-page.p-highlight {
+  background: #F6AF33 !important;
+  color: #09090b !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown,
+:host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-select {
+  background: #09090b !important;
+  border-color: #27272a !important;
+  color: #ffffff !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-dropdown:hover,
+:host-context(.app-dark) :host ::ng-deep .p-paginator-rpp-dropdown .p-select:hover {
+  border-color: #F6AF33 !important;
+  box-shadow: 0 1px 3px rgba(246, 175, 51, 0.3) !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-element {
+  color: #a1a1aa !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .p-paginator .p-paginator-element:not(:disabled):hover {
+  background: #27272a !important;
+  color: #F6AF33 !important;
+}
+
+@media (min-width: 1201px) and (max-width: 1600px) {
+  .ventas-title {
+    font-size: 1rem;
+  }
+
+  .ventas-kicker {
+    font-size: 0.6rem;
+  }
+
+  .estadistica-label {
+    font-size: 0.68rem;
+  }
+
+  .estadistica-valor {
+    font-size: 1.5rem;
+  }
+
+  .estadistica-card i {
+    font-size: 2.1rem;
+  }
+
+  .tabla-header h3 {
+    font-size: 1rem;
+  }
+
+  .seccion-filtros h3 {
+    font-size: 0.875rem;
+  }
+
+  :host ::ng-deep .p-datatable th,
+  :host ::ng-deep .p-datatable td {
+    font-size: 0.85rem !important;
+    padding: 0.65rem 0.75rem !important;
+  }
+
+  .responsable-text {
+    font-size: 0.85rem;
+  }
+
+  :host ::ng-deep .tipo-pago-tag {
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-width: 1200px) {
+  .seccion-estadisticas {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .estadistica-card:nth-child(2) {
+    border-right: none;
+  }
+  
+  .estadistica-card:nth-child(1),
+  .estadistica-card:nth-child(2) {
+    border-bottom: 2px solid #e5e7eb;
+  }
+
+  :host-context(.app-dark) .estadistica-card:nth-child(1),
+  :host-context(.app-dark) .estadistica-card:nth-child(2) {
+    border-bottom-color: #27272a;
+  }
+
+  .filtros-linea-2 {
+    flex-wrap: wrap;
+  }
+  
+  .filtro-compacto {
+    flex: 1 1 calc(50% - 0.5rem);
+    min-width: 140px;
+  }
+  
+  .filtro-boton-limpiar {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  :host ::ng-deep .p-datatable-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-first,
+  :host ::ng-deep .p-paginator .p-paginator-prev,
+  :host ::ng-deep .p-paginator .p-paginator-next,
+  :host ::ng-deep .p-paginator .p-paginator-last {
+    transform: translateX(0) !important;
+    position: static !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-pages {
+    transform: translateX(0) !important;
+    position: static !important;
+  }
+}
+
+@media (max-width: 992px) {
+  .ventas-title {
+    font-size: 1rem;
+  }
+
+  .ventas-kicker {
+    font-size: 0.6rem;
+  }
+
+  .estadistica-valor {
+    font-size: 1.5rem;
+  }
+
+  .estadistica-card i {
+    font-size: 2rem;
+  }
+
+  :host ::ng-deep .p-paginator {
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-current {
+    flex: 1 1 100% !important;
+    order: 1 !important;
+    text-align: center !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-first,
+  :host ::ng-deep .p-paginator .p-paginator-prev,
+  :host ::ng-deep .p-paginator .p-paginator-pages,
+  :host ::ng-deep .p-paginator .p-paginator-next,
+  :host ::ng-deep .p-paginator .p-paginator-last {
+    order: 2 !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-rpp-dropdown {
+    flex: 1 1 100% !important;
+    order: 3 !important;
+    justify-content: center !important;
+    margin-top: 0.5rem !important;
+    margin-left: 0 !important;
+  }
+
+  :host ::ng-deep .tipo-pago-tag {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .cabecera-pagina {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .ventas-title-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
+  }
+
+  .ventas-title {
+    font-size: 0.95rem;
+  }
+
+  .seccion-estadisticas {
+    grid-template-columns: 1fr;
+  }
+  
+  .estadistica-card {
+    border-right: none;
+    border-bottom: 2px solid #e5e7eb;
+    padding: 1.25rem;
+  }
+
+  :host-context(.app-dark) .estadistica-card {
+    border-bottom-color: #27272a;
+  }
+  
+  .estadistica-card:last-child {
+    border-bottom: none;
+  }
+  
+  .estadistica-valor {
+    font-size: 1.5rem;
+  }
+
+  .estadistica-card i {
+    font-size: 2rem;
+  }
+
+  .filtros-container {
+    padding: 0.875rem;
+  }
+  
+  .filtros-linea-1 {
+    flex-direction: column !important;
+    gap: 0.875rem !important;
+  }
+  
+  .filtro-cliente-50::after {
+    display: none;
+  }
+  
+  .filtro-cliente-50,
+  .filtro-grupo-fechas {
+    width: 100%;
+  }
+  
+  .fechas-con-guion {
+    width: 100%;
+    flex-direction: column;
+    height: auto !important;
+    gap: 0.5rem !important;
+  }
+
+  .fecha-separador {
+    display: none !important;
+  }
+  
+  :host ::ng-deep .fechas-con-guion .p-datepicker {
+    flex: 1;
+    width: 100% !important;
+  }
+
+  :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext {
+    border-radius: 6px !important;
+  }
+  
+  .filtros-linea-2 {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .filtro-compacto,
+  .filtro-boton-limpiar {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .tabla-header h3 {
+    font-size: 1rem;
+  }
+
+  :host ::ng-deep .p-datatable-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+  }
+
+  :host ::ng-deep .p-datatable table {
+    min-width: 900px !important;
+  }
+
+  :host ::ng-deep .p-datatable th,
+  :host ::ng-deep .p-datatable td {
+    padding: 0.55rem 0.5rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  .acciones-tabla {
+    gap: 0.125rem;
+  }
+
+  :host ::ng-deep .acciones-tabla .p-button {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  :host ::ng-deep .p-paginator {
+    padding: 0.75rem !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-page,
+  :host ::ng-deep .p-paginator .p-paginator-element {
+    min-width: 2rem !important;
+    height: 2rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  :host ::ng-deep .ventas-pill {
+    padding: 0.4rem 1rem !important;
+    font-size: 0.875rem !important;
+    min-height: 38px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .ventas-header-card .p-card-body {
+    padding: 0.75rem 1rem;
+  }
+
+  .ventas-title {
+    font-size: 0.85rem;
+  }
+
+  .ventas-kicker {
+    font-size: 0.52rem;
+  }
+
+  .ventas-title-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+  }
+
+  .estadistica-card {
+    padding: 1rem;
+  }
+
+  .estadistica-label {
+    font-size: 0.6rem;
+  }
+
+  .estadistica-valor {
+    font-size: 1.25rem;
+  }
+
+  .estadistica-card i {
+    font-size: 1.65rem;
+  }
+
+  .filtros-container {
+    padding: 0.75rem;
+  }
+
+  .seccion-filtros h3 {
+    font-size: 0.8rem;
+  }
+
+  .filtro-item label {
+    font-size: 0.6rem !important;
+  }
+
+  :host ::ng-deep .filtro-cliente-50 .p-autocomplete .p-autocomplete-input,
+  :host ::ng-deep .fechas-con-guion .p-datepicker .p-inputtext,
+  :host ::ng-deep .filtros-linea-2 .p-select,
+  :host ::ng-deep .filtros-linea-2 .p-inputtext {
+    font-size: 0.72rem !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    max-height: 36px !important;
+  }
+
+  :host ::ng-deep .btn-limpiar-filtros {
+    height: 36px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .tabla-header h3 {
+    font-size: 0.875rem;
+  }
+
+  :host ::ng-deep .p-datatable-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+  }
+
+  :host ::ng-deep .p-datatable table {
+    min-width: 850px !important;
+  }
+
+  :host ::ng-deep .p-datatable th,
+  :host ::ng-deep .p-datatable td {
+    padding: 0.45rem 0.4rem !important;
+    font-size: 0.72rem !important;
+  }
+
+  :host ::ng-deep .acciones-tabla .p-button {
+    width: 28px !important;
+    height: 28px !important;
+  }
+
+  :host ::ng-deep .acciones-tabla .p-button .p-button-icon {
+    font-size: 0.7rem !important;
+  }
+
+  :host ::ng-deep .tipo-pago-tag {
+    font-size: 0.68rem !important;
+    padding: 0.2rem 0.4rem !important;
+  }
+
+  .responsable-text {
+    font-size: 0.72rem;
+  }
+
+  .mensaje-vacio {
+    padding: 1.75rem 0.875rem;
+  }
+
+  .mensaje-vacio i {
+    font-size: 1.75rem;
+  }
+
+  .mensaje-vacio p {
+    font-size: 0.8rem;
+  }
+
+  :host ::ng-deep .ventas-pill {
+    padding: 0.35rem 0.85rem !important;
+    font-size: 0.78rem !important;
+    min-height: 36px !important;
+  }
+
+  :host ::ng-deep .p-paginator {
+    padding: 0.5rem !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-current {
+    font-size: 0.7rem !important;
+  }
+
+  :host ::ng-deep .p-paginator .p-paginator-page,
+  :host ::ng-deep .p-paginator .p-paginator-element {
+    min-width: 1.75rem !important;
+    height: 1.75rem !important;
+    font-size: 0.7rem !important;
+  }
+}
+
+@media (max-height: 600px) and (orientation: landscape) {
+  .estadistica-card {
+    padding: 1rem;
+  }
+
+  .estadistica-valor {
+    font-size: 1.35rem;
+  }
+
+  .estadistica-card i {
+    font-size: 1.75rem;
+  }
+
+  .filtros-container {
+    padding: 0.75rem;
+  }
+
+  :host ::ng-deep .p-paginator {
+    padding: 0.75rem !important;
+  }
+
+
+@media (max-width: 600px) {
+  .contador-card {
+    padding: 1rem;
+  }
+
+  .contador-label {
+    font-size: 0.6rem;
+  }
+
+  .contador-valor {
+    font-size: 1.25rem;
+  }
+
+  .contador-card i {
+    font-size: 1.65rem;
+  }
+
+  .contador-detalle {
+    font-size: 0.65rem;
+  }
+}
+
+}
+
+/* ─── MODAL DETALLE REMATE ─────────────────────────────────────── */
+.remate-detail-modal {
+  display: flex;
+  flex-direction: column;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+/* Banner */
+.rdm-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 24px 16px;
+  background: linear-gradient(135deg, var(--primary-color, #d49e09) 0%, #d49e09 100%);
+  color: #fff;
+  position: relative;
+}
+
+.rdm-banner-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.rdm-banner-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.rdm-kicker {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  opacity: 0.75;
+  text-transform: uppercase;
+  margin: 0 0 2px;
+}
+
+.rdm-nombre {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rdm-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.rdm-close-btn:hover { background: rgba(255,255,255,0.3); }
+
+/* Fila código + estado */
+.rdm-code-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  background: var(--surface-ground, #f8fafc);
+  border-bottom: 1px solid var(--surface-border, #e2e8f0);
+}
+
+.rdm-code-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: var(--surface-card, #000000);
+  border: 1px solid var(--surface-border, #e2e8f0);
+  border-radius: 20px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-color, #1e293b);
+}
+
+.rdm-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.rdm-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.rdm-status--activo    { background: #dcfce7; color: #15803d; }
+.rdm-status--activo    .rdm-status-dot { background: #16a34a; }
+.rdm-status--finalizado { background: #f1f5f9; color: #475569; }
+.rdm-status--finalizado .rdm-status-dot { background: #94a3b8; }
+.rdm-status--cancelado  { background: #fee2e2; color: #b91c1c; }
+.rdm-status--cancelado  .rdm-status-dot { background: #ef4444; }
+
+/* Grilla de info */
+.rdm-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  padding: 8px 0;
+}
+
+.rdm-info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--surface-border, #f0f4f8);
+}
+
+.rdm-info-item--full {
+  grid-column: 1 / -1;
+}
+
+.rdm-info-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface-ground, #f8fafc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-color, #ddc226);
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.rdm-info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rdm-info-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-color-secondary, #64748b);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rdm-info-value {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-color, #1e293b);
+}
+
+/* Footer */
+.rdm-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  background: var(--surface-ground, #f8fafc);
+  border-top: 1px solid var(--surface-border, #e2e8f0);
+}
+
+.rdm-btn-close { min-width: 100px; }
+.rdm-btn-toggle { min-width: 150px; }
+.rdm-btn-edit   { min-width: 150px; }

@@ -10,25 +10,68 @@ export class TransferSocketService {
   private readonly zone = inject(NgZone);
   private socket: Socket | null = null;
   private connectedHeadquarterId: string | null = null;
+  private readonly consumerHeadquarters = new Map<string, string>();
 
   readonly connectionState = signal<TransferSocketConnectionState>('disconnected');
   readonly lastNewRequest = signal<TransferSocketEventDto | null>(null);
   readonly lastStatusUpdate = signal<TransferSocketEventDto | null>(null);
   readonly lastError = signal<string | null>(null);
 
-  connect(headquartersId: string | number | null | undefined): void {
+  connect(
+    headquartersId: string | number | null | undefined,
+    owner: string = 'default',
+  ): void {
     const normalizedHeadquarterId = String(headquartersId ?? '').trim();
     if (!normalizedHeadquarterId) {
-      this.disconnect();
+      this.disconnect(owner);
       return;
     }
 
-    if (this.socket && this.connectedHeadquarterId === normalizedHeadquarterId) {
+    this.consumerHeadquarters.set(owner, normalizedHeadquarterId);
+    this.ensureConnection();
+  }
+
+  disconnect(owner: string = 'default'): void {
+    this.consumerHeadquarters.delete(owner);
+    this.ensureConnection();
+  }
+
+  private ensureConnection(): void {
+    const targetHeadquarterId = this.resolveTargetHeadquarterId();
+    if (!targetHeadquarterId) {
+      this.teardownSocket(true);
       return;
     }
 
-    this.disconnect(false);
-    this.connectedHeadquarterId = normalizedHeadquarterId;
+    if (this.socket && this.connectedHeadquarterId === targetHeadquarterId) {
+      return;
+    }
+
+    this.teardownSocket(false);
+    this.createSocket(targetHeadquarterId);
+  }
+
+  private resolveTargetHeadquarterId(): string | null {
+    const requestedHeadquarters = Array.from(
+      new Set(this.consumerHeadquarters.values()),
+    );
+
+    if (requestedHeadquarters.length === 0) {
+      return null;
+    }
+
+    if (requestedHeadquarters.length > 1) {
+      console.warn(
+        '[TransferSocketService] Se detectaron multiples sedes consumidoras del mismo socket. Se usara la primera.',
+        requestedHeadquarters,
+      );
+    }
+
+    return requestedHeadquarters[0] ?? null;
+  }
+
+  private createSocket(headquartersId: string): void {
+    this.connectedHeadquarterId = headquartersId;
     this.connectionState.set('connecting');
     this.lastError.set(null);
 
@@ -38,7 +81,7 @@ export class TransferSocketService {
       transports: ['websocket', 'polling'],
       withCredentials: false,
       query: {
-        headquartersId: normalizedHeadquarterId,
+        headquartersId,
       },
     });
 
@@ -61,7 +104,8 @@ export class TransferSocketService {
       this.runInZone(() => {
         this.connectionState.set('disconnected');
         this.lastError.set(
-          error.message || 'No se pudo conectar al canal en tiempo real de transferencias.',
+          error.message ||
+            'No se pudo conectar al canal en tiempo real de transferencias.',
         );
       }),
     );
@@ -79,7 +123,7 @@ export class TransferSocketService {
     );
   }
 
-  disconnect(resetEvents: boolean = true): void {
+  private teardownSocket(resetEvents: boolean): void {
     if (this.socket) {
       this.socket.removeAllListeners();
       this.socket.disconnect();
@@ -88,11 +132,13 @@ export class TransferSocketService {
 
     this.connectedHeadquarterId = null;
     this.connectionState.set('disconnected');
-    this.lastError.set(null);
 
-    if (resetEvents) {
-      this.lastNewRequest.set(null);
-      this.lastStatusUpdate.set(null);
+    if (this.consumerHeadquarters.size === 0) {
+      this.lastError.set(null);
+      if (resetEvents) {
+        this.lastNewRequest.set(null);
+        this.lastStatusUpdate.set(null);
+      }
     }
   }
 

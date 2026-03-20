@@ -12,14 +12,12 @@
           <h2 class="clientes-title">GESTIÓN DE CLIENTES</h2>
         </div>
       </div>
-      <div class="flex justify-items-end gap-2">
-        <p-button
-          label="Agregar Cliente"
-          icon="pi pi-plus"
-          styleClass="clientes-pill"
-          [routerLink]="['/admin/clientes/agregar-cliente']">
-        </p-button>
-      </div>
+      <p-button
+        label="Agregar Cliente"
+        icon="pi pi-plus"
+        styleClass="clientes-pill"
+        [routerLink]="['/admin/clientes/agregar-cliente']">
+      </p-button>
     </div>
   </p-card>
 
@@ -67,6 +65,19 @@
           </p-select>
         </div>
 
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
+          <p-select
+            [options]="statusOptions"
+            optionLabel="label"
+            optionValue="value"
+            [ngModel]="statusFilter()"
+            (ngModelChange)="onStatusFilterChange($event)"
+            placeholder="Activos"
+            styleClass="w-full">
+          </p-select>
+        </div>
+
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button
@@ -98,24 +109,20 @@
     [loading]="loading()"
     [paginaActual]="page()"
     [totalPaginas]="totalPaginas()"
-    [totalRegistros]="displayedList().length"
+    [totalRegistros]="totalItems()"
     [limitePorPagina]="rows()"
     [mostrarExportar]="false"
     (pageChange)="onPageChange($event)"
-    (limitChange)="onLimitChange($event)"
-  >
+    (limitChange)="onLimitChange($event)">
 
-    <!-- Tag contador en slot de acciones -->
     <div slot="acciones" class="flex align-items-center gap-2">
       <p-tag
-        [value]="displayedList().length + ' clientes'"
-        [severity]="viewMode() === 'juridica' ? 'info'
-                  : viewMode() === 'natural'   ? 'warn' : 'info'">
+        [value]="totalItems() + ' clientes'"
+        severity="info">
       </p-tag>
     </div>
 
-    <!-- Estado vacío -->
-    <div *ngIf="displayedList().length === 0" class="mensaje-vacio">
+    <div *ngIf="!loading() && customers().length === 0" class="mensaje-vacio">
       <i class="pi pi-inbox"></i>
       <p>No hay clientes con ese filtro</p>
       <p-button
@@ -128,10 +135,9 @@
       </p-button>
     </div>
 
-    <!-- Tabla -->
     <p-table
-      *ngIf="displayedList().length > 0"
-      [value]="clientesPaginados()"
+      *ngIf="customers().length > 0"
+      [value]="customers()"
       [paginator]="false"
       [tableStyle]="{ 'min-width': '60rem' }"
       styleClass="p-datatable-striped">
@@ -142,6 +148,7 @@
           <th>Tipo Doc.</th>
           <th>Cliente / Razón Social</th>
           <th>Teléfono</th>
+          <th class="text-center">Estado</th>
           <th class="text-center">Acciones</th>
         </tr>
       </ng-template>
@@ -168,6 +175,12 @@
           </td>
           <td><span class="phone-value">{{ getPhoneDisplay(cliente) }}</span></td>
           <td class="text-center">
+            <p-tag
+              [value]="cliente.status ? 'Activo' : 'Inactivo'"
+              [severity]="cliente.status ? 'success' : 'danger'">
+            </p-tag>
+          </td>
+          <td class="text-center">
             <div class="acciones-tabla">
               <p-button
                 icon="pi pi-eye"
@@ -185,7 +198,7 @@
                 [icon]="cliente.status ? 'pi pi-times' : 'pi pi-check'"
                 [rounded]="true" [text]="true"
                 [severity]="cliente.status ? 'danger' : 'success'"
-                [pTooltip]="cliente.status ? 'Desactivar cliente' : 'Activar cliente'"
+                [pTooltip]="cliente.status ? 'Desactivar' : 'Activar'"
                 tooltipPosition="top"
                 (onClick)="confirmToggleStatus(cliente)">
               </p-button>
@@ -196,7 +209,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="5" class="text-center">
+          <td colspan="6" class="text-center">
             <div class="mensaje-vacio">
               <i class="pi pi-inbox"></i>
               <p>No se encontraron clientes</p>
@@ -296,8 +309,5 @@
       </ng-container>
     </p-dialog>
 
-    <p-confirmDialog />
-
   </app-shared-table-container>
-
 </div>

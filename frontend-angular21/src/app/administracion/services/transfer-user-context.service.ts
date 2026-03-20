@@ -52,6 +52,7 @@ export class TransferUserContextService {
   getCurrentHeadquarterId(): string | null {
     const user = this.readStoredUser();
     const storedHeadquarterId = user?.idSede ?? user?.id_sede;
+    
     if (storedHeadquarterId !== undefined && storedHeadquarterId !== null) {
       return String(storedHeadquarterId);
     }

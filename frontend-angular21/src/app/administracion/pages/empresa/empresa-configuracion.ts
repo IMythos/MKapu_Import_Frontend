@@ -12,12 +12,14 @@ import { DividerModule } from 'primeng/divider';
 import { MessageService } from 'primeng/api';
 import { TooltipModule } from 'primeng/tooltip';
 import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
+import { EmpresaService, UpdateEmpresaPayload } from '../../services/empresa.service';
 
-export interface EmpresaConfig {
+export interface EmpresaForm {
   nombre:       string;
   razon_social: string;
   ruc:          string;
   logo_url:     string;
+  logoPublicId: string;
   direccion:    string;
   ciudad:       string;
   departamento: string;
@@ -42,22 +44,17 @@ export interface EmpresaConfig {
 })
 export class EmpresaConfiguracion implements OnInit {
   private readonly messageService = inject(MessageService);
+  private readonly empresaService = inject(EmpresaService);
 
-  loading  = signal(false);
-  guardando = signal(false);
+  loading     = signal(false);
+  guardando   = signal(false);
   logoPreview = signal<string | null>(null);
+  logoFile    = signal<File | null>(null);
 
-  form: EmpresaConfig = {
-    nombre:       '',
-    razon_social: '',
-    ruc:          '',
-    logo_url:     '',
-    direccion:    '',
-    ciudad:       '',
-    departamento: '',
-    telefono:     '',
-    email:        '',
-    web:          '',
+  form: EmpresaForm = {
+    nombre: '', razon_social: '', ruc: '', logo_url: '',
+    logoPublicId: '', direccion: '', ciudad: '',
+    departamento: '', telefono: '', email: '', web: '',
   };
 
   ngOnInit(): void {
@@ -66,24 +63,34 @@ export class EmpresaConfiguracion implements OnInit {
 
   cargarDatos(): void {
     this.loading.set(true);
-    // TODO: reemplazar con tu servicio real
-    // this.empresaService.getConfig().subscribe(...)
-    setTimeout(() => {
-      // Simulación — reemplaza con datos reales del API
-      this.form = {
-        nombre:       'Mkapu Import',
-        razon_social: 'Mkapu Import S.A.C.',
-        ruc:          '20612345678',
-        logo_url:     '',
-        direccion:    'Av. Principal 123',
-        ciudad:       'Lima',
-        departamento: 'Lima',
-        telefono:     '+51 987 654 321',
-        email:        'contacto@mkapu.com',
-        web:          'www.mkapu.com',
-      };
-      this.loading.set(false);
-    }, 600);
+    this.empresaService.getEmpresa().subscribe({
+      next: (data) => {
+        this.form = {
+          nombre:       data.nombreComercial ?? '',
+          razon_social: data.razonSocial     ?? '',
+          ruc:          data.ruc             ?? '',
+          logo_url:     data.logoUrl         ?? '',
+          logoPublicId: '',
+          direccion:    data.direccion       ?? '',
+          ciudad:       data.ciudad          ?? '',
+          departamento: data.departamento    ?? '',
+          telefono:     data.telefono        ?? '',
+          email:        data.email           ?? '',
+          web:          data.sitioWeb        ?? '',
+        };
+        this.loading.set(false);
+      },
+      error: (err) => {
+        this.loading.set(false);
+        console.error('Error empresa:', err);
+        this.messageService.add({
+          severity: 'error',
+          summary:  'Error ' + err.status,
+          detail:   err?.error?.message ?? err.message ?? 'No se pudo cargar.',
+          life:     6000,
+        });
+      },
+    });
   }
 
   onLogoChange(event: Event): void {
@@ -99,17 +106,20 @@ export class EmpresaConfiguracion implements OnInit {
       return;
     }
 
+    this.logoFile.set(file);
+
     const reader = new FileReader();
     reader.onload = (e) => {
       this.logoPreview.set(e.target?.result as string);
-      this.form.logo_url = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   }
 
   quitarLogo(): void {
     this.logoPreview.set(null);
-    this.form.logo_url = '';
+    this.logoFile.set(null);
+    this.form.logo_url    = '';
+    this.form.logoPublicId = '';
   }
 
   guardar(): void {
@@ -122,14 +132,67 @@ export class EmpresaConfiguracion implements OnInit {
     }
 
     this.guardando.set(true);
-    // TODO: reemplazar con tu servicio real
-    // this.empresaService.updateConfig(this.form).subscribe(...)
-    setTimeout(() => {
-      this.guardando.set(false);
-      this.messageService.add({
-        severity: 'success', summary: 'Configuración guardada',
-        detail: 'Los datos de la empresa fueron actualizados.', life: 3000,
+
+    const file = this.logoFile();
+
+    if (file) {
+      this.empresaService.uploadLogo(file).subscribe({
+        next: ({ url, publicId }) => {
+          this.form.logo_url     = url;
+          this.form.logoPublicId = publicId;
+          this.enviarPayload();
+        },
+        error: () => {
+          this.guardando.set(false);
+          this.messageService.add({
+            severity: 'error', summary: 'Error al subir logo',
+            detail: 'No se pudo subir la imagen. Intenta de nuevo.', life: 4000,
+          });
+        },
       });
-    }, 800);
+    } else {
+      this.enviarPayload();
+    }
+  }
+
+  private enviarPayload(): void {
+    const payload: UpdateEmpresaPayload = {
+      nombreComercial: this.form.nombre,
+      razonSocial:     this.form.razon_social  || undefined,
+      ruc:             this.form.ruc,
+      sitioWeb:        this.form.web           || undefined,
+      direccion:       this.form.direccion     || undefined,
+      ciudad:          this.form.ciudad        || undefined,
+      departamento:    this.form.departamento  || undefined,
+      telefono:        this.form.telefono      || undefined,
+      email:           this.form.email         || undefined,
+      logoUrl:         this.form.logo_url      || undefined,
+      logoPublicId:    this.form.logoPublicId  || undefined,
+    };
+
+    this.empresaService.updateEmpresa(payload).subscribe({
+      next: (data) => {
+        this.guardando.set(false);
+        this.logoFile.set(null);
+        this.form.logo_url     = data.logoUrl ?? '';
+        this.form.logoPublicId = '';
+        this.logoPreview.set(null);
+        this.messageService.add({
+          severity: 'success',
+          summary:  'Configuración guardada',
+          detail:   'Los datos fueron actualizados en tiempo real.',
+          life:     3000,
+        });
+      },
+      error: (err) => {
+        this.guardando.set(false);
+        this.messageService.add({
+          severity: 'error',
+          summary:  'Error al guardar',
+          detail:   err?.error?.message ?? 'No se pudo guardar.',
+          life:     5000,
+        });
+      },
+    });
   }
 }

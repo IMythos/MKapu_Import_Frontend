@@ -74,7 +74,7 @@ interface DetalleItem {
 export class CotizacionFormulario implements OnInit {
   public iconoCabecera   = 'pi pi-wallet';
   public tituloKicker    = 'ADMINISTRACIÓN';
-  public subtituloKicker = 'AGREGAR NUEVA COTIZACIÓN';
+  public subtituloKicker = 'AGREGAR NUEVA COTIZACIÓN DE VENTA';
   private fb              = inject(FormBuilder);
   private router          = inject(Router);
   private route           = inject(ActivatedRoute);
@@ -171,6 +171,12 @@ export class CotizacionFormulario implements OnInit {
     this.sedeService.loadSedes().subscribe({
       next: () => {
         this.sedes.set(this.sedeService.sedes());
+          // ── Lee tipo desde queryParam (viene del listado) ─────────────────
+        const tipoParam = this.route.snapshot.queryParamMap.get('tipo') as 'VENTA' | 'COMPRA' | null;
+        if (tipoParam) {
+          this.tipoCotizacion.set(tipoParam);
+          this.pasoActual.set(1);  // salta directo al formulario
+        }
 
         // Preselecciona la sede del usuario logueado
         const idSedeUsuario = this.getSedeUsuarioActual();
@@ -739,7 +745,7 @@ export class CotizacionFormulario implements OnInit {
             : 'La cotización fue registrada exitosamente.',
           life: 2500,
         });
-        setTimeout(() => this.router.navigate(['/admin/cotizaciones']), 2000);
+        setTimeout(() => this.router.navigate(['/admin/cotizaciones-venta']), 2000);
       },
       error: (err) => {
         this.isSubmitting.set(false);
@@ -753,7 +759,7 @@ export class CotizacionFormulario implements OnInit {
     });
   }
 
-  cancelar() { this.router.navigate(['/admin/cotizaciones']); }
+  cancelar() { this.router.navigate(['/admin/cotizaciones-venta']); }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
   private _limpiarClienteSinDoc() {

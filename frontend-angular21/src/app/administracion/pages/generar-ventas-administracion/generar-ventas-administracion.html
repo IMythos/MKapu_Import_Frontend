@@ -1,15 +1,11 @@
-<app-loading-overlay [visible]="isLoading()" mensaje="Cargando..." modo="inline" />
-
 <div class="p-2">
-  <p-card class="ventas-header-card mb-4 ventas-header-bordered">
+  <p-card class="ventas-header-card mb-2 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <span class="ventas-title-icon">
-          <i [class]="iconoCabecera"></i>
-        </span>
+        <span class="ventas-title-icon"><i class="pi pi-shopping-cart"></i></span>
         <div>
-          <p class="ventas-kicker mb-0">{{ tituloKicker }}</p>
-          <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
+          <p class="ventas-kicker mb-0">VENTAS - GENERAR VENTA</p>
+          <h2 class="ventas-title mb-0">Generar Venta</h2>
         </div>
       </div>
       <div class="flex gap-2">
@@ -20,7 +16,7 @@
           severity="secondary"
           styleClass="ventas-pill"
           (onClick)="verListado()"
-          pTooltip="Ver historial de ventas"
+          pTooltip="Ver historial"
           tooltipPosition="bottom"
         />
         <p-button
@@ -28,7 +24,7 @@
           icon="pi pi-refresh"
           styleClass="ventas-pill"
           (onClick)="nuevaVenta()"
-          pTooltip="Reiniciar formulario"
+          pTooltip="Reiniciar"
           tooltipPosition="bottom"
           [disabled]="!comprobanteGenerado()"
         />
@@ -37,1408 +33,865 @@
   </p-card>
 </div>
 
+<app-loading-overlay [visible]="isLoading()" mensaje="Cargando..." modo="inline" />
+
 <div class="p-2">
-  <p-card class="wizard-card">
-    <!-- ══ WIZARD STEPS ══ -->
-    <div class="wizard-steps">
-      <div
-        *ngFor="let step of steps; let i = index"
-        class="wizard-step"
-        [class.active]="activeStep() === i"
-        [class.completed]="activeStep() > i"
-      >
-        <div class="step-number">
-          <i *ngIf="activeStep() > i" class="pi pi-check"></i>
-          <span *ngIf="activeStep() <= i">{{ i + 1 }}</span>
+  <div class="pos-body">
+    <div class="pos-search-card">
+      <div class="pos-filters-row">
+        <div class="pos-sede-wrap" *ngIf="esAdmin">
+          <p-select
+            [ngModel]="sedeSeleccionada()"
+            (ngModelChange)="onSedeChange($event)"
+            [options]="sedesOptions()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Sede"
+            [loading]="sedesLoading()"
+            styleClass="pos-sede-select"
+          />
         </div>
-        <div class="step-title">{{ step }}</div>
+        <div class="pos-sede-fija" *ngIf="!esAdmin">
+          <i class="pi pi-map-marker"></i>
+          <span>{{ sedeNombreVentas }}</span>
+        </div>
+
+        <div class="pos-autocomplete-wrap" style="position: relative">
+          <input
+            #searchInput
+            pInputText
+            [value]="queryBusqueda()"
+            (input)="onQueryChange($any($event.target).value)"
+            (focus)="panelVisible.set(productosSugeridos().length > 0)"
+            (blur)="cerrarPanelConDelay()"
+            placeholder="Buscar producto por nombre o código (mín. 3 caracteres)…"
+            class="pos-search-input"
+            [disabled]="!sedeSeleccionada()"
+            autocomplete="off"
+          />
+          <i class="pi pi-spin pi-spinner pos-search-spinner" *ngIf="buscandoProductos()"></i>
+
+          <div
+            class="pos-search-panel"
+            *ngIf="panelVisible() && productosSugeridos().length > 0"
+            (mousedown)="$event.preventDefault()"
+          >
+            <div
+              *ngFor="let p of productosSugeridos()"
+              class="pos-sugg"
+              [class.pos-sugg-checked]="estaEnPendientes(p.id)"
+              [class.pos-sugg-sin-stock]="p.stock <= 0"
+              (click)="p.stock > 0 ? onProductoToggle(p) : null"
+            >
+              <div class="pos-sugg-check">
+                <i
+                  [class]="
+                    estaEnPendientes(p.id)
+                      ? 'pi pi-check-circle'
+                      : p.stock <= 0
+                        ? 'pi pi-ban'
+                        : 'pi pi-circle'
+                  "
+                ></i>
+              </div>
+              <div class="pos-sugg-content">
+                <div class="pos-sugg-row1">
+                  <span class="pos-sugg-codigo">{{ p.codigo }}</span>
+                  <p-tag [value]="p.familia" severity="info" styleClass="pos-sugg-fam" />
+                  <p-tag
+                    [value]="p.stock <= 0 ? 'Sin stock' : 'Stock: ' + p.stock"
+                    [severity]="p.stock <= 0 ? 'danger' : obtenerSeveridadStock(p.stock)"
+                    styleClass="pos-sugg-stock"
+                  />
+                  <span class="pos-sugg-precio" *ngIf="p.stock > 0"
+                    >S/. {{ p.precioUnidad | number: '1.2-2' }}</span
+                  >
+                </div>
+                <div class="pos-sugg-nombre">{{ p.nombre }}</div>
+                <small *ngIf="p.stock <= 0" class="pos-sugg-no-stock-msg"
+                  >Sin stock en esta sede</small
+                >
+              </div>
+            </div>
+
+            <div class="pos-panel-footer" *ngIf="productosPendientes().length > 0">
+              <span class="pos-panel-counter">
+                <i class="pi pi-check-circle"></i>
+                {{ productosPendientes().length }} seleccionado{{
+                  productosPendientes().length > 1 ? 's' : ''
+                }}
+              </span>
+              <button
+                class="pos-panel-add-btn"
+                (click)="
+                  agregarTodosAlCarrito();
+                  panelVisible.set(false);
+                  queryBusqueda.set('');
+                  productosSugeridos.set([])
+                "
+              >
+                <i class="pi pi-shopping-cart"></i>
+                Agregar al carrito
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <p-select
+          [ngModel]="familiaSeleccionada()"
+          (ngModelChange)="onFamiliaChange($event)"
+          [options]="familiasDisponibles()"
+          optionLabel="label"
+          optionValue="value"
+          placeholder="Categoría"
+          [showClear]="true"
+          [loading]="familiasLoading()"
+          [disabled]="!sedeSeleccionada()"
+          styleClass="pos-cat-select"
+        />
+
+        <button
+          class="pos-cliente-btn"
+          [class.active]="clienteEncontrado()"
+          (click)="abrirSidebarCliente()"
+          pTooltip="{{ clienteEncontrado() ? clienteEncontrado()!.name : 'Agregar cliente' }}"
+          tooltipPosition="bottom"
+        >
+          <i [class]="clienteEncontrado() ? 'pi pi-user-check' : 'pi pi-user'"></i>
+          <span *ngIf="clienteEncontrado()"
+            >{{ clienteEncontrado()!.name | slice: 0 : 16
+            }}{{ clienteEncontrado()!.name.length > 16 ? '…' : '' }}</span
+          >
+          <span *ngIf="!clienteEncontrado()">Cliente</span>
+        </button>
+      </div>
+
+      <div class="pos-pending-wrap" *ngIf="productosPendientes().length > 0">
+        <div class="pos-pending-header">
+          <span class="pos-pending-title">
+            <i class="pi pi-list-check"></i>
+            Seleccionados para agregar
+            <span class="pos-pending-badge">{{ productosPendientes().length }}</span>
+          </span>
+          <button class="pos-pending-clear" (click)="limpiarPendientes()">
+            <i class="pi pi-times"></i> Limpiar
+          </button>
+        </div>
+        <div class="pos-pending-list">
+          <div *ngFor="let p of productosPendientes(); let i = index" class="pos-pending-item">
+            <div class="pos-pending-item-info">
+              <span class="pos-pending-codigo">{{ p.codigo }}</span>
+              <span class="pos-pending-nombre">{{ p.nombre }}</span>
+              <span class="pos-pending-stock">Stock: {{ p.stock }}</span>
+            </div>
+            <div class="pos-pending-item-controls">
+              <select
+                class="pos-pending-tipo"
+                [(ngModel)]="p.tipoPrecio"
+                (change)="actualizarPrecioPendiente(i)"
+              >
+                <option value="unidad">Unidad S/. {{ p.precioUnidad | number: '1.2-2' }}</option>
+                <option value="caja">Caja S/. {{ p.precioCaja | number: '1.2-2' }}</option>
+                <option value="mayorista">
+                  Mayor. S/. {{ p.precioMayorista | number: '1.2-2' }}
+                </option>
+              </select>
+              <div class="pos-pending-qty-wrap">
+                <button
+                  class="pos-qty-btn"
+                  (click)="decrementarPendiente(i)"
+                  [disabled]="p.cantidad <= 1"
+                >
+                  −
+                </button>
+                <input
+                  type="number"
+                  class="pos-qty-input"
+                  [(ngModel)]="p.cantidad"
+                  [min]="1"
+                  [max]="p.stock"
+                  (change)="clampCantidadPendiente(i)"
+                />
+                <button
+                  class="pos-qty-btn"
+                  (click)="incrementarPendiente(i)"
+                  [disabled]="p.cantidad >= p.stock"
+                >
+                  +
+                </button>
+              </div>
+              <span class="pos-pending-precio"
+                >S/. {{ getPrecioPendiente(p) | number: '1.2-2' }}</span
+              >
+              <span class="pos-pending-subtotal"
+                >S/. {{ getPrecioPendiente(p) * p.cantidad | number: '1.2-2' }}</span
+              >
+              <button class="pos-pending-del" (click)="quitarPendiente(i)">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="pos-pending-footer">
+          <button class="pos-btn-agregar-todos" (click)="agregarTodosAlCarrito()">
+            <i class="pi pi-shopping-cart"></i>
+            Agregar {{ productosPendientes().length }} producto{{
+              productosPendientes().length > 1 ? 's' : ''
+            }}
+            al carrito
+          </button>
+        </div>
       </div>
     </div>
 
-    <p-divider styleClass="wizard-divider" />
+    <div class="pos-empty-hint" *ngIf="!sedeSeleccionada()">
+      <i class="pi pi-building"></i>
+      <p>Selecciona una sede para comenzar</p>
+    </div>
+    <div
+      class="pos-empty-hint"
+      *ngIf="sedeSeleccionada() && productosSeleccionados().length === 0 && !comprobanteGenerado()"
+    >
+      <i class="pi pi-search"></i>
+      <p>Busca y selecciona productos desde el campo de arriba</p>
+    </div>
 
-    <div class="wizard-content">
-      <!-- ══════════════════════════════════════════════════════════════
-           STEP 0 — Productos
-      ══════════════════════════════════════════════════════════════════ -->
-      <div *ngIf="activeStep() === 0" class="step-content">
-        <div class="step-header">
-          <i class="pi pi-box step-icon"></i>
-          <h3>Seleccionar Sede y Productos</h3>
+    <div *ngIf="comprobanteGenerado()" class="pos-success-card">
+      <div class="pos-success-icon"><i class="pi pi-check-circle"></i></div>
+      <div class="pos-success-info">
+        <h4>¡Venta generada exitosamente!</h4>
+        <p class="pos-success-num">{{ comprobanteGenerado()!.numeroCompleto }}</p>
+        <small>{{ comprobanteGenerado()!.fecEmision | date: 'dd/MM/yyyy HH:mm' }}</small>
+      </div>
+      <p-divider styleClass="w-full" />
+      <div class="pos-success-btns">
+        <p-button
+          label="Nueva Venta"
+          icon="pi pi-plus"
+          (onClick)="nuevaVenta()"
+          styleClass="ventas-pill"
+        />
+        <p-button
+          label="Descargar PDF"
+          icon="pi pi-file-pdf"
+          severity="danger"
+          [outlined]="true"
+          (onClick)="
+            ventasService.descargarComprobantePdf(comprobanteGenerado()!.idComprobante).subscribe()
+          "
+          styleClass="ventas-pill"
+        />
+        <p-button
+          label="Ver PDF"
+          icon="pi pi-eye"
+          severity="info"
+          [outlined]="true"
+          (onClick)="
+            ventasService
+              .verComprobantePdfEnPestana(comprobanteGenerado()!.idComprobante)
+              .subscribe()
+          "
+          styleClass="ventas-pill"
+        />
+        <p-button
+          label="Voucher Original"
+          icon="pi pi-receipt"
+          severity="success"
+          [outlined]="true"
+          (onClick)="
+            ventasService.generarVoucher(comprobanteGenerado()!.idComprobante, false).subscribe()
+          "
+          styleClass="ventas-pill"
+        />
+        <p-button
+          label="Historial de Ventas"
+          icon="pi pi-list"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="verListado()"
+          styleClass="ventas-pill"
+        />
+      </div>
+    </div>
+
+    <div
+      *ngIf="productosSeleccionados().length > 0 && !comprobanteGenerado()"
+      class="pos-cart-card"
+    >
+      <div class="pos-cart-header">
+        <span class="pos-cart-title">
+          <i class="pi pi-shopping-cart"></i>
+          Carrito de compras
+          <span class="pos-cart-badge">{{ productosSeleccionados().length }}</span>
+        </span>
+        <div
+          class="pos-cart-cliente-chip"
+          *ngIf="clienteEncontrado()"
+          (click)="abrirSidebarCliente()"
+        >
+          <i class="pi pi-user-check"></i>
+          <span>{{ clienteEncontrado()!.name }}</span>
+          <p-tag
+            [value]="tipoComprobante() === 1 ? 'FACTURA' : 'BOLETA'"
+            [severity]="tipoComprobante() === 1 ? 'warn' : 'info'"
+            styleClass="pos-comp-tag"
+          />
         </div>
-
-        <div class="productos-container">
-          <!-- Filtros -->
-          <div class="seccion-busquedas">
-            <div class="filtros-productos">
-              <div class="buscar-producto-auto">
-                <label class="font-semibold mb-2 block">Buscar producto</label>
-                <p-autocomplete
-                  [ngModel]="productoSeleccionadoBusqueda()"
-                  (ngModelChange)="productoSeleccionadoBusqueda.set($event)"
-                  [suggestions]="productosSugeridos()"
-                  (completeMethod)="buscarProductos($event)"
-                  (onSelect)="onProductoSeleccionado($event.value)"
-                  (onClear)="productoSeleccionadoBusqueda.set(null)"
-                  field="nombre"
-                  [dropdown]="true"
-                  placeholder="Buscar por nombre o código (mín. 3 caracteres)"
-                  [forceSelection]="false"
-                  [showEmptyMessage]="true"
-                  emptyMessage="No se encontraron productos"
-                  styleClass="w-full autocomplete-productos-search"
-                  [minLength]="3"
-                  [disabled]="!sedeSeleccionada()"
-                >
-                  <ng-template let-producto pTemplate="item">
-                    <div class="producto-suggestion-mejorado">
-                      <div class="suggestion-row-1">
-                        <span class="sugerencia-codigo-nuevo">{{ producto.codigo }}</span>
-                        <p-tag
-                          [value]="producto.familia"
-                          severity="info"
-                          styleClass="suggestion-tag-nuevo"
-                        />
-                      </div>
-                      <div class="suggestion-row-2">
-                        <span class="sugerencia-nombre-nuevo">{{ producto.nombre }}</span>
-                        <div class="flex align-items-center gap-2">
-                          <span class="suggestion-precio-nuevo"
-                            >S/. {{ producto.precioUnidad | number: '1.2-2' }}</span
-                          >
-                          <p-tag
-                            [value]="'Stock: ' + producto.stock"
-                            [severity]="obtenerSeveridadStock(producto.stock)"
-                            styleClass="suggestion-stock-tag"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </ng-template>
-                </p-autocomplete>
-              </div>
-
-              <!-- ── Sede: ADMIN ve selector / VENTAS ve badge fijo ── -->
-              <div class="familia-selector">
-                <label class="font-semibold mb-2 block">Sede</label>
-
-                <!-- ADMIN: puede cambiar la sede -->
-                <p-select
-                  *ngIf="esAdmin"
-                  [ngModel]="sedeSeleccionada()"
-                  (ngModelChange)="onSedeChange($event)"
-                  [options]="sedesOptions()"
-                  optionLabel="label"
-                  optionValue="value"
-                  placeholder="Seleccione una sede"
-                  [loading]="sedesLoading()"
-                  [showClear]="false"
-                  styleClass="w-full"
-                />
-
-                <!-- VENTAS: sede fija, solo informativa -->
-                <div *ngIf="!esAdmin" class="sede-fija-badge">
-                  <i class="pi pi-map-marker"></i>
-                  <span>{{ sedeNombreVentas }}</span>
-                </div>
-              </div>
-
-              <div class="familia-selector">
-                <label class="font-semibold mb-2 block">Familia</label>
-                <p-select
-                  [ngModel]="familiaSeleccionada()"
-                  (ngModelChange)="onFamiliaChange($event)"
-                  [options]="familiasDisponibles()"
-                  optionLabel="label"
-                  optionValue="value"
-                  placeholder="Todas las categorías"
-                  [showClear]="true"
-                  [loading]="familiasLoading()"
-                  [disabled]="!sedeSeleccionada()"
-                  styleClass="w-full"
-                >
-                  <ng-template pTemplate="selectedItem" let-option>
-                    <div class="familia-option" *ngIf="option">
-                      <i class="pi pi-tag"></i><span>{{ option.label }}</span>
-                    </div>
-                  </ng-template>
-                  <ng-template let-option pTemplate="item">
-                    <div class="familia-option">
-                      <i class="pi pi-tag"></i><span>{{ option.label }}</span>
-                    </div>
-                  </ng-template>
-                </p-select>
-              </div>
-            </div>
-          </div>
-
-          <!-- Columnas productos + agregar -->
-          <div class="seccion-productos-agregar">
-            <!-- Lista de productos -->
-            <div class="columna-productos-disponibles">
-              <div class="columna-header">
-                <h4>
-                  <i class="pi pi-box"></i> Productos Disponibles ({{
-                    productosFiltrados().length
-                  }})
-                </h4>
-              </div>
-              <div class="columna-scroll">
-                <div *ngIf="!sedeSeleccionada() && !productosLoading()" class="no-productos">
-                  <i class="pi pi-building text-4xl text-300 mb-3"></i>
-                  <p class="text-600 font-semibold">Seleccione una sede</p>
-                  <small class="text-400"
-                    >Elija una sede en el filtro superior para ver los productos disponibles</small
-                  >
-                </div>
-
-                <div *ngIf="productosLoading()" class="flex justify-content-center p-4">
-                  <i class="pi pi-spin pi-spinner text-2xl"></i>
-                </div>
-
-                <ng-container *ngIf="sedeSeleccionada() && !productosLoading()">
-                  <div
-                    *ngFor="let producto of productosFiltrados()"
-                    class="producto-item"
-                    [class.selected]="productoTemp()?.id === producto.id"
-                    (click)="seleccionarProducto(producto)"
-                  >
-                    <div class="flex justify-content-between align-items-center mb-2">
-                      <span class="codigo">{{ producto.codigo }}</span>
-                      <p-tag [value]="producto.familia" severity="info" />
-                    </div>
-                    <div class="producto-nombre mb-2">{{ producto.nombre }}</div>
-                    <div class="producto-stock mb-2">
-                      <p-tag
-                        *ngFor="let alm of producto.almacenes"
-                        [value]="alm.nombre + ': ' + alm.stock"
-                        [severity]="obtenerSeveridadStock(alm.stock)"
-                        icon="pi pi-box"
-                        styleClass="almacen-tag"
-                      />
-                    </div>
-                    <div class="producto-precios">
-                      <small
-                        ><strong>Unidad:</strong> S/.
-                        {{ producto.precioUnidad | number: '1.2-2' }}</small
-                      >
-                      <small
-                        ><strong>Caja:</strong> S/.
-                        {{ producto.precioCaja | number: '1.2-2' }}</small
-                      >
-                      <small
-                        ><strong>Mayorista:</strong> S/.
-                        {{ producto.precioMayorista | number: '1.2-2' }}</small
-                      >
-                    </div>
-                  </div>
-
-                  <div *ngIf="hayMasPaginas()" class="flex justify-content-center p-3">
-                    <p-button
-                      label="Cargar más productos"
-                      icon="pi pi-plus"
-                      [outlined]="true"
-                      size="small"
-                      [loading]="cargandoMas()"
-                      (onClick)="cargarMasProductos()"
-                    />
-                  </div>
-
-                  <div *ngIf="productosFiltrados().length === 0" class="no-productos">
-                    <i class="pi pi-inbox"></i>
-                    <p>No se encontraron productos</p>
-                  </div>
-                </ng-container>
-              </div>
-            </div>
-
-            <!-- Agregar al carrito -->
-            <div class="columna-agregar-carrito">
-              <div class="columna-header">
-                <h4><i class="pi pi-plus-circle"></i> Agregar al Carrito</h4>
-              </div>
-              <div class="columna-scroll">
-                <div *ngIf="productoTemp()" class="form-agregar">
-                  <div class="producto-seleccionado mb-3">
-                    <strong class="block mb-1">{{ productoTemp()!.nombre }}</strong>
-                    <small class="text-600">{{ productoTemp()!.codigo }}</small>
-                    <div class="mt-2">
-                      <p-tag
-                        [value]="'Stock disponible: ' + productoTemp()!.stock"
-                        [severity]="obtenerSeveridadStock(productoTemp()!.stock)"
-                        icon="pi pi-box"
-                      />
-                    </div>
-                  </div>
-
-                  <div class="form-field mb-3">
-                    <label class="block mb-2 font-semibold">Tipo de Precio</label>
-                    <p-selectButton
-                      [ngModel]="tipoPrecioTemp()"
-                      (ngModelChange)="tipoPrecioTemp.set($event)"
-                      [options]="opcionesTipoPrecio"
-                      optionLabel="label"
-                      optionValue="value"
-                      styleClass="w-full"
-                    />
-                  </div>
-
-                  <div class="form-field mb-3">
-                    <label class="block mb-2 font-semibold">Cantidad</label>
-                    <p-inputNumber
-                      [ngModel]="cantidadTemp()"
-                      (ngModelChange)="cantidadTemp.set($event)"
-                      [min]="1"
-                      [max]="productoTemp()!.stock"
-                      [showButtons]="true"
-                      styleClass="w-full"
-                    />
-                    <small class="text-600 mt-1 block"
-                      >Máximo: {{ productoTemp()!.stock }} unidades</small
-                    >
-                  </div>
-
-                  <div class="precio-display mb-3">
-                    <span>Precio Unitario</span>
-                    <span class="precio-valor">S/. {{ precioSegunTipo() | number: '1.2-2' }}</span>
-                  </div>
-
-                  <div class="total-display mb-3">
-                    <span>Total</span>
-                    <span class="total-valor"
-                      >S/. {{ precioSegunTipo() * cantidadTemp() | number: '1.2-2' }}</span
-                    >
-                  </div>
-
-                  <p-button
-                    label="Agregar al Carrito"
-                    icon="pi pi-plus"
-                    (onClick)="agregarProducto()"
-                    [disabled]="cantidadTemp() <= 0 || cantidadTemp() > productoTemp()!.stock"
-                    styleClass="w-full btn-agregar-producto"
-                  />
-
-                  <small
-                    *ngIf="cantidadTemp() > productoTemp()!.stock"
-                    class="text-red-500 mt-2 block text-center"
-                  >
-                    <i class="pi pi-exclamation-triangle"></i> Stock insuficiente. Disponible:
-                    {{ productoTemp()!.stock }} unidades
-                  </small>
-                  <small
-                    *ngIf="cantidadTemp() > 0 && cantidadTemp() <= productoTemp()!.stock"
-                    class="text-green-500 mt-2 block text-center"
-                  >
-                    <i class="pi pi-check-circle"></i> Stock disponible
-                  </small>
-                </div>
-
-                <div *ngIf="!productoTemp()" class="no-seleccion">
-                  <i class="pi pi-hand-pointer"></i>
-                  <p>Seleccione un producto de la lista</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Carrito -->
-          <div class="seccion-carrito-completo">
-            <div class="carrito-header">
-              <h4>
-                <i class="pi pi-shopping-cart"></i> Carrito de Compras ({{
-                  productosSeleccionados().length
-                }}
-                items)
-              </h4>
-            </div>
-            <div class="carrito-contenido">
-              <div *ngIf="productosSeleccionados().length > 0" class="carrito-tabla">
-                <p-table
-                  [value]="productosSeleccionados()"
-                  styleClass="p-datatable-sm tabla-carrito-productos"
-                  [tableStyle]="{ 'min-width': '100%' }"
-                >
-                  <ng-template pTemplate="header">
-                    <tr>
-                      <th style="width: 120px">Código</th>
-                      <th>Producto</th>
-                      <th class="text-right" style="width: 100px">Cantidad</th>
-                      <th class="text-right" style="width: 120px">Precio Unit.</th>
-                      <th class="text-right" style="width: 130px">Subtotal</th>
-                      <th class="text-center" style="width: 80px">Acción</th>
-                    </tr>
-                  </ng-template>
-                  <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
-                    <tr>
-                      <td>
-                        <span class="codigo-tabla">{{ item.codigo }}</span>
-                      </td>
-                      <td>
-                        <span class="producto-nombre-tabla">{{ item.description }}</span>
-                      </td>
-                      <td class="text-right">
-                        <span class="cantidad-badge">{{ item.quantity }}</span>
-                      </td>
-                      <td class="text-right">
-                        <strong>S/. {{ item.unitPrice | number: '1.2-2' }}</strong>
-                      </td>
-                      <td class="text-right">
-                        <strong class="subtotal-item"
-                          >S/. {{ item.total | number: '1.2-2' }}</strong
-                        >
-                      </td>
-                      <td class="text-center">
-                        <p-button
-                          icon="pi pi-trash"
-                          severity="danger"
-                          [text]="true"
-                          [rounded]="true"
-                          size="small"
-                          (onClick)="eliminarProducto(rowIndex)"
-                          pTooltip="Eliminar producto"
-                          tooltipPosition="left"
-                        />
-                      </td>
-                    </tr>
-                  </ng-template>
-                </p-table>
-
-                <div class="carrito-totales-box">
-                  <div class="totales-contenido">
-                    <div class="total-line">
-                      <span class="label">Subtotal (Base imponible):</span>
-                      <span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
-                    </div>
-                    <div class="total-line">
-                      <span class="label">IGV (18%):</span>
-                      <span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
-                    </div>
-                    <div class="total-line total-final">
-                      <span class="label">TOTAL A PAGAR:</span>
-                      <span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div *ngIf="productosSeleccionados().length === 0" class="carrito-vacio">
-                <i class="pi pi-shopping-cart"></i>
-                <p>El carrito está vacío</p>
-                <small>Agregue productos para continuar con la venta</small>
-              </div>
-            </div>
-          </div>
-        </div>
+        <button
+          class="pos-cart-add-cliente"
+          *ngIf="!clienteEncontrado()"
+          (click)="abrirSidebarCliente()"
+        >
+          <i class="pi pi-user-plus"></i> Agregar cliente
+        </button>
       </div>
 
-      <!-- ══════════════════════════════════════════════════════════════
-           STEP 1 — Cliente y Comprobante
-      ══════════════════════════════════════════════════════════════════ -->
-      <div *ngIf="activeStep() === 1" class="step-content">
-        <div class="step-header">
-          <i class="pi pi-file-edit step-icon"></i>
-          <h3>Datos del Comprobante y Cliente</h3>
-        </div>
-
-        <div class="content-centrado">
-          <!-- Tipo de comprobante -->
-          <div class="comprobante-section">
-            <label class="section-label"><i class="pi pi-file-edit"></i> Tipo de Comprobante</label>
-            <div *ngIf="tiposComprobante().length === 0" class="flex justify-content-center p-3">
-              <i class="pi pi-spin pi-spinner text-xl"></i>
-            </div>
-            <div *ngIf="tiposComprobante().length > 0" class="flex justify-content-center">
-              <p-selectButton
-                [ngModel]="tipoComprobante()"
-                (ngModelChange)="tipoComprobante.set($event); onTipoComprobanteChange()"
-                [options]="tiposComprobante()"
-                optionLabel="descripcion"
-                optionValue="id"
-                styleClass="select-comprobante-inline"
+      <table class="pos-table">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Producto</th>
+            <th class="ta-r">Cant.</th>
+            <th class="ta-r">P. Unit.</th>
+            <th class="ta-r">Subtotal</th>
+            <th class="ta-c">Promo</th>
+            <th class="ta-c">Quitar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of productosSeleccionados(); let i = index">
+            <td>
+              <span class="pos-codigo">{{ item.codigo }}</span>
+            </td>
+            <td class="pos-td-nombre">{{ item.description }}</td>
+            <td class="ta-r">
+              <span class="pos-qty-badge">{{ item.quantity }}</span>
+            </td>
+            <td class="ta-r">S/. {{ item.unitPrice | number: '1.2-2' }}</td>
+            <td class="ta-r">
+              <strong class="pos-subtotal-val">S/. {{ item.total | number: '1.2-2' }}</strong>
+            </td>
+            <td class="ta-c">
+              <p-tag
+                *ngIf="promocionAplicada() && itemCalificaPromocion(item)"
+                value="🎁 Promo"
+                severity="success"
+              />
+              <span *ngIf="!promocionAplicada() || !itemCalificaPromocion(item)" class="pos-dash"
+                >—</span
               >
-                <ng-template let-item>
-                  <div class="option-inline">
-                    <span>{{ item.descripcion }}</span>
-                  </div>
-                </ng-template>
-              </p-selectButton>
-            </div>
-          </div>
+            </td>
+            <td class="ta-c">
+              <button class="pos-btn-del" (click)="eliminarProducto(i)">
+                <i class="pi pi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-          <p-divider styleClass="section-divider" />
-
-          <!-- Cliente -->
-          <div class="cliente-section">
-            <div class="buscar-cliente-grid mb-2">
-              <!-- Fila 1: Selector + Input -->
-              <div class="buscar-fila-1">
-                <div class="buscar-campo">
-                  <label class="input-label">Tipo de Documento</label>
-                  <p-select
-                    [ngModel]="tipoComprobante() === 1 ? tipoDocRucId() : tipoDocBoleta()"
-                    (ngModelChange)="onTipoDocBoleta($event); limpiarCliente()"
-                    [options]="tiposDocumentoParaBusqueda()"
-                    optionLabel="description"
-                    optionValue="documentTypeId"
-                    placeholder="Tipo doc."
-                    styleClass="w-full"
-                    [disabled]="!!clienteEncontrado() || tipoComprobante() === 1"
-                  />
-                </div>
-                <div class="buscar-campo buscar-campo-flex">
-                  <label class="input-label">{{
-                    tipoComprobante() === 2 ? 'Número de Documento' : 'RUC (11 dígitos)'
-                  }}</label>
-                  <input
-                    pInputText
-                    [value]="clienteDocumento()"
-                    (input)="validarSoloNumeros($event)"
-                    [placeholder]="documentoConfig().placeholder"
-                    class="w-full"
-                    [attr.inputmode]="documentoConfig().soloNumeros ? 'numeric' : 'text'"
-                    [attr.pattern]="documentoConfig().soloNumeros ? '[0-9]*' : '[a-zA-Z0-9]*'"
-                    [attr.maxlength]="documentoConfig().maxLength"
-                    [disabled]="!!clienteEncontrado()"
-                  />
-                </div>
-              </div>
-
-              <!-- Fila 2: Info dígitos + Botón -->
-              <div class="buscar-fila-2">
-                <div
-                  *ngIf="clienteDocumento() && !clienteEncontrado()"
-                  class="flex align-items-center gap-2"
-                >
-                  <i class="pi pi-info-circle text-500"></i>
-                  <small class="text-600">
-                    {{ clienteDocumento().length }} / {{ longitudDocumento() }} dígitos
-                    <span
-                      *ngIf="clienteDocumento().length < longitudDocumento()"
-                      class="text-orange-500"
-                    >
-                      ({{ longitudDocumento() - clienteDocumento().length }} restantes)
-                    </span>
-                    <span
-                      *ngIf="clienteDocumento().length === longitudDocumento()"
-                      class="text-green-500"
-                      >✓ Completo</span
-                    >
-                  </small>
-                </div>
-                <div *ngIf="!clienteDocumento() || clienteEncontrado()"></div>
-
-                <p-button
-                  [label]="clienteEncontrado() ? 'Cambiar Cliente' : 'Buscar Cliente'"
-                  [icon]="clienteEncontrado() ? 'pi pi-times' : 'pi pi-search'"
-                  [severity]="clienteEncontrado() ? 'secondary' : 'primary'"
-                  (onClick)="clienteEncontrado() ? limpiarCliente() : buscarCliente()"
-                  [disabled]="!clienteEncontrado() && !botonClienteHabilitado()"
-                  [loading]="clienteLoading()"
-                  styleClass="btn-buscar-cliente"
-                />
-              </div>
-            </div>
-
-            <!-- Cliente encontrado -->
-            <div *ngIf="clienteEncontrado()" class="cliente-encontrado-card mt-3">
-              <p-card class="cliente-card-success">
-                <div class="cliente-content">
-                  <div class="cliente-cabecera-row">
-                    <div class="cliente-row">
-                      <h4 class="cliente-nombre">{{ clienteEncontrado()!.name }}</h4>
-                      <span class="badge-verified"
-                        ><i class="pi pi-check-circle"></i> Verificado</span
-                      >
-                      <p-button
-                        icon="pi pi-times-circle"
-                        [text]="true"
-                        severity="secondary"
-                        size="small"
-                        (onClick)="limpiarCliente()"
-                        pTooltip="Cambiar cliente"
-                        tooltipPosition="left"
-                        styleClass="btn-close-cliente"
-                      />
-                    </div>
-                  </div>
-                  <div class="cliente-row mt-3">
-                    <span class="info-badge dni"
-                      ><i class="pi pi-id-card"></i> {{ formatearDocumentoCompleto() }}</span
-                    >
-                    <span class="info-badge telefono" *ngIf="clienteEncontrado()!.phone">
-                      <i class="pi pi-phone"></i> {{ clienteEncontrado()!.phone }}
-                    </span>
-                  </div>
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.email">
-                    <span class="info-badge email"
-                      ><i class="pi pi-envelope"></i> {{ clienteEncontrado()!.email }}</span
-                    >
-                  </div>
-                  <div class="cliente-row mt-3" *ngIf="clienteEncontrado()!.address">
-                    <span class="info-badge direccion"
-                      ><i class="pi pi-map-marker"></i> {{ clienteEncontrado()!.address }}</span
-                    >
-                  </div>
-
-                  <div class="mt-3 flex justify-content-end" *ngIf="!editandoCliente()">
-                    <p-button
-                      label="Editar datos"
-                      icon="pi pi-pencil"
-                      [text]="true"
-                      size="small"
-                      (onClick)="iniciarEdicionCliente()"
-                    />
-                  </div>
-
-                  <div *ngIf="editandoCliente()" class="mt-3">
-                    <p-divider align="center">
-                      <span class="divider-text"
-                        ><i class="pi pi-pencil mr-2"></i>Editar datos del cliente</span
-                      >
-                    </p-divider>
-                    <div class="form-grid">
-                      <div class="form-field full-width">
-                        <label>Nombre *</label>
-                        <input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.name"
-                          placeholder="Nombre completo"
-                          class="w-full"
-                        />
-                      </div>
-                      <div class="form-field">
-                        <label>Dirección</label>
-                        <input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.address"
-                          placeholder="Dirección"
-                          class="w-full"
-                        />
-                      </div>
-                      <div class="form-field">
-                        <label>Teléfono</label>
-                        <input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.phone"
-                          placeholder="Teléfono"
-                          class="w-full"
-                          maxlength="9"
-                          inputmode="numeric"
-                        />
-                      </div>
-                      <div class="form-field full-width">
-                        <label>Email</label>
-                        <input
-                          pInputText
-                          [(ngModel)]="editarClienteForm.email"
-                          placeholder="Email"
-                          class="w-full"
-                          type="email"
-                        />
-                      </div>
-                      <div class="botones-form-cliente">
-                        <p-button
-                          label="Cancelar"
-                          icon="pi pi-times"
-                          [outlined]="true"
-                          severity="secondary"
-                          (onClick)="cancelarEdicionCliente()"
-                          styleClass="btn-cancelar-cliente"
-                        />
-                        <p-button
-                          label="Guardar"
-                          icon="pi pi-check"
-                          (onClick)="guardarCambiosCliente()"
-                          [loading]="guardandoCliente()"
-                          styleClass="btn-registrar-cliente btn-guardar-fixed"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </p-card>
-            </div>
-
-            <!-- Cliente no encontrado -->
-            <div
-              *ngIf="busquedaRealizada() && !clienteEncontrado() && !creandoCliente()"
-              class="mt-3"
-            >
-              <div class="monto-destacado-box cliente-no-encontrado-box">
-                <i class="pi pi-exclamation-triangle" style="color: #ff9800"></i>
-                <span>Cliente no encontrado: </span>
-                <p-button
-                  label="Registrar nuevo cliente"
-                  icon="pi pi-user-plus"
-                  [text]="true"
-                  size="small"
-                  (onClick)="creandoCliente.set(true)"
-                />
-              </div>
-            </div>
-
-            <!-- Formulario nuevo cliente -->
-            <div *ngIf="creandoCliente()" class="nuevo-cliente-form mt-3">
-              <p-divider align="center">
-                <span class="divider-text"
-                  ><i class="pi pi-user-plus mr-2"></i>Registrar nuevo cliente</span
-                >
-              </p-divider>
-              <div class="form-grid">
-                <div class="form-field full-width">
-                  <label>Tipo de Documento *</label>
-                  <p-select
-                    [(ngModel)]="nuevoClienteForm.documentTypeId"
-                    [options]="tiposDocumento()"
-                    optionLabel="description"
-                    optionValue="documentTypeId"
-                    placeholder="Seleccione tipo"
-                    styleClass="w-full"
-                    (ngModelChange)="
-                      nuevoClienteForm.documentValue = '';
-                      nuevoClienteForm.name = '';
-                      nombreDesdeReniec.set(false)
-                    "
-                  />
-                </div>
-
-                <div class="form-field full-width">
-                  <label>Número de Documento *</label>
-                  <div class="flex align-items-center gap-2">
-                    <input
-                      pInputText
-                      [ngModel]="nuevoClienteForm.documentValue"
-                      (ngModelChange)="onDocumentoNuevoClienteChange($event)"
-                      placeholder="Número de documento"
-                      class="w-full"
-                      inputmode="numeric"
-                    />
-                    <i
-                      *ngIf="reniecLoading()"
-                      class="pi pi-spin pi-spinner text-primary"
-                      style="font-size: 1.25rem; flex-shrink: 0"
-                      pTooltip="Consultando RENIEC/SUNAT..."
-                      tooltipPosition="left"
-                    ></i>
-                  </div>
-                  <ng-container *ngIf="nuevoClienteForm.documentTypeId">
-                    <ng-container *ngFor="let t of tiposDocumento()">
-                      <ng-container *ngIf="t.documentTypeId === nuevoClienteForm.documentTypeId">
-                        <small
-                          *ngIf="
-                            t.description.toUpperCase().includes('DNI') ||
-                            t.description.toUpperCase().includes('IDENTIDAD')
-                          "
-                          class="text-500 mt-1 block"
-                        >
-                          <i class="pi pi-info-circle mr-1"></i>
-                          Al ingresar <strong>8 dígitos</strong> se consultará
-                          <strong>RENIEC</strong> automáticamente
-                        </small>
-                        <small
-                          *ngIf="
-                            t.description.toUpperCase().includes('RUC') ||
-                            t.description.toUpperCase().includes('CONTRIBUYENTE')
-                          "
-                          class="text-500 mt-1 block"
-                        >
-                          <i class="pi pi-info-circle mr-1"></i>
-                          Al ingresar <strong>11 dígitos</strong> se consultará
-                          <strong>SUNAT</strong> automáticamente
-                        </small>
-                      </ng-container>
-                    </ng-container>
-                  </ng-container>
-                </div>
-
-                <div class="form-field full-width">
-                  <label>Nombre completo / Razón Social *</label>
-                  <div class="flex align-items-center gap-2">
-                    <input
-                      pInputText
-                      [(ngModel)]="nuevoClienteForm.name"
-                      placeholder="Nombre o razón social"
-                      class="w-full"
-                    />
-                    <span
-                      *ngIf="nombreDesdeReniec()"
-                      class="flex align-items-center gap-1 text-green-600"
-                      style="font-size: 0.78rem; white-space: nowrap; flex-shrink: 0"
-                      pTooltip="Nombre obtenido de RENIEC/SUNAT"
-                      tooltipPosition="left"
-                    >
-                      <i class="pi pi-check-circle"></i> RENIEC
-                    </span>
-                  </div>
-                </div>
-
-                <div class="form-field">
-                  <label>Dirección</label>
-                  <input
-                    pInputText
-                    [(ngModel)]="nuevoClienteForm.address"
-                    placeholder="Dirección"
-                    class="w-full"
-                  />
-                </div>
-                <div class="form-field">
-                  <label>Teléfono</label>
-                  <input
-                    pInputText
-                    [(ngModel)]="nuevoClienteForm.phone"
-                    placeholder="Teléfono"
-                    class="w-full"
-                    maxlength="9"
-                    inputmode="numeric"
-                  />
-                </div>
-                <div class="form-field full-width">
-                  <label>Email (opcional)</label>
-                  <input
-                    pInputText
-                    [(ngModel)]="nuevoClienteForm.email"
-                    placeholder="Email"
-                    class="w-full"
-                    type="email"
-                  />
-                </div>
-                <div class="botones-form-cliente">
-                  <p-button
-                    label="Cancelar"
-                    icon="pi pi-times"
-                    [outlined]="true"
-                    severity="secondary"
-                    (onClick)="creandoCliente.set(false); nombreDesdeReniec.set(false)"
-                    styleClass="btn-cancelar-cliente"
-                  />
-                  <p-button
-                    label="Guardar Cliente"
-                    icon="pi pi-check"
-                    (onClick)="crearNuevoCliente()"
-                    [loading]="guardandoCliente()"
-                    styleClass="btn-registrar-cliente btn-guardar-fixed"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ══════════════════════════════════════════════════════════════
-           STEP 2 — Pago, Promociones y Entrega
-      ══════════════════════════════════════════════════════════════════ -->
-      <div *ngIf="activeStep() === 2" class="step-content">
-        <div class="step-header">
-          <i class="pi pi-credit-card step-icon"></i>
-          <h3>Pago, Promociones y Entrega</h3>
-        </div>
-
-        <!-- Crédito -->
-        <div *ngIf="tipoPagoOrigen() === 'credito'" class="content-centrado">
-          <div
-            class="surface-card border-round-xl p-5 text-center"
-            style="
-              border-left: 4px solid var(--p-primary-color);
-              max-width: 480px;
-              margin: 2rem auto;
-            "
-          >
-            <i class="pi pi-credit-card text-primary mb-3 block" style="font-size: 3rem"></i>
-            <h4 class="text-900 mb-2">Venta a Crédito</h4>
-            <p class="text-600 mb-4 line-height-3">
-              Esta venta se registrará como <strong>cuenta por cobrar</strong>.<br />
-              El pago se irá abonando de forma parcial hasta completar el total.
-            </p>
-            <div class="flex justify-content-center gap-3 flex-wrap">
-              <p-tag value="SIN PAGO INMEDIATO" severity="warn" styleClass="font-bold"></p-tag>
-              <p-tag value="CUENTA POR COBRAR" severity="info" styleClass="font-bold"></p-tag>
-            </div>
-            <p-divider></p-divider>
-            <div class="flex justify-content-center align-items-center gap-2 text-600">
-              <i class="pi pi-info-circle"></i>
-              <small>El saldo quedará pendiente en el módulo de Ventas por Cobrar</small>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contado -->
-        <div *ngIf="tipoPagoOrigen() !== 'credito'" class="content-centrado">
-          <!-- Tipo de entrega -->
-          <div class="tipo-pago-section">
-            <label class="section-label"><i class="pi pi-truck"></i> Tipo de Entrega</label>
-            <div class="metodos-pago-grid">
-              <div
-                *ngFor="let opcion of tipoEntregaOptions"
-                class="metodo-pago-card"
-                [class.selected]="tipoEntrega() === opcion.value"
-                (click)="onTipoEntregaChange($any(opcion.value))"
+      <div class="pos-bottom-block">
+        <div class="pos-bottom-left">
+          <div class="pos-section">
+            <p class="pos-section-label"><i class="pi pi-truck"></i> Tipo de Entrega</p>
+            <div class="pos-opt-row">
+              <button
+                class="pos-opt-btn"
+                [class.active]="tipoEntrega() === 'recojo'"
+                (click)="onTipoEntregaChange('recojo')"
               >
-                <div class="metodo-icon"><i [class]="opcion.icon"></i></div>
-                <span class="metodo-label">{{ opcion.label }}</span>
-                <div class="check-indicator" *ngIf="tipoEntrega() === opcion.value">
-                  <i class="pi pi-check"></i>
-                </div>
-              </div>
+                <i class="pi pi-shop"></i> Recojo en tienda
+              </button>
+              <button
+                class="pos-opt-btn"
+                [class.active]="tipoEntrega() === 'delivery'"
+                (click)="onTipoEntregaChange('delivery')"
+              >
+                <i class="pi pi-truck"></i> Delivery
+              </button>
             </div>
-
-            <div *ngIf="tipoEntrega() === 'recojo'" class="pago-detalles-animated mt-3">
-              <div class="monto-destacado-box">
-                <i class="pi pi-check-circle" style="color: var(--p-green-500)"></i>
-                <span
-                  >Recojo en <strong>{{ nombreSedeSeleccionada() }}</strong></span
-                >
-              </div>
-            </div>
-
-            <div *ngIf="tipoEntrega() === 'delivery'" class="pago-detalles-animated mt-3">
-              <div class="monto-destacado-box">
-                <i class="pi pi-truck" style="color: var(--p-primary-color)"></i>
-                <span>Delivery — ingrese la dirección:</span>
-              </div>
-              <div class="form-field mt-2">
-                <input
-                  pInputText
-                  [value]="direccionDelivery()"
-                  (input)="direccionDelivery.set($any($event.target).value)"
-                  placeholder="Dirección de entrega"
-                  class="w-full"
-                />
-              </div>
-              <div class="form-field mt-2">
-                <label class="input-label">Costo de delivery (S/.)</label>
-                <p-inputNumber
-                  [ngModel]="costoDelivery()"
-                  (ngModelChange)="costoDelivery.set($event)"
-                  mode="currency"
-                  currency="PEN"
-                  locale="es-PE"
-                  [min]="0"
-                  styleClass="w-full"
-                />
-              </div>
-            </div>
-          </div>
-
-          <p-divider styleClass="section-divider" />
-
-          <!-- Código promoción -->
-          <div class="tipo-pago-section">
-            <label class="section-label"
-              ><i class="pi pi-percentage"></i> Código de Promoción</label
-            >
-
-            <div class="flex gap-2 align-items-center mt-2">
+            <div *ngIf="tipoEntrega() === 'delivery'" class="pos-delivery-fields">
               <input
                 pInputText
-                [value]="codigoPromocionInput()"
-                (input)="
-                  codigoPromocionInput.set($any($event.target).value);
-                  promoNoEncontrada.set(false);
-                  promoYaAplicada.set(false)
-                "
-                (keydown.enter)="buscarYAplicarPromocion()"
-                placeholder="Ingrese concepto de promoción..."
-                class="w-full"
-                [disabled]="!!promocionAplicada()"
+                [value]="direccionDelivery()"
+                (input)="direccionDelivery.set($any($event.target).value)"
+                placeholder="Dirección de entrega…"
+                class="pos-delivery-input"
               />
-              <p-button
-                label="Aplicar"
-                icon="pi pi-check"
-                (onClick)="buscarYAplicarPromocion()"
-                [disabled]="!codigoPromocionInput().trim() || !!promocionAplicada()"
-                [loading]="promocionesLoading()"
-              />
-            </div>
-
-            <small *ngIf="promoNoEncontrada()" class="text-red-500 mt-1 block">
-              <i class="pi pi-times-circle mr-1"></i> Promoción no encontrada. Verifique el
-              concepto.
-            </small>
-            <small *ngIf="promoYaAplicada()" class="text-orange-500 mt-1 block">
-              <i class="pi pi-exclamation-circle mr-1"></i> Esa promoción ya está aplicada.
-            </small>
-
-            <div
-              *ngIf="promocionAplicada()"
-              class="monto-destacado-box mt-3"
-              style="border-color: #4caf50"
-            >
-              <i class="pi pi-check-circle" style="color: #4caf50"></i>
-              <span>
-                Aplicada: <strong>{{ promocionAplicada()!.concepto }}</strong>
-                &nbsp;—&nbsp;descuento:
-                <strong>{{
-                  esPorcentaje(promocionAplicada()!.tipo)
-                    ? promocionAplicada()!.valor + '%'
-                    : 'S/. ' + (promocionAplicada()!.valor | number: '1.2-2')
-                }}</strong>
-                &nbsp;=&nbsp;
-                <strong style="color: #2e7d32"
-                  >-S/. {{ descuentoPromocion() | number: '1.2-2' }}</strong
-                >
-              </span>
-              <p-button
-                icon="pi pi-times"
-                [text]="true"
-                severity="danger"
-                size="small"
-                (onClick)="quitarPromocion()"
-                pTooltip="Quitar promoción"
+              <p-inputNumber
+                [ngModel]="costoDelivery()"
+                (ngModelChange)="costoDelivery.set($event)"
+                mode="currency"
+                currency="PEN"
+                locale="es-PE"
+                [min]="0"
+                placeholder="Costo delivery"
+                styleClass="pos-delivery-cost"
               />
             </div>
           </div>
 
-          <p-divider styleClass="section-divider" />
-
-          <!-- Método de pago -->
-          <div class="tipo-pago-section">
-            <label class="section-label"><i class="pi pi-wallet"></i> Método de Pago</label>
-
-            <div *ngIf="metodosPago().length === 0" class="flex justify-content-center p-4">
-              <i class="pi pi-spin pi-spinner text-2xl"></i>
+          <div class="pos-section" *ngIf="tipoPagoOrigen() !== 'credito'">
+            <p class="pos-section-label"><i class="pi pi-wallet"></i> Método de Pago</p>
+            <div class="pos-opt-row">
+              <button
+                *ngFor="let m of metodoPagoOptions()"
+                class="pos-opt-btn"
+                [class.active]="metodoPagoSeleccionado() === m.value"
+                (click)="onMetodoPagoChange(m.value)"
+              >
+                <i [class]="m.icon"></i> {{ m.label }}
+              </button>
             </div>
 
-            <div class="metodos-pago-grid" *ngIf="metodosPago().length > 0">
-              <div
-                *ngFor="let metodo of metodoPagoOptions()"
-                class="metodo-pago-card"
-                [class.selected]="metodoPagoSeleccionado() === metodo.value"
-                (click)="metodoPagoSeleccionado.set(metodo.value)"
-              >
-                <div class="metodo-icon"><i [class]="metodo.icon"></i></div>
-                <span class="metodo-label">{{ metodo.label }}</span>
-                <div class="check-indicator" *ngIf="metodoPagoSeleccionado() === metodo.value">
-                  <i class="pi pi-check"></i>
+            <div *ngIf="metodoPagoRequiereBanco()" class="pos-banco-wrap">
+              <p class="pos-section-label mt-2"><i class="pi pi-building"></i> Banco emisor</p>
+              <p-select
+                [ngModel]="bancoSeleccionado()"
+                (ngModelChange)="onBancoChange($event)"
+                [options]="bancosOptions()"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Selecciona el banco…"
+                [loading]="bancosLoading()"
+                [showClear]="true"
+                styleClass="w-full pos-banco-select"
+              />
+              <ng-container *ngIf="bancoSeleccionado()">
+                <p class="pos-section-label mt-2"><i class="pi pi-credit-card"></i> Tipo de servicio</p>
+                <ng-container *ngIf="!tiposServicioLoading()">
+                  <p-select
+                    *ngIf="tiposServicioOptions().length > 0"
+                    [ngModel]="tipoServicioSeleccionado()"
+                    (ngModelChange)="tipoServicioSeleccionado.set($event)"
+                    [options]="tiposServicioOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Selecciona tipo de servicio…"
+                    [showClear]="true"
+                    styleClass="w-full pos-banco-select"
+                  />
+                  <div *ngIf="tiposServicioOptions().length === 0" class="pos-banco-sin-servicio">
+                    <i class="pi pi-exclamation-triangle"></i>
+                    Este banco no tiene servicios registrados para este tipo de tarjeta. Contacta al administrador.
+                  </div>
+                </ng-container>
+                <div *ngIf="tiposServicioLoading()" class="pos-banco-sin-servicio">
+                  <i class="pi pi-spin pi-spinner"></i> Cargando servicios…
                 </div>
-              </div>
+                <div class="pos-comision-badge" *ngIf="bancoSeleccionado()">
+                  <i class="pi pi-info-circle"></i>
+                  Se aplica comisión bancaria del 5%:
+                  <strong>+S/. {{ comisionMonto() | number: '1.2-2' }}</strong>
+                </div>
+              </ng-container>
             </div>
 
             <div
               *ngIf="metodoPagoSeleccionado() === idMetodoPagoEfectivo()"
-              class="pago-detalles-animated mt-4"
+              class="pos-efectivo-row"
             >
-              <div class="monto-destacado-box">
-                <i class="pi pi-tag"></i>
-                <span>Total a Pagar</span>
-                <strong class="monto-destacado">S/. {{ total() | number: '1.2-2' }}</strong>
-              </div>
-              <div class="form-field mt-3">
-                <label class="input-label">Monto Recibido</label>
-                <p-inputNumber
-                  [ngModel]="montoRecibido()"
-                  (ngModelChange)="montoRecibido.set($event)"
-                  mode="currency"
-                  currency="PEN"
-                  locale="es-PE"
-                  [min]="0"
-                  styleClass="w-full"
-                />
-              </div>
-              <div *ngIf="montoRecibido() >= total()" class="vuelto-display mt-3">
-                <span class="flex align-items-center gap-2">
-                  Vuelto
-                  <i
-                    class="pi pi-info-circle"
-                    style="font-size: 1rem; cursor: pointer"
-                    [pTooltip]="
-                      saldoCaja() !== null
-                        ? 'Saldo en caja: S/. ' +
-                          (saldoCaja() | number: '1.2-2') +
-                          (vuelto() > saldoCaja()!
-                            ? ' ⚠ Vuelto excede el saldo disponible'
-                            : ' ✓ Saldo suficiente')
-                        : 'No se pudo obtener el saldo de caja'
-                    "
-                    [style.color]="
-                      saldoCaja() !== null && vuelto() > saldoCaja()! ? '#ef4444' : '#d1fae5'
-                    "
-                    tooltipPosition="top"
-                  ></i>
-                </span>
-                <span class="vuelto-valor">S/. {{ vuelto() | number: '1.2-2' }}</span>
+              <label class="pos-input-label">Monto recibido</label>
+              <p-inputNumber
+                [ngModel]="montoRecibido()"
+                (ngModelChange)="montoRecibido.set($event)"
+                mode="currency"
+                currency="PEN"
+                locale="es-PE"
+                [min]="0"
+                styleClass="pos-monto-input"
+              />
+              <div *ngIf="montoRecibido() >= totalFinal()" class="pos-vuelto">
+                <span>Vuelto</span>
+                <strong>S/. {{ vuelto() | number: '1.2-2' }}</strong>
               </div>
             </div>
-
             <ng-container *ngFor="let m of metodosPago()">
               <div
                 *ngIf="metodoPagoSeleccionado() === m.id && m.codSunat !== '008'"
-                class="pago-detalles-animated mt-4"
+                class="pos-operacion-row"
               >
-                <div class="monto-destacado-box">
-                  <i class="pi pi-tag"></i>
-                  <span>Total a Pagar</span>
-                  <strong class="monto-destacado">S/. {{ total() | number: '1.2-2' }}</strong>
-                </div>
-                <div class="pago-header-inline mt-3">
-                  <i class="pi pi-credit-card"></i>
-                  <span>{{ getLabelMetodoPago(metodoPagoSeleccionado() ?? 0) }}</span>
-                </div>
-                <div class="form-field mt-3">
-                  <label class="input-label">Nº de Operación</label>
-                  <input
-                    pInputText
-                    [value]="numeroOperacion()"
-                    (input)="numeroOperacion.set($any($event.target).value)"
-                    placeholder="Ingrese número de operación"
-                    class="w-full input-operacion"
-                  />
-                </div>
+                <label class="pos-input-label">Nº de Operación</label>
+                <input
+                  pInputText
+                  [value]="numeroOperacion()"
+                  (input)="numeroOperacion.set($any($event.target).value)"
+                  placeholder="Número de operación"
+                  class="pos-operacion-input"
+                />
               </div>
             </ng-container>
           </div>
 
-          <p-divider styleClass="section-divider" />
+          <div class="pos-section pos-credito-box" *ngIf="tipoPagoOrigen() === 'credito'">
+            <i class="pi pi-credit-card"></i>
+            <div>
+              <strong>Venta a Crédito</strong><small>Se registrará como cuenta por cobrar</small>
+            </div>
+          </div>
 
-          <!-- Totales paso 2 -->
-          <div class="carrito-totales-box">
-            <div class="totales-contenido">
-              <div class="total-line">
-                <span class="label">Subtotal (base imponible)</span>
-                <span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
+          <div class="pos-section">
+            <p class="pos-section-label"><i class="pi pi-percentage"></i> Promoción</p>
+            <div *ngIf="promocionAplicada()" class="pos-promo-applied">
+              <i class="pi pi-check-circle"></i>
+              <div class="pos-promo-applied-info">
+                <span class="pos-promo-applied-name">{{ promocionAplicada()!.concepto }}</span>
+                <span class="pos-promo-applied-val"
+                  >-S/. {{ descuentoPromocion() | number: '1.2-2' }}
+                  <small
+                    >({{
+                      esPorcentaje(promocionAplicada()!.tipo)
+                        ? promocionAplicada()!.valor + '%'
+                        : 'S/. ' + (promocionAplicada()!.valor | number: '1.2-2')
+                    }})</small
+                  ></span
+                >
               </div>
-              <div class="total-line">
-                <span class="label">IGV (18%)</span>
-                <span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
+              <button class="pos-promo-quitar" (click)="quitarPromocion()">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div *ngIf="!promocionAplicada()" class="pos-promo-search-wrap">
+              <div class="pos-promo-search-row">
+                <input
+                  pInputText
+                  [value]="codigoPromocionInput()"
+                  (input)="
+                    codigoPromocionInput.set($any($event.target).value);
+                    promoNoEncontrada.set(false);
+                    filtrarPromociones()
+                  "
+                  (keydown.enter)="buscarYAplicarPromocion()"
+                  placeholder="Buscar promoción por nombre…"
+                  class="pos-promo-input"
+                />
+                <button
+                  class="pos-promo-search-btn"
+                  (click)="buscarYAplicarPromocion()"
+                  [disabled]="!codigoPromocionInput().trim() || promocionesLoading()"
+                >
+                  <i [class]="promocionesLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-search'"></i>
+                </button>
               </div>
-              <div *ngIf="promocionAplicada()" class="total-line" style="color: #4caf50">
-                <span class="label">Descuento</span>
-                <span class="total-valor">-S/. {{ descuentoPromocion() | number: '1.2-2' }}</span>
+              <div
+                class="pos-promo-results"
+                *ngIf="
+                  promocionesFiltradas().length > 0 && codigoPromocionInput().trim().length > 0
+                "
+              >
+                <div
+                  *ngFor="let promo of promocionesFiltradas()"
+                  class="pos-promo-result-item"
+                  [class.pos-promo-no-aplica]="!promoAplicaAlCarrito(promo)"
+                  (click)="aplicarPromocion(promo)"
+                >
+                  <div class="pos-promo-result-left">
+                    <span class="pos-promo-result-name">{{ promo.concepto }}</span>
+                    <small *ngIf="!promoAplicaAlCarrito(promo)" class="pos-promo-req">
+                      <i class="pi pi-info-circle"></i> Requiere producto específico no agregado
+                    </small>
+                  </div>
+                  <span class="pos-promo-result-val">
+                    {{
+                      esPorcentaje(promo.tipo)
+                        ? promo.valor + '%'
+                        : 'S/. ' + (promo.valor | number: '1.2-2')
+                    }}
+                  </span>
+                </div>
               </div>
-              <div *ngIf="tipoEntrega() === 'delivery' && costoDelivery() > 0" class="total-line">
-                <span class="label">Costo de delivery</span>
-                <span class="total-valor">S/. {{ costoDelivery() | number: '1.2-2' }}</span>
-              </div>
-              <div class="total-line total-final">
-                <span class="label">TOTAL A PAGAR</span>
-                <span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
-              </div>
+              <small *ngIf="promoNoEncontrada()" class="pos-promo-error"
+                ><i class="pi pi-times-circle"></i> No se encontró esa promoción</small
+              >
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ══════════════════════════════════════════════════════════════
-           STEP 3 — Confirmar Venta / Comprobante generado
-      ══════════════════════════════════════════════════════════════════ -->
-      <div *ngIf="activeStep() === 3" class="step-content">
-        <!-- Vista previa (antes de generar) -->
-        <div *ngIf="!comprobanteGenerado()">
-          <div class="step-header">
-            <i class="pi pi-check-circle step-icon"></i>
-            <h3>Confirmar Venta</h3>
+        <div class="pos-bottom-right">
+          <div class="pos-totales">
+            <div class="pos-total-row">
+              <span>Subtotal (sin IGV)</span><span>S/. {{ subtotal() | number: '1.2-2' }}</span>
+            </div>
+            <div class="pos-total-row">
+              <span>IGV (18%)</span><span>S/. {{ igv() | number: '1.2-2' }}</span>
+            </div>
+            <div class="pos-total-row pos-total-desc" *ngIf="descuentoPromocion() > 0">
+              <span><i class="pi pi-tag"></i> Descuento</span
+              ><span>-S/. {{ descuentoPromocion() | number: '1.2-2' }}</span>
+            </div>
+            <div
+              class="pos-total-row pos-total-delivery"
+              *ngIf="tipoEntrega() === 'delivery' && costoDelivery() > 0"
+            >
+              <span><i class="pi pi-truck"></i> Delivery</span
+              ><span>S/. {{ costoDelivery() | number: '1.2-2' }}</span>
+            </div>
+            <div class="pos-total-row pos-total-comision" *ngIf="comisionMonto() > 0">
+              <span><i class="pi pi-credit-card"></i> Comisión bancaria (5%)</span>
+              <span>+S/. {{ comisionMonto() | number: '1.2-2' }}</span>
+            </div>
+            <div class="pos-total-final">
+              <span>TOTAL A PAGAR</span><strong>S/. {{ totalFinal() | number: '1.2-2' }}</strong>
+            </div>
           </div>
-          <div class="content-centrado">
-            <p-card class="resumen-venta">
-              <h4 class="resumen-titulo mb-4">
-                <i class="pi pi-file-check"></i> Resumen de la Venta
-              </h4>
-
-              <div class="resumen-grid mb-4">
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-building"></i> Sede:</span>
-                  <strong class="resumen-value">{{ nombreSedeSeleccionada() }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-user"></i> Cliente:</span>
-                  <strong class="resumen-value">{{ clienteEncontrado()?.name }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-id-card"></i> Documento:</span>
-                  <strong class="resumen-value">{{ formatearDocumentoCompleto() }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-file"></i> Comprobante:</span>
-                  <strong class="resumen-value">{{
-                    tipoComprobante() === 1 ? 'Factura' : 'Boleta'
-                  }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-tag"></i> Tipo de Venta:</span>
-                  <strong class="resumen-value">{{ nombreTipoVentaSeleccionado() }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-wallet"></i> Pago:</span>
-                  <strong class="resumen-value">
-                    {{
-                      tipoPagoOrigen() === 'credito'
-                        ? 'Crédito (Cuenta por Cobrar)'
-                        : getLabelMetodoPago(metodoPagoSeleccionado() ?? 0)
-                    }}
-                  </strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label">
-                    <i [class]="tipoEntrega() === 'delivery' ? 'pi pi-truck' : 'pi pi-shop'"></i>
-                    Entrega:
-                  </span>
-                  <strong class="resumen-value">
-                    {{
-                      tipoEntrega() === 'delivery'
-                        ? 'Delivery — ' + direccionDelivery()
-                        : 'Recojo en tienda'
-                    }}
-                  </strong>
-                </div>
-                <div class="resumen-item" *ngIf="promocionAplicada()">
-                  <span class="label"><i class="pi pi-tag"></i> Promoción:</span>
-                  <strong class="resumen-value" style="color: #2e7d32">
-                    {{ promocionAplicada()!.concepto }} (-S/.
-                    {{ descuentoPromocion() | number: '1.2-2' }})
-                  </strong>
-                </div>
-              </div>
-
-              <p-divider />
-
-              <p-table
-                [value]="productosSeleccionados()"
-                styleClass="p-datatable-sm"
-                [tableStyle]="{ 'min-width': '100%' }"
-              >
-                <ng-template pTemplate="header">
-                  <tr>
-                    <th style="width: 120px">Código</th>
-                    <th>Producto</th>
-                    <th class="text-right" style="width: 100px">Cantidad</th>
-                    <th class="text-right" style="width: 120px">Precio Unit.</th>
-                    <th class="text-right" style="width: 130px">Subtotal</th>
-                    <th class="text-center" style="width: 110px">Promoción</th>
-                    <th class="text-center" style="width: 80px">Acción</th>
-                  </tr>
-                </ng-template>
-                <ng-template pTemplate="body" let-item let-rowIndex="rowIndex">
-                  <tr>
-                    <td>
-                      <span class="codigo-tabla">{{ item.codigo }}</span>
-                    </td>
-                    <td>
-                      <span class="producto-nombre-tabla">{{ item.description }}</span>
-                    </td>
-                    <td class="text-right">
-                      <span class="cantidad-badge">{{ item.quantity }}</span>
-                    </td>
-                    <td class="text-right">
-                      <strong>S/. {{ item.unitPrice | number: '1.2-2' }}</strong>
-                    </td>
-                    <td class="text-right">
-                      <strong class="subtotal-item">S/. {{ item.total | number: '1.2-2' }}</strong>
-                    </td>
-                    <td class="text-center">
-                      <p-tag
-                        *ngIf="promocionAplicada() && itemCalificaPromocion(item)"
-                        value="🎁 Promo"
-                        severity="success"
-                        pTooltip="Este producto aplica al descuento de la promoción"
-                        tooltipPosition="left"
-                      />
-                      <span
-                        *ngIf="!promocionAplicada() || !itemCalificaPromocion(item)"
-                        class="text-400"
-                        >—</span
-                      >
-                    </td>
-                    <td class="text-center">
-                      <p-button
-                        icon="pi pi-trash"
-                        severity="danger"
-                        [text]="true"
-                        [rounded]="true"
-                        size="small"
-                        (onClick)="eliminarProducto(rowIndex)"
-                        pTooltip="Eliminar producto"
-                        tooltipPosition="left"
-                      />
-                    </td>
-                  </tr>
-                </ng-template>
-              </p-table>
-
-              <div class="carrito-totales-box mt-3">
-                <div class="totales-contenido">
-                  <div class="total-line">
-                    <span class="label">Subtotal (Base imponible):</span>
-                    <span class="total-valor">S/. {{ subtotal() | number: '1.2-2' }}</span>
-                  </div>
-                  <div class="total-line">
-                    <span class="label">IGV (18%):</span>
-                    <span class="total-valor">S/. {{ igv() | number: '1.2-2' }}</span>
-                  </div>
-                  <div class="total-line" *ngIf="descuentoPromocion() > 0">
-                    <span class="label"><i class="pi pi-tag mr-1"></i>Descuento:</span>
-                    <span class="total-valor" style="color: #e53935"
-                      >-S/. {{ descuentoPromocion() | number: '1.2-2' }}</span
-                    >
-                  </div>
-                  <div
-                    class="total-line"
-                    *ngIf="tipoEntrega() === 'delivery' && costoDelivery() > 0"
-                  >
-                    <span class="label"><i class="pi pi-truck mr-1"></i>Delivery:</span>
-                    <span class="total-valor">S/. {{ costoDelivery() | number: '1.2-2' }}</span>
-                  </div>
-                  <div class="total-line total-final">
-                    <span class="label">TOTAL A PAGAR:</span>
-                    <span class="total-valor">S/. {{ total() | number: '1.2-2' }}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="flex justify-content-center mt-4">
-                <p-button
-                  label="Generar Venta"
-                  icon="pi pi-check"
-                  size="large"
-                  (onClick)="generarVenta()"
-                  [loading]="loading()"
-                  styleClass="btn-generar-venta"
-                />
-              </div>
-            </p-card>
-          </div>
-        </div>
-
-        <div *ngIf="comprobanteGenerado()">
-          <div class="step-header">
-            <i class="pi pi-check-circle step-icon" style="color: #4caf50"></i>
-            <h3>¡Venta Generada Exitosamente!</h3>
-          </div>
-          <div class="content-centrado">
-            <p-card class="resumen-venta">
-              <div class="text-center mb-4" style="padding-top: 1.5rem">
-                <i class="pi pi-file-check" style="font-size: 3rem; color: #4caf50"></i>
-                <h4 class="mt-3">Comprobante: {{ comprobanteGenerado()!.numeroCompleto }}</h4>
-                <p class="text-600">
-                  Emitido el {{ comprobanteGenerado()!.fecEmision | date: 'dd/MM/yyyy HH:mm' }}
-                </p>
-              </div>
-
-              <!-- resumen-grid: 7 items, el último centrado -->
-              <div class="resumen-grid-comprobante mb-4">
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-user"></i> Cliente:</span>
-                  <strong class="resumen-value">{{ snapshotCliente()?.name }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-building"></i> Sede:</span>
-                  <strong class="resumen-value">{{ snapshotSede() }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-wallet"></i> Pago:</span>
-                  <strong class="resumen-value">{{ snapshotMetodoPago() }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-file"></i> Tipo:</span>
-                  <strong class="resumen-value">{{
-                    snapshotTipoComprobante() === 1 ? 'Factura' : 'Boleta'
-                  }}</strong>
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-calculator"></i> Subtotal:</span>
-                  <strong class="resumen-value"
-                    >S/. {{ comprobanteGenerado()!.subtotal | number: '1.2-2' }}</strong
-                  >
-                </div>
-                <div class="resumen-item">
-                  <span class="label"><i class="pi pi-percentage"></i> IGV:</span>
-                  <strong class="resumen-value"
-                    >S/. {{ comprobanteGenerado()!.igv | number: '1.2-2' }}</strong
-                  >
-                </div>
-                <!-- Total solo, centrado -->
-                <div class="resumen-item resumen-item-full">
-                  <span class="label"><i class="pi pi-dollar"></i> Total:</span>
-                  <strong
-                    class="resumen-value"
-                    style="color: var(--p-primary-color); font-size: 1.1rem"
-                  >
-                    S/. {{ comprobanteGenerado()!.total | number: '1.2-2' }}
-                  </strong>
-                </div>
-              </div>
-
-              <!-- Botones: 1 por fila -->
-              <div class="botones-comprobante mt-4" style="padding-bottom: 1.5rem">
-                                  <p-button
-                    label="Voucher Térmico"
-                    icon="pi pi-print"
-                    severity="success"
-                    [outlined]="true"
-                    (onClick)="
-                      ventasService
-                        .verVoucherTermicoEnPestana(comprobanteGenerado()!.idComprobante, false)
-                        .subscribe()
-                    "
-                    styleClass="ventas-pill w-full"
-                  />
-                <p-button
-                  label="Nueva Venta"
-                  icon="pi pi-plus"
-                  (onClick)="nuevaVenta()"
-                  styleClass="ventas-pill w-full"
-                />
-                <p-button
-                  label="Ver Listado"
-                  icon="pi pi-list"
-                  [outlined]="true"
-                  severity="secondary"
-                  (onClick)="verListado()"
-                  styleClass="ventas-pill w-full"
-                />
-                <p-button
-                  label="Descargar PDF"
-                  icon="pi pi-file-pdf"
-                  severity="danger"
-                  [outlined]="true"
-                  (onClick)="
-                    ventasService
-                      .descargarComprobantePdf(comprobanteGenerado()!.idComprobante)
-                      .subscribe()
-                  "
-                  styleClass="ventas-pill w-full"
-                />
-                <p-button
-                  label="Ver PDF"
-                  icon="pi pi-eye"
-                  severity="info"
-                  [outlined]="true"
-                  (onClick)="
-                    ventasService
-                      .verComprobantePdfEnPestana(comprobanteGenerado()!.idComprobante)
-                      .subscribe()
-                  "
-                  styleClass="ventas-pill w-full"
-                />
-              </div>
-            </p-card>
-          </div>
+          <button
+            class="pos-btn-submit"
+            (click)="generarVenta()"
+            [disabled]="productosSeleccionados().length === 0 || !clienteEncontrado() || loading()"
+            [class.pos-btn-loading]="loading()"
+          >
+            <i [class]="loading() ? 'pi pi-spin pi-spinner' : 'pi pi-check-circle'"></i>
+            {{ loading() ? 'Procesando…' : 'Confirmar Venta' }}
+          </button>
+          <p class="pos-submit-hint" *ngIf="!clienteEncontrado()">
+            <i class="pi pi-info-circle"></i> Agrega un cliente para continuar
+          </p>
         </div>
       </div>
     </div>
-
-    <!-- ══ NAVEGACIÓN WIZARD ══ -->
-    <p-divider styleClass="wizard-divider" />
-    <div class="wizard-navigation" *ngIf="!comprobanteGenerado()">
-      <p-button
-        label="Anterior"
-        icon="pi pi-chevron-left"
-        [outlined]="true"
-        severity="secondary"
-        (onClick)="prevStep()"
-        [disabled]="activeStep() === 0"
-        styleClass="btn-wizard-nav"
-      />
-      <p-button
-        *ngIf="activeStep() < steps.length - 1"
-        label="Siguiente"
-        icon="pi pi-chevron-right"
-        iconPos="right"
-        (onClick)="nextStep()"
-        styleClass="btn-wizard-nav"
-      />
-    </div>
-  </p-card>
+  </div>
 </div>
+
+<p-drawer
+  [(visible)]="sidebarClienteVisible"
+  position="right"
+  styleClass="pos-cliente-sidebar"
+  [style]="{ width: '450px' }"
+  header="Cliente y Comprobante"
+>
+  <div class="pos-sb-body">
+    <div class="pos-sb-section">
+      <p class="pos-sb-label"><i class="pi pi-file-edit"></i> Tipo de Comprobante</p>
+      <div class="pos-comp-btns" *ngIf="tiposComprobante().length > 0">
+        <button
+          *ngFor="let tc of tiposComprobante()"
+          class="pos-opt-btn"
+          [class.active]="tipoComprobante() === tc.id"
+          (click)="tipoComprobante.set(tc.id); onTipoComprobanteChange()"
+        >
+          <i class="pi pi-file"></i> {{ tc.descripcion }}
+        </button>
+      </div>
+    </div>
+
+    <p-divider />
+
+    <div class="pos-sb-section" *ngIf="!clienteEncontrado()">
+      <p class="pos-sb-label"><i class="pi pi-search"></i> Buscar Cliente</p>
+      <div class="pos-sb-doc-row">
+        <p-select
+          [ngModel]="tipoComprobante() === 1 ? tipoDocRucId() : tipoDocBoleta()"
+          (ngModelChange)="onTipoDocBoleta($event); limpiarCliente()"
+          [options]="tiposDocumento()"
+          optionLabel="description"
+          optionValue="documentTypeId"
+          placeholder="Tipo"
+          styleClass="pos-sb-tipo-select"
+        />
+        <input
+          pInputText
+          [value]="clienteDocumento()"
+          (input)="validarSoloNumeros($event)"
+          [placeholder]="documentoConfig().placeholder"
+          class="pos-sb-input"
+          [attr.inputmode]="documentoConfig().soloNumeros ? 'numeric' : 'text'"
+          [attr.maxlength]="documentoConfig().maxLength"
+        />
+      </div>
+      <small class="pos-sb-hint" *ngIf="clienteDocumento()">
+        {{ clienteDocumento().length }} / {{ longitudDocumento() }} dígitos
+        <span class="pos-ok" *ngIf="clienteDocumento().length === longitudDocumento()"
+          >✓ Completo</span
+        >
+      </small>
+      <p-button
+        label="Buscar Cliente"
+        icon="pi pi-search"
+        (onClick)="buscarCliente()"
+        [disabled]="!botonClienteHabilitado()"
+        [loading]="clienteLoading()"
+        styleClass="w-full mt-2"
+      />
+      <div
+        *ngIf="busquedaRealizada() && !clienteEncontrado() && !creandoCliente()"
+        class="pos-sb-no-result"
+      >
+        <i class="pi pi-exclamation-triangle"></i>
+        <span>Cliente no encontrado</span>
+        <p-button
+          label="Registrar nuevo"
+          icon="pi pi-user-plus"
+          [text]="true"
+          size="small"
+          (onClick)="creandoCliente.set(true)"
+        />
+      </div>
+    </div>
+
+    <div class="pos-sb-section" *ngIf="clienteEncontrado() && !editandoCliente()">
+      <p class="pos-sb-label"><i class="pi pi-user-check"></i> Cliente Seleccionado</p>
+      <div class="pos-sb-cliente-card">
+        <div class="pos-sb-cliente-name">
+          {{ clienteEncontrado()!.name
+          }}<span class="pos-sb-verified"><i class="pi pi-check-circle"></i> Verificado</span>
+        </div>
+        <div class="pos-sb-meta">
+          <span><i class="pi pi-id-card"></i> {{ formatearDocumentoCompleto() }}</span>
+          <span *ngIf="clienteEncontrado()!.phone"
+            ><i class="pi pi-phone"></i> {{ clienteEncontrado()!.phone }}</span
+          >
+          <span *ngIf="clienteEncontrado()!.email"
+            ><i class="pi pi-envelope"></i> {{ clienteEncontrado()!.email }}</span
+          >
+          <span *ngIf="clienteEncontrado()!.address"
+            ><i class="pi pi-map-marker"></i> {{ clienteEncontrado()!.address }}</span
+          >
+        </div>
+        <div class="pos-sb-actions">
+          <p-button
+            label="Editar"
+            icon="pi pi-pencil"
+            [text]="true"
+            size="small"
+            (onClick)="iniciarEdicionCliente()"
+          />
+          <p-button
+            label="Cambiar"
+            icon="pi pi-times"
+            severity="secondary"
+            [text]="true"
+            size="small"
+            (onClick)="limpiarCliente()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="pos-sb-section" *ngIf="clienteEncontrado() && editandoCliente()">
+      <p class="pos-sb-label"><i class="pi pi-pencil"></i> Editar Cliente</p>
+      <div class="pos-sb-form">
+        <div class="pos-sb-field">
+          <label>Nombre *</label
+          ><input pInputText [(ngModel)]="editarClienteForm.name" class="w-full" />
+        </div>
+        <div class="pos-sb-field">
+          <label>Dirección</label
+          ><input pInputText [(ngModel)]="editarClienteForm.address" class="w-full" />
+        </div>
+        <div class="pos-sb-field">
+          <label>Teléfono</label
+          ><input
+            pInputText
+            [(ngModel)]="editarClienteForm.phone"
+            class="w-full"
+            maxlength="9"
+            inputmode="numeric"
+          />
+        </div>
+        <div class="pos-sb-field">
+          <label>Email</label
+          ><input pInputText [(ngModel)]="editarClienteForm.email" class="w-full" type="email" />
+        </div>
+        <div class="pos-sb-form-actions">
+          <p-button
+            label="Cancelar"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="cancelarEdicionCliente()"
+          />
+          <p-button
+            label="Guardar"
+            icon="pi pi-check"
+            (onClick)="guardarCambiosCliente()"
+            [loading]="guardandoCliente()"
+          />
+        </div>
+      </div>
+    </div>
+
+    <div class="pos-sb-section" *ngIf="creandoCliente()">
+      <p class="pos-sb-label"><i class="pi pi-user-plus"></i> Registrar Nuevo Cliente</p>
+      <div class="pos-sb-form">
+        <div class="pos-sb-field">
+          <label>Tipo de Documento *</label>
+          <p-select
+            [(ngModel)]="nuevoClienteForm.documentTypeId"
+            [options]="tiposDocumento()"
+            optionLabel="description"
+            optionValue="documentTypeId"
+            placeholder="Seleccione tipo"
+            styleClass="w-full"
+            (ngModelChange)="
+              nuevoClienteForm.documentValue = '';
+              nuevoClienteForm.name = '';
+              nombreDesdeReniec.set(false)
+            "
+          />
+        </div>
+        <div class="pos-sb-field">
+          <label>Número de Documento *</label>
+          <div class="pos-sb-doc-loader">
+            <input
+              pInputText
+              [ngModel]="nuevoClienteForm.documentValue"
+              (ngModelChange)="onDocumentoNuevoClienteChange($event)"
+              placeholder="Número"
+              class="w-full"
+              inputmode="numeric"
+            />
+            <i *ngIf="reniecLoading()" class="pi pi-spin pi-spinner pos-reniec-spin"></i>
+          </div>
+        </div>
+        <div class="pos-sb-field">
+          <label>Nombre / Razón Social *</label>
+          <div class="pos-sb-nombre-row">
+            <input
+              pInputText
+              [(ngModel)]="nuevoClienteForm.name"
+              placeholder="Nombre o razón social"
+              class="w-full"
+            />
+            <span *ngIf="nombreDesdeReniec()" class="pos-reniec-badge"
+              ><i class="pi pi-check-circle"></i> RENIEC</span
+            >
+          </div>
+        </div>
+        <div class="pos-sb-field">
+          <label>Dirección</label
+          ><input pInputText [(ngModel)]="nuevoClienteForm.address" class="w-full" />
+        </div>
+        <div class="pos-sb-field">
+          <label>Teléfono</label
+          ><input
+            pInputText
+            [(ngModel)]="nuevoClienteForm.phone"
+            class="w-full"
+            maxlength="9"
+            inputmode="numeric"
+          />
+        </div>
+        <div class="pos-sb-field">
+          <label>Email (opcional)</label
+          ><input pInputText [(ngModel)]="nuevoClienteForm.email" class="w-full" type="email" />
+        </div>
+        <div class="pos-sb-form-actions">
+          <p-button
+            label="Cancelar"
+            [outlined]="true"
+            severity="secondary"
+            (onClick)="creandoCliente.set(false); nombreDesdeReniec.set(false)"
+          />
+          <p-button
+            label="Guardar Cliente"
+            icon="pi pi-check"
+            (onClick)="crearNuevoCliente()"
+            [loading]="guardandoCliente()"
+          />
+        </div>
+      </div>
+    </div>
+  </div>
+</p-drawer>
 
 <p-toast />
 <p-confirmDialog />

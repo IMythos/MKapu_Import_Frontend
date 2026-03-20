@@ -8,7 +8,7 @@
         <div>
           <p class="cotizaciones-kicker mb-0">ADMINISTRACIÓN · COTIZACIONES</p>
           <h2 class="cotizaciones-title mb-0">
-            DETALLE DE COTIZACIÓN
+            {{ esCompra() ? 'DETALLE DE COTIZACIÓN DE COMPRA' : 'DETALLE DE COTIZACIÓN DE VENTA' }}
             <span *ngIf="cotizacion()" class="cotizacion-codigo-badge">
               {{ getCodigo() }}
             </span>
@@ -31,25 +31,6 @@
             (onClick)="enviar()">
           </p-button>
 
-          <ng-container *ngIf="c.estado === 'PENDIENTE'">
-            <p-button
-              [label]="c.tipo === 'COMPRA' ? 'Registrar Compra' : 'Agregar Venta'"
-              [icon]="c.tipo === 'COMPRA' ? 'pi pi-truck' : 'pi pi-shopping-cart'"
-              styleClass="cotizaciones-pill accion-btn--venta"
-              (onClick)="irAgregarVenta()">
-            </p-button>
-            <p-button
-              [label]="c.tipo === 'COMPRA' ? 'Compra por Pagar' : 'Venta por Cobrar'"
-              [icon]="c.tipo === 'COMPRA' ? 'pi pi-truck' : 'pi pi-credit-card'"
-              styleClass="cotizaciones-pill accion-btn--cobrar"
-              (onClick)="irAgregarVentaPorCobrar()">
-            </p-button>
-            <p-button label="Rechazar" icon="pi pi-times"
-              styleClass="cotizaciones-pill"
-              severity="danger"
-              (onClick)="rechazar()">
-            </p-button>
-          </ng-container>
 
           <ng-container *ngIf="c.estado === 'RECHAZADA'">
             <p-button label="Reactivar" icon="pi pi-refresh"
@@ -106,18 +87,18 @@
               <div class="detalle-info-row">
                 <span class="detalle-info-label">Tipo</span>
                 <p-tag
-                  [value]="c.tipo === 'COMPRA' ? 'Compra' : 'Venta'"
-                  [severity]="c.tipo === 'COMPRA' ? 'warn' : 'info'"
-                  [icon]="c.tipo === 'COMPRA' ? 'pi pi-truck' : 'pi pi-shopping-cart'">
+                  [value]="esCompra() ? 'Compra' : 'Venta'"
+                  [severity]="esCompra() ? 'warn' : 'info'"
+                  [icon]="esCompra() ? 'pi pi-truck' : 'pi pi-shopping-cart'">
                 </p-tag>
               </div>
               <div class="detalle-info-row">
                 <span class="detalle-info-label">Impacto Stock</span>
                 <span class="detalle-info-value flex align-items-center gap-1"
-                  [style.color]="c.tipo === 'COMPRA' ? '#4ade80' : '#f87171'">
-                  <i [class]="c.tipo === 'COMPRA' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
+                  [style.color]="esCompra() ? '#4ade80' : '#f87171'">
+                  <i [class]="esCompra() ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
                      style="font-size:0.75rem"></i>
-                  {{ c.tipo === 'COMPRA' ? 'Suma stock al aprobarse' : 'Resta stock al aprobarse' }}
+                  {{ esCompra() ? 'Suma stock al aprobarse' : 'Resta stock al aprobarse' }}
                 </span>
               </div>
               <div class="detalle-info-row">
@@ -185,52 +166,102 @@
 
       </div>
 
-      <!-- ── FILA 2: CLIENTE + SEDE ───────────────────────────────── -->
+      <!-- ── FILA 2: CLIENTE o PROVEEDOR + SEDE ─────────────────── -->
       <div class="detalle-grid-bottom mb-4">
 
-        <!-- Cliente -->
-        <p-card styleClass="tarjeta-principal">
-          <div class="flex flex-column gap-3">
-            <span class="detalle-section-label"><i class="pi pi-user mr-2"></i>Datos del Cliente</span>
-            <p-divider styleClass="my-1"></p-divider>
+        <!-- ══ BLOQUE PROVEEDOR — solo COMPRA ══ -->
+        <ng-container *ngIf="esCompra()">
+          <p-card styleClass="tarjeta-principal">
+            <div class="flex flex-column gap-3">
+              <span class="detalle-section-label">
+                <i class="pi pi-truck mr-2"></i>Datos del Proveedor
+              </span>
+              <p-divider styleClass="my-1"></p-divider>
 
-            <ng-container *ngIf="cliente() as cl; else sinCliente">
-              <div class="grid">
-                <div class="field col-12 md:col-6">
-                  <label class="detalle-field-label">Nombre / Razón Social</label>
-                  <div class="detalle-field-value">{{ clienteNombre() }}</div>
-                </div>
-                <div class="field col-12 md:col-6">
-                  <label class="detalle-field-label">Documento</label>
-                  <div class="detalle-field-value" style="font-family:monospace">
-                    {{ cl.valor_doc }}
+              <ng-container *ngIf="proveedor() as p; else sinProveedor">
+                <div class="grid">
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Razón Social</label>
+                    <div class="detalle-field-value">{{ p.razon_social || '—' }}</div>
+                  </div>
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">RUC</label>
+                    <div class="detalle-field-value" style="font-family:monospace">
+                      {{ p.ruc || '—' }}
+                    </div>
+                  </div>
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Contacto</label>
+                    <div class="detalle-field-value">{{ p.contacto ?? '—' }}</div>
+                  </div>
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Teléfono</label>
+                    <div class="detalle-field-value">{{ p.telefono ?? '—' }}</div>
+                  </div>
+                  <div class="field col-12">
+                    <label class="detalle-field-label">Email</label>
+                    <div class="detalle-field-value">{{ p.email ?? '—' }}</div>
                   </div>
                 </div>
-                <div class="field col-12 md:col-6">
-                  <label class="detalle-field-label">Email</label>
-                  <div class="detalle-field-value">{{ cl.email ?? '—' }}</div>
-                </div>
-                <div class="field col-12 md:col-6">
-                  <label class="detalle-field-label">Teléfono</label>
-                  <div class="detalle-field-value">{{ cl.telefono }}</div>
-                </div>
-                <div class="field col-12">
-                  <label class="detalle-field-label">Dirección</label>
-                  <div class="detalle-field-value">{{ cl.direccion ?? '—' }}</div>
-                </div>
-              </div>
-            </ng-container>
+              </ng-container>
 
-            <ng-template #sinCliente>
-              <div class="empty-state-small">
-                <i class="pi pi-user-minus"></i>
-                <span>Sin información de cliente</span>
-              </div>
-            </ng-template>
-          </div>
-        </p-card>
+              <ng-template #sinProveedor>
+                <div class="empty-state-small">
+                  <i class="pi pi-truck"></i>
+                  <span>Sin información de proveedor</span>
+                </div>
+              </ng-template>
+            </div>
+          </p-card>
+        </ng-container>
 
-        <!-- Sede -->
+        <!-- ══ BLOQUE CLIENTE — solo VENTA ══ -->
+        <ng-container *ngIf="!esCompra()">
+          <p-card styleClass="tarjeta-principal">
+            <div class="flex flex-column gap-3">
+              <span class="detalle-section-label">
+                <i class="pi pi-user mr-2"></i>Datos del Cliente
+              </span>
+              <p-divider styleClass="my-1"></p-divider>
+
+              <ng-container *ngIf="cliente() as cl; else sinCliente">
+                <div class="grid">
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Nombre / Razón Social</label>
+                    <div class="detalle-field-value">{{ clienteNombre() }}</div>
+                  </div>
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Documento</label>
+                    <div class="detalle-field-value" style="font-family:monospace">
+                      {{ cl.valor_doc }}
+                    </div>
+                  </div>
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Email</label>
+                    <div class="detalle-field-value">{{ cl.email ?? '—' }}</div>
+                  </div>
+                  <div class="field col-12 md:col-6">
+                    <label class="detalle-field-label">Teléfono</label>
+                    <div class="detalle-field-value">{{ cl.telefono }}</div>
+                  </div>
+                  <div class="field col-12">
+                    <label class="detalle-field-label">Dirección</label>
+                    <div class="detalle-field-value">{{ cl.direccion ?? '—' }}</div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <ng-template #sinCliente>
+                <div class="empty-state-small">
+                  <i class="pi pi-user-minus"></i>
+                  <span>Sin información de cliente</span>
+                </div>
+              </ng-template>
+            </div>
+          </p-card>
+        </ng-container>
+
+        <!-- Sede (igual para ambos tipos) -->
         <p-card styleClass="tarjeta-principal">
           <div class="flex flex-column gap-3">
             <span class="detalle-section-label"><i class="pi pi-building mr-2"></i>Datos de la Sede</span>
@@ -281,12 +312,13 @@
         <div class="flex flex-column gap-3">
           <div class="flex align-items-center justify-content-between">
             <span class="detalle-section-label">
-              <i class="pi pi-shopping-cart mr-2"></i>Productos Cotizados
+              <i class="pi pi-shopping-cart mr-2"></i>
+              {{ esCompra() ? 'Productos a Comprar' : 'Productos Cotizados' }}
             </span>
             <p-tag
-              [value]="c.tipo === 'COMPRA' ? '↑ Suma stock al aprobar' : '↓ Resta stock al aprobar'"
-              [severity]="c.tipo === 'COMPRA' ? 'success' : 'danger'"
-              [icon]="c.tipo === 'COMPRA' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
+              [value]="esCompra() ? '↑ Suma stock al aprobar' : '↓ Resta stock al aprobar'"
+              [severity]="esCompra() ? 'success' : 'danger'"
+              [icon]="esCompra() ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
               styleClass="text-xs">
             </p-tag>
           </div>
@@ -316,8 +348,8 @@
                   <td style="font-weight:500">{{ d.descripcion }}</td>
                   <td class="text-center">
                     <span class="flex align-items-center justify-content-center gap-1">
-                      <i [class]="c.tipo === 'COMPRA' ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
-                         [style.color]="c.tipo === 'COMPRA' ? '#4ade80' : '#f87171'"
+                      <i [class]="esCompra() ? 'pi pi-arrow-up' : 'pi pi-arrow-down'"
+                         [style.color]="esCompra() ? '#4ade80' : '#f87171'"
                          style="font-size:0.65rem"></i>
                       {{ d.cantidad }}
                     </span>

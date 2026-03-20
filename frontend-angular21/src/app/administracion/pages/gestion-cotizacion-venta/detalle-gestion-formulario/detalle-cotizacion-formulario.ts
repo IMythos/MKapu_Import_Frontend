@@ -83,7 +83,7 @@ export class DetalleCotizacionComponent implements OnInit {
   // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (!id) { this.router.navigate(['/admin/cotizaciones']); return; }
+    if (!id) { this.router.navigate(['/admin/cotizaciones-venta']); return; }
 
     this.quoteService.getQuoteById(Number(id)).subscribe({
       next: (data: Quote) => {
@@ -281,7 +281,7 @@ export class DetalleCotizacionComponent implements OnInit {
     });
   }
 
-  volver() { this.router.navigate(['/admin/cotizaciones']); }
+  volver() { this.router.navigate(['/admin/cotizaciones-venta']); }
 
   irEditar() {
     const id = this.cotizacion()?.id_cotizacion;
