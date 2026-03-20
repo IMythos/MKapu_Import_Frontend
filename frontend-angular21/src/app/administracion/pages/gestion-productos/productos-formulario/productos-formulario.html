@@ -138,7 +138,7 @@
 
     <div class="field col-12 mb-4">
       <label for="almacen" class="font-semibold text-900 mb-2 block">Almacen *</label>
-      <p-select id="almacen" formControlName="almacen" [options]="almacenes()" optionLabel="nombre"
+      <p-select id="almacen" formControlName="almacen" [options]="almacenesFiltrados()" optionLabel="nombre"
         optionValue="id" placeholder="Seleccionar almacén" styleClass="w-full border-1 border-300">
       </p-select>
 

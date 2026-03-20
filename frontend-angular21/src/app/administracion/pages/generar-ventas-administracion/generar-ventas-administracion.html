@@ -438,11 +438,55 @@
                 *ngFor="let m of metodoPagoOptions()"
                 class="pos-opt-btn"
                 [class.active]="metodoPagoSeleccionado() === m.value"
-                (click)="metodoPagoSeleccionado.set(m.value)"
+                (click)="onMetodoPagoChange(m.value)"
               >
                 <i [class]="m.icon"></i> {{ m.label }}
               </button>
             </div>
+
+            <div *ngIf="metodoPagoRequiereBanco()" class="pos-banco-wrap">
+              <p class="pos-section-label mt-2"><i class="pi pi-building"></i> Banco emisor</p>
+              <p-select
+                [ngModel]="bancoSeleccionado()"
+                (ngModelChange)="onBancoChange($event)"
+                [options]="bancosOptions()"
+                optionLabel="label"
+                optionValue="value"
+                placeholder="Selecciona el banco…"
+                [loading]="bancosLoading()"
+                [showClear]="true"
+                styleClass="w-full pos-banco-select"
+              />
+              <ng-container *ngIf="bancoSeleccionado()">
+                <p class="pos-section-label mt-2"><i class="pi pi-credit-card"></i> Tipo de servicio</p>
+                <ng-container *ngIf="!tiposServicioLoading()">
+                  <p-select
+                    *ngIf="tiposServicioOptions().length > 0"
+                    [ngModel]="tipoServicioSeleccionado()"
+                    (ngModelChange)="tipoServicioSeleccionado.set($event)"
+                    [options]="tiposServicioOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Selecciona tipo de servicio…"
+                    [showClear]="true"
+                    styleClass="w-full pos-banco-select"
+                  />
+                  <div *ngIf="tiposServicioOptions().length === 0" class="pos-banco-sin-servicio">
+                    <i class="pi pi-exclamation-triangle"></i>
+                    Este banco no tiene servicios registrados para este tipo de tarjeta. Contacta al administrador.
+                  </div>
+                </ng-container>
+                <div *ngIf="tiposServicioLoading()" class="pos-banco-sin-servicio">
+                  <i class="pi pi-spin pi-spinner"></i> Cargando servicios…
+                </div>
+                <div class="pos-comision-badge" *ngIf="bancoSeleccionado()">
+                  <i class="pi pi-info-circle"></i>
+                  Se aplica comisión bancaria del 5%:
+                  <strong>+S/. {{ comisionMonto() | number: '1.2-2' }}</strong>
+                </div>
+              </ng-container>
+            </div>
+
             <div
               *ngIf="metodoPagoSeleccionado() === idMetodoPagoEfectivo()"
               class="pos-efectivo-row"
@@ -457,7 +501,7 @@
                 [min]="0"
                 styleClass="pos-monto-input"
               />
-              <div *ngIf="montoRecibido() >= total()" class="pos-vuelto">
+              <div *ngIf="montoRecibido() >= totalFinal()" class="pos-vuelto">
                 <span>Vuelto</span>
                 <strong>S/. {{ vuelto() | number: '1.2-2' }}</strong>
               </div>
@@ -582,8 +626,12 @@
               <span><i class="pi pi-truck"></i> Delivery</span
               ><span>S/. {{ costoDelivery() | number: '1.2-2' }}</span>
             </div>
+            <div class="pos-total-row pos-total-comision" *ngIf="comisionMonto() > 0">
+              <span><i class="pi pi-credit-card"></i> Comisión bancaria (5%)</span>
+              <span>+S/. {{ comisionMonto() | number: '1.2-2' }}</span>
+            </div>
             <div class="pos-total-final">
-              <span>TOTAL A PAGAR</span><strong>S/. {{ total() | number: '1.2-2' }}</strong>
+              <span>TOTAL A PAGAR</span><strong>S/. {{ totalFinal() | number: '1.2-2' }}</strong>
             </div>
           </div>
           <button

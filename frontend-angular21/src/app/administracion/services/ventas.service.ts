@@ -31,6 +31,8 @@ import {
   SalesReceiptDetalleCompletoDto,
   WhatsAppStatusResponse,
   SendNotificationResponse,
+  BancoAdmin,
+  TipoServicioAdmin,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -425,8 +427,6 @@ export class VentasAdminService {
       );
   }
 
-  // ─── DETALLE COMPLETO ──────────────────────────────────────────────────────
-
   getDetalleCompleto(id: number, historialPage = 1): Observable<SalesReceiptDetalleCompletoDto> {
     const params = new HttpParams().set('historialPage', String(historialPage));
     return this.http.get<SalesReceiptDetalleCompletoDto>(
@@ -450,5 +450,26 @@ export class VentasAdminService {
         }),
         catchError((err) => throwError(() => err)),
       );
+  }
+
+  // ─── BANCOS ────────────────────────────────────────────────────────────────
+
+  obtenerBancos(): Observable<BancoAdmin[]> {
+    return this.http
+      .get<BancoAdmin[]>(`${this.salesUrl}/banks`, {
+        headers: this.headers,
+      })
+      .pipe(catchError(() => of([])));
+  }
+
+  obtenerTiposServicio(bancoId?: number): Observable<TipoServicioAdmin[]> {
+    let params = new HttpParams();
+    if (bancoId != null) params = params.set('bancoId', String(bancoId));
+    return this.http
+      .get<TipoServicioAdmin[]>(`${this.salesUrl}/banks/service-types`, {
+        headers: this.headers,
+        params,
+      })
+      .pipe(catchError(() => of([])));
   }
 }

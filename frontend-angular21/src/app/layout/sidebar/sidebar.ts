@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core'; // 👈 Importamos ChangeDetectorRef
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, TitleCasePipe } from '@angular/common';
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -12,6 +12,7 @@ import { ToastModule } from 'primeng/toast';
 import { AuthService } from '../../auth/services/auth.service';
 import { RoleService } from '../../core/services/role.service';
 import { CashboxSocketService } from '../../ventas/services/cashbox-socket.service';
+import { EmpresaService } from '../../administracion/services/empresa.service';
 
 interface MenuItem {
   path: string;
@@ -55,6 +56,8 @@ export class Sidebar implements OnInit {
 
   private cashboxSocket = inject(CashboxSocketService);
   private cdr = inject(ChangeDetectorRef);
+  private empresaService = inject(EmpresaService);
+  empresa = this.empresaService.empresaActual;
 
   private readonly SIDEBAR_ROUTES: MenuSection[] = [
     {
@@ -71,12 +74,14 @@ export class Sidebar implements OnInit {
         { path: '/admin/promociones',                     label: 'Promociones',                icon: 'pi pi-percentage',         permiso: 'CREAR_PROMOCION' },
         { path: '/admin/ventas-por-cobrar',               label: 'Ventas por Cobrar',          icon: 'pi pi-wallet',             permiso: 'CREAR_VENTA_POR_COBRAR' },
         { path: '/admin/clientes',                        label: 'Clientes',                   icon: 'pi pi-users',              permiso: 'CREAR_CLIENTE' },
-        { path: '/admin/cotizaciones',                    label: 'Cotizaciones',               icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
+        { path: '/admin/cotizaciones-venta',              label: 'Cotizaciones Venta',         icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
+        { path: '/admin/cotizaciones-compra',             label: 'Cotizaciones Compra',        icon: 'pi pi-id-card',            permiso: 'CREAR_COTIZACIONES' },
         { path: '/admin/reclamos-listado',                label: 'Reclamos',                   icon: 'pi pi-exclamation-circle', permiso: 'CREAR_RECLAMO' },
+        { path: '/admin/notas-credito',                   label: 'Notas de Credito',           icon: 'pi pi-id-card',            permiso: 'VER_NOTAS_CREDITO' }
       ]
     },
 
-    // ================= ALMACÉN (ADMIN) =================
+    // ================= ALMACÉN =================
     {
       label: 'ALMACÉN',
       icon: 'pi pi-box',
@@ -91,7 +96,7 @@ export class Sidebar implements OnInit {
       ]
     },
 
-    // ================= ADMINISTRACIÓN (ADMIN) =================
+    // ================= ADMINISTRACIÓN =================
     {
       label: 'ADMINISTRACIÓN',
       icon: 'pi pi-cog',
@@ -99,7 +104,7 @@ export class Sidebar implements OnInit {
       items: [
         { path: '/admin/transferencia',      label: 'Transferencias', icon: 'pi pi-arrows-h',             permiso: 'CREAR_TRANSFERENCIA' },
         { path: '/admin/despacho-productos', label: 'Despacho',       icon: 'pi pi-truck',                permiso: 'CREAR_DESPACHO' },
-        { path: '/admin/usuarios',           label: 'Usuarios',       icon: 'pi pi-user-plus',            permiso: 'CREAR_USUARIOS' },
+        { path: '/admin/usuarios',           label: 'Empleados',      icon: 'pi pi-user-plus',            permiso: 'CREAR_USUARIOS' },
         { path: '/admin/roles-permisos',     label: 'Permisos',       icon: 'pi pi-key',                  permiso: 'ADMINISTRACION' },
         { path: '/admin/gestion-productos',  label: 'Productos',      icon: 'pi pi-tags',                 permiso: 'CREAR_PRODUCTOS' },
         { path: '/admin/categoria',          label: 'Categorías',     icon: 'pi pi-list',                 permiso: 'CREAR_CATEGORIAS' },
@@ -108,12 +113,13 @@ export class Sidebar implements OnInit {
         { path: '/admin/mermas',             label: 'Mermas',         icon: 'pi pi-exclamation-triangle', permiso: 'CREAR_MERMAS' },
         { path: '/admin/remates',            label: 'Remates',        icon: 'pi pi-tag',                  permiso: 'CREAR_REMATES' },
         { path: '/admin/proveedores',        label: 'Proveedores',    icon: 'pi pi-truck',                permiso: 'CREAR_PROVEEDORES' },
+        { path: '/admin/documento-contador', label: 'Documentos', icon: 'pi pi-file',                 permiso: 'CREAR_PROVEEDORES' },
       ]
     },
 
-    // ================= SECCIÓN PRINCIPAL (CUALQUIER ROL CON PRINCIPAL) =================
+    // ================= SECCIÓN PRINCIPAL =================
     {
-      label: 'PRINCIPAL',         // ← se reemplaza dinámicamente por roleName en loadMenu()
+      label: 'PRINCIPAL', 
       icon: 'pi pi-shopping-cart',
       permisoSeccion: 'PRINCIPAL',
       items: [
@@ -128,7 +134,7 @@ export class Sidebar implements OnInit {
         { path: '/ventas/ventas-por-cobrar', label: 'Ventas por Cobrar', icon: 'pi pi-wallet',             permiso: 'CREAR_VENTA_POR_COBRAR' },
         { path: '/ventas/cotizaciones',      label: 'Cotizaciones',      icon: 'pi pi-file',               permiso: 'CREAR_COTIZACIONES' },
         { path: '/ventas/remates',           label: 'Remates',           icon: 'pi pi-tag',                permiso: 'CREAR_REMATES' },
-        { path: '/logistica/movimiento-inventario',       label: 'Movimientos',       icon: 'pi pi-book',               permiso: 'VER_MOVIMIENTOS' },
+        { path: '/logistica/movimiento-inventario',       label: 'Movimientos',       icon: 'pi pi-book',              permiso: 'VER_MOVIMIENTOS' },
       ]
     },
   ];
@@ -149,8 +155,16 @@ export class Sidebar implements OnInit {
     this.loadUserInfo();
     this.loadMenu();
     this.iniciarSuscripcionReactiva();
+    this.cargarEmpresa(); 
+
   }
 
+  private cargarEmpresa(): void {
+    this.empresaService.getEmpresa().subscribe({
+      next: () => {},
+      error: (err) => console.error('Error cargando empresa en sidebar:', err)
+    });
+  }
 
   private iniciarSuscripcionReactiva(): void {
     this.authService.permisosActualizados$.subscribe(() => {
@@ -178,6 +192,7 @@ export class Sidebar implements OnInit {
     const userStr = localStorage.getItem('user');
     const user = userStr ? JSON.parse(userStr) : null;
 
+
     const permisos = user?.permisos || [];
     const roleName = user?.roleName || 'Invitado';
 
@@ -188,14 +203,16 @@ export class Sidebar implements OnInit {
     }
 
     this.menuSections = this.SIDEBAR_ROUTES
-      .map(section => ({
-        ...section,
-        label: section.permisoSeccion === 'PRINCIPAL' ? roleName : section.label,
-        items: section.items.filter(item => permisos.includes(item.permiso))
-      }))
-      .filter(section =>
-        permisos.includes(section.permisoSeccion) && section.items.length > 0
-      );
+      .map(section => {
+        const itemsPermitidos = section.items.filter(item => permisos.includes(item.permiso));
+        
+        return {
+          ...section,
+          label: section.permisoSeccion === 'PRINCIPAL' ? roleName : section.label,
+          items: itemsPermitidos
+        };
+      })
+      .filter(section => section.items.length > 0);
   }
 
   toggleMenu(menu: string): void {
@@ -205,26 +222,24 @@ export class Sidebar implements OnInit {
   // ================= VALIDACION CAJA =================
 
   navigateTo(event: Event, path: string): void {
-    const permisos = this.roleService.getPermisos();
-    const esRutaVentas = path.startsWith('/ventas');
-    const esCaja = path === '/ventas/caja';
+    const rutasQueRequierenCajaAbierta = [
+      '/ventas/generar-ventas',
+      '/admin/generar-ventas-administracion',
+    ];
 
-    // Admin no necesita validación de caja
-    const esAdmin = permisos.includes('ADMINISTRACION') || permisos.includes('VENTAS');
-
-    if (!esAdmin && esRutaVentas && !esCaja) {
+    if (rutasQueRequierenCajaAbierta.includes(path)) {
       const caja = this.cashboxSocket.caja();
 
+      // Si la caja no está abierta, nadie (ni siquiera el administrador root) puede crear ventas.
       if (!caja || caja.estado !== 'ABIERTA') {
         event.preventDefault();
         event.stopPropagation();
         this.messageService.add({
           severity: 'warn',
           summary: 'Caja Cerrada',
-          detail: 'Debes abrir caja para operar',
+          detail: 'Debes abrir la caja antes de poder realizar ventas.',
           life: 3500
         });
-        return;
       }
     }
   }
@@ -232,7 +247,6 @@ export class Sidebar implements OnInit {
   // ================= LOGOUT =================
 
   confirm2(event: Event): void {
-    // ... tu código original del confirm2 ...
     this.confirmationService.confirm({
       target: event.target as EventTarget,
       message: '¿Estás seguro de que deseas cerrar sesión?',
@@ -264,4 +278,5 @@ export class Sidebar implements OnInit {
       }
     });
   }
+
 }

@@ -42,6 +42,15 @@ export const VENTAS_ROUTES: Routes = [
     data: { permiso: 'VER_VENTAS' },
   },
   {
+    path: 'nota-credito',
+    canActivate: [roleGuard],
+    loadComponent: () =>
+      import('../administracion/pages/nota-credito/nota-credito').then(
+        (m) => m.NotasCreditoComponent
+      ),
+    data: { permiso: 'VER_NOTAS_CREDITO' },
+  },
+  {
     path: 'ver-detalle/:id',
     canActivate: [roleGuard, CashboxGuard],
     loadComponent: () =>
@@ -124,28 +133,28 @@ export const VENTAS_ROUTES: Routes = [
   },
 
   {
-    path: 'cotizaciones',
+    path: 'cotizaciones-venta',
     canActivate: [roleGuard],
     data: { permiso: 'CREAR_COTIZACIONES' },
     children: [
       {
         path: '',
         loadComponent: () =>
-          import('../administracion/pages/gestion-cotizacion/gestion-listado/gestion-listado').then(
+          import('../administracion/pages/gestion-cotizacion-venta/gestion-listado/gestion-listado').then(
             (m) => m.GestionCotizacionesComponent,
           ),
       },
       {
         path: 'agregar',
         loadComponent: () =>
-          import('../administracion/pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then(
+          import('../administracion/pages/gestion-cotizacion-venta/gestion-formulario/cotizacion-formulario').then(
             (m) => m.CotizacionFormulario,
           ),
       },
       {
         path: 'ver-detalle/:id',
         loadComponent: () =>
-          import('../administracion/pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then(
+          import('../administracion/pages/gestion-cotizacion-venta/detalle-gestion-formulario/detalle-cotizacion-formulario').then(
             (m) => m.DetalleCotizacionComponent,
           ),
       },

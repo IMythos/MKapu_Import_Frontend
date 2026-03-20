@@ -17,6 +17,8 @@ import { take } from 'rxjs/operators';
 
 import { PermissionService } from '../../../../../services/permission.service';
 import { Permission }        from '../../../../../interfaces/role-permission.interface';
+import { TooltipModule } from 'primeng/tooltip';
+import { SharedTableContainerComponent } from '../../../../../../shared/components/table.componente/shared-table-container.component';
 
 type ViewMode = 'todos' | 'activos' | 'inactivos';
 
@@ -28,6 +30,8 @@ type ViewMode = 'todos' | 'activos' | 'inactivos';
     DialogModule, CardModule, ButtonModule,
     AutoCompleteModule, TableModule, TagModule,
     ToastModule, ConfirmDialogModule, MessageModule, SelectModule,
+    TooltipModule,               
+    SharedTableContainerComponent,             
   ],
   providers: [ConfirmationService, MessageService],
   templateUrl: './permisos-listado.component.html',

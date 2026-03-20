@@ -11,6 +11,8 @@ import { ThemeService } from '../../core/services/theme.service';
 import { CommonModule } from '@angular/common';
 import { TransferNotificationRuntimeService } from '../../administracion/services/transfer-notification-runtime.service';
 
+import { TooltipModule } from 'primeng/tooltip';
+
 @Component({
   selector: 'app-header',
   imports: [
@@ -20,6 +22,7 @@ import { TransferNotificationRuntimeService } from '../../administracion/service
     InputTextModule,
     RouterLink,
     ToastModule,
+    TooltipModule,
   ],
   templateUrl: './header.html',
   styleUrl: './header.css',

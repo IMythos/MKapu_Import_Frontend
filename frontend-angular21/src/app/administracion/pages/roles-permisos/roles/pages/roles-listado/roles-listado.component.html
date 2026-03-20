@@ -1,5 +1,6 @@
 <div class="p-2">
 
+  <!-- CABECERA -->
   <p-card styleClass="sedes-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
@@ -10,11 +11,13 @@
         </div>
       </div>
       <div class="flex gap-2">
-        <p-button label="Volver" icon="pi pi-arrow-left"
+        <p-button
+          label="Volver" icon="pi pi-arrow-left"
           severity="secondary" [outlined]="true" styleClass="sedes-pill"
           [routerLink]="['/admin/roles-permisos']">
         </p-button>
-        <p-button label="Agregar Rol" icon="pi pi-plus"
+        <p-button
+          label="Agregar Rol" icon="pi pi-plus"
           styleClass="sedes-pill"
           [routerLink]="['/admin/roles-permisos/agregar-rol']">
         </p-button>
@@ -22,7 +25,8 @@
     </div>
   </p-card>
 
-  <p-card>
+  <!-- FILTROS -->
+  <p-card class="mb-4">
     <div class="flex flex-column lg:flex-row lg:align-items-center lg:justify-content-between gap-3">
       <div class="sedes-search-container flex-1">
         <span class="sedes-search-label">Buscar Rol</span>
@@ -53,7 +57,8 @@
           (ngModelChange)="onViewModeChange($event)"
           class="sedes-filter-select">
         </p-select>
-        <p-button label="Limpiar Filtros" icon="pi pi-filter-slash"
+        <p-button
+          label="Limpiar Filtros" icon="pi pi-filter-slash"
           severity="danger" styleClass="sedes-pill sedes-pill-danger"
           (click)="clearSearch()">
         </p-button>
@@ -62,43 +67,48 @@
   </p-card>
 
   <p-toast position="top-right" />
+
+  <!-- ERROR -->
   <div class="mb-3">
-    <p-message *ngIf="loading()" severity="info" text="Cargando roles..."></p-message>
     <p-message *ngIf="!loading() && error() as e" severity="error" [text]="e"></p-message>
   </div>
 
-  <p-card>
-    <div class="flex align-items-center gap-2 mb-3">
-      <span class="sedes-section-icon"><i class="pi pi-id-card"></i></span>
-      <span class="text-sm font-semibold text-700">
-        {{
-          viewMode() === 'activos'   ? 'ROLES ACTIVOS'   :
-          viewMode() === 'inactivos' ? 'ROLES INACTIVOS' : 'ROLES (TODOS)'
-        }}
-      </span>
-      <p-tag class="sedes-count-tag"
-        [value]="'[' + filteredRoles().length + '] Roles'"
-        [severity]="viewMode() === 'activos' ? 'success' :
-                    viewMode() === 'inactivos' ? 'danger' : 'info'">
+  <!-- TABLA -->
+  <app-shared-table-container
+    titulo="Listado de Roles"
+    iconoTitulo="pi pi-id-card"
+    mensajeCarga="Cargando roles..."
+    [loading]="loading()"
+    [mostrarExportar]="false"
+  >
+    <!-- Tag contador en slot de acciones -->
+    <div slot="acciones">
+      <p-tag
+        [value]="filteredRoles().length + ' roles'"
+        [severity]="viewMode() === 'activos'   ? 'success'
+                  : viewMode() === 'inactivos'  ? 'danger' : 'info'">
       </p-tag>
     </div>
 
-    <div *ngIf="!loading() && filteredRoles().length === 0" class="sedes-empty-state">
-      <div class="sedes-empty-icon"><i class="pi pi-id-card"></i></div>
-      <div class="sedes-empty-title">No hay roles con ese filtro</div>
-      <div class="sedes-empty-subtitle">Prueba con otro término o limpia los filtros.</div>
-      <p-button label="Limpiar filtros" icon="pi pi-filter-slash"
-        severity="danger" styleClass="sedes-pill sedes-pill-danger"
+    <!-- Estado vacío -->
+    <div *ngIf="!loading() && filteredRoles().length === 0" class="mensaje-vacio">
+      <i class="pi pi-inbox"></i>
+      <p>No hay roles con ese filtro</p>
+      <p-button
+        label="Limpiar filtros" icon="pi pi-filter-slash"
+        severity="danger" size="small"
         (click)="clearSearch()">
       </p-button>
     </div>
 
+    <!-- Tabla con paginador nativo de PrimeNG -->
     <p-table
       *ngIf="!loading() && filteredRoles().length > 0"
       [value]="filteredRoles()"
-      styleClass="sedes-table"
-      [paginator]="true" [rows]="10"
-      [rowsPerPageOptions]="[5,10,20,50]"
+      styleClass="p-datatable-striped"
+      [paginator]="true"
+      [rows]="5"
+      [rowsPerPageOptions]="[5, 10, 20, 50]"
       [tableStyle]="{ 'min-width': '100%' }">
 
       <ng-template pTemplate="header">
@@ -117,47 +127,74 @@
           <td class="font-medium">{{ rol.nombre }}</td>
           <td class="text-600">{{ rol.descripcion || '—' }}</td>
           <td>
-            <p-tag [value]="rol.activo ? 'Activo' : 'Inactivo'"
+            <p-tag
+              [value]="rol.activo ? 'Activo' : 'Inactivo'"
               [severity]="rol.activo ? 'success' : 'danger'">
             </p-tag>
           </td>
-          <td>
-            <div class="flex align-items-center justify-content-center gap-1">
-              <p-button icon="pi pi-eye" text severity="secondary"
-                styleClass="sedes-icon-btn" title="Ver detalle"
-                (click)="verDetalle(rol)">
+          <td class="text-center">
+            <div class="acciones-tabla">
+              <p-button
+                icon="pi pi-eye"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Ver detalle" tooltipPosition="top"
+                (onClick)="verDetalle(rol)">
               </p-button>
-              <p-button icon="pi pi-pencil" text severity="secondary"
-                styleClass="sedes-icon-btn" title="Editar"
+              <p-button
+                icon="pi pi-pencil"
+                [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar rol" tooltipPosition="top"
                 [routerLink]="['/admin/roles-permisos/editar-rol', rol.id_rol]">
               </p-button>
               <p-button
                 [icon]="rol.activo ? 'pi pi-times' : 'pi pi-check'"
-                text [severity]="rol.activo ? 'danger' : 'success'"
-                styleClass="sedes-icon-btn"
-                [title]="rol.activo ? 'Desactivar' : 'Activar'"
-                (click)="confirmToggleStatus(rol)">
+                [rounded]="true" [text]="true"
+                [severity]="rol.activo ? 'danger' : 'success'"
+                [pTooltip]="rol.activo ? 'Desactivar' : 'Activar'"
+                tooltipPosition="top"
+                (onClick)="confirmToggleStatus(rol)">
               </p-button>
-              <p-button icon="pi pi-trash" text severity="danger"
-                styleClass="sedes-icon-btn" title="Eliminar"
-                (click)="confirmDelete(rol)">
+              <p-button
+                icon="pi pi-trash"
+                [rounded]="true" [text]="true" severity="danger"
+                pTooltip="Eliminar" tooltipPosition="top"
+                (onClick)="confirmDelete(rol)">
               </p-button>
             </div>
           </td>
         </tr>
       </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="5" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>No se encontraron roles</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
+
     </p-table>
+
     <p-confirmdialog />
-  </p-card>
+
+  </app-shared-table-container>
 
   <!-- DIALOG DETALLE -->
-  <p-dialog [(visible)]="dialogVisible" [modal]="true" [draggable]="false"
+  <p-dialog
+    [(visible)]="dialogVisible"
+    [modal]="true" [draggable]="false"
     [style]="{ width: '420px', 'border-radius': '16px', overflow: 'hidden' }"
-    [contentStyle]="{ padding: '0' }" (onHide)="dialogVisible = false">
+    [contentStyle]="{ padding: '0' }"
+    (onHide)="dialogVisible = false">
+
     <ng-template pTemplate="header"><span></span></ng-template>
 
     <ng-container *ngIf="rolSeleccionado() as r">
       <div class="almacen-detail-modal">
+
         <div class="adm-banner">
           <div class="adm-banner-icon"><i class="pi pi-id-card"></i></div>
           <div class="adm-banner-info">
@@ -168,6 +205,7 @@
             <i class="pi pi-times"></i>
           </button>
         </div>
+
         <div class="adm-code-row">
           <span class="adm-code-badge">
             <i class="pi pi-hashtag"></i> ID: {{ r.id_rol }}
@@ -179,6 +217,7 @@
             {{ r.activo ? 'Activo' : 'Inactivo' }}
           </span>
         </div>
+
         <div class="adm-info-grid">
           <div class="adm-info-item adm-info-item--full">
             <span class="adm-info-icon"><i class="pi pi-id-card"></i></span>
@@ -195,16 +234,22 @@
             </div>
           </div>
         </div>
+
         <div class="adm-footer">
-          <p-button label="Cerrar" icon="pi pi-times"
-            severity="secondary" [outlined]="true" styleClass="adm-btn-close"
+          <p-button
+            label="Cerrar" icon="pi pi-times"
+            severity="secondary" [outlined]="true"
+            styleClass="adm-btn-close"
             (onClick)="dialogVisible = false">
           </p-button>
-          <p-button label="Editar" icon="pi pi-pencil" styleClass="adm-btn-edit"
+          <p-button
+            label="Editar" icon="pi pi-pencil"
+            styleClass="adm-btn-edit"
             [routerLink]="['/admin/roles-permisos/editar-rol', r.id_rol]"
             (onClick)="dialogVisible = false">
           </p-button>
         </div>
+
       </div>
     </ng-container>
   </p-dialog>

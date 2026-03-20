@@ -421,3 +421,16 @@ export interface SendNotificationResponse {
   message: string;
   sentTo: string;
 }
+
+
+export interface BancoAdmin {
+  id_banco: number;
+  nombre_banco: string;
+}
+
+export interface TipoServicioAdmin {
+  id_servicio: number;
+  id_banco: number;
+  nombre_servicio: string;
+  descripcion?: string;
+}

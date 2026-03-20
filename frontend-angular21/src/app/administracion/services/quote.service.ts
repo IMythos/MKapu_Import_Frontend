@@ -4,22 +4,33 @@ import { environment } from '../../../enviroments/enviroment';
 import { Observable, throwError, firstValueFrom } from 'rxjs';
 import { finalize, tap, catchError } from 'rxjs/operators';
 import { Quote, QuoteListItem, QuotePagedResponse } from '../interfaces/quote.interface';
+import { ProveedorService } from '../services/proveedor.service';
+import { SupplierResponse } from '../interfaces/supplier.interface';
 
 export type CreateQuoteRequest = Omit<Quote, 'id_cotizacion' | 'cliente' | 'sede'>;
 
 export interface LoadQuotesFilters {
-  search?: string;
-  estado?: string | null;
+  search?:  string;
+  estado?:  string | null;
+  tipo?:    'VENTA' | 'COMPRA' | null;
   id_sede?: number | null;
-  page?: number;
-  limit?: number;
+  page?:    number;
+  limit?:   number;
 }
 
 @Injectable({ providedIn: 'root' })
 export class QuoteService {
-  private readonly http = inject(HttpClient);
-  private readonly api = `${environment.apiUrl}/sales/quote`;
+  private readonly http            = inject(HttpClient);
+  private          proveedorService = inject(ProveedorService);
+  private readonly api             = `${environment.apiUrl}/sales/quote`;
 
+  // ── Proveedor utils ───────────────────────────────────────────────
+  proveedoresMap        = signal<Map<number, string>>(new Map());
+  proveedorEncontrado   = signal<SupplierResponse | null>(null);
+  busquedaProvSinResult = signal(false);
+  cargandoProveedor     = signal(false);
+
+  // ── Estado compartido (lista + paginación) ────────────────────────
   private readonly _quoteList  = signal<QuoteListItem[]>([]);
   private readonly _total      = signal<number>(0);
   private readonly _page       = signal<number>(1);
@@ -27,11 +38,6 @@ export class QuoteService {
   private readonly _quote      = signal<Quote | null>(null);
   private readonly _loading    = signal(false);
   private readonly _error      = signal<string | null>(null);
-
-  // ── KPI globales ──────────────────────────────────────────────────
-  readonly kpiTotal      = signal<number>(0);
-  readonly kpiAprobadas  = signal<number>(0);
-  readonly kpiPendientes = signal<number>(0);
 
   readonly quotes     = computed(() => this._quoteList());
   readonly total      = computed(() => this._total());
@@ -41,20 +47,57 @@ export class QuoteService {
   readonly loading    = computed(() => this._loading());
   readonly error      = computed(() => this._error());
 
-  // ── Listar cotizaciones paginadas ─────────────────────────────────
+  // ── KPIs separados por tipo ───────────────────────────────────────
+  // VENTA
+  readonly kpiTotalVenta      = signal<number>(0);
+  readonly kpiAprobadasVenta  = signal<number>(0);
+  readonly kpiPendientesVenta = signal<number>(0);
+
+  // COMPRA
+  readonly kpiTotalCompra      = signal<number>(0);
+  readonly kpiAprobadasCompra  = signal<number>(0);
+  readonly kpiPendientesCompra = signal<number>(0);
+
+  // ── Compatibilidad hacia atrás (apuntan al último tipo cargado) ───
+  private readonly _lastTipo = signal<'VENTA' | 'COMPRA'>('VENTA');
+
+  readonly kpiTotal = computed(() =>
+    this._lastTipo() === 'COMPRA' ? this.kpiTotalCompra() : this.kpiTotalVenta()
+  );
+  readonly kpiAprobadas = computed(() =>
+    this._lastTipo() === 'COMPRA' ? this.kpiAprobadasCompra() : this.kpiAprobadasVenta()
+  );
+  readonly kpiPendientes = computed(() =>
+    this._lastTipo() === 'COMPRA' ? this.kpiPendientesCompra() : this.kpiPendientesVenta()
+  );
+
+  // ── Nombre contraparte ────────────────────────────────────────────
+  getNombreContraparte(c: QuoteListItem): string {
+    if (c.proveedor_nombre) return c.proveedor_nombre;
+    if (c.id_proveedor) {
+      return this.proveedoresMap().get(c.id_proveedor) ?? `Proveedor #${c.id_proveedor}`;
+    }
+    return c.cliente_nombre || '-';
+  }
+
+  // ── Cargar lista ──────────────────────────────────────────────────
   loadQuotes(filters?: LoadQuotesFilters): Observable<QuotePagedResponse> {
     this._loading.set(true);
     this._error.set(null);
 
+    const tipo = (filters?.tipo ?? 'VENTA') as 'VENTA' | 'COMPRA';
+    this._lastTipo.set(tipo);
+
     let params = new HttpParams();
     if (filters?.search)  params = params.set('search',  filters.search);
     if (filters?.estado)  params = params.set('estado',  filters.estado);
+    if (filters?.tipo)    params = params.set('tipo',    filters.tipo);
     if (filters?.id_sede) params = params.set('id_sede', filters.id_sede.toString());
     if (filters?.page)    params = params.set('page',    filters.page.toString());
     if (filters?.limit)   params = params.set('limit',   filters.limit.toString());
 
-    // KPIs en paralelo — sin await para no bloquear el Observable principal
-    this._loadKpis();
+    // Carga KPIs filtrados por el mismo tipo
+    this._loadKpis(tipo);
 
     return this.http.get<QuotePagedResponse>(this.api, { params }).pipe(
       tap((res) => {
@@ -71,17 +114,29 @@ export class QuoteService {
     );
   }
 
-  private _loadKpis(): void {
-    const base = new HttpParams().set('page', '1').set('limit', '1');
+  // ── KPIs filtrados por tipo ───────────────────────────────────────
+  private _loadKpis(tipo: 'VENTA' | 'COMPRA'): void {
+    const base = new HttpParams()
+      .set('tipo',  tipo)
+      .set('page',  '1')
+      .set('limit', '1');
 
     Promise.all([
       firstValueFrom(this.http.get<QuotePagedResponse>(this.api, { params: base })),
       firstValueFrom(this.http.get<QuotePagedResponse>(this.api, { params: base.set('estado', 'APROBADA') })),
       firstValueFrom(this.http.get<QuotePagedResponse>(this.api, { params: base.set('estado', 'PENDIENTE') })),
     ]).then(([totalRes, aprobRes, pendRes]) => {
-      this.kpiTotal.set(totalRes.total);
-      this.kpiAprobadas.set(aprobRes.total);
-      this.kpiPendientes.set(pendRes.total);
+
+      if (tipo === 'COMPRA') {
+        this.kpiTotalCompra.set(totalRes.total);
+        this.kpiAprobadasCompra.set(aprobRes.total);
+        this.kpiPendientesCompra.set(pendRes.total);
+      } else {
+        this.kpiTotalVenta.set(totalRes.total);
+        this.kpiAprobadasVenta.set(aprobRes.total);
+        this.kpiPendientesVenta.set(pendRes.total);
+      }
+
     }).catch(() => { /* silencioso — los KPIs no son críticos */ });
   }
 

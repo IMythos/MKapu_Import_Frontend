@@ -1483,3 +1483,33 @@
 :host-context(.app-dark) .pos-sugg-nombre {
   color: #f1f5f9;
 }
+
+
+.pos-banco-wrap {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pos-banco-select {
+  width: 100%;
+}
+
+.pos-comision-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  color: #856404;
+  border-radius: 6px;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+  margin-top: 0.25rem;
+}
+
+.pos-total-comision span:last-child {
+  color: #e67e22;
+  font-weight: 600;
+}

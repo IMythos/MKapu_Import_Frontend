@@ -10,7 +10,6 @@ import { CardModule } from 'primeng/card';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 
-// 👇 Importaciones nuevas de RxJS necesarias para la reactividad
 import { filter, switchMap, catchError, tap, distinctUntilChanged } from 'rxjs/operators';
 import { of } from 'rxjs';
 
@@ -18,9 +17,9 @@ import { VentasService } from '../../../../core/services/ventas.service';
 import { RemissionService } from '../../../services/remission.service';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
-// Asegúrate de exportar la interfaz ReniecDniResponse desde tu sunat.service.ts y agregarla aquí
 import { SunatService, ReniecDniResponse } from '../../../services/sunat.service';
 import { TagModule } from 'primeng/tag';
+import { CreateRemissionDto } from '../../../interfaces/remision.interface';
 
 @Component({
   selector: 'app-nueva-remision',
@@ -85,24 +84,25 @@ export class NuevaRemision implements OnInit {
     this.remissionForm = this.fb.group({
       id_comprobante_ref: [null, Validators.required],
       id_almacen_origen: [null, Validators.required],
-      id_sede_origen: ['', Validators.required],
-      tipo_guia: [0, Validators.required],
+      id_sede_ref: ['', Validators.required],
+      tipo_guia: ['0', Validators.required],
       modalidad: [1, Validators.required],
-      fecha_inicio_traslado: [new Date(), Validators.required],
+      fecha_inicio: [new Date(), Validators.required],
       motivo_traslado: ['VENTA', Validators.required],
       unidad_peso: ['KGM', Validators.required],
       descripcion: [''],
       datos_traslado: this.fb.group({
         ubigeo_origen: ['150101', Validators.required],
         direccion_origen: ['Almacén Principal', Validators.required],
-        ubigeo_destino: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(6)]],
+        // ✅ Se agregó validación de regex para asegurar exactamente 6 números
+        ubigeo_destino: ['', [Validators.required, Validators.pattern(/^\d{6}$/)]],
         direccion_destino: ['', Validators.required],
       }),
 
       datos_transporte: this.fb.group({
         nombre_completo: [''],
         tipo_documento: ['DNI'],
-        numero_documento: [''],
+        numero_documento: [''], 
         licencia: [''],
         placa: [''],
         ruc: [''],
@@ -116,6 +116,9 @@ export class NuevaRemision implements OnInit {
       .get('modalidad')
       ?.valueChanges.subscribe((val) => this.ajustarValidadoresTransporte(val));
       
+    // Inicializar validadores para modo por defecto
+    this.ajustarValidadoresTransporte(1);
+
     this.items.valueChanges.subscribe(() => {
       this.items.controls.forEach((control) => {
         const cant = Number(control.get('cantidad')?.value) || 0;
@@ -202,7 +205,7 @@ export class NuevaRemision implements OnInit {
     this.remissionForm.patchValue({
       id_comprobante_ref: venta.id,
       id_almacen_origen: venta.id_almacen || venta.almacenId, 
-      id_sede_origen: idSede,
+      id_sede_ref: idSede,
       motivo_traslado: 'VENTA',
       descripcion: `Traslado de mercadería por venta ${comprobanteActual}`,
       datos_traslado: {
@@ -266,11 +269,27 @@ export class NuevaRemision implements OnInit {
     
     this.isLoading.set(true);
     const formValue = this.remissionForm.getRawValue(); 
-    const payload = {
-      ...formValue,
+    
+    const cantidadTotal = formValue.items.reduce((acc: number, curr: any) => acc + (Number(curr.cantidad) || 0), 0);
+
+    const payload: CreateRemissionDto = {
+      id_comprobante_ref: Number(formValue.id_comprobante_ref),
+      id_almacen_origen: Number(formValue.id_almacen_origen),
+      id_sede_origen: String(formValue.id_sede_ref),
+      id_usuario: 1,
+      tipo_guia: Number(formValue.tipo_guia),
+      modalidad: Number(formValue.modalidad),
+      fecha_inicio_traslado: formValue.fecha_inicio.toISOString(),
+      motivo_traslado: formValue.motivo_traslado,
       peso_bruto_total: this.pesoBrutoTotal(),
-      id_usuario: 1, 
-      fecha_inicio_traslado: formValue.fecha_inicio_traslado.toISOString(),
+      unidad_peso: formValue.unidad_peso,
+      descripcion: formValue.descripcion,
+      observaciones: formValue.descripcion,
+      cantidad: cantidadTotal,
+      razon_social: formValue.modalidad === 0 ? formValue.datos_transporte.razon_social : formValue.datos_transporte.nombre_completo,
+      datos_traslado: formValue.datos_traslado,
+      datos_transporte: formValue.datos_transporte,
+      items: formValue.items 
     };
 
     this.remissionService.create(payload).subscribe({
@@ -278,7 +297,7 @@ export class NuevaRemision implements OnInit {
         this.messageService.add({
           severity: 'success',
           summary: 'Éxito',
-          detail: `Guía ${res.serie_numero} generada`,
+          detail: `Guía ${res.serie_numero || 'generada exitosamente'}`,
         });
         setTimeout(() => {
           this.cerrar();
@@ -296,23 +315,30 @@ export class NuevaRemision implements OnInit {
   }
   
   private ajustarValidadoresTransporte(modalidad: number) {
-    const transport = this.remissionForm.get('datos_transporte');
-    if (modalidad === 1) {
-      transport?.get('nombre_completo')?.setValidators(Validators.required);
-      transport?.get('placa')?.setValidators(Validators.required);
-      transport?.get('ruc')?.clearValidators();
-      transport?.get('razon_social')?.clearValidators();
-    } else {
-      transport?.get('ruc')?.setValidators(Validators.required);
-      transport?.get('razon_social')?.setValidators(Validators.required);
-      transport?.get('nombre_completo')?.clearValidators();
-      transport?.get('placa')?.clearValidators();
+    const transport = this.remissionForm.get('datos_transporte') as FormGroup;
+    if (modalidad === 1) { // Privado
+      transport.get('nombre_completo')?.setValidators(Validators.required);
+      // ✅ Regex: Solo acepta de 8 a 11 números
+      transport.get('numero_documento')?.setValidators([Validators.required, Validators.pattern(/^\d{8,11}$/)]);
+      // ✅ Regex: Acepta exactamente formato ABC-123
+      transport.get('placa')?.setValidators([Validators.required, Validators.pattern(/^[A-Z0-9]{3}-[A-Z0-9]{3}$/)]);
+      transport.get('licencia')?.setValidators(Validators.required);
+      transport.get('ruc')?.clearValidators();
+      transport.get('razon_social')?.clearValidators();
+    } else { // Público
+      transport.get('ruc')?.setValidators([Validators.required, Validators.pattern(/^\d{11}$/)]);
+      transport.get('razon_social')?.setValidators(Validators.required);
+      transport.get('nombre_completo')?.clearValidators();
+      transport.get('numero_documento')?.clearValidators();
+      transport.get('placa')?.clearValidators();
+      transport.get('licencia')?.clearValidators();
     }
-    transport?.get('nombre_completo')?.updateValueAndValidity();
-    transport?.get('placa')?.updateValueAndValidity();
-    transport?.get('ruc')?.updateValueAndValidity();
-    transport?.get('razon_social')?.updateValueAndValidity();
+    
+    Object.keys(transport.controls).forEach(key => {
+      transport.get(key)?.updateValueAndValidity({ emitEvent: false });
+    });
   }
+
   buscarRucTransportista() {
     const rucControl = this.remissionForm.get('datos_transporte.ruc');
     const ruc = rucControl?.value;
@@ -347,7 +373,31 @@ export class NuevaRemision implements OnInit {
       }
     });
   }
+
   cerrar() {
     this.router.navigate(['/logistica/remision']);
+  }
+
+
+  allowOnlyNumbers(event: Event, controlPath: string) {
+    const input = event.target as HTMLInputElement;
+    const cleanValue = input.value.replace(/[^0-9]/g, '');
+    this.remissionForm.get(controlPath)?.setValue(cleanValue, { emitEvent: false });
+  }
+
+  formatPlaca(event: Event) {
+    const input = event.target as HTMLInputElement;
+    let cleanValue = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+    
+    if (cleanValue.length > 3) {
+      cleanValue = cleanValue.substring(0, 3) + '-' + cleanValue.substring(3);
+    }
+    
+    this.remissionForm.get('datos_transporte.placa')?.setValue(cleanValue, { emitEvent: false });
+  }
+
+  forceUppercase(event: Event, controlPath: string) {
+    const input = event.target as HTMLInputElement;
+    this.remissionForm.get(controlPath)?.setValue(input.value.toUpperCase(), { emitEvent: false });
   }
 }

@@ -41,6 +41,8 @@ import {
   MetodoPagoAdmin,
   TipoVentaAdmin,
   TipoComprobanteAdmin,
+  BancoAdmin,
+  TipoServicioAdmin,
 } from '../../interfaces/ventas.interface';
 
 export type TipoEntrega = 'recojo' | 'delivery';
@@ -100,6 +102,9 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   readonly sedeNombreVentas: string;
 
   private readonly SIZE_PAGE = 10;
+  private readonly COMISION_TARJETA = 0.05;
+  private readonly COD_SUNAT_TARJETAS = ['005', '006'];
+  private readonly COD_SUNAT_CON_BANCO = ['005', '006', '003'];
   private searchTimeout: any = null;
 
   sidebarClienteVisible = false;
@@ -133,6 +138,14 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   metodosPago = signal<MetodoPagoAdmin[]>([]);
   cotizacionOrigen = signal<number | null>(null);
   tipoPagoOrigen = signal<'contado' | 'credito'>('contado');
+
+  bancosDisponibles = signal<BancoAdmin[]>([]);
+  bancosLoading = signal(false);
+  bancoSeleccionado = signal<number | null>(null);
+  tiposServicio = signal<TipoServicioAdmin[]>([]);
+  tiposServicioLoading = signal(false);
+  tipoServicioSeleccionado = signal<number | null>(null);
+  codSunatMetodoPago = signal<string>('');
 
   nuevoClienteForm: {
     documentTypeId: number | null;
@@ -193,6 +206,75 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     () => this.metodosPago().find((m) => m.codSunat === '008')?.id ?? null,
   );
 
+  readonly metodoPagoEsTarjeta = computed(() => {
+    const id = this.metodoPagoSeleccionado();
+    const metodo = this.metodosPago().find((m) => m.id === id);
+    return this.COD_SUNAT_TARJETAS.includes(metodo?.codSunat ?? '');
+  });
+
+  readonly metodoPagoRequiereBanco = computed(() => {
+    const id = this.metodoPagoSeleccionado();
+    const metodo = this.metodosPago().find((m) => m.id === id);
+    return this.COD_SUNAT_CON_BANCO.includes(metodo?.codSunat ?? '');
+  });
+
+  readonly comisionMonto = computed(() =>
+    this.metodoPagoEsTarjeta() && this.bancoSeleccionado()
+      ? Number((this.total() * this.COMISION_TARJETA).toFixed(2))
+      : 0,
+  );
+
+  readonly totalFinal = computed(() => Number((this.total() + this.comisionMonto()).toFixed(2)));
+
+  readonly bancosOptions = computed(() =>
+    this.bancosDisponibles().map((b) => ({ label: b.nombre_banco, value: b.id_banco })),
+  );
+
+  private normalizarTexto(s: string): string {
+    return s
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase();
+  }
+
+  readonly tiposServicioOptions = computed(() => {
+    const codSunat = this.codSunatMetodoPago();
+    const servicios = this.tiposServicio();
+
+    if (codSunat === '006') {
+      const filtrados = servicios.filter((s) =>
+        this.normalizarTexto(s.nombre_servicio).includes('CREDITO'),
+      );
+      return (filtrados.length > 0 ? filtrados : servicios).map((s) => ({
+        label: s.nombre_servicio,
+        value: s.id_servicio,
+      }));
+    }
+
+    if (codSunat === '005') {
+      const filtrados = servicios.filter((s) =>
+        this.normalizarTexto(s.nombre_servicio).includes('DEBITO'),
+      );
+      return (filtrados.length > 0 ? filtrados : servicios).map((s) => ({
+        label: s.nombre_servicio,
+        value: s.id_servicio,
+      }));
+    }
+
+    if (codSunat === '003') {
+      const filtrados = servicios.filter((s) => {
+        const n = this.normalizarTexto(s.nombre_servicio);
+        return n.includes('TRANSFERENCIA') || n.includes('YAPE') || n.includes('PLIN');
+      });
+      return (filtrados.length > 0 ? filtrados : servicios).map((s) => ({
+        label: s.nombre_servicio,
+        value: s.id_servicio,
+      }));
+    }
+
+    return servicios.map((s) => ({ label: s.nombre_servicio, value: s.id_servicio }));
+  });
+
   private iconoPorMetodoPago(codSunat: string): string {
     const map: Record<string, string> = {
       '008': 'pi pi-money-bill',
@@ -211,6 +293,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       icon: this.iconoPorMetodoPago(m.codSunat),
     })),
   );
+
   readonly tipoDocRucId = computed(
     () =>
       this.tiposDocumento().find((t) => t.description?.toUpperCase().includes('RUC'))
@@ -265,6 +348,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   });
 
   readonly longitudDocumento = computed(() => this.documentoConfig().maxLength);
+
   readonly botonClienteHabilitado = computed(() => {
     const len = this.clienteDocumento()?.trim().length ?? 0;
     const cfg = this.documentoConfig();
@@ -297,17 +381,21 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
 
   readonly subtotal = computed(() => Number((this.total() / (1 + IGV_RATE_ADMIN)).toFixed(2)));
   readonly igv = computed(() => Number((this.total() - this.subtotal()).toFixed(2)));
+
   readonly vuelto = computed(() => {
-    const v = this.montoRecibido() - this.total();
+    const v = this.montoRecibido() - this.totalFinal();
     return v >= 0 ? v : 0;
   });
+
   readonly hayMasPaginas = computed(() => this.productosCargados().length < this.totalRegistros());
+
   readonly nombreSedeSeleccionada = computed(() => {
     const id = this.sedeSeleccionada();
     if (!id) return 'Sin sede';
     if (this.esAdmin) return this.sedes().find((s) => s.id_sede === id)?.nombre ?? '';
     return this.sedeNombreVentas;
   });
+
   readonly sedesOptions = computed(() =>
     this.sedes().map((s) => ({ label: s.nombre, value: s.id_sede })),
   );
@@ -418,6 +506,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   actualizarPrecioPendiente(_i: number): void {
     this.productosPendientes.update((v) => [...v]);
   }
+
   decrementarPendiente(i: number): void {
     const l = [...this.productosPendientes()];
     if (l[i].cantidad > 1) {
@@ -425,6 +514,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       this.productosPendientes.set(l);
     }
   }
+
   incrementarPendiente(i: number): void {
     const l = [...this.productosPendientes()];
     if (l[i].cantidad < l[i].stock) {
@@ -432,6 +522,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       this.productosPendientes.set(l);
     }
   }
+
   clampCantidadPendiente(i: number): void {
     const l = [...this.productosPendientes()];
     let c = l[i].cantidad;
@@ -440,11 +531,13 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     l[i] = { ...l[i], cantidad: c };
     this.productosPendientes.set(l);
   }
+
   quitarPendiente(i: number): void {
     const l = [...this.productosPendientes()];
     l.splice(i, 1);
     this.productosPendientes.set(l);
   }
+
   limpiarPendientes(): void {
     this.productosPendientes.set([]);
   }
@@ -536,12 +629,10 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   }
 
   private cargarTiposComprobante(): void {
-    this.ventasService
-      .obtenerTiposComprobante()
-      .subscribe({
-        next: (d) =>
-          this.tiposComprobante.set(d.filter((t) => t.codSunat === '03' || t.codSunat === '01')),
-      });
+    this.ventasService.obtenerTiposComprobante().subscribe({
+      next: (d) =>
+        this.tiposComprobante.set(d.filter((t) => t.codSunat === '03' || t.codSunat === '01')),
+    });
   }
 
   private cargarTiposDocumento(): void {
@@ -558,12 +649,10 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
   private cargarSaldoCaja(): void {
     const sedeId = this.sedeSeleccionada();
     if (!sedeId) return;
-    this.cajaService
-      .getResumenDia(sedeId)
-      .subscribe({
-        next: (res) => this.saldoCaja.set(res?.dineroEnCaja ?? null),
-        error: () => this.saldoCaja.set(null),
-      });
+    this.cajaService.getResumenDia(sedeId).subscribe({
+      next: (res) => this.saldoCaja.set(res?.dineroEnCaja ?? null),
+      error: () => this.saldoCaja.set(null),
+    });
   }
 
   private cargarSedes(): void {
@@ -887,6 +976,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     };
     this.editandoCliente.set(true);
   }
+
   cancelarEdicionCliente(): void {
     this.editandoCliente.set(false);
   }
@@ -936,6 +1026,7 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
       if (dni) this.tipoDocBoleta.set(dni.documentTypeId);
     }
   }
+
   abrirSidebarCliente(): void {
     this.sidebarClienteVisible = true;
   }
@@ -1057,48 +1148,43 @@ export class GenerarVentasAdministracion implements OnInit, AfterViewInit {
     );
   }
 
-aplicarPromocion(promo: PromocionAdmin): void {
-  // Validar si la promo tiene regla de producto específico
-  const reglaProducto = promo.reglas?.find((r) => r.tipoCondicion === 'PRODUCTO');
-  
-  if (reglaProducto) {
-    const productoEnCarrito = this.productosSeleccionados().some(
-      (i) => i.codigo === reglaProducto.valorCondicion || 
-             i.productId.toString() === reglaProducto.valorCondicion,
-    );
-
-    if (!productoEnCarrito) {
-      this.messageService.add({
-        severity: 'warn',
-        summary: 'Producto requerido',
-        detail: `Esta promoción requiere el producto "${reglaProducto.valorCondicion}" en el carrito`,
-        life: 4000,
-      });
-      return;
+  aplicarPromocion(promo: PromocionAdmin): void {
+    const reglaProducto = promo.reglas?.find((r) => r.tipoCondicion === 'PRODUCTO');
+    if (reglaProducto) {
+      const productoEnCarrito = this.productosSeleccionados().some(
+        (i) =>
+          i.codigo === reglaProducto.valorCondicion ||
+          i.productId.toString() === reglaProducto.valorCondicion,
+      );
+      if (!productoEnCarrito) {
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Producto requerido',
+          detail: `Esta promoción requiere el producto "${reglaProducto.valorCondicion}" en el carrito`,
+          life: 4000,
+        });
+        return;
+      }
     }
+    this.promocionAplicada.set(promo);
+    this.codigoPromocionInput.set('');
+    this.promocionesFiltradas.set([]);
+    this.promoNoEncontrada.set(false);
+    this.messageService.add({
+      severity: 'success',
+      summary: 'Promoción aplicada',
+      detail: `${promo.concepto} — descuento: ${this.esPorcentaje(promo.tipo) ? `${promo.valor}%` : `S/. ${promo.valor.toFixed(2)}`}`,
+      life: 3000,
+    });
   }
 
-  this.promocionAplicada.set(promo);
-  this.codigoPromocionInput.set('');
-  this.promocionesFiltradas.set([]);
-  this.promoNoEncontrada.set(false);
-  this.messageService.add({
-    severity: 'success',
-    summary: 'Promoción aplicada',
-    detail: `${promo.concepto} — descuento: ${this.esPorcentaje(promo.tipo) ? `${promo.valor}%` : `S/. ${promo.valor.toFixed(2)}`}`,
-    life: 3000,
-  });
-}
-
-// Computed para saber si una promo aplica al carrito actual
-promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
-  const regla = promo.reglas?.find((r) => r.tipoCondicion === 'PRODUCTO');
-  if (!regla) return true; // sin restricción de producto, aplica siempre
-  return this.productosSeleccionados().some(
-    (i) => i.codigo === regla.valorCondicion || 
-           i.productId.toString() === regla.valorCondicion,
-  );
-}
+  promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
+    const regla = promo.reglas?.find((r) => r.tipoCondicion === 'PRODUCTO');
+    if (!regla) return true;
+    return this.productosSeleccionados().some(
+      (i) => i.codigo === regla.valorCondicion || i.productId.toString() === regla.valorCondicion,
+    );
+  }
 
   buscarYAplicarPromocion(): void {
     const codigo = this.codigoPromocionInput().trim();
@@ -1150,6 +1236,80 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
     }
   }
 
+  onMetodoPagoChange(id: number): void {
+    this.metodoPagoSeleccionado.set(id);
+    const metodo = this.metodosPago().find((m) => m.id === id);
+    this.codSunatMetodoPago.set(metodo?.codSunat ?? '');
+    this.bancoSeleccionado.set(null);
+    this.tiposServicio.set([]);
+    this.tipoServicioSeleccionado.set(null);
+    this.bancosDisponibles.set([]);
+    if (this.metodoPagoRequiereBanco()) {
+      this.cargarBancos();
+    }
+  }
+
+  private cargarBancos(): void {
+    if (this.bancosDisponibles().length > 0) return;
+    this.bancosLoading.set(true);
+    this.ventasService.obtenerBancos().subscribe({
+      next: (data) => {
+        this.bancosDisponibles.set(data);
+        this.bancosLoading.set(false);
+      },
+      error: () => {
+        this.bancosLoading.set(false);
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Bancos',
+          detail: 'No se pudieron cargar los bancos',
+          life: 3000,
+        });
+      },
+    });
+  }
+
+  onBancoChange(bancoId: number | null): void {
+    this.bancoSeleccionado.set(bancoId);
+    this.tiposServicio.set([]);
+    this.tipoServicioSeleccionado.set(null);
+    if (!bancoId) return;
+    this.tiposServicioLoading.set(true);
+    this.ventasService.obtenerTiposServicio(bancoId).subscribe({
+      next: (data) => {
+        this.tiposServicio.set(data);
+        this.tiposServicioLoading.set(false);
+        const normalizar = (s: string) =>
+          s
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toUpperCase();
+        const cod = this.codSunatMetodoPago();
+        const keyword =
+          cod === '006'
+            ? 'CREDITO'
+            : cod === '005'
+              ? 'DEBITO'
+              : cod === '003'
+                ? 'TRANSFERENCIA'
+                : '';
+        if (keyword) {
+          const match = data.find((s) => normalizar(s.nombre_servicio).includes(keyword));
+          if (match) this.tipoServicioSeleccionado.set(match.id_servicio);
+        }
+      },
+      error: () => {
+        this.tiposServicioLoading.set(false);
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Servicios',
+          detail: 'No se pudieron cargar los tipos de servicio',
+          life: 3000,
+        });
+      },
+    });
+  }
+
   generarVenta(): void {
     if (!this.clienteEncontrado()) {
       this.messageService.add({
@@ -1183,9 +1343,17 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
       });
       return;
     }
+    if (this.metodoPagoRequiereBanco() && !this.bancoSeleccionado()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Banco Requerido',
+        detail: 'Selecciona el banco emisor de la tarjeta',
+      });
+      return;
+    }
     if (this.tipoPagoOrigen() !== 'credito') {
       const esEfectivo = this.metodoPagoSeleccionado() === this.idMetodoPagoEfectivo();
-      if (esEfectivo && this.montoRecibido() < this.total()) {
+      if (esEfectivo && this.montoRecibido() < this.totalFinal()) {
         this.messageService.add({
           severity: 'warn',
           summary: 'Monto Insuficiente',
@@ -1221,26 +1389,38 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
     this.snapshotSede.set(this.nombreSedeSeleccionada());
     this.snapshotMetodoPago.set(this.getLabelMetodoPago(this.metodoPagoSeleccionado()!));
     this.snapshotTipoComprobante.set(this.tipoComprobante());
+
     const delivery = this.tipoEntrega() === 'delivery' ? this.costoDelivery() : 0;
-    const totalBruto = Number(
+
+    // Total bruto de items sin descontar la promoción, más delivery y comisión
+    const totalItemsBruto = Number(
       (this.productosSeleccionados().reduce((s, i) => s + i.total, 0) + delivery).toFixed(2),
     );
-    const subtotalBruto = Number((totalBruto / 1.18).toFixed(2));
-    const igvBruto = Number((totalBruto - subtotalBruto).toFixed(2));
+
+    // Total que ve el usuario (con descuento aplicado + comisión bancaria)
+    const totalConComision = this.totalFinal();
+
+    // El backend espera el total YA con descuento aplicado (totalFinal)
+    // y el descuento por separado para guardarlo en descuento_aplicado.
+    // El mapper ya NO resta el descuento del total (fix aplicado en backend).
+    const subtotalEnvio = Number((totalConComision / 1.18).toFixed(2));
+    const igvEnvio = Number((totalConComision - subtotalEnvio).toFixed(2));
+
     const esCredito = this.tipoPagoOrigen() === 'credito';
     const promo = this.promocionAplicada();
     const serie = this.tipoComprobante() === 1 ? 'F001' : 'B001';
     const cotizId = this.cotizacionOrigen();
     const esEfectivo = this.metodoPagoSeleccionado() === this.idMetodoPagoEfectivo();
+
     const request: RegistroVentaAdminRequest = {
       customerId: this.clienteEncontrado()!.customerId,
       receiptTypeId: this.tipoComprobante(),
       saleTypeId: this.tipoVentaSeleccionado(),
       serie,
-      subtotal: subtotalBruto,
-      igv: igvBruto,
+      subtotal: subtotalEnvio,
+      igv: igvEnvio,
       isc: 0,
-      total: totalBruto,
+      total: totalConComision,
       descuento: this.descuentoPromocion(),
       responsibleId: this.idUsuarioActual(),
       branchId: this.sedeSeleccionada()!,
@@ -1250,6 +1430,9 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
       esCreditoPendiente: esCredito,
       dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       ...(promo && { promotionId: promo.idPromocion }),
+      ...(this.bancoSeleccionado() && { bankId: this.bancoSeleccionado()! }),
+      ...(this.tipoServicioSeleccionado() && { serviceTypeId: this.tipoServicioSeleccionado()! }),
+      ...(this.comisionMonto() > 0 && { comisionBancaria: this.comisionMonto() }),
       items: this.productosSeleccionados().map((i) => ({
         productId: String(i.productId),
         quantity: i.quantity,
@@ -1260,6 +1443,7 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
         categoriaId: i.categoriaId,
       })),
     };
+
     this.ventasService.registrarVenta(request).subscribe({
       next: (response: RegistroVentaAdminResponse) => {
         this.loading.set(false);
@@ -1290,24 +1474,22 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
               cantidad_solicitada: item.quantity,
             })),
           };
-          this.dispatchService
-            .createDispatch(dispatchPayload)
-            .subscribe({
-              next: (d) =>
-                this.messageService.add({
-                  severity: 'info',
-                  summary: 'Despacho Creado',
-                  detail: `Despacho #${d.id_despacho} generado`,
-                  life: 4000,
-                }),
-              error: () =>
-                this.messageService.add({
-                  severity: 'warn',
-                  summary: 'Venta registrada',
-                  detail: 'No se pudo crear el despacho.',
-                  life: 5000,
-                }),
-            });
+          this.dispatchService.createDispatch(dispatchPayload).subscribe({
+            next: (d) =>
+              this.messageService.add({
+                severity: 'info',
+                summary: 'Despacho Creado',
+                detail: `Despacho #${d.id_despacho} generado`,
+                life: 4000,
+              }),
+            error: () =>
+              this.messageService.add({
+                severity: 'warn',
+                summary: 'Venta registrada',
+                detail: 'No se pudo crear el despacho.',
+                life: 5000,
+              }),
+          });
         }
         if (cotizId)
           this.quoteService.updateQuoteStatus(cotizId, 'APROBADA').subscribe({ error: () => {} });
@@ -1318,7 +1500,7 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
             .create({
               salesReceiptId: response.idComprobante,
               userRef: this.clienteEncontrado()!.name,
-              totalAmount: totalBruto,
+              totalAmount: totalItemsBruto,
               dueDate: fechaVenc.toISOString().split('T')[0],
               paymentTypeId: this.metodoPagoSeleccionado()!,
               currencyCode: 'PEN',
@@ -1329,7 +1511,7 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
                 this.messageService.add({
                   severity: 'info',
                   summary: 'Cuenta por Cobrar Creada',
-                  detail: `Saldo: S/. ${ar.pendingBalance?.toFixed(2) ?? totalBruto.toFixed(2)}`,
+                  detail: `Saldo: S/. ${ar.pendingBalance?.toFixed(2) ?? totalItemsBruto.toFixed(2)}`,
                   life: 5000,
                 });
             });
@@ -1369,28 +1551,38 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
     this.panelVisible.set(false);
     this.productosSugeridos.set([]);
     this.sidebarClienteVisible = false;
+    this.bancoSeleccionado.set(null);
+    this.tipoServicioSeleccionado.set(null);
+    this.tiposServicio.set([]);
+    this.bancosDisponibles.set([]);
+    this.codSunatMetodoPago.set('');
   }
 
   verListado(): void {
     this.router.navigate(['/admin/historial-ventas-administracion']);
   }
+
   getLabelMetodoPago(id: number): string {
     return this.metodosPago().find((m) => m.id === id)?.descripcion ?? 'N/A';
   }
+
   obtenerSeveridadStock(stock: number): 'success' | 'warn' | 'danger' {
     if (stock > 10) return 'success';
     if (stock > 0) return 'warn';
     return 'danger';
   }
+
   esPorcentaje(tipo: string): boolean {
     return tipo?.toUpperCase().includes('PORCENTAJE') || tipo?.toUpperCase().includes('PERCENT');
   }
+
   normalizarActivo(activo: any): boolean {
     if (typeof activo === 'boolean') return activo;
     if (typeof activo === 'number') return activo === 1;
     if (activo && typeof activo === 'object' && 'data' in activo) return activo.data?.[0] === 1;
     return false;
   }
+
   itemCalificaPromocion(item: ItemVentaUIAdmin): boolean {
     const promo = this.promocionAplicada();
     if (!promo) return false;
@@ -1400,6 +1592,7 @@ promoAplicaAlCarrito(promo: PromocionAdmin): boolean {
       item.codigo === regla.valorCondicion || item.productId.toString() === regla.valorCondicion
     );
   }
+
   formatearDocumentoCompleto(): string {
     const c = this.clienteEncontrado();
     if (!c) return '';

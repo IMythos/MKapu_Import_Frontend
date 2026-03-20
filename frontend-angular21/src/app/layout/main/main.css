@@ -28,9 +28,19 @@
 
 /* Header arriba */
 .header {
-  height: 64px; /* igual que tu captura */
+  /* CAMBIO CLAVE: Usar min-height en lugar de height fijo */
+  min-height: 64px; 
+  height: auto; /* Permite que el header crezca si los elementos bajan de línea */
+  
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  flex-shrink: 0; /* no se encoge */
+  flex-shrink: 0;
+  
+  /* Agregamos esto para asegurar que siempre esté por encima del contenido principal */
+  position: relative; 
+  z-index: 10;
+  
+  /* Opcional: ponerle un fondo por si el toolbar se vuelve transparente */
+  background-color: var(--sb-surface, #18181c); 
 }
 
 /* Contenido dinámico debajo */

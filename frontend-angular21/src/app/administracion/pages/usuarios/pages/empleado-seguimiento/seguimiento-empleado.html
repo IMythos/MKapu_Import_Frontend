@@ -1,0 +1,355 @@
+<div class="p-2">
+
+  <!-- CABECERA -->
+  <p-card styleClass="seg-header-card mb-3 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="seg-avatar">
+          {{ empleado().nombre.charAt(0) }}{{ empleado().apellidos.charAt(0) }}
+        </span>
+        <div>
+          <p class="seg-kicker">ADMINISTRADOR · EMPLEADOS · SEGUIMIENTO</p>
+          <h2 class="seg-title">
+            {{ loading() ? 'Cargando...' : nombreCompleto() }}
+          </h2>
+          <div class="seg-meta" *ngIf="!loading()">
+            <span class="seg-meta-item"><i class="pi pi-id-card"></i>{{ empleado().dni }}</span>
+            <span class="seg-meta-sep">·</span>
+            <span class="seg-meta-item"><i class="pi pi-map-marker"></i>{{ empleado().sede }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex align-items-center gap-2 flex-wrap">
+        <p-tag *ngIf="!loading()" [value]="empleado().rol" severity="info"></p-tag>
+        <p-tag *ngIf="!loading()" value="Activo" severity="success"></p-tag>
+        <p-button
+          icon="pi pi-file-pdf"
+          label="Exportar PDF"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="seg-pill"
+          [loading]="exportando()"
+          pTooltip="Exportar reporte completo"
+          tooltipPosition="bottom"
+          (onClick)="exportarPDF()">
+        </p-button>
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="seg-pill"
+          (onClick)="volver()">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- FILTRO DE FECHAS -->
+  <p-card styleClass="seg-filtros-card mb-3">
+    <div class="seg-filtros-row">
+      <div class="seg-filtros-label">
+        <i class="pi pi-calendar"></i>
+        <span>Período de consulta</span>
+      </div>
+      <div class="seg-filtros-controles">
+        <p-datepicker
+          [ngModel]="fechaInicio()"
+          (ngModelChange)="fechaInicio.set($event)"
+          dateFormat="dd/mm/yy"
+          placeholder="Fecha inicio"
+          [showClear]="true"
+          [showIcon]="true"
+          styleClass="seg-date-input">
+        </p-datepicker>
+        <span class="seg-filtros-sep">—</span>
+        <p-datepicker
+          [ngModel]="fechaFin()"
+          (ngModelChange)="fechaFin.set($event)"
+          dateFormat="dd/mm/yy"
+          placeholder="Fecha fin"
+          [showClear]="true"
+          [showIcon]="true"
+          styleClass="seg-date-input">
+        </p-datepicker>
+        <p-button
+          label="Filtrar"
+          icon="pi pi-search"
+          size="small"
+          styleClass="seg-pill seg-pill-gold"
+          (onClick)="aplicarFiltroFechas()">
+        </p-button>
+        <p-button
+          icon="pi pi-filter-slash"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="seg-pill"
+          pTooltip="Limpiar filtros"
+          (onClick)="limpiarFiltros()">
+        </p-button>
+      </div>
+      <div class="seg-filtros-rango">
+        <i class="pi pi-clock"></i>
+        {{ rangoFechaLabel() }}
+      </div>
+    </div>
+  </p-card>
+
+  <div style="position:relative">
+    <app-loading-overlay
+      [visible]="loading()"
+      mensaje="Cargando seguimiento..."
+      modo="inline">
+    </app-loading-overlay>
+
+    <div [style.opacity]="loading() ? '0.3' : '1'"
+         style="transition: opacity 0.2s ease;">
+
+      <!-- KPIs -->
+      <div class="seg-kpis mb-3">
+
+        <div class="seg-kpi-card">
+          <div class="seg-kpi-icono seg-kpi-icono--ventas">
+            <i class="pi pi-shopping-cart"></i>
+          </div>
+          <div class="seg-kpi-info">
+            <span class="seg-kpi-num">{{ kpis().totalVentas }}</span>
+            <span class="seg-kpi-label">Ventas</span>
+            <span class="seg-kpi-sub">S/ {{ kpis().montoVentas | number:'1.2-2' }}</span>
+          </div>
+        </div>
+
+        <div class="seg-kpi-card">
+          <div class="seg-kpi-icono seg-kpi-icono--cot">
+            <i class="pi pi-file-edit"></i>
+          </div>
+          <div class="seg-kpi-info">
+            <span class="seg-kpi-num">{{ kpis().totalCotizaciones }}</span>
+            <span class="seg-kpi-label">Cotizaciones</span>
+            <span class="seg-kpi-sub">{{ kpis().cotizacionesAprobadas }} aprobadas</span>
+          </div>
+        </div>
+
+        <div class="seg-kpi-card">
+          <div class="seg-kpi-icono seg-kpi-icono--com">
+            <i class="pi pi-wallet"></i>
+          </div>
+          <div class="seg-kpi-info">
+            <span class="seg-kpi-num">S/ {{ kpis().montoComisiones | number:'1.2-2' }}</span>
+            <span class="seg-kpi-label">Comisiones</span>
+            <span class="seg-kpi-sub">{{ kpis().totalComisiones }} movimientos</span>
+          </div>
+        </div>
+
+        <div class="seg-kpi-card seg-kpi-card--highlight">
+          <div class="seg-kpi-icono seg-kpi-icono--tasa">
+            <i class="pi pi-chart-pie"></i>
+          </div>
+          <div class="seg-kpi-info">
+            <span class="seg-kpi-num seg-kpi-num--gold">{{ tasaAprobacion() }}%</span>
+            <span class="seg-kpi-label">Tasa aprobación</span>
+            <span class="seg-kpi-sub">{{ kpis().cotizacionesAprobadas }} / {{ kpis().totalCotizaciones }} cot.</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- GRÁFICA -->
+      <p-card styleClass="seg-card mb-3">
+        <div class="seg-section-header">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-chart-line"></i>
+            <span>Evolución mensual</span>
+          </div>
+          <div class="seg-legend">
+            <span class="seg-legend-item">
+              <span class="seg-legend-dot" style="background:#f6af33"></span>
+              Ventas
+            </span>
+            <span class="seg-legend-item">
+              <span class="seg-legend-dot" style="background:#63b3ed"></span>
+              Comisiones
+            </span>
+          </div>
+        </div>
+        <div style="height:240px; position:relative">
+          <p-chart
+            *ngIf="chartData()"
+            type="line"
+            [data]="chartData()"
+            [options]="chartOptions()"
+            height="240px">
+          </p-chart>
+        </div>
+      </p-card>
+
+      <!-- TABS DE MOVIMIENTOS -->
+      <p-card styleClass="seg-card">
+        <div class="seg-section-header mb-3">
+          <div class="flex align-items-center gap-2">
+            <i class="pi pi-list"></i>
+            <span>Movimientos del empleado</span>
+          </div>
+          <span class="seg-periodo-badge">
+            <i class="pi pi-calendar"></i>
+            {{ rangoFechaLabel() }}
+          </span>
+        </div>
+
+        <p-tabs>
+
+          <!-- TAB: VENTAS -->
+          <p-tabpanel>
+            <ng-template pTemplate="header">
+              <div class="seg-tab-header">
+                <i class="pi pi-shopping-cart"></i>
+                <span>Ventas</span>
+                <span class="seg-tab-count">{{ ventas().length }}</span>
+              </div>
+            </ng-template>
+
+            <div class="seg-tabla-info mb-2">
+              <i class="pi pi-info-circle"></i>
+              Mostrando {{ ventas().length }} ventas ·
+              Total: <strong>S/ {{ totalMontoVentas() | number:'1.2-2' }}</strong>
+            </div>
+
+            <p-table
+              [value]="ventas()"
+              styleClass="p-datatable-striped p-datatable-sm"
+              [paginator]="true" [rows]="5"
+              [rowsPerPageOptions]="[5,10,20]">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width:12%">Código</th>
+                  <th style="width:30%">Cliente</th>
+                  <th style="width:18%">Fecha</th>
+                  <th style="width:20%">Total</th>
+                  <th style="width:20%">Estado</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-v>
+                <tr>
+                  <td><span class="seg-codigo">{{ v.codigo }}</span></td>
+                  <td>{{ v.cliente }}</td>
+                  <td>{{ v.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td class="seg-monto">S/ {{ v.total | number:'1.2-2' }}</td>
+                  <td><p-tag [value]="v.estado" [severity]="getVentasSeverity(v.estado)"></p-tag></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr><td colspan="5" class="text-center">
+                  <div class="mensaje-vacio"><i class="pi pi-inbox"></i><p>Sin ventas en el período</p></div>
+                </td></tr>
+              </ng-template>
+            </p-table>
+          </p-tabpanel>
+
+          <!-- TAB: COTIZACIONES -->
+          <p-tabpanel>
+            <ng-template pTemplate="header">
+              <div class="seg-tab-header">
+                <i class="pi pi-file-edit"></i>
+                <span>Cotizaciones</span>
+                <span class="seg-tab-count">{{ cotizaciones().length }}</span>
+              </div>
+            </ng-template>
+
+            <div class="seg-tabla-info mb-2">
+              <i class="pi pi-info-circle"></i>
+              Mostrando {{ cotizaciones().length }} cotizaciones ·
+              Total: <strong>S/ {{ totalMontoCotizaciones() | number:'1.2-2' }}</strong>
+            </div>
+
+            <p-table
+              [value]="cotizaciones()"
+              styleClass="p-datatable-striped p-datatable-sm"
+              [paginator]="true" [rows]="5"
+              [rowsPerPageOptions]="[5,10,20]">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width:12%">Código</th>
+                  <th style="width:30%">Cliente</th>
+                  <th style="width:18%">Fecha</th>
+                  <th style="width:20%">Total</th>
+                  <th style="width:20%">Estado</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-c>
+                <tr>
+                  <td><span class="seg-codigo">{{ c.codigo }}</span></td>
+                  <td>{{ c.cliente }}</td>
+                  <td>{{ c.fecha | date:'dd/MM/yyyy' }}</td>
+                  <td class="seg-monto">S/ {{ c.total | number:'1.2-2' }}</td>
+                  <td><p-tag [value]="c.estado" [severity]="getCotizacionSeverity(c.estado)"></p-tag></td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr><td colspan="5" class="text-center">
+                  <div class="mensaje-vacio"><i class="pi pi-inbox"></i><p>Sin cotizaciones en el período</p></div>
+                </td></tr>
+              </ng-template>
+            </p-table>
+          </p-tabpanel>
+
+          <!-- TAB: COMISIONES -->
+          <p-tabpanel>
+            <ng-template pTemplate="header">
+              <div class="seg-tab-header">
+                <i class="pi pi-wallet"></i>
+                <span>Comisiones</span>
+                <span class="seg-tab-count">{{ comisiones().length }}</span>
+              </div>
+            </ng-template>
+
+            <div class="seg-tabla-info mb-2">
+              <i class="pi pi-info-circle"></i>
+              Mostrando {{ comisiones().length }} comisiones ·
+              Total ganado: <strong>S/ {{ totalMontoComisiones() | number:'1.2-2' }}</strong>
+            </div>
+
+            <p-table
+              [value]="comisiones()"
+              styleClass="p-datatable-striped p-datatable-sm"
+              [paginator]="true" [rows]="5"
+              [rowsPerPageOptions]="[5,10,20]">
+              <ng-template pTemplate="header">
+                <tr>
+                  <th style="width:35%">Producto</th>
+                  <th style="width:12%">Cant.</th>
+                  <th style="width:15%">Tipo</th>
+                  <th style="width:20%">Monto</th>
+                  <th style="width:18%">Fecha</th>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="body" let-com>
+                <tr>
+                  <td>{{ com.producto }}</td>
+                  <td>{{ com.cantidad }}</td>
+                  <td>
+                    <p-tag
+                      [value]="com.tipo === 'PORCENTAJE' ? 'Porcentaje' : 'Fijo'"
+                      [severity]="com.tipo === 'PORCENTAJE' ? 'info' : 'success'">
+                    </p-tag>
+                  </td>
+                  <td class="seg-monto seg-monto--com">S/ {{ com.monto | number:'1.2-2' }}</td>
+                  <td>{{ com.fecha | date:'dd/MM/yyyy' }}</td>
+                </tr>
+              </ng-template>
+              <ng-template pTemplate="emptymessage">
+                <tr><td colspan="5" class="text-center">
+                  <div class="mensaje-vacio"><i class="pi pi-inbox"></i><p>Sin comisiones en el período</p></div>
+                </td></tr>
+              </ng-template>
+            </p-table>
+          </p-tabpanel>
+
+        </p-tabs>
+      </p-card>
+
+    </div>
+  </div>
+
+  <p-toast></p-toast>
+</div>

@@ -10,6 +10,22 @@ export const ADMIN_ROUTES: Routes = [
     pathMatch: 'full',
   },
   {
+    path: 'empresa/configuracion',
+    loadComponent: () =>
+      import('./pages/empresa/empresa-configuracion')
+        .then(m => m.EmpresaConfiguracion),
+    canActivate: [roleGuard],
+    data: { permiso: 'ADMINISTRACION' }, 
+  },
+  {
+    path: 'empleados/:id/seguimiento',
+    loadComponent: () =>
+      import('./pages/usuarios/pages/empleado-seguimiento/seguimiento-empleado') 
+        .then(m => m.SeguimientoEmpleado),
+    canActivate: [roleGuard],
+    data: { permiso: 'ADMINISTRACION' },
+  },
+  {
     path: 'dashboard-admin',
     loadComponent: () => import('./pages/dashboard-admin/dashboard-admin').then((m) => m.DashboardAdmin),
     canActivate: [roleGuard],
@@ -148,7 +164,7 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'generar-ventas-administracion',
     loadComponent: () => import('./pages/generar-ventas-administracion/generar-ventas-administracion').then((m) => m.GenerarVentasAdministracion),
-    canActivate: [roleGuard, CashboxAdminGuard], 
+    canActivate: [roleGuard, CashboxAdminGuard],
     data: { permiso: 'CREAR_VENTA_ADMIN' }
   },
   {
@@ -163,7 +179,15 @@ export const ADMIN_ROUTES: Routes = [
     canActivate: [roleGuard],
     data: { permiso: 'VER_VENTAS_ADMIN' }
   },
-
+  {
+    path: 'nota-credito',
+    loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent),
+    //canActivate: [roleGuard],
+    data: { permiso: 'CREAR_NOTA_CREDITO' },
+    children: [
+      { path: 'crear', loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent) }
+    ]
+  },
   {
     path: 'ventas-por-cobrar',
     canActivate: [roleGuard],
@@ -180,17 +204,29 @@ export const ADMIN_ROUTES: Routes = [
   { path: 'pagar-ventas-por-cobrar/:id', redirectTo: 'ventas-por-cobrar/pagar/:id', pathMatch: 'full' },
 
   {
-    path: 'cotizaciones',
+    path: 'cotizaciones-compra',
     canActivate: [roleGuard],
     data: { permiso: 'CREAR_COTIZACIONES' },
     children: [
-      { path: '', loadComponent: () => import('./pages/gestion-cotizacion/gestion-listado/gestion-listado').then((m) => m.GestionCotizacionesComponent) },
-      { path: 'agregar', loadComponent: () => import('./pages/gestion-cotizacion/gestion-formulario/cotizacion-formulario').then((m) => m.CotizacionFormulario) },
-      { path: 'ver-detalle/:id', loadComponent: () => import('./pages/gestion-cotizacion/detalle-gestion-formulario/detalle-cotizacion-formulario').then((m) => m.DetalleCotizacionComponent) },
+      { path: '', loadComponent: () => import('./pages/gestion-cotizacion-compra/gestion-listado/gestion-compras-listado').then((m) => m.GestionComprasComponent) },
+      { path: 'agregar-cotizaciones', loadComponent: () => import('./pages/gestion-cotizacion-compra/gestion-formulario/cotizacion-compra-formulario').then((m) => m.CotizacionCompraFormulario) },
+      { path: 'ver-detalle-cotizacion/:id', loadComponent: () => import('./pages/gestion-cotizacion-compra/detalle-gestion-formulario/detalle-cotizacion-formulario').then((m) => m.DetalleCotizacionComponent) },
     ],
   },
+  {
+    path: 'cotizaciones-venta',
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_COTIZACIONES' },
+    children: [
+      { path: '', loadComponent: () => import('./pages/gestion-cotizacion-venta/gestion-listado/gestion-listado').then((m) => m.GestionCotizacionesComponent) },
+      { path: 'agregar-cotizaciones', loadComponent: () => import('./pages/gestion-cotizacion-venta/gestion-formulario/cotizacion-formulario').then((m) => m.CotizacionFormulario) },
+      { path: 'ver-detalle-cotizacion/:id', loadComponent: () => import('./pages/gestion-cotizacion-venta/detalle-gestion-formulario/detalle-cotizacion-formulario').then((m) => m.DetalleCotizacionComponent) },
+    ],
+  },
+
+
   { path: 'agregar-cotizaciones', redirectTo: 'cotizaciones/agregar', pathMatch: 'full' },
-  { path: 'ver-detalle-cotizacion/:id', redirectTo: 'cotizaciones/ver-detalle/:id', pathMatch: 'full' },
+  { path: 'ver-detalle-cotizacion/:id', redirectTo: 'cotizaciones/ver-detalle-cotizacion/:id', pathMatch: 'full' },
 
   {
     path: 'promociones',
@@ -246,7 +282,15 @@ export const ADMIN_ROUTES: Routes = [
     children: [
       { path: '', loadComponent: () => import('./pages/remates/pages/remates-pr/remates-pr').then((m) => m.RematesPr) },
       { path: 'registro-remate', loadComponent: () => import('./pages/remates/pages/remates-registro/remates-registro').then((m) => m.RematesRegistro) },
+      { path: 'editar-remate/:id', loadComponent: () => import('./pages/remates/pages/remates-list/editar-remate').then((m) => m.EditarRemateComponent) },
     ],
+  },
+
+  {
+    path: 'documento-contador',
+    loadComponent: () => import('./pages/contador/pages/documento-contador/documento-contador').then((m) => m.DocumentoContador),
+    canActivate: [roleGuard],
+    //data: { permiso: 'AGREGAR_DOCUMENTO' }
   },
 
   {
@@ -268,12 +312,17 @@ export const ADMIN_ROUTES: Routes = [
     data: { permiso: 'CREAR_DESPACHO' }
   },
   {
+    path: 'despacho-productos/confirmar-despacho',
+    loadComponent: () => import('./pages/despacho-productos/pages/confirmar-despacho/confirmar-despacho').then((m) => m.ConfirmarDespacho),
+    canActivate: [roleGuard],
+    data: { permiso: 'CREAR_DESPACHO' }
+  },
+  {
     path: 'despacho-productos/editar-despacho/:id',
     loadComponent: () => import('./pages/despacho-productos/pages/editar-despacho/editar-despacho').then((m) => m.EditarDespacho),
     canActivate: [roleGuard],
     data: { permiso: 'CREAR_DESPACHO' }
   },
-
   {
     path: 'conteo-inventario',
     canActivate: [roleGuard],
@@ -284,6 +333,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: 'detalle/:id', loadComponent: () => import('../logistica/pages/conteo-detalle/conteodetalle').then((m) => m.ConteoDetalle) },
     ],
   },
+
   { path: 'conteo-crear', redirectTo: 'conteo-inventario/crear', pathMatch: 'full' },
   { path: 'conteo-detalle/:id', redirectTo: 'conteo-inventario/detalle/:id', pathMatch: 'full' },
 

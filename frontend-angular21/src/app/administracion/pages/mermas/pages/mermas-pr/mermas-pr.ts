@@ -18,33 +18,32 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { CommonModule } from '@angular/common';
 
-import { WastageService, WastageResponseDto } from '../../../../services/wastage.service';
-import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../../../shared/components/paginador/Paginador.component';
+import { WastageService, WastageResponseDto, WastageTypeDto } from '../../../../services/wastage.service';
+import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 interface WastageDetail {
-  id_detalle: number;
-  id_producto: number;
-  cod_prod: string;
-  desc_prod: string;
-  cantidad: number;
-  pre_unit: number;
-  observacion?: string;
+  id_detalle:    number;
+  id_producto:   number;
+  cod_prod:      string;
+  desc_prod:     string;
+  cantidad:      number;
+  pre_unit:      number;
+  observacion?:  string;
   id_tipo_merma: number;
 }
 
 interface MermaUI {
-  id_merma: number;
-  codigo: string;
-  motivo: string;
-  tipoMerma: string;
-  tipoMermaId: number;
-  cantidad: number;
-  responsable: string;
+  id_merma:      number;
+  codigo:        string;
+  motivo:        string;
+  tipoMerma:     string;
+  tipoMermaId:   number;
+  cantidad:      number;
+  responsable:   string;
   fechaRegistro: Date;
-  observacion?: string;
-  detalles: WastageDetail[];
-  valorTotal: number;
+  observacion?:  string;
+  detalles:      WastageDetail[];
+  valorTotal:    number;
 }
 
 type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast';
@@ -56,9 +55,7 @@ type Severity = 'success' | 'info' | 'warn' | 'danger' | 'secondary' | 'contrast
     CardModule, ButtonModule, RouterModule, FormsModule, InputTextModule,
     AutoCompleteModule, Select, ConfirmDialogModule, ToastModule, TableModule,
     TooltipModule, TagModule, DialogModule, InputNumberModule, SelectButtonModule,
-    CommonModule,
-    LoadingOverlayComponent,
-    PaginadorComponent, 
+    CommonModule, SharedTableContainerComponent,
   ],
   templateUrl: './mermas-pr.html',
   styleUrl: './mermas-pr.css',
@@ -73,13 +70,15 @@ export class MermasPr implements OnInit {
   mesActual = signal(this.obtenerMesActual());
   cargando  = this.wastageService.loading;
 
-  tiposMerma = [
-    { label: 'Por Defecto', value: 'POR_DEFECTO' },
-    { label: 'Daño',        value: 'DAÑO'        },
-    { label: 'Garantía',    value: 'GARANTIA'    },
-    { label: 'Merma',       value: 'MERMA'       },
-    { label: 'Oferta',      value: 'OFERTA'      },
-  ];
+  // ── Tipos de merma desde la API ───────────────────────────────────────────
+  // Incluye opción "Todos" al inicio para el filtro
+  tiposMermaOpciones = computed(() => [
+    { label: 'Todos los tipos', value: '' },
+    ...this.wastageService.tiposMerma().map((t: WastageTypeDto) => ({
+      label: t.tipo,
+      value: t.tipo,
+    })),
+  ]);
 
   // Filtros
   busqueda        = signal('');
@@ -102,8 +101,8 @@ export class MermasPr implements OnInit {
 
     if (busquedaStr) {
       resultados = resultados.filter(m =>
-        m.codigo.toLowerCase().includes(busquedaStr) ||
-        m.motivo.toLowerCase().includes(busquedaStr) ||
+        m.codigo.toLowerCase().includes(busquedaStr)      ||
+        m.motivo.toLowerCase().includes(busquedaStr)      ||
         m.responsable.toLowerCase().includes(busquedaStr)
       );
     }
@@ -137,7 +136,18 @@ export class MermasPr implements OnInit {
   });
 
   ngOnInit(): void {
+    this.cargarTiposMerma();
     this.cargarMermas();
+  }
+
+  // ── Carga tipos desde el endpoint ─────────────────────────────────────────
+  private cargarTiposMerma(): void {
+    this.wastageService.loadTiposMerma().subscribe({
+      error: () => this.messageService.add({
+        severity: 'warn', summary: 'Aviso',
+        detail: 'No se pudieron cargar los tipos de merma.', life: 3000,
+      }),
+    });
   }
 
   private mapToUI(merma: WastageResponseDto): MermaUI {
@@ -175,8 +185,8 @@ export class MermasPr implements OnInit {
 
   obtenerMesActual(): string {
     const meses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+      'Enero','Febrero','Marzo','Abril','Mayo','Junio',
+      'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre',
     ];
     return meses[new Date().getMonth()];
   }
@@ -184,14 +194,10 @@ export class MermasPr implements OnInit {
   cargarMermas(): void {
     this.wastageService.loadWastages(1, 50).subscribe({
       next: () => console.log(`✅ ${this.mermas().length} mermas cargadas`),
-      error: () => {
-        this.messageService.add({
-          severity: 'error',
-          summary:  'Error',
-          detail:   'No se pudieron cargar las mermas',
-          life:     3000,
-        });
-      },
+      error: () => this.messageService.add({
+        severity: 'error', summary: 'Error',
+        detail: 'No se pudieron cargar las mermas', life: 3000,
+      }),
     });
   }
 
@@ -200,10 +206,8 @@ export class MermasPr implements OnInit {
     this.tipoMermaFiltro.set('');
     this.paginaActual.set(1);
     this.messageService.add({
-      severity: 'info',
-      summary:  'Filtros limpiados',
-      detail:   'Se muestran todas las mermas',
-      life:     2000,
+      severity: 'info', summary: 'Filtros limpiados',
+      detail: 'Se muestran todas las mermas', life: 2000,
     });
   }
 
@@ -217,15 +221,22 @@ export class MermasPr implements OnInit {
     this.mermaSeleccionada.set(null);
   }
 
-  getTipoMermaLabel(tipo: string): string { return tipo.toUpperCase(); }
+  getTipoMermaLabel(tipo: string): string {
+    // Busca el motivo_merma del tipo para mostrar algo más descriptivo
+    const found = this.wastageService.tiposMerma()
+      .find((t: WastageTypeDto) => t.tipo === tipo);
+    return found ? found.tipo : tipo || 'SIN CLASIFICAR';
+  }
 
   getTipoMermaSeverity(tipo: string): Severity {
-    const map: { [key: string]: Severity } = {
-      'POR_DEFECTO':    'secondary',
-      'DAÑO':           'danger',
-      'GARANTIA':       'warn',
-      'MERMA':          'info',
-      'OFERTA':         'success',
+    const map: Record<string, Severity> = {
+      'DAÑO':         'danger',
+      'VENCIMIENTO':  'warn',
+      'ROBO':         'danger',
+      'DETERIORO':    'info',
+      'ERROR_CONTEO': 'secondary',
+      'DEVOLUCION':   'warn',
+      'OTRO':         'secondary',
       'SIN CLASIFICAR': 'secondary',
     };
     return map[tipo] || 'info';
@@ -233,6 +244,6 @@ export class MermasPr implements OnInit {
 
   refrescarLista(): void { this.cargarMermas(); }
 
-  onPageChange(page: number): void   { this.paginaActual.set(page); }
+  onPageChange(page: number):   void { this.paginaActual.set(page); }
   onLimitChange(limit: number): void { this.limitePagina.set(limit); this.paginaActual.set(1); }
 }

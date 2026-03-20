@@ -18,6 +18,7 @@
   <p-card styleClass="cliente-card border-none">
     <form #clienteForm="ngForm" (ngSubmit)="registrar(clienteForm)">
       <div class="grid form-grid">
+
         <div class="col-12 md:col-6">
           <label class="field-label">TIPO DE DOCUMENTO</label>
           <p-select
@@ -33,80 +34,103 @@
 
         <div class="col-12 md:col-6">
           <label class="field-label" for="nro_documento">NÚMERO DE DOCUMENTO</label>
-          <input id="nro_documento" pInputText class="w-full"
-            [(ngModel)]="cliente.nro_documento" name="nro_documento"
-            (input)="sanitizarDocumento()" (keydown)="soloDocumento($event)" [maxlength]="maxLengthDocumento" />
+          <input
+            id="nro_documento"
+            pInputText
+            class="w-full"
+            [(ngModel)]="cliente.nro_documento"
+            name="nro_documento"
+            (input)="sanitizarDocumento()"
+            (keydown)="soloDocumento($event)"
+            [maxlength]="maxLengthDocumento"
+          />
           <small class="p-error" *ngIf="submitted() && !documentoValido">
             {{ esDNI ? 'El DNI debe tener exactamente 8 dígitos.' : esRUC ? 'El RUC debe tener exactamente 11 dígitos.' : 'Documento inválido.' }}
+          </small>
+          <small *ngIf="reniecLoading()" class="text-500">
+            <i class="pi pi-spin pi-spinner"></i> Consultando...
+          </small>
+          <small *ngIf="!reniecLoading() && nombreDesdeApi()" style="color: var(--green-600)">
+            <i class="pi pi-check-circle"></i>
+            {{ esRUC ? 'Datos obtenidos de SUNAT' : 'Datos obtenidos de RENIEC' }}
           </small>
         </div>
 
         <div class="col-12" *ngIf="esRUC">
           <label class="field-label" for="razon_social">RAZÓN SOCIAL</label>
-          <input id="razon_social" pInputText class="w-full" [(ngModel)]="cliente.razon_social" name="razon_social"
+          <input id="razon_social" pInputText class="w-full"
+            [(ngModel)]="cliente.razon_social" name="razon_social"
             (input)="sanitizarSoloLetras('razon_social')" (keydown)="soloLetras($event)" />
           <small class="p-error" *ngIf="submitted() && !razonSocialValida">La razón social es obligatoria.</small>
         </div>
 
         <div class="col-12 md:col-6" *ngIf="!esRUC">
           <label class="field-label" for="nombres">NOMBRES</label>
-          <input id="nombres" pInputText class="w-full" [(ngModel)]="cliente.nombres" name="nombres"
+          <input id="nombres" pInputText class="w-full"
+            [(ngModel)]="cliente.nombres" name="nombres"
             (input)="sanitizarSoloLetras('nombres')" (keydown)="soloLetras($event)" />
           <small class="p-error" *ngIf="submitted() && !nombresValido">Los nombres son obligatorios.</small>
         </div>
 
         <div class="col-12 md:col-6" *ngIf="!esRUC">
           <label class="field-label" for="apellidos">APELLIDOS</label>
-          <input id="apellidos" pInputText class="w-full" [(ngModel)]="cliente.apellidos" name="apellidos"
+          <input id="apellidos" pInputText class="w-full"
+            [(ngModel)]="cliente.apellidos" name="apellidos"
             (input)="sanitizarSoloLetras('apellidos')" (keydown)="soloLetras($event)" />
           <small class="p-error" *ngIf="submitted() && !apellidosValido">Los apellidos son obligatorios.</small>
         </div>
 
         <div class="col-12">
           <label class="field-label" for="direccion">DIRECCIÓN</label>
-          <input id="direccion" pInputText class="w-full" [(ngModel)]="cliente.direccion" name="direccion"
+          <input id="direccion" pInputText class="w-full"
+            [(ngModel)]="cliente.direccion" name="direccion"
             (input)="sanitizarTexto('direccion')" />
           <small class="p-error" *ngIf="submitted() && cliente.direccion.trim().length < 3">La dirección es obligatoria.</small>
         </div>
 
         <div class="col-12 md:col-6">
           <label class="field-label" for="email">EMAIL</label>
-          <input id="email" pInputText class="w-full" [(ngModel)]="cliente.email" name="email"
+          <input id="email" pInputText class="w-full"
+            [(ngModel)]="cliente.email" name="email"
             (input)="sanitizarEmail()" />
           <small class="p-error" *ngIf="submitted() && !emailValido">Email inválido.</small>
         </div>
 
         <div class="col-12 md:col-6">
           <label class="field-label" for="telefono">NUMERO TELEFONICO</label>
-          <p-inputnumber id="telefono" class="w-full" [(ngModel)]="cliente.telefono" name="telefono"
+          <p-inputnumber id="telefono" class="w-full"
+            [(ngModel)]="cliente.telefono" name="telefono"
             [useGrouping]="false" [min]="0" [max]="999999999"
-            (onKeyDown)="onTelefonoKeyDown($event)" (ngModelChange)="onTelefonoChange($event)"></p-inputnumber>
+            (onKeyDown)="onTelefonoKeyDown($event)"
+            (ngModelChange)="onTelefonoChange($event)">
+          </p-inputnumber>
           <small class="p-error" *ngIf="submitted() && !telefonoValido">El teléfono debe tener 9 dígitos.</small>
           <small class="text-500" *ngIf="!submitted() && cliente.telefono !== null">
             {{ telefonoDigitos }}/9 dígitos
           </small>
         </div>
+
       </div>
 
       <p-divider></p-divider>
 
       <div class="flex align-items-center justify-content-center gap-3 mt-3">
-        <p-button 
-        label="Cancelar"
-        outlined severity="secondary"
-        styleClass="cliente-btn-cancel"
-        type="button"
-        (onClick)="confirmCancel(clienteForm)"
-        ></p-button>
-
-        <p-button 
-        label="Registrar Cliente" 
-        icon="pi pi-check" 
-        styleClass="cliente-btn-primary"
-        (onClick)="registrar(clienteForm)" 
-        [loading]="loading()"
-        ></p-button>
+        <p-button
+          label="Cancelar"
+          outlined severity="secondary"
+          styleClass="cliente-btn-cancel"
+          type="button"
+          (onClick)="confirmCancel(clienteForm)">
+        </p-button>
+        <p-button
+          label="Registrar Cliente"
+          icon="pi pi-check"
+          styleClass="cliente-btn-primary"
+          (onClick)="registrar(clienteForm)"
+          [loading]="loading()">
+        </p-button>
       </div>
+
     </form>
   </p-card>
 </div>

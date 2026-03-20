@@ -1,4 +1,3 @@
-
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
@@ -42,8 +41,11 @@ export class AgregarCliente implements OnInit {
   private readonly confirmationService = inject(ConfirmationService);
   private readonly messageService      = inject(MessageService);
 
-  submitted      = signal(false);
-  tiposDocumento = signal<TipoDocumento[]>([]);
+  submitted        = signal(false);
+  tiposDocumento   = signal<TipoDocumento[]>([]);
+  reniecLoading    = signal(false);
+  nombreDesdeApi   = signal(false);
+
   readonly loading = this.clienteService.loading;
 
   cliente = {
@@ -86,6 +88,56 @@ export class AgregarCliente implements OnInit {
       case '07': return 12;
       default:   return 15;
     }
+  }
+
+  // ── RENIEC / SUNAT ────────────────────────────────────────────────
+  consultarDocumento(): void {
+    const doc = this.cliente.nro_documento.trim();
+    const esDniCompleto = this.esDNI && doc.length === 8;
+    const esRucCompleto = this.esRUC && doc.length === 11;
+
+    if (!esDniCompleto && !esRucCompleto) return;
+
+    this.reniecLoading.set(true);
+    this.nombreDesdeApi.set(false);
+
+    this.clienteService.consultarDocumentoIdentidad(doc).subscribe({
+      next: (res) => {
+        this.reniecLoading.set(false);
+        if (res?.nombreCompleto) {
+          if (this.esRUC) {
+            this.cliente.razon_social = res.nombreCompleto;
+            if (res.direccion) this.cliente.direccion = res.direccion;
+          } else {
+            this.cliente.nombres   = res.nombres ?? '';
+            this.cliente.apellidos = `${res.apellidoPaterno ?? ''} ${res.apellidoMaterno ?? ''}`.trim();
+          }
+          this.nombreDesdeApi.set(true);
+          this.messageService.add({
+            severity: 'success',
+            summary: this.esRUC ? 'SUNAT' : 'RENIEC',
+            detail: res.nombreCompleto,
+            life: 3000,
+          });
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'No encontrado',
+            detail: 'Ingrese el nombre manualmente.',
+            life: 3000,
+          });
+        }
+      },
+      error: () => {
+        this.reniecLoading.set(false);
+        this.messageService.add({
+          severity: 'warn',
+          summary: 'Sin conexión',
+          detail: 'No se pudo consultar. Ingrese el nombre manualmente.',
+          life: 3000,
+        });
+      },
+    });
   }
 
   // ── Teléfono ──────────────────────────────────────────────────────
@@ -163,6 +215,8 @@ export class AgregarCliente implements OnInit {
       ? val.replace(/\D/g, '')
       : val.replace(/[^a-zA-Z0-9]/g, '');
     this.cliente.nro_documento = val.slice(0, this.maxLengthDocumento).toUpperCase();
+    this.nombreDesdeApi.set(false);
+    this.consultarDocumento();
   }
 
   sanitizarEmail(): void {
@@ -189,10 +243,10 @@ export class AgregarCliente implements OnInit {
   private detectConcatenationIssues(): string[] {
     const issues: string[] = [];
     const c = this.cliente;
-    if (this.looksTooConcatenated(c.nombres))  issues.push('El campo "NOMBRES" parece contener texto pegado sin separadores.');
+    if (this.looksTooConcatenated(c.nombres))   issues.push('El campo "NOMBRES" parece contener texto pegado sin separadores.');
     if (this.looksTooConcatenated(c.apellidos)) issues.push('El campo "APELLIDOS" parece contener texto pegado sin separadores.');
     if (this.looksTooConcatenated(c.direccion)) issues.push('La "DIRECCIÓN" parece contener texto pegado sin separadores.');
-    if (this.hasEmailLike(c.nombres) || this.hasPhoneLike(c.nombres))   issues.push('El campo "NOMBRES" contiene un email o teléfono.');
+    if (this.hasEmailLike(c.nombres)  || this.hasPhoneLike(c.nombres))   issues.push('El campo "NOMBRES" contiene un email o teléfono.');
     if (this.hasEmailLike(c.apellidos) || this.hasPhoneLike(c.apellidos)) issues.push('El campo "APELLIDOS" contiene un email o teléfono.');
     if (!this.hasEmailLike(c.email) && c.email.trim().length > 0 && c.email.includes(' ')) {
       issues.push('El campo "EMAIL" contiene espacios o texto extraño.');
@@ -234,12 +288,11 @@ export class AgregarCliente implements OnInit {
   // ── Tipo documento change ─────────────────────────────────────────
   onTipoDocumentoChange(): void {
     this.cliente.nro_documento = '';
-    if (this.esRUC) {
-      this.cliente.nombres   = '';
-      this.cliente.apellidos = '';
-    } else {
-      this.cliente.razon_social = '';
-    }
+    this.cliente.nombres       = '';
+    this.cliente.apellidos     = '';
+    this.cliente.razon_social  = '';
+    this.cliente.direccion     = '';
+    this.nombreDesdeApi.set(false);
   }
 
   // ── Cancelar ──────────────────────────────────────────────────────

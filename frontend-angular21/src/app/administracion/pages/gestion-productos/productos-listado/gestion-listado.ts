@@ -42,6 +42,8 @@ export class GestionListado implements OnInit {
   private productoService = inject(ProductoService);
   private sedeService = inject(SedeService);
   private categoriaService = inject(CategoriaService);
+  private confirmationService = inject(ConfirmationService);
+  private messageService = inject(MessageService);
   // Definición de Signals para el estado
 
   productos = signal<ProductoStock[]>([]);
@@ -174,7 +176,8 @@ private actualizarCabecera() {
       sedeId,
       this.currentPage(),
       this.rows(),
-      this.categoriaSeleccionada() ?? undefined
+      this.categoriaSeleccionada() ?? undefined,
+      true // Solo activos
     ).subscribe({
       next: (response) => {
         this.productos.set(response.data);
@@ -281,6 +284,44 @@ seleccionarProductoBusqueda(event: any) {
 
   irDetalle(id: number) { 
     this.router.navigate(['/admin/gestion-productos/ver-detalle-producto', id]);
+  }
+
+  confirmarEliminar(id: number) {
+    this.confirmationService.confirm({
+      message: '¿Estás seguro de que deseas eliminar este producto?',
+      header: 'Confirmar Eliminación',
+      icon: 'pi pi-exclamation-triangle',
+      acceptLabel: 'Sí, eliminar',
+      rejectLabel: 'No, cancelar',
+      accept: () => {
+        this.eliminarProducto(id);
+      },
+      reject: () => {
+        // No hacemos nada, el usuario canceló
+      }
+    });
+  }
+
+  eliminarProducto(id: number) {
+    this.productoService.actualizarProductoEstado(id, false).subscribe({
+      next: (res) => {
+        this.messageService.add({ 
+          severity: 'success', 
+          summary: 'Eliminado', 
+          detail: 'El producto fue eliminado correctamente' 
+        });
+        
+        // AQUÍ VUELVES A CARGAR TU TABLA PARA QUE DESAPAREZCA
+        this.cargarProductos(); 
+      },
+      error: (err) => {
+        this.messageService.add({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'No se pudo eliminar el producto' 
+        });
+      }
+    });
   }
 
 }
