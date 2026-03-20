@@ -1,15 +1,13 @@
 <p-toast></p-toast>
 
 <div class="p-2">
-  <p-card class="ventas-header-card mb-4 ventas-header-bordered">
+  <p-card styleClass="sedes-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
-        <span class="ventas-title-icon">
-          <i [class]="iconoCabecera"></i>
-        </span>
+        <span class="sedes-title-icon"><i class="pi pi-tag"></i></span>
         <div>
-          <p class="ventas-kicker mb-0">{{ tituloKicker }}</p>
-          <h2 class="ventas-title mb-0">{{ subtituloKicker }}</h2>
+          <p class="sedes-kicker ">{{ tituloKicker }}</p>
+          <h2 class="sedes-title ">{{ subtituloKicker }}</h2>
         </div>
       </div>
       <div class="flex gap-3">
@@ -20,15 +18,7 @@
           pTooltip="Ir al listado"
           tooltipPosition="bottom"
         />
-        <p-button
-          label="Imprimir"
-          icon="pi pi-print"
-          [outlined]="true"
-          (click)="imprimirDetalle()"
-          pTooltip="Imprimir detalle"
-          tooltipPosition="bottom"
-          [disabled]="!cuenta()"
-        />
+      
       </div>
     </div>
   </p-card>
