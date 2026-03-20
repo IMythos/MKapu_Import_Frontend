@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -11,22 +11,24 @@ import { MessageService } from 'primeng/api';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Select } from 'primeng/select';
 import { CheckboxModule } from 'primeng/checkbox';
+import { TagModule } from 'primeng/tag';
 
 import { AuctionService, CreateAuctionDto } from '../../../../services/auction.service';
 import { ProductoService } from '../../../../services/producto.service';
 import { AuthService } from '../../../../../auth/services/auth.service';
+import { SedeService } from '../../../../services/sede.service';
 
 interface Producto {
-  id_producto:     number;
-  id_categoria?:   number;
+  id_producto:      number;
+  id_categoria?:    number;
   categoriaNombre?: string;
-  codigo:          string;
-  anexo:           string;
-  descripcion?:    string;
-  pre_unit:        number;
-  estado?:         boolean;
-  stock?:          number;
-  id_almacen?:     number | null;
+  codigo:           string;
+  anexo:            string;
+  descripcion?:     string;
+  pre_unit:         number;
+  estado?:          boolean;
+  stock?:           number;
+  id_almacen?:      number | null;
 }
 
 interface MotivoOption {
@@ -42,21 +44,30 @@ interface MotivoOption {
     CommonModule, FormsModule, RouterModule,
     ButtonModule, CardModule, InputTextModule,
     TextareaModule, ToastModule, InputNumberModule,
-    Select, CheckboxModule,
+    Select, CheckboxModule, TagModule,
   ],
   templateUrl: './remates-registro.html',
   styleUrl: './remates-registro.css',
   providers: [MessageService],
 })
 export class RematesRegistro implements OnInit {
-  private readonly messageService = inject(MessageService);
-  private readonly router         = inject(Router);
-  private readonly auctionService = inject(AuctionService);
+  private readonly messageService  = inject(MessageService);
+  private readonly router          = inject(Router);
+  private readonly auctionService  = inject(AuctionService);
   private readonly productoService = inject(ProductoService);
-  private readonly authService    = inject(AuthService);
-  private readonly cdr            = inject(ChangeDetectorRef);
+  private readonly authService     = inject(AuthService);
+  private readonly sedeService     = inject(SedeService);
+  private readonly cdr             = inject(ChangeDetectorRef);
 
-  codigoProducto       = '';
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  queryBusqueda      = signal('');
+  productosSugeridos = signal<any[]>([]);
+  panelVisible       = signal(false);
+  buscandoProductos  = signal(false);
+  registrando        = signal(false);
+  private searchTimeout: any = null;
+
+  // ── Estado producto ───────────────────────────────────────────────────────
   productoSeleccionado: Producto | null = null;
   productoNoEncontrado = false;
 
@@ -65,14 +76,13 @@ export class RematesRegistro implements OnInit {
   precioRemate: number | null = null;
   observaciones = '';
   responsableNombre = 'Cargando...';
-
   generarCodigoAuto = true;
 
-  id_usuario_ref   = 0;
-  id_sede_ref      = 0;
+  id_usuario_ref = 0;
+  id_sede_ref    = 0;
   id_sede_code: string | null = null;
 
-  motivosRemate: MotivoOption[] = [
+  readonly motivosRemate: MotivoOption[] = [
     { label: 'Liquidación',          value: 1, descripcion: 'Promoción / Liquidación' },
     { label: 'Obsolescencia',        value: 2, descripcion: 'Fin de ciclo'            },
     { label: 'Rotura caja',          value: 3, descripcion: 'Presentación dañada'     },
@@ -81,26 +91,21 @@ export class RematesRegistro implements OnInit {
 
   motivo: number | null = null;
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.cargarDatosUsuario();
-  }
-
-  private applyStateSafe(fn: () => void): void {
-    setTimeout(() => { fn(); this.cdr.detectChanges(); }, 50);
+    this.sedeService.loadSedes().subscribe();
   }
 
   private cargarDatosUsuario(): void {
     const usuario: any = this.authService.getCurrentUser();
-
     if (!usuario) {
       this.messageService.add({ severity: 'error', summary: 'Sesión no válida', detail: 'No se pudo obtener la información del usuario.', life: 5000 });
       setTimeout(() => this.authService.logout(), 1200);
       return;
     }
-
     this.id_usuario_ref = Number(usuario.userId ?? usuario.id_usuario ?? 0) || 0;
     const sedeFromToken = usuario.id_sede ?? usuario.idSede ?? usuario.id_sede_ref ?? usuario.id_sede_code ?? null;
-
     if (sedeFromToken != null) {
       const sedeNum = Number(sedeFromToken);
       if (!Number.isNaN(sedeNum) && sedeNum > 0) {
@@ -111,77 +116,138 @@ export class RematesRegistro implements OnInit {
         this.id_sede_code = String(sedeFromToken);
       }
     }
-
     const nombres = String(usuario.nombres ?? usuario.nombre ?? usuario.username ?? '').trim();
     const ape_pat = String(usuario.ape_pat ?? usuario.apellidos ?? '').trim();
     const ape_mat = String(usuario.ape_mat ?? '').trim();
     this.responsableNombre = [nombres, ape_pat, ape_mat].filter(Boolean).join(' ').trim() || 'Usuario';
   }
 
-  private isProductoValido(data: any): data is Producto {
-    return !!data && typeof data === 'object' && typeof data.id_producto === 'number' && typeof data.codigo === 'string';
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  getNombreSede(): string {
+    if (!this.id_sede_ref) return 'Sin sede';
+    const sede = this.sedeService.sedes().find(s => s.id_sede === this.id_sede_ref);
+    return sede ? sede.nombre : `Sede #${this.id_sede_ref}`;
   }
 
-  private mapDetailWithStockToProducto(resp: any): Producto | null {
-    const p = resp?.producto;
-    const s = resp?.stock;
-    if (!p || typeof p !== 'object') return null;
-    const id_producto = Number(p.id_producto);
-    if (!id_producto || Number.isNaN(id_producto)) return null;
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  onQueryChange(value: string): void {
+    this.queryBusqueda.set(value);
+    this.productosSugeridos.set([]);
+    this.panelVisible.set(false);
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
 
-    return {
-      id_producto,
-      id_categoria:    Number(p.categoria?.id_categoria ?? 0),
-      categoriaNombre: String(p.categoria?.nombre ?? ''),
-      codigo:          String(p.codigo ?? ''),
-      anexo:           String(p.nombre ?? p.anexo ?? ''),
-      descripcion:     String(p.descripcion ?? ''),
-      pre_unit:        Number(p.precio_unitario ?? p.pre_unit ?? 0),
-      estado:          Number(p.estado ?? 0) === 1,
-      stock:           Number(s?.cantidad ?? 0),
-      id_almacen:      s?.id_almacen != null ? Number(s.id_almacen) : null,
-    };
-  }
-
-  buscarProductoPorCodigo(): void {
-    const codigo = (this.codigoProducto ?? '').trim().toUpperCase();
-    this.productoNoEncontrado = false;
-    this.productoSeleccionado = null;
-
-    if (!codigo) {
-      this.messageService.add({ severity: 'warn', summary: 'Código requerido', detail: 'Ingrese el código del producto.', life: 2000 });
-      return;
+    if (this.productoSeleccionado) {
+      this.productoSeleccionado = null;
+      this.cantidad = 1;
+      this.precioRemate = null;
     }
 
-    const sedeNum = Number(this.id_sede_ref && this.id_sede_ref > 0 ? this.id_sede_ref : (this.id_sede_code ?? 0));
-    if (Number.isNaN(sedeNum) || sedeNum === 0) {
+    if (!value || value.trim().length < 3) return;
+
+    const sede = this.id_sede_ref > 0 ? this.id_sede_ref : 0;
+    if (!sede) {
       this.messageService.add({ severity: 'warn', summary: 'Sede no definida', detail: 'No se pudo determinar la sede del usuario.', life: 3000 });
-      this.applyStateSafe(() => { this.productoNoEncontrado = true; });
       return;
     }
 
-    this.productoService.getProductoByCodigoConStock(codigo, sedeNum).subscribe({
-      next: (resp: any) => {
-        const producto = this.mapDetailWithStockToProducto(resp);
-        if (!producto || !this.isProductoValido(producto)) {
-          this.applyStateSafe(() => { this.productoSeleccionado = null; this.productoNoEncontrado = true; });
-          this.messageService.add({ severity: 'warn', summary: 'No encontrado', detail: 'Producto no encontrado o sin stock.', life: 2500 });
-          return;
-        }
-        this.applyStateSafe(() => {
-          this.productoSeleccionado = producto;
-          this.productoNoEncontrado = false;
-          this.cantidad     = 1;
-          this.precioRemate = Math.round(producto.pre_unit * 0.5 * 100) / 100;
-        });
-        this.messageService.add({ severity: 'success', summary: 'Producto encontrado', detail: `${producto.codigo} - ${producto.anexo}`, life: 2000 });
+    this.buscandoProductos.set(true);
+    this.searchTimeout = setTimeout(() => {
+    this.productoService.getProductosAutocompleteConPrecio(value.trim(), sede).subscribe({
+      next: (res: any) => {
+        const items = (res?.data ?? res ?? []).map((p: any) => ({
+          id:          p.id_producto,
+          codigo:      p.codigo,
+          nombre:      p.nombre,
+          stock:       Number(p.stock ?? 0),
+          pre_unit:    Number(p.precio_unitario ?? 0),  // ← viene del endpoint ventas
+          id_almacen:  p.id_almacen ?? null,
+          categoria:   p.familia ?? p.categoriaNombre ?? '',
+          categoriaId: p.id_categoria ?? null,
+        }));
+        this.productosSugeridos.set(items);
+        this.panelVisible.set(items.length > 0);
+        this.buscandoProductos.set(false);
       },
-      error: (err: any) => {
-        console.error('Error buscarProductoPorCodigo:', err);
-        this.applyStateSafe(() => { this.productoSeleccionado = null; this.productoNoEncontrado = true; });
-        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'Error al buscar producto.', life: 3500 });
+      error: () => {
+        this.productosSugeridos.set([]);
+        this.buscandoProductos.set(false);
       },
     });
+    }, 300);
+  }
+
+  seleccionarProducto(p: any): void {
+    if (p.stock <= 0) {
+      this.messageService.add({
+        severity: 'warn', summary: 'Sin stock',
+        detail: `${p.nombre} no tiene stock disponible en esta sede.`, life: 3000,
+      });
+      return;
+    }
+
+    // Selección inmediata con datos del autocomplete
+    this.productoSeleccionado = {
+      id_producto:     p.id,
+      id_categoria:    p.categoriaId ?? 0,
+      categoriaNombre: p.categoria   ?? '',
+      codigo:          p.codigo,
+      anexo:           p.nombre,
+      descripcion:     p.nombre,
+      pre_unit:        p.pre_unit,
+      estado:          true,
+      stock:           p.stock,
+      id_almacen:      null,  // se resuelve abajo
+    };
+    this.cantidad             = 1;
+    this.precioRemate         = Math.round(p.pre_unit * 0.5 * 100) / 100;
+    this.productoNoEncontrado = false;
+    this.queryBusqueda.set(`${p.codigo} — ${p.nombre}`);
+    this.panelVisible.set(false);
+    this.productosSugeridos.set([]);
+    this.cdr.detectChanges();
+
+    // Segunda llamada para resolver id_almacen
+    const sede = this.id_sede_ref > 0 ? this.id_sede_ref : 0;
+    this.productoService.getProductoByCodigoConStock(p.codigo, sede).subscribe({
+      next: (resp: any) => {
+        console.log('🔍 stock resp:', JSON.stringify(resp));
+        const idAlmacen = resp?.stock?.id_almacen
+          ?? resp?.almacen?.id_almacen
+          ?? resp?.id_almacen
+          ?? null;
+        if (this.productoSeleccionado) {
+          this.productoSeleccionado = {
+            ...this.productoSeleccionado,
+            id_almacen: idAlmacen ? Number(idAlmacen) : null,
+          };
+        }
+        this.cdr.detectChanges();
+        this.messageService.add({
+          severity: 'success', summary: 'Producto seleccionado',
+          detail: `${p.codigo} — ${p.nombre}`, life: 2000,
+        });
+      },
+      error: () => {
+        this.messageService.add({
+          severity: 'warn', summary: 'Producto seleccionado',
+          detail: `No se pudo obtener el almacén. Intente nuevamente.`, life: 3000,
+        });
+      },
+    });
+  }
+
+  cerrarPanelConDelay(): void {
+    setTimeout(() => this.panelVisible.set(false), 200);
+  }
+
+  limpiarBusqueda(): void {
+    this.queryBusqueda.set('');
+    this.productoSeleccionado = null;
+    this.productoNoEncontrado = false;
+    this.productosSugeridos.set([]);
+    this.panelVisible.set(false);
+    this.cantidad     = 1;
+    this.precioRemate = null;
   }
 
   calcularPorcentajeDescuento(): number {
@@ -210,7 +276,7 @@ export class RematesRegistro implements OnInit {
       return false;
     }
     if (!this.generarCodigoAuto && !this.codigoRemate?.trim()) {
-      this.messageService.add({ severity: 'error', summary: 'Código remate requerido', detail: 'Debe indicar un código de remate.', life: 3000 });
+      this.messageService.add({ severity: 'error', summary: 'Código requerido', detail: 'Debe indicar un código de remate.', life: 3000 });
       return false;
     }
     if (!this.precioRemate || this.precioRemate <= 0) {
@@ -225,7 +291,10 @@ export class RematesRegistro implements OnInit {
   }
 
   registrar(): void {
+    if (this.registrando()) return; 
     if (!this.validarFormulario()) return;
+
+    this.registrando.set(true);
 
     const dto: CreateAuctionDto = {
       descripcion:    this.productoSeleccionado!.anexo,
@@ -244,16 +313,20 @@ export class RematesRegistro implements OnInit {
       dto.cod_remate = this.codigoRemate.trim();
     }
 
-    console.log('✅ CreateAuctionDto:', JSON.stringify(dto, null, 2));
-
     this.auctionService.createAuction(dto).subscribe({
       next: (created) => {
-        this.messageService.add({ severity: 'success', summary: '✓ Remate creado', detail: `Remate ${created.cod_remate} creado exitosamente.`, life: 3000 });
+        this.messageService.add({
+          severity: 'success', summary: '✓ Remate creado',
+          detail: `Remate ${created.cod_remate} creado exitosamente.`, life: 3000,
+        });
         setTimeout(() => this.router.navigate(['/admin/remates']), 1500);
       },
       error: (err) => {
-        console.error('❌ Error creando remate:', err);
-        this.messageService.add({ severity: 'error', summary: 'Error al crear remate', detail: err?.error?.message || 'No se pudo crear el remate.', life: 5000 });
+        this.registrando.set(false); 
+        this.messageService.add({
+          severity: 'error', summary: 'Error al crear remate',
+          detail: err?.error?.message || 'No se pudo crear el remate.', life: 5000,
+        });
       },
     });
   }
@@ -261,14 +334,10 @@ export class RematesRegistro implements OnInit {
   cancelar(): void { this.router.navigate(['/admin/remates']); }
 
   limpiarFormulario(): void {
-    this.codigoProducto      = '';
-    this.productoSeleccionado = null;
-    this.productoNoEncontrado = false;
-    this.cantidad             = 1;
-    this.codigoRemate         = '';
-    this.precioRemate         = null;
-    this.observaciones        = '';
-    this.motivo               = null;
+    this.limpiarBusqueda();
+    this.codigoRemate  = '';
+    this.observaciones = '';
+    this.motivo        = null;
     this.messageService.add({ severity: 'info', summary: 'Formulario limpiado', detail: 'Puede iniciar un nuevo registro.', life: 2000 });
   }
 

@@ -1,5 +1,4 @@
 <div class="p-2">
-
   <!-- CABECERA -->
   <p-card styleClass="clientes-header-card mb-4">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
@@ -11,8 +10,13 @@
         </div>
       </div>
       <div class="flex gap-2">
-        <p-button label="Volver" icon="pi pi-arrow-left"
-          severity="secondary" [outlined]="true" (onClick)="volver()">
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          [outlined]="true"
+          (onClick)="volver()"
+        >
         </p-button>
       </div>
     </div>
@@ -26,34 +30,58 @@
 
   <!-- FORMULARIO -->
   <div *ngIf="!cargando()">
-
     <!-- Información -->
     <div class="filtros-container mb-4">
       <div class="seccion-filtros">
         <h3><i class="pi pi-info-circle"></i> Información del Remate</h3>
         <div class="grid">
-
           <!-- Código readonly -->
           <div class="col-12 md:col-4">
             <div class="filtro-item">
               <label class="filter-label">Código</label>
-              <input pInputText type="text" [value]="form().codigo" class="w-full"
-                [disabled]="true" style="opacity:0.6; cursor:not-allowed;">
+              <input
+                pInputText
+                type="text"
+                [value]="form().codigo"
+                class="w-full"
+                [disabled]="true"
+                style="opacity: 0.6; cursor: not-allowed"
+              />
             </div>
           </div>
-
+          <!-- Sede readonly -->
+          <div class="col-12 md:col-4">
+            <div class="filtro-item">
+              <label class="filter-label">Sede</label>
+              <div
+                class="flex align-items-center gap-2 p-2 border-round"
+                style="
+                  background: rgba(246, 175, 51, 0.08);
+                  border: 1px solid rgba(246, 175, 51, 0.2);
+                  height: 38px;
+                "
+              >
+                <i class="pi pi-map-marker" style="color: #f6af33; font-size: 0.85rem"></i>
+                <span class="text-sm font-bold" style="color: #f6af33">{{ nombreSede() }}</span>
+              </div>
+            </div>
+          </div>
           <!-- Estado -->
           <div class="col-12 md:col-4">
             <div class="filtro-item">
               <label class="filter-label">Estado <span class="text-red-400">*</span></label>
-              <p-select [options]="estadoOptions" optionLabel="label" optionValue="value"
-                [ngModel]="form().estado" (ngModelChange)="setField('estado', $event)"
-                placeholder="Seleccionar estado" styleClass="w-full">
+              <p-select
+                [options]="estadoOptions"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="form().estado"
+                (ngModelChange)="setField('estado', $event)"
+                placeholder="Seleccionar estado"
+                styleClass="w-full"
+              >
               </p-select>
             </div>
-            
           </div>
-
         </div>
       </div>
     </div>
@@ -63,19 +91,22 @@
       <div class="seccion-filtros">
         <h3><i class="pi pi-pencil"></i> Datos Editables</h3>
         <div class="grid">
-
           <div class="col-12">
             <div class="filtro-item">
               <label class="filter-label">Descripción <span class="text-red-400">*</span></label>
-              <input pInputText type="text" placeholder="Descripción del remate..."
-                class="w-full" [ngModel]="form().descripcion"
-                (ngModelChange)="setField('descripcion', $event)">
+              <input
+                pInputText
+                type="text"
+                placeholder="Descripción del remate..."
+                class="w-full"
+                [ngModel]="form().descripcion"
+                (ngModelChange)="setField('descripcion', $event)"
+              />
               <small *ngIf="errores().descripcion" class="text-red-400">
                 {{ errores().descripcion }}
               </small>
             </div>
           </div>
-
         </div>
       </div>
     </div>
@@ -85,14 +116,19 @@
       <div class="seccion-filtros">
         <h3><i class="pi pi-dollar"></i> Precio y Stock</h3>
         <div class="grid">
-
           <!-- Precio original readonly -->
           <div class="col-12 md:col-4">
             <div class="filtro-item">
               <label class="filter-label">Precio Original (S/)</label>
-              <p-inputNumber [ngModel]="form().precioOriginal"
-                mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
-                [disabled]="true" styleClass="w-full" style="opacity:0.6;">
+              <p-inputNumber
+                [ngModel]="form().precioOriginal"
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                [disabled]="true"
+                styleClass="w-full"
+                style="opacity: 0.6"
+              >
               </p-inputNumber>
             </div>
           </div>
@@ -100,11 +136,19 @@
           <!-- Precio remate -->
           <div class="col-12 md:col-4">
             <div class="filtro-item">
-              <label class="filter-label">Precio Remate (S/) <span class="text-red-400">*</span></label>
-              <p-inputNumber [ngModel]="form().precioRemate"
+              <label class="filter-label"
+                >Precio Remate (S/) <span class="text-red-400">*</span></label
+              >
+              <p-inputNumber
+                [ngModel]="form().precioRemate"
                 (ngModelChange)="setField('precioRemate', $event)"
-                mode="decimal" [minFractionDigits]="2" [maxFractionDigits]="2"
-                [min]="0" styleClass="w-full" placeholder="0.00">
+                mode="decimal"
+                [minFractionDigits]="2"
+                [maxFractionDigits]="2"
+                [min]="0"
+                styleClass="w-full"
+                placeholder="0.00"
+              >
               </p-inputNumber>
               <small *ngIf="errores().precioRemate" class="text-red-400">
                 {{ errores().precioRemate }}
@@ -116,9 +160,14 @@
           <div class="col-12 md:col-4">
             <div class="filtro-item">
               <label class="filter-label">Stock Remate <span class="text-red-400">*</span></label>
-              <p-inputNumber [ngModel]="form().stockRemate"
+              <p-inputNumber
+                [ngModel]="form().stockRemate"
                 (ngModelChange)="setField('stockRemate', $event)"
-                [min]="0" [useGrouping]="false" styleClass="w-full" placeholder="0">
+                [min]="0"
+                [useGrouping]="false"
+                styleClass="w-full"
+                placeholder="0"
+              >
               </p-inputNumber>
               <small *ngIf="errores().stockRemate" class="text-red-400">
                 {{ errores().stockRemate }}
@@ -130,27 +179,40 @@
           <div class="col-12 md:col-4">
             <div class="filtro-item">
               <label class="filter-label">Descuento calculado</label>
-              <input pInputText type="text" [value]="descuentoCalculado() + '%'"
-                class="w-full" [disabled]="true"
+              <input
+                pInputText
+                type="text"
+                [value]="descuentoCalculado() + '%'"
+                class="w-full"
+                [disabled]="true"
                 [style.color]="descuentoCalculado() > 0 ? '#22c55e' : 'inherit'"
-                style="opacity:0.8; cursor:not-allowed; font-weight:600;">
+                style="opacity: 0.8; cursor: not-allowed; font-weight: 600"
+              />
             </div>
           </div>
-
         </div>
       </div>
     </div>
 
     <!-- Botones -->
     <div class="flex justify-content-end gap-3 mb-4">
-      <p-button label="Cancelar" icon="pi pi-times"
-        severity="secondary" [outlined]="true" (onClick)="volver()">
+      <p-button
+        label="Cancelar"
+        icon="pi pi-times"
+        severity="secondary"
+        [outlined]="true"
+        (onClick)="volver()"
+      >
       </p-button>
-      <p-button label="Guardar Cambios" icon="pi pi-save"
-        [loading]="guardando()" [disabled]="!formularioValido()" (onClick)="guardar()">
+      <p-button
+        label="Guardar Cambios"
+        icon="pi pi-save"
+        [loading]="guardando()"
+        [disabled]="!formularioValido()"
+        (onClick)="guardar()"
+      >
       </p-button>
     </div>
-
   </div>
 
   <p-toast></p-toast>

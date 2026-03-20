@@ -25,17 +25,17 @@ export interface WastageDetail {
 }
 
 export interface WastageResponseDto {
-  id_merma:        number;
-  fec_merma:       string;
-  motivo:          string;
-  total_items:     number;
-  estado:          boolean;
-  detalles:        WastageDetail[];
-  responsable:     string;
-  tipo_merma_id:   number;
+  id_merma:         number;
+  fec_merma:        string;
+  motivo:           string;
+  total_items:      number;
+  estado:           boolean;
+  detalles:         WastageDetail[];
+  responsable:      string;
+  tipo_merma_id:    number;
   tipo_merma_label: string;
+  id_sede_ref:      number;   
 }
-
 export interface WastagePaginatedResponse {
   data:       WastageResponseDto[];
   total:      number;
@@ -61,14 +61,15 @@ export class WastageService {
   private readonly _wastages     = signal<WastageResponseDto[]>([]);
   private readonly _totalPages   = signal(1);
   private readonly _currentPage  = signal(1);
-  private readonly _tiposMerma   = signal<WastageTypeDto[]>([]);  // ← nuevo
+  private readonly _tiposMerma   = signal<WastageTypeDto[]>([]); 
+
 
   readonly loading     = computed(() => this._loading());
   readonly error       = computed(() => this._error());
   readonly wastages    = computed(() => this._wastages());
   readonly totalPages  = computed(() => this._totalPages());
   readonly currentPage = computed(() => this._currentPage());
-  readonly tiposMerma  = computed(() => this._tiposMerma());       // ← nuevo
+  readonly tiposMerma  = computed(() => this._tiposMerma());       
 
   constructor(private http: HttpClient) {}
 
@@ -96,13 +97,22 @@ export class WastageService {
   }
 
   // ── Listar mermas paginadas ───────────────────────────────────────────────
-  loadWastages(page = 1, limit = 10, role = 'Administrador'): Observable<WastagePaginatedResponse> {
+  loadWastages(
+    page    = 1,
+    limit   = 10,
+    id_sede = 0,
+    role    = 'Administrador',
+  ): Observable<WastagePaginatedResponse> {
     this._loading.set(true);
     this._error.set(null);
 
-    const params = new HttpParams()
+    let params = new HttpParams()
       .set('page',  page.toString())
       .set('limit', limit.toString());
+
+    if (id_sede > 0) {
+      params = params.set('id_sede', id_sede.toString());
+    }
 
     return this.http
       .get<WastagePaginatedResponse>(`${this.api}/logistics/catalog/wastage`, {
@@ -141,8 +151,37 @@ export class WastageService {
       );
   }
 
+  // ── Actualizar merma (solo datos descriptivos, sin tocar stock) ───────────
+  updateWastage(
+    id:      number,
+    payload: { motivo?: string; id_tipo_merma?: number; observacion?: string },
+    role = 'Administrador',
+  ): Observable<WastageResponseDto> {
+    this._loading.set(true);
+    this._error.set(null);
+
+    return this.http
+      .put<WastageResponseDto>(
+        `${this.api}/logistics/catalog/wastage/${id}`,
+        payload,
+        { headers: this.buildHeaders(role) },
+      )
+      .pipe(
+        tap(updated => {
+          // Actualiza el registro en caché si existe
+          this._wastages.update(prev =>
+            prev.map(w => w.id_merma === id ? { ...w, ...updated } : w)
+          );
+        }),
+        catchError(err => {
+          this._error.set('No se pudo actualizar la merma.');
+          return throwError(() => err);
+        }),
+        finalize(() => this._loading.set(false)),
+      );
+  }
+  
   // ── Obtener tipos de merma desde la BD ───────────────────────────────────
-  // Llama a GET /catalog/wastage/tipos — devuelve los tipos activos
   loadTiposMerma(role = 'Administrador'): Observable<WastageTypeDto[]> {
     return this.http
       .get<WastageTypeDto[]>(`${this.api}/logistics/catalog/wastage/tipos`, {

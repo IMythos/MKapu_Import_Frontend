@@ -63,12 +63,18 @@
             optionLabel="label" optionValue="value"
             [showClear]="true" styleClass="w-full" />
         </div>
-         <div class="filtro-item filtro-compacto">
+        <div class="filtro-item filtro-compacto">
           <label>SEDE</label>
-          <p-select [ngModel]="estadoFiltro()" (ngModelChange)="onEstadoChange($event)"
-            [options]="estadoOptions" placeholder="Todos"
-            optionLabel="label" optionValue="value"
-            [showClear]="true" styleClass="w-full" />
+          <p-select
+            [ngModel]="sedeFiltro()"
+            (ngModelChange)="sedeFiltro.set($event); page.set(1)"
+            [options]="sedesOpciones()"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todas las sedes"
+            [showClear]="true"
+            styleClass="w-full">
+          </p-select>
         </div>
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
@@ -104,11 +110,12 @@
 
       <ng-template pTemplate="header">
         <tr>
-          <th style="width:12%">CÓDIGO</th>
-          <th style="width:35%">PRODUCTO</th>
+          <th style="width:10%">CÓDIGO</th>
+          <th style="width:25%">PRODUCTO</th>
+          <th style="width:12%">SEDE</th>
           <th style="width:10%">CANTIDAD</th>
-          <th style="width:15%">PRECIO REMATE</th>
-          <th style="width:10%">DESCUENTO</th>
+          <th style="width:13%">PRECIO REMATE</th>
+          <th style="width:8%">DESCUENTO</th>
           <th style="width:10%">ESTADO</th>
           <th style="width:8%" class="text-center">ACCIONES</th>
         </tr>
@@ -120,25 +127,29 @@
             <span class="codigo-producto">{{ remate.codigo }}</span>
           </td>
           <td>
-            <div class="producto-info">
-              <div class="producto-nombre">{{ remate.nombre }}</div>
-              <div class="producto-responsable text-sm text-500">Responsable: {{ remate.responsable }}</div>
-            </div>
+            <div class="producto-nombre">{{ remate.nombre }}</div>
           </td>
-          <td><span class="cantidad-badge">{{ remate.cantidad }} unid.</span></td>
+          <td>
+            <span class="text-700">{{ remate.nombreSede }}</span>
+          </td>
+          <td>
+            <span class="cantidad-badge">{{ remate.cantidad }} unid.</span>
+          </td>
           <td>
             <div class="flex flex-column gap-1">
               <span class="precio-remate font-bold">S/ {{ remate.precioRemate | number:'1.2-2' }}</span>
               <small class="text-500">Original: S/ {{ remate.precioOriginal | number:'1.2-2' }}</small>
             </div>
           </td>
-          <td><span class="text-green-600 font-semibold">-{{ remate.descuento }}%</span></td>
+          <td>
+            <span class="text-green-600 font-semibold">-{{ remate.descuento }}%</span>
+          </td>
           <td>
             <p-tag [value]="remate.estado" [severity]="getEstadoSeverity(remate.estado)"></p-tag>
           </td>
           <td class="text-center">
             <div class="acciones-tabla">
-              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info"
+              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="secondary"
                 pTooltip="Ver detalle" tooltipPosition="top" (onClick)="verDetalle(remate)">
               </p-button>
               <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary"
@@ -159,7 +170,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center">
+          <td colspan="8" class="text-center">
             <div class="mensaje-vacio">
               <i class="pi pi-inbox"></i>
               <p>No hay remates registrados</p>
@@ -214,6 +225,13 @@
             <div class="rdm-info-content">
               <span class="rdm-info-label">Descuento</span>
               <span class="rdm-info-value text-green-600 font-bold">-{{ r.descuento }}%</span>
+            </div>
+          </div>
+          <div class="rdm-info-item">
+            <span class="rdm-info-icon"><i class="pi pi-map-marker"></i></span>
+            <div class="rdm-info-content">
+              <span class="rdm-info-label">Sede</span>
+              <span class="rdm-info-value">{{ r.nombreSede }}</span>
             </div>
           </div>
           <div class="rdm-info-item">

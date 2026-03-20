@@ -1,0 +1,179 @@
+<div class="p-2">
+  <p-card styleClass="registro-header-card">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="flex align-items-center gap-3">
+        <span class="registro-title-icon"><i class="pi pi-pencil"></i></span>
+        <div>
+          <p class="registro-kicker">ADMINISTRADOR · ADMINISTRACIÓN - MERMAS</p>
+          <h2 class="registro-title">EDITAR MERMA</h2>
+        </div>
+      </div>
+      <div class="flex align-items-center gap-2">
+        <p-button icon="pi pi-arrow-left" label="Volver" [outlined]="true"
+          severity="secondary" [routerLink]="['/admin/mermas']">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <!-- CARGANDO -->
+  <div *ngIf="cargando()" class="flex justify-content-center align-items-center p-6">
+    <p-progressSpinner strokeWidth="4" styleClass="w-4rem h-4rem"></p-progressSpinner>
+  </div>
+
+  <!-- CONTENIDO -->
+  <div *ngIf="!cargando() && merma()" class="grid mt-3">
+
+    <!-- PASO 1: Info de la merma (solo lectura) -->
+    <div class="col-12">
+      <p-card styleClass="form-card">
+        <div class="section-header">
+          <div class="section-number">1</div>
+          <div>
+            <h3 class="section-title">Información del Registro</h3>
+            <p class="section-subtitle">Datos originales de la merma — solo lectura</p>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="col-12 md:col-6">
+            <div class="producto-info-card">
+              <div class="producto-info-row">
+                <span class="info-label">Código Merma:</span>
+                <span class="info-value font-bold">MER-{{ merma()!.id_merma.toString().padStart(4,'0') }}</span>
+              </div>
+              <div class="producto-info-row">
+                <span class="info-label">Fecha Registro:</span>
+                <span class="info-value">{{ merma()!.fec_merma | date:'dd/MM/yyyy HH:mm' }}</span>
+              </div>
+              <div class="producto-info-row">
+                <span class="info-label">Responsable:</span>
+                <span class="info-value">{{ merma()!.responsable || 'Sin asignar' }}</span>
+              </div>
+              <div class="producto-info-row">
+                <span class="info-label">Total unidades:</span>
+                <span class="info-value stock-value">
+                  <i class="pi pi-box"></i> {{ merma()!.total_items }} unidades
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 md:col-6">
+            <label class="field-label mb-2 block">PRODUCTOS AFECTADOS</label>
+            <div class="productos-readonly-list">
+              <div *ngFor="let d of merma()!.detalles" class="producto-readonly-item">
+                <span class="codigo-producto" style="font-size:0.75rem">{{ d.cod_prod }}</span>
+                <span class="text-700 text-sm">{{ d.desc_prod }}</span>
+                <span class="cantidad-badge ml-auto">{{ d.cantidad }} unid.</span>
+              </div>
+              <div *ngIf="!merma()!.detalles?.length" class="text-400 text-sm p-2">
+                Sin productos registrados
+              </div>
+            </div>
+          </div>
+        </div>
+      </p-card>
+    </div>
+
+    <!-- PASO 2: Datos editables -->
+    <div class="col-12">
+      <p-card styleClass="form-card">
+        <div class="section-header">
+          <div class="section-number">2</div>
+          <div>
+            <h3 class="section-title">Datos Editables</h3>
+            <p class="section-subtitle">Puede modificar el motivo, tipo de merma y observaciones</p>
+          </div>
+        </div>
+
+        <div class="grid">
+
+          <!-- Motivo -->
+          <div class="col-12">
+            <label class="field-label">MOTIVO <span class="required-asterisk">*</span></label>
+            <input pInputText
+              [(ngModel)]="motivoEdit"
+              class="w-full"
+              placeholder="Describa el motivo de la merma" />
+            <small class="field-hint">Descripción breve del motivo de la merma</small>
+          </div>
+
+          <!-- Tipo de merma -->
+          <div class="col-12">
+            <label class="field-label">TIPO DE MERMA <span class="required-asterisk">*</span></label>
+            <p-select
+              [(ngModel)]="tipoMermaEdit"
+              [options]="tiposMermaOpciones()"
+              optionLabel="label"
+              optionValue="value"
+              placeholder="Seleccione el tipo de merma"
+              [showClear]="true"
+              styleClass="w-full">
+              <ng-template let-option pTemplate="item">
+                <div class="flex flex-column gap-1">
+                  <span class="font-semibold">{{ option.label }}</span>
+                  <small class="text-500" *ngIf="option.descripcion">{{ option.descripcion }}</small>
+                </div>
+              </ng-template>
+            </p-select>
+            <small class="field-hint">Categoría que mejor describe el motivo de la merma</small>
+          </div>
+
+          <!-- Observaciones -->
+          <div class="col-12">
+            <label class="field-label">OBSERVACIONES / DETALLES</label>
+            <textarea pInputTextarea
+              [(ngModel)]="observacionesEdit"
+              rows="4" class="w-full"
+              placeholder="Agregue detalles adicionales sobre la merma">
+            </textarea>
+            <small class="field-hint">Opcional — Información adicional que ayude a identificar la causa</small>
+          </div>
+
+        </div>
+      </p-card>
+    </div>
+
+    <!-- AVISO stock -->
+    <div class="col-12">
+      <div class="p-3 border-round flex align-items-start gap-2"
+        style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.2);">
+        <i class="pi pi-info-circle text-blue-500 mt-1"></i>
+        <div class="text-sm text-700">
+          <strong>Nota:</strong> Esta edición solo modifica los datos descriptivos de la merma.
+          El stock ya fue descontado al momento del registro original y <strong>no será modificado</strong>.
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTONES -->
+    <div class="col-12">
+      <p-card styleClass="actions-card">
+        <div class="flex justify-content-center gap-3">
+          <p-button label="Cancelar" icon="pi pi-times" [outlined]="true"
+            severity="secondary" (onClick)="cancelar()">
+          </p-button>
+          <p-button label="Guardar Cambios" icon="pi pi-check" severity="info"
+            (onClick)="guardar()"
+            [disabled]="!motivoEdit || !tipoMermaEdit"
+            [loading]="guardando()">
+          </p-button>
+        </div>
+      </p-card>
+    </div>
+
+  </div>
+
+  <!-- ERROR estado -->
+  <div *ngIf="!cargando() && !merma()"
+    class="flex flex-column align-items-center p-6 gap-3">
+    <i class="pi pi-exclamation-triangle text-5xl text-orange-400"></i>
+    <p class="text-700">No se pudo cargar la merma. Verifique el ID o vuelva al listado.</p>
+    <p-button label="Volver al listado" icon="pi pi-arrow-left"
+      severity="secondary" [routerLink]="['/admin/mermas']">
+    </p-button>
+  </div>
+
+  <p-toast />
+</div>

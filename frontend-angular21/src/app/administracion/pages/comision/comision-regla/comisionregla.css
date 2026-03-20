@@ -21,10 +21,11 @@
     display: grid;
     place-items: center;
     border-radius: 999px;
-    background: #f5c34d;
-    color: #1f2937;
+    background: #e8a424 !important;
+    color: #1f2937 !important;
     font-size: 18px;
   }
+
   
   .sedes-kicker {
     margin: 0;

@@ -9,13 +9,14 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { AvatarModule } from 'primeng/avatar';
 import { CommissionService, CommissionReport } from '../../../services/commission.service';
+import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-comision-reportes',
   standalone: true,
   imports: [
     CommonModule, FormsModule, CardModule, ButtonModule,
-    InputTextModule, AutoCompleteModule, TableModule, TagModule, AvatarModule,
+    InputTextModule, AutoCompleteModule, TableModule, TagModule, AvatarModule, RouterModule
   ],
   templateUrl: './comisionreportes.html',
   styleUrls: ['./comisionreportes.css'],

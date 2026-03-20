@@ -145,5 +145,17 @@ export class ProductoService {
     return this.http.put<any>(`${this.api}/logistics/products/status`, payload);
   }
 
+  getProductosAutocompleteConPrecio(
+    search: string,
+    idSede: number,
+  ): Observable<any> {
+    const params = new HttpParams()
+      .set('search', search)
+      .set('id_sede', idSede);
 
+    return this.http.get<any>(
+      `${this.api}/logistics/products/ventas/autocomplete`, 
+      { params }
+    );
+  }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, ChangeDetectorRef, computed } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -10,10 +10,12 @@ import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { Select } from 'primeng/select';
+import { TagModule } from 'primeng/tag';
 
 import { WastageService, CreateWastageDto, WastageDetail, WastageTypeDto } from '../../../../services/wastage.service';
 import { ProductoService } from '../../../../services/producto.service';
 import { AuthService } from '../../../../../auth/services/auth.service';
+import { SedeService } from '../../../../services/sede.service';
 
 interface Producto {
   id_producto:     number;
@@ -34,7 +36,8 @@ interface Producto {
   imports: [
     CommonModule, FormsModule, RouterModule,
     ButtonModule, CardModule, InputTextModule,
-    TextareaModule, ToastModule, InputNumberModule, Select,
+    TextareaModule, ToastModule, InputNumberModule,
+    Select, TagModule,
   ],
   templateUrl: './mermas-registro.html',
   styleUrl: './mermas-registro.css',
@@ -46,6 +49,7 @@ export class MermasRegistro implements OnInit {
   private readonly wastageService  = inject(WastageService);
   private readonly productoService = inject(ProductoService);
   private readonly authService     = inject(AuthService);
+  private readonly sedeService     = inject(SedeService);
   private readonly cdr             = inject(ChangeDetectorRef);
 
   readonly loading = this.wastageService.loading;
@@ -60,7 +64,14 @@ export class MermasRegistro implements OnInit {
     }))
   );
 
-  codigoProducto       = '';
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  queryBusqueda      = signal('');
+  productosSugeridos = signal<any[]>([]);
+  panelVisible       = signal(false);
+  buscandoProductos  = signal(false);
+  private searchTimeout: any = null;
+
+  // ── Estado producto ───────────────────────────────────────────────────────
   productoSeleccionado: Producto | null = null;
   productoNoEncontrado = false;
 
@@ -69,13 +80,15 @@ export class MermasRegistro implements OnInit {
   observaciones = '';
   responsableNombre = 'Cargando...';
 
-  id_usuario_ref   = 0;
-  id_sede_ref      = 0;
+  id_usuario_ref = 0;
+  id_sede_ref    = 0;
   id_sede_code: string | null = null;
 
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
   ngOnInit(): void {
     this.cargarDatosUsuario();
     this.cargarTiposMerma();
+    this.sedeService.loadSedes().subscribe();
   }
 
   // ── Carga tipos desde el endpoint ─────────────────────────────────────────
@@ -121,78 +134,133 @@ export class MermasRegistro implements OnInit {
       || String(usuario.usuario ?? usuario.username ?? 'Usuario');
   }
 
-  private isProductoValido(data: any): data is Producto {
-    return !!data && typeof data === 'object'
-      && typeof data.id_producto === 'number'
-      && typeof data.codigo      === 'string'
-      && typeof data.anexo       === 'string'
-      && typeof data.pre_unit    === 'number';
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  getNombreSede(): string {
+    if (!this.id_sede_ref) return 'Sin sede';
+    const sede = this.sedeService.sedes().find(s => s.id_sede === this.id_sede_ref);
+    return sede ? sede.nombre : `Sede #${this.id_sede_ref}`;
   }
 
-  private mapDetailWithStockToProducto(resp: any): Producto | null {
-    const p = resp?.producto;
-    const s = resp?.stock;
-    if (!p || typeof p !== 'object') return null;
-    const id_producto = Number(p.id_producto);
-    if (!id_producto || Number.isNaN(id_producto)) return null;
+  // ── Autocomplete ──────────────────────────────────────────────────────────
+  onQueryChange(value: string): void {
+    this.queryBusqueda.set(value);
+    this.productosSugeridos.set([]);
+    this.panelVisible.set(false);
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
 
-    return {
-      id_producto,
-      id_categoria:    Number(p.categoria?.id_categoria ?? 0),
-      categoriaNombre: String(p.categoria?.nombre ?? ''),
-      codigo:          String(p.codigo ?? ''),
-      anexo:           String(p.nombre ?? ''),
-      descripcion:     String(p.descripcion ?? ''),
-      pre_unit:        Number(p.precio_unitario ?? 0),
-      estado:          Number(p.estado ?? 0) === 1,
-      stock:           Number(s?.cantidad ?? 0),
-      id_almacen:      s?.id_almacen != null ? Number(s.id_almacen) : null,
-    };
-  }
+    if (this.productoSeleccionado) {
+      this.productoSeleccionado = null;
+      this.cantidad = 1;
+    }
 
-  private applyStateSafe(fn: () => void): void {
-    setTimeout(() => { fn(); this.cdr.detectChanges(); }, 50);
-  }
+    if (!value || value.trim().length < 3) return;
 
-  buscarProductoPorCodigo(): void {
-    const codigo = (this.codigoProducto ?? '').trim().toUpperCase();
-    this.productoNoEncontrado = false;
-    this.productoSeleccionado = null;
-
-    if (!codigo) {
-      this.messageService.add({ severity: 'warn', summary: 'Código requerido', detail: 'Ingrese el código del producto.', life: 2500 });
+    const sede = this.id_sede_ref > 0 ? this.id_sede_ref : 0;
+    if (!sede) {
+      this.messageService.add({
+        severity: 'warn', summary: 'Sede no definida',
+        detail: 'No se pudo determinar la sede del usuario.', life: 3000,
+      });
       return;
     }
 
-    const sedeCandidate = this.id_sede_ref > 0 ? this.id_sede_ref : (this.id_sede_code ?? 0);
-    const sedeParam = Number(sedeCandidate);
-
-    if (Number.isNaN(sedeParam) || sedeParam === 0) {
-      this.messageService.add({ severity: 'warn', summary: 'Sede no definida', detail: 'No se pudo determinar la sede del usuario.', life: 3000 });
-      this.applyStateSafe(() => { this.productoNoEncontrado = true; });
-      return;
-    }
-
-    this.productoService.getProductoByCodigoConStock(codigo, sedeParam).subscribe({
-      next: (resp: any) => {
-        const producto = this.mapDetailWithStockToProducto(resp);
-        if (!producto || !this.isProductoValido(producto)) {
-          this.applyStateSafe(() => { this.productoNoEncontrado = true; this.productoSeleccionado = null; });
-          return;
-        }
-        this.applyStateSafe(() => { this.productoSeleccionado = producto; this.productoNoEncontrado = false; this.cantidad = 1; });
-        this.messageService.add({ severity: 'success', summary: 'Producto encontrado', detail: `${producto.codigo} - ${producto.anexo}`, life: 2000 });
+    this.buscandoProductos.set(true);
+    this.searchTimeout = setTimeout(() => {
+    this.productoService.getProductosAutocompleteConPrecio(value.trim(), sede).subscribe({
+      next: (res: any) => {
+        const items = (res?.data ?? res ?? []).map((p: any) => ({
+          id:          p.id_producto,
+          codigo:      p.codigo,
+          nombre:      p.nombre,
+          stock:       Number(p.stock ?? 0),
+          pre_unit:    Number(p.precio_unitario ?? 0),  // ← viene del endpoint ventas
+          id_almacen:  p.id_almacen ?? null,
+          categoria:   p.familia ?? p.categoriaNombre ?? '',
+          categoriaId: p.id_categoria ?? null,
+        }));
+        this.productosSugeridos.set(items);
+        this.panelVisible.set(items.length > 0);
+        this.buscandoProductos.set(false);
       },
-      error: (err: any) => {
-        const detail = err?.status === 404
-          ? `No hay stock del producto ${codigo} en la sede.`
-          : 'Error al buscar producto. Intente nuevamente.';
-        this.messageService.add({ severity: err?.status === 404 ? 'warn' : 'error', summary: err?.status === 404 ? 'Sin stock' : 'Error', detail, life: 3500 });
-        this.applyStateSafe(() => { this.productoNoEncontrado = true; this.productoSeleccionado = null; });
+      error: () => {
+        this.productosSugeridos.set([]);
+        this.buscandoProductos.set(false);
+      },
+    });
+    }, 300);
+  }
+
+  seleccionarProducto(p: any): void {
+    if (p.stock <= 0) {
+      this.messageService.add({
+        severity: 'warn', summary: 'Sin stock',
+        detail: `${p.nombre} no tiene stock disponible en esta sede.`, life: 3000,
+      });
+      return;
+    }
+
+    // Selección inmediata con lo que tenemos del autocomplete
+    this.productoSeleccionado = {
+      id_producto:     p.id,
+      id_categoria:    p.categoriaId ?? 0,
+      categoriaNombre: p.categoria   ?? '',
+      codigo:          p.codigo,
+      anexo:           p.nombre,
+      descripcion:     p.nombre,
+      pre_unit:        p.pre_unit,
+      estado:          true,
+      stock:           p.stock,
+      id_almacen:      null,  // se resuelve abajo
+    };
+    this.cantidad             = 1;
+    this.productoNoEncontrado = false;
+    this.queryBusqueda.set(`${p.codigo} — ${p.nombre}`);
+    this.panelVisible.set(false);
+    this.productosSugeridos.set([]);
+    this.cdr.detectChanges();
+
+    // Segunda llamada para resolver id_almacen
+    const sede = this.id_sede_ref > 0 ? this.id_sede_ref : 0;
+    this.productoService.getProductoByCodigoConStock(p.codigo, sede).subscribe({
+      next: (resp: any) => {
+        const idAlmacen = resp?.stock?.id_almacen ?? resp?.id_almacen ?? null;
+        if (this.productoSeleccionado) {
+          this.productoSeleccionado = {
+            ...this.productoSeleccionado,
+            id_almacen: idAlmacen ? Number(idAlmacen) : null,
+          };
+        }
+        this.cdr.detectChanges();
+        this.messageService.add({
+          severity: 'success', summary: 'Producto seleccionado',
+          detail: `${p.codigo} — ${p.nombre}`, life: 2000,
+        });
+      },
+      error: () => {
+        // Si falla la segunda llamada, el producto igual queda seleccionado
+        // pero sin almacén — la validación lo detectará al registrar
+        this.messageService.add({
+          severity: 'success', summary: 'Producto seleccionado',
+          detail: `${p.codigo} — ${p.nombre}`, life: 2000,
+        });
       },
     });
   }
 
+  cerrarPanelConDelay(): void {
+    setTimeout(() => this.panelVisible.set(false), 200);
+  }
+
+  limpiarBusqueda(): void {
+    this.queryBusqueda.set('');
+    this.productoSeleccionado = null;
+    this.productoNoEncontrado = false;
+    this.productosSugeridos.set([]);
+    this.panelVisible.set(false);
+    this.cantidad = 1;
+  }
+
+  // ── Validación ────────────────────────────────────────────────────────────
   validarFormulario(): boolean {
     if (!this.id_usuario_ref) {
       this.messageService.add({ severity: 'error', summary: 'Error de sesión', detail: 'No se pudo identificar al usuario.', life: 3000 });
@@ -221,6 +289,7 @@ export class MermasRegistro implements OnInit {
     return true;
   }
 
+  // ── Registro ──────────────────────────────────────────────────────────────
   registrar(): void {
     if (!this.validarFormulario()) return;
 
@@ -253,11 +322,17 @@ export class MermasRegistro implements OnInit {
 
     this.wastageService.createWastage(dto).subscribe({
       next: (res) => {
-        this.messageService.add({ severity: 'success', summary: '✓ Merma registrada', detail: `Merma #${res.id_merma} registrada exitosamente.`, life: 3000 });
+        this.messageService.add({
+          severity: 'success', summary: '✓ Merma registrada',
+          detail: `Merma #${res.id_merma} registrada exitosamente.`, life: 3000,
+        });
         setTimeout(() => this.router.navigate(['/admin/mermas']), 1500);
       },
       error: (err) => {
-        this.messageService.add({ severity: 'error', summary: 'Error al registrar', detail: err?.error?.message ?? 'No se pudo registrar la merma.', life: 5000 });
+        this.messageService.add({
+          severity: 'error', summary: 'Error al registrar',
+          detail: err?.error?.message ?? 'No se pudo registrar la merma.', life: 5000,
+        });
       },
     });
   }
@@ -265,13 +340,13 @@ export class MermasRegistro implements OnInit {
   cancelar(): void { this.router.navigate(['/admin/mermas']); }
 
   limpiarFormulario(): void {
-    this.codigoProducto      = '';
-    this.productoSeleccionado = null;
-    this.productoNoEncontrado = false;
-    this.cantidad             = 1;
-    this.motivo               = null;
-    this.observaciones        = '';
-    this.messageService.add({ severity: 'info', summary: 'Formulario limpiado', detail: 'Puede iniciar un nuevo registro.', life: 2000 });
+    this.limpiarBusqueda();
+    this.motivo        = null;
+    this.observaciones = '';
+    this.messageService.add({
+      severity: 'info', summary: 'Formulario limpiado',
+      detail: 'Puede iniciar un nuevo registro.', life: 2000,
+    });
   }
 
   getMotivoLabel(): string {

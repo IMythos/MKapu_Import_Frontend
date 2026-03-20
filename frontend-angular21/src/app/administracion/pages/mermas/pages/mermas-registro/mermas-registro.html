@@ -1,8 +1,9 @@
-<div class="registro-page">
+<div class="p-2">
   <p-card styleClass="registro-header-card">
     <div class="flex align-items-center justify-content-between flex-wrap gap-3">
       <div class="flex align-items-center gap-3">
-        <span class="registro-title-icon"><i class="pi pi-exclamation-triangle"></i></span>
+        <span class="registro-title-icon">
+          <i class="pi pi-exclamation-triangle"></i></span>
         <div>
           <p class="registro-kicker">ALMACÉN · ADMINISTRACIÓN - MERMAS</p>
           <h2 class="registro-title">REGISTRO DE MERMA</h2>
@@ -14,76 +15,158 @@
     </div>
   </p-card>
 
-  <div class="grid">
+  <div class="grid mt-3">
 
-    <!-- PASO 1: Producto -->
-    <div class="col-12">
-      <p-card styleClass="form-card">
-        <div class="section-header">
-          <div class="section-number">1</div>
-          <div>
-            <h3 class="section-title">Información del Producto</h3>
-            <p class="section-subtitle">Busque el producto por código y especifique la cantidad a dar de baja</p>
-          </div>
+  <!-- PASO 1: Producto -->
+  <div class="col-12">
+    <!-- Sede activa -->
+<div class="flex align-items-center gap-2 p-2 border-round mb-3"
+  style="background: rgba(246,175,51,0.08); border: 1px solid rgba(246,175,51,0.2);">
+  <i class="pi pi-map-marker" style="color:#F6AF33"></i>
+  <span class="text-sm font-semibold">Buscando stock en:</span>
+  <span class="text-sm font-bold" style="color:#F6AF33">{{ getNombreSede() }}</span>
+  <small class="text-400 ml-1">(sede del usuario en sesión)</small>
+</div>
+    <p-card styleClass="form-card">
+      <div class="section-header">
+        <div class="section-number">1</div>
+        <div>
+          <h3 class="section-title">Información del Producto</h3>
+          <p class="section-subtitle">Busque el producto por nombre o código y especifique la cantidad</p>
         </div>
+      </div>
 
-        <div class="grid">
-          <div class="col-12 md:col-8">
-            <label class="field-label">CÓDIGO DE PRODUCTO <span class="required-asterisk">*</span></label>
+      <div class="grid">
+        <div class="col-12 md:col-8">
+          <label class="field-label">BUSCAR PRODUCTO <span class="required-asterisk">*</span></label>
+
+          <div style="position: relative">
             <div class="flex align-items-center gap-2">
-              <input pInputText [(ngModel)]="codigoProducto" class="w-full codigo-uppercase"
-                placeholder="Ej: R6602" autocomplete="off"
-                (input)="codigoProducto = (codigoProducto || '').toUpperCase()"
-                (keydown.enter)="buscarProductoPorCodigo()" />
-              <p-button type="button" icon="pi pi-search" label="Buscar"
-                (onClick)="buscarProductoPorCodigo()">
+              <div style="position: relative; flex: 1">
+                <input
+                  pInputText
+                  [value]="queryBusqueda()"
+                  (input)="onQueryChange($any($event.target).value)"
+                  (focus)="panelVisible.set(productosSugeridos().length > 0)"
+                  (blur)="cerrarPanelConDelay()"
+                  placeholder="Buscar por nombre o código (mín. 3 caracteres)…"
+                  class="w-full"
+                  autocomplete="off" />
+                <i class="pi pi-spin pi-spinner"
+                  *ngIf="buscandoProductos()"
+                  style="position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); color:#9ca3af">
+                </i>
+              </div>
+              <p-button *ngIf="productoSeleccionado"
+                icon="pi pi-times" severity="secondary" [outlined]="true"
+                pTooltip="Limpiar producto" (onClick)="limpiarBusqueda()">
               </p-button>
             </div>
 
-            <div class="mt-2" *ngIf="productoNoEncontrado">
-              <small class="p-error">
-                <i class="pi pi-exclamation-circle"></i>
-                No se encontró ningún producto con el código ingresado.
-              </small>
-            </div>
+            <!-- Panel de sugerencias -->
+            <div *ngIf="panelVisible() && productosSugeridos().length > 0"
+              (mousedown)="$event.preventDefault()"
+              style="position:absolute; top:100%; left:0; right:0; z-index:1000;
+                    background:var(--surface-card); border:1px solid var(--surface-border);
+                    border-radius:8px; box-shadow:0 8px 24px rgba(0,0,0,0.15);
+                    max-height:280px; overflow-y:auto; margin-top:4px;">
+              <div *ngFor="let p of productosSugeridos()"
+                (click)="p.stock > 0 ? seleccionarProducto(p) : null"
+                [style.opacity]="p.stock <= 0 ? '0.5' : '1'"
+                [style.cursor]="p.stock <= 0 ? 'not-allowed' : 'pointer'"
+                style="display:flex; align-items:center; gap:0.75rem;
+                      padding:0.75rem 1rem; border-bottom:1px solid var(--surface-border);
+                      transition:background 0.15s;"
+                onmouseover="this.style.background='var(--surface-hover)'"
+                onmouseout="this.style.background='transparent'">
 
-            <div *ngIf="productoSeleccionado" class="producto-info-card mt-3">
-              <div class="producto-info-row"><span class="info-label">Código:</span><span class="info-value">{{ productoSeleccionado.codigo }}</span></div>
-              <div class="producto-info-row"><span class="info-label">Producto:</span><span class="info-value font-semibold">{{ productoSeleccionado.anexo }}</span></div>
-              <div class="producto-info-row"><span class="info-label">Categoría:</span><span class="info-value">{{ productoSeleccionado.categoriaNombre }}</span></div>
-              <div class="producto-info-row">
-                <span class="info-label">Stock disponible:</span>
-                <span class="info-value stock-value"><i class="pi pi-box"></i> {{ productoSeleccionado.stock ?? 0 }} unidades</span>
-              </div>
-              <div class="producto-info-row">
-                <span class="info-label">Precio unitario:</span>
-                <span class="info-value precio-value">S/ {{ productoSeleccionado.pre_unit | number:'1.2-2' }}</span>
+                <i [class]="p.stock <= 0 ? 'pi pi-ban text-red-400' : 'pi pi-circle text-400'"
+                  style="font-size:0.85rem; flex-shrink:0"></i>
+
+                <div style="flex:1; min-width:0">
+                  <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap">
+                    <span class="codigo-producto" style="font-size:0.75rem">{{ p.codigo }}</span>
+                    <p-tag [value]="p.categoria" severity="info"
+                      *ngIf="p.categoria"
+                      style="font-size:0.65rem">
+                    </p-tag>
+                    <p-tag
+                      [value]="p.stock <= 0 ? 'Sin stock' : 'Stock: ' + p.stock"
+                      [severity]="p.stock <= 0 ? 'danger' : p.stock <= 5 ? 'warn' : 'success'"
+                      style="font-size:0.65rem">
+                    </p-tag>
+                    <span *ngIf="p.stock > 0"
+                      style="margin-left:auto; font-weight:700; font-size:0.85rem; color:#059669; font-family:monospace">
+                      S/ {{ p.pre_unit | number:'1.2-2' }}
+                    </span>
+                  </div>
+                  <div style="font-size:0.85rem; font-weight:500; margin-top:0.2rem">{{ p.nombre }}</div>
+                  <small *ngIf="p.stock <= 0" style="color:#f87171">Sin stock en esta sede</small>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="col-12 md:col-4">
-            <label class="field-label">CANTIDAD A DAR DE BAJA <span class="required-asterisk">*</span></label>
-            <p-inputNumber [(ngModel)]="cantidad" [min]="1"
-              [max]="productoSeleccionado?.stock || 999"
-              [style]="{ width: '100%' }" [showButtons]="true"
-              buttonLayout="vertical"
-              incrementButtonIcon="pi pi-plus"
-              decrementButtonIcon="pi pi-minus"
-              styleClass="cantidad-input"
-              [disabled]="!productoSeleccionado">
-            </p-inputNumber>
-            <small class="field-hint" *ngIf="productoSeleccionado">
-              Máximo disponible: {{ productoSeleccionado.stock ?? 0 }} unidades
-            </small>
-            <small class="field-hint text-400" *ngIf="!productoSeleccionado">
-              Primero busque un producto
+          <small class="field-hint">Escriba al menos 3 caracteres para buscar</small>
+
+          <!-- Info del producto seleccionado -->
+          <div *ngIf="productoSeleccionado" class="producto-info-card mt-3">
+            <div class="producto-info-row">
+              <span class="info-label">Código:</span>
+              <span class="info-value">{{ productoSeleccionado.codigo }}</span>
+            </div>
+            <div class="producto-info-row">
+              <span class="info-label">Producto:</span>
+              <span class="info-value font-semibold">{{ productoSeleccionado.anexo }}</span>
+            </div>
+            <div class="producto-info-row">
+              <span class="info-label">Categoría:</span>
+              <span class="info-value">{{ productoSeleccionado.categoriaNombre }}</span>
+            </div>
+            <div class="producto-info-row">
+              <span class="info-label">Stock disponible:</span>
+              <span class="info-value stock-value">
+                <i class="pi pi-box"></i> {{ productoSeleccionado.stock ?? 0 }} unidades
+              </span>
+            </div>
+            <div class="producto-info-row">
+              <span class="info-label">Precio unitario:</span>
+              <span class="info-value precio-value">
+                S/ {{ productoSeleccionado.pre_unit | number:'1.2-2' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-2" *ngIf="productoNoEncontrado">
+            <small class="p-error">
+              <i class="pi pi-exclamation-circle"></i>
+              No se encontró ningún producto con el texto ingresado.
             </small>
           </div>
         </div>
-      </p-card>
-    </div>
 
+        <div class="col-12 md:col-4">
+          <label class="field-label">CANTIDAD A DAR DE BAJA <span class="required-asterisk">*</span></label>
+          <p-inputNumber [(ngModel)]="cantidad" [min]="1"
+            [max]="productoSeleccionado?.stock || 999"
+            [style]="{ width: '100%' }" [showButtons]="true"
+            buttonLayout="vertical"
+            incrementButtonIcon="pi pi-plus"
+            decrementButtonIcon="pi pi-minus"
+            styleClass="cantidad-input"
+            [disabled]="!productoSeleccionado">
+          </p-inputNumber>
+          <small class="field-hint" *ngIf="productoSeleccionado">
+            Máximo disponible: {{ productoSeleccionado.stock ?? 0 }} unidades
+          </small>
+          <small class="field-hint text-400" *ngIf="!productoSeleccionado">
+            Primero busque un producto
+          </small>
+        </div>
+      </div>
+    </p-card>
+  </div>
+  
     <!-- PASO 2: Tipo y Motivo -->
     <div class="col-12" *ngIf="productoSeleccionado">
       <p-card styleClass="form-card">

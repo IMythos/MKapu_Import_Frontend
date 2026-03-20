@@ -1,0 +1,42 @@
+/* Reutiliza exactamente los mismos estilos del registro */
+@import url('../mermas-registro/mermas-registro.css');
+
+
+.productos-readonly-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.producto-readonly-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #ffffff;
+  border-radius: 6px;
+  border: 1px solid #f3f4f6;
+  font-size: 0.85rem;
+}
+
+/* Dark mode */
+:host-context(.app-dark) .productos-readonly-list {
+  background: rgba(255,255,255,0.02);
+  border-color: #27272a;
+}
+
+:host-context(.app-dark) .producto-readonly-item {
+  background: #18181b;
+  border-color: #27272a;
+}
+
+:host ::ng-deep .form-card {
+  margin-bottom: 1.5rem !important;
+}
+

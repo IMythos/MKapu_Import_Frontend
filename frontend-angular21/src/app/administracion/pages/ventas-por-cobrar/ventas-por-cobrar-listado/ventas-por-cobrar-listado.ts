@@ -444,8 +444,8 @@ export class VentasPorCobrarListadoComponent implements OnInit, OnDestroy {
     return new Date(iso).toLocaleDateString('es-PE');
   }
 
-  irAgregarVentaPorCobrar(id: number) { this.router.navigate(['/admin/ventas-por-cobrar/pagar-ventas-por-cobrar', id]); }
-  verDetalle(id: number)               { this.router.navigate(['/admin/ventas-por-cobrar/detalles-ventas-por-cobrar', id]); }
+  irAgregarVentaPorCobrar(id: number) { this.router.navigate(['/admin/ventas-por-cobrar/pagar', id]); }
+  verDetalle(id: number)               { this.router.navigate(['/admin/ventas-por-cobrar/detalles', id]); }
 
   rechazarCotizacion(id: number) {
     const cuenta = this.arService.accounts().find((a) => a.id === id);

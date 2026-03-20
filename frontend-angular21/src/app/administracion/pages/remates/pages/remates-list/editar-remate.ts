@@ -9,6 +9,7 @@ import { InputNumberModule } from 'primeng/inputnumber';
 import { SelectModule } from 'primeng/select';
 import { ToastModule } from 'primeng/toast';
 import { MessageService } from 'primeng/api';
+import { SedeService } from '../../../../services/sede.service';
 
 import { AuctionService, AuctionResponseDto, PatchAuctionDto } from '../../../../services/auction.service';
 
@@ -45,6 +46,7 @@ export class EditarRemateComponent implements OnInit {
   private readonly messageService = inject(MessageService);
   private readonly router         = inject(Router);
   private readonly route          = inject(ActivatedRoute);
+  private readonly sedeService     = inject(SedeService);
 
   cargando  = signal(true);
   guardando = signal(false);
@@ -92,6 +94,7 @@ export class EditarRemateComponent implements OnInit {
     }
     this.idRemate = Number(idParam);
     this.cargarRemate(this.idRemate);
+    this.sedeService.loadSedes().subscribe();
   }
 
   private cargarRemate(id: number): void {
@@ -114,6 +117,15 @@ export class EditarRemateComponent implements OnInit {
     });
   }
 
+  // Agrega computed:
+  readonly nombreSede = computed(() => {
+    const auction = this.auctionService.auctions()
+      .find(a => a.id_remate === this.idRemate);
+    const id_sede = auction?.id_sede_ref ?? 0;
+    if (!id_sede) return '—';
+    return this.sedeService.sedes().find(s => s.id_sede === id_sede)?.nombre ?? `Sede #${id_sede}`;
+  });
+  
   private mapearAuction(a: AuctionResponseDto): void {
     const detalle = a.detalles?.[0];
     this.form.set({

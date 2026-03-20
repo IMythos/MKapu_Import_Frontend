@@ -271,8 +271,7 @@ export const ADMIN_ROUTES: Routes = [
     children: [
       { path: '', loadComponent: () => import('./pages/mermas/pages/mermas-pr/mermas-pr').then((m) => m.MermasPr) },
       { path: 'registro-merma', loadComponent: () => import('./pages/mermas/pages/mermas-registro/mermas-registro').then((m) => m.MermasRegistro) },
-      { path: 'edicion-merma-remate', loadComponent: () => import('./pages/mermas-remates/pages/mermas-remates-edc/mermas-remates-edc').then((m) => m.MermasRematesEdcComponent) },
-    ],
+      { path: 'edicion-merma/:id', loadComponent: () => import('./pages/mermas/pages/mermas-listado/mermas-editar').then((m) => m.MermasEditar) },    ],
   },
 
   {

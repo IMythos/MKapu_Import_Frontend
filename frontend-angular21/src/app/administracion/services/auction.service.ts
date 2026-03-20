@@ -36,12 +36,14 @@ export interface AuctionDetailResponse {
 }
 
 export interface AuctionResponseDto {
-  id_remate:    number;
-  cod_remate:   string;
-  descripcion:  string;
-  estado?:      string;
-  detalles?:    AuctionDetailResponse[];
-  total_items?: number;
+  id_remate:      number;
+  cod_remate:     string;
+  descripcion:    string;
+  estado?:        string;
+  id_almacen_ref?: number;
+  id_sede_ref?:   number; 
+  detalles?:      AuctionDetailResponse[];
+  total_items?:   number;
 }
 
 export interface PaginatedAuctions {
@@ -76,7 +78,7 @@ export class AuctionService {
     return headers;
   }
 
-  // ── Crear ──────────────────────────────────────────────────────────────────
+  // ── Crear ─────────────────────────────────────────────────────────────────
   createAuction(dto: CreateAuctionDto, role = 'Administrador'): Observable<AuctionResponseDto> {
     this._loading.set(true);
     this._error.set(null);
@@ -93,16 +95,13 @@ export class AuctionService {
   patchAuction(id: number, dto: PatchAuctionDto, role = 'Administrador'): Observable<AuctionResponseDto> {
     this._loading.set(true);
     this._error.set(null);
-
     return this.getAuctionById(id, role).pipe(
       switchMap((actual) => {
         const detallesActuales = actual.detalles ?? [];
-
         const detallesCambiaron = dto.detalles && dto.detalles.length > 0 && (
           dto.detalles[0].pre_remate   !== detallesActuales[0]?.pre_remate ||
           dto.detalles[0].stock_remate !== detallesActuales[0]?.stock_remate
         );
-
         const detallesPayload = detallesCambiaron && dto.detalles
           ? dto.detalles.map((d, i) => ({
               id_detalle_remate: detallesActuales[i]?.id_detalle_remate,
@@ -118,13 +117,11 @@ export class AuctionService {
               pre_remate:        d.pre_remate   ?? 0,
               stock_remate:      d.stock_remate ?? 0,
             }));
-
         const payload = {
           descripcion: dto.descripcion ?? actual.descripcion,
           estado:      dto.estado      ?? actual.estado,
           detalles:    detallesPayload,
         };
-
         return this.http
           .put<AuctionResponseDto>(`${this.api}/logistics/auctions/${id}`, payload, { headers: this.buildHeaders(role) })
           .pipe(tap(updated => this._auctions.update(list => list.map(a => a.id_remate === updated.id_remate ? updated : a))));
@@ -135,10 +132,23 @@ export class AuctionService {
   }
 
   // ── Listar ────────────────────────────────────────────────────────────────
-  loadAuctions(page = 1, limit = 10, role = 'Administrador'): Observable<PaginatedAuctions> {
+  loadAuctions(
+    page    = 1,
+    limit   = 10,
+    id_sede = 0,          
+    role    = 'Administrador',
+  ): Observable<PaginatedAuctions> {
     this._loading.set(true);
     this._error.set(null);
-    const params = new HttpParams().set('page', page.toString()).set('limit', limit.toString());
+
+    let params = new HttpParams()
+      .set('page',  page.toString())
+      .set('limit', limit.toString());
+
+    if (id_sede > 0) {
+      params = params.set('id_sede', id_sede.toString());
+    }
+
     return this.http
       .get<PaginatedAuctions>(`${this.api}/logistics/auctions`, { headers: this.buildHeaders(role), params })
       .pipe(

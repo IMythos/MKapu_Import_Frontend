@@ -1,4 +1,4 @@
-import { Component, signal, computed, inject, OnInit } from '@angular/core';
+import { Component, signal, computed, inject, OnInit, effect } from '@angular/core';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { RouterModule, Router } from '@angular/router';
@@ -14,6 +14,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { SelectModule } from 'primeng/select';
 import { CommonModule } from '@angular/common';
 import { AuctionService, AuctionResponseDto } from '../../../../services/auction.service';
+import { SedeService } from '../../../../services/sede.service';
+import { AuthService } from '../../../../../auth/services/auth.service';
 import { SharedTableContainerComponent } from '../../../../../shared/components/table.componente/shared-table-container.component';
 
 interface RemateUI {
@@ -27,6 +29,8 @@ interface RemateUI {
   estado:         string;
   observacion?:   string;
   descuento:      number;
+  id_sede:        number;
+  nombreSede:     string;
 }
 
 type EstadoFiltro = 'TODOS' | 'ACTIVO' | 'FINALIZADO' | 'CANCELADO';
@@ -51,13 +55,18 @@ export class RematesPr implements OnInit {
   private readonly messageService      = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
   private readonly router              = inject(Router);
+  private readonly sedeService         = inject(SedeService);
+  private readonly authService         = inject(AuthService);
 
   cargando = this.auctionService.loading;
 
   busqueda     = signal('');
   estadoFiltro = signal<EstadoFiltro>('ACTIVO');
-  page         = signal(1);
-  limit        = signal(5);
+  sedeFiltro   = signal(
+    String(this.authService.getCurrentUser()?.idSede ?? '')
+  );
+  page  = signal(1);
+  limit = signal(5);
 
   dialogVisible      = false;
   remateSeleccionado = signal<RemateUI | null>(null);
@@ -69,7 +78,28 @@ export class RematesPr implements OnInit {
     { label: 'Cancelado',  value: 'CANCELADO'  },
   ];
 
-  remates = computed(() => this.auctionService.auctions().map(a => this.mapToUI(a)));
+  readonly sedesOpciones = computed(() => [
+    { label: 'Todas las sedes', value: '' },
+    ...this.sedeService.sedes().map(s => ({
+      label: s.nombre,
+      value: String(s.id_sede),
+    })),
+  ]);
+
+  // ── Constructor con effect para filtro de sede ────────────────────────────
+  constructor() {
+    effect(() => {
+      const sede   = this.sedeFiltro();
+      const idSede = sede ? Number(sede) : 0;
+      this.auctionService.loadAuctions(1, 50, idSede).subscribe();
+      this.page.set(1);
+    });
+  }
+
+  // ── Datos ─────────────────────────────────────────────────────────────────
+  remates = computed(() =>
+    this.auctionService.auctions().map(a => this.mapToUI(a))
+  );
 
   private rematesPorEstado = computed(() => {
     const estado = this.estadoFiltro();
@@ -82,7 +112,7 @@ export class RematesPr implements OnInit {
     if (!str) return this.rematesPorEstado();
     return this.rematesPorEstado().filter(r =>
       r.codigo.toLowerCase().includes(str) ||
-      r.nombre.toLowerCase().includes(str) ||
+      r.nombre.toLowerCase().includes(str)  ||
       r.responsable.toLowerCase().includes(str)
     );
   });
@@ -93,45 +123,65 @@ export class RematesPr implements OnInit {
     return data.slice(start, start + this.limit());
   });
 
-  totalPages = computed(() => Math.ceil(this.productosFiltrados().length / this.limit()));
+  totalPages = computed(() =>
+    Math.ceil(this.productosFiltrados().length / this.limit())
+  );
 
   totalRemates      = computed(() => this.remates().length);
-  valorTotalRemates = computed(() => this.remates().reduce((s, r) => s + r.precioRemate * r.cantidad, 0));
+  valorTotalRemates = computed(() =>
+    this.remates().reduce((s, r) => s + r.precioRemate * r.cantidad, 0)
+  );
 
-  ngOnInit(): void { this.cargarRemates(); }
+  // ── Lifecycle ─────────────────────────────────────────────────────────────
+  ngOnInit(): void {
+    this.sedeService.loadSedes().subscribe();
+    // el effect dispara la carga inicial automáticamente
+  }
 
+  // ── Mapper ────────────────────────────────────────────────────────────────
   private mapToUI(a: AuctionResponseDto): RemateUI {
     const d              = a.detalles?.[0];
     const precioOriginal = d?.pre_original ?? 0;
     const precioRemate   = d?.pre_remate   ?? 0;
     const descuento      = precioOriginal > 0
       ? Math.round(((precioOriginal - precioRemate) / precioOriginal) * 100) : 0;
+    const id_sede = a.id_sede_ref ?? 0;
     return {
       id_remate:      a.id_remate,
       codigo:         a.cod_remate,
       nombre:         a.descripcion,
-      cantidad:       d?.stock_remate ?? 0,
+      cantidad:       d?.stock_remate  ?? 0,
       precioRemate,
       precioOriginal,
       responsable:    'Sin asignar',
-      estado:         a.estado ?? 'ACTIVO',
+      estado:         a.estado         ?? 'ACTIVO',
       observacion:    '',
       descuento,
+      id_sede,
+      nombreSede:     this.getNombreSede(id_sede),
     };
   }
 
-  cargarRemates(): void {
-    this.auctionService.loadAuctions(1, 50).subscribe({
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudieron cargar los remates', life: 3000 }),
-    });
+  private getNombreSede(id_sede: number): string {
+    if (!id_sede) return '—';
+    return this.sedeService.sedes().find(s => s.id_sede === id_sede)?.nombre ?? `Sede #${id_sede}`;
   }
 
-  onBusquedaChange(v: string):      void { this.busqueda.set(v);     this.page.set(1); }
-  onEstadoChange(v: EstadoFiltro):  void { this.estadoFiltro.set(v); this.page.set(1); }
-  limpiarFiltros():                 void { this.busqueda.set(''); this.estadoFiltro.set('TODOS'); this.page.set(1); }
-  onPageChange(p: number):          void { this.page.set(p); }
-  onLimitChange(l: number):         void { this.limit.set(l); this.page.set(1); }
+  // ── Filtros ───────────────────────────────────────────────────────────────
+  onBusquedaChange(v: string):     void { this.busqueda.set(v);     this.page.set(1); }
+  onEstadoChange(v: EstadoFiltro): void { this.estadoFiltro.set(v); this.page.set(1); }
 
+  limpiarFiltros(): void {
+    this.busqueda.set('');
+    this.estadoFiltro.set('TODOS');
+    this.sedeFiltro.set('');
+    this.page.set(1);
+  }
+
+  onPageChange(p: number):  void { this.page.set(p); }
+  onLimitChange(l: number): void { this.limit.set(l); this.page.set(1); }
+
+  // ── Modal ─────────────────────────────────────────────────────────────────
   verDetalle(remate: RemateUI): void {
     this.remateSeleccionado.set({ ...remate });
     this.dialogVisible = true;
@@ -147,6 +197,7 @@ export class RematesPr implements OnInit {
     this.router.navigate(['/admin', 'remates', 'editar-remate', remate.id_remate]);
   }
 
+  // ── Estado ────────────────────────────────────────────────────────────────
   confirmarCambioEstado(remate: RemateUI): void {
     const esActivo = remate.estado === 'ACTIVO';
     this.confirmationService.confirm({
@@ -164,18 +215,29 @@ export class RematesPr implements OnInit {
   private cambiarEstado(remate: RemateUI): void {
     this.auctionService.finalizeAuction(remate.id_remate).subscribe({
       next: () => {
-        this.messageService.add({ severity: 'success', summary: 'Estado actualizado', detail: `El remate ${remate.codigo} fue finalizado.`, life: 3000 });
+        this.messageService.add({
+          severity: 'success', summary: 'Estado actualizado',
+          detail: `El remate ${remate.codigo} fue finalizado.`, life: 3000,
+        });
         this.cerrarModalDetalle();
-        this.cargarRemates();
+        const sede = this.sedeFiltro();
+        this.auctionService.loadAuctions(1, 50, sede ? Number(sede) : 0).subscribe();
       },
-      error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo cambiar el estado del remate.', life: 3000 }),
+      error: () => this.messageService.add({
+        severity: 'error', summary: 'Error',
+        detail: 'No se pudo cambiar el estado del remate.', life: 3000,
+      }),
     });
   }
 
   abrirRegistro(): void { this.router.navigate(['/admin', 'remates', 'registro-remate']); }
 
   getEstadoSeverity(estado: string): Severity {
-    const map: Record<string, Severity> = { ACTIVO: 'success', FINALIZADO: 'secondary', CANCELADO: 'danger' };
+    const map: Record<string, Severity> = {
+      ACTIVO:     'success',
+      FINALIZADO: 'secondary',
+      CANCELADO:  'danger',
+    };
     return map[estado] || 'info';
   }
 }

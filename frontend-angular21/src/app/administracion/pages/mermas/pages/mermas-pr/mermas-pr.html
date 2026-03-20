@@ -89,12 +89,12 @@
         <div class="filtro-item filtro-compacto">
           <label>SEDE</label>
           <p-select
-            [options]="tiposMermaOpciones()"
-            [ngModel]="tipoMermaFiltro()"
-            (ngModelChange)="tipoMermaFiltro.set($event); paginaActual.set(1)"
+            [options]="sedesOpciones()"
+            [ngModel]="sedeFiltro()"
+            (ngModelChange)="sedeFiltro.set($event); paginaActual.set(1)"
             optionLabel="label"
             optionValue="value"
-            placeholder="Todos los tipos"
+            placeholder="Todas las sedes"
             styleClass="w-full"
             [showClear]="true">
           </p-select>
@@ -142,7 +142,7 @@
           <th style="width:10%">TIPO MERMA</th>
           <th style="width:8%">CANTIDAD</th>
           <th style="width:12%">RESPONSABLE</th>
-          <th style="width:12%">FECHA</th>
+          <th style="width:12%">SEDE</th>
           <th style="width:10%" class="text-center">ACCIONES</th>
         </tr>
       </ng-template>
@@ -177,15 +177,17 @@
           <td><span class="cantidad-badge">{{ merma.cantidad }} unid.</span></td>
           <td><span class="text-700">{{ merma.responsable }}</span></td>
           <td>
-            <div class="fecha-producto">
-              {{ merma.fechaRegistro | date:'dd/MM/yyyy HH:mm' }}
-            </div>
+            <span class="text-700">{{ getNombreSede(merma.id_sede) }}</span>
           </td>
           <td class="text-center">
             <div class="acciones-tabla">
-              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="info"
+              <p-button icon="pi pi-eye" [rounded]="true" [text]="true" severity="secondary"
                 pTooltip="Ver detalle" tooltipPosition="top"
                 (onClick)="verDetalleMerma(merma)">
+              </p-button>
+              <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="secondary"
+                pTooltip="Editar" tooltipPosition="top"
+                (onClick)="irEditar(merma)">
               </p-button>
             </div>
           </td>

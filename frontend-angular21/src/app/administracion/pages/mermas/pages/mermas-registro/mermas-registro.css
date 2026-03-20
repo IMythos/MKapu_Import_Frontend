@@ -1,51 +1,49 @@
 .registro-page {
-    min-height: 100vh;
-    padding: 2rem 2.5rem;
-    background: #f5f5f5;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
 }
 
 /* ===== HEADER CARD ===== */
 :host ::ng-deep .registro-header-card .p-card-body {
-    padding: 1rem 1.5rem;
+    padding: 1rem 1.25rem;
 }
 
 .registro-header-card {
-    margin-bottom: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
 }
 
 .registro-title-icon {
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    border-radius: 8px;
-    background: #f5c34d;
-    color: #1f2937;
-    font-size: 20px;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #e8a424 !important;
+  color: #1f2937 !important;
+  font-size: 18px;
 }
+
 
 .registro-kicker {
     margin: 0;
-    font-size: 0.7rem;
-    letter-spacing: 0.15em;
+    font-size: 0.65rem;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
     color: #94a3b8;
-    font-weight: 400;
 }
 
 .registro-title {
     margin: 0;
-    font-size: 1.15rem;
-    font-weight: 700;
+    font-size: 1.1rem;
+    font-weight: 600;
     color: #1f2937;
-    letter-spacing: -0.02em;
 }
 
 /* ===== FORM CARDS ===== */
 :host ::ng-deep .form-card {
-    margin-bottom: 1.5rem;
+    margin-bottom: 3.5rem;
     border-radius: 8px;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
@@ -401,7 +399,7 @@
 }
 
 :host ::ng-deep .resumen-card .p-card-body {
-    padding: 1.5rem;
+    padding: 1.35rem;
 }
 
 .resumen-title {
