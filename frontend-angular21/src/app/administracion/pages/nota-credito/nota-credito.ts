@@ -194,7 +194,33 @@ export class NotasCreditoComponent implements OnInit, OnDestroy {
 
   exportarExcel(): void {
     this.messageService.add({ severity: 'info', summary: 'Exportando', detail: 'Generando archivo Excel...' });
-    // TODO: Llamar al endpoint de exportación o procesar localmente
+
+    const filters: CreditNoteFilter = {
+      ...(this.filtroEstado    && { status:           this.filtroEstado }),
+      ...(this.filtroSerie     && { serie:            this.filtroSerie.trim() }),
+      ...(this.filtroDoc       && { customerDocument: this.filtroDoc.trim() }),
+      ...(this.filtroFechaInicio && { startDate:      this.formatDate(this.filtroFechaInicio) }),
+      ...(this.filtroFechaFin    && { endDate:        this.formatDate(this.filtroFechaFin) }),
+    };
+
+    const sub = this.creditNoteService.exportarExcel(filters).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Notas_de_Credito_${new Date().getTime()}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+
+        this.messageService.add({ severity: 'success', summary: 'Éxito', detail: 'Excel descargado correctamente.' });
+      },
+      error: () => {
+        this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo generar el Excel.' });
+      }
+    });
+    this.subscriptions.add(sub);
   }
 
   // ── Detalle ───────────────────────────────────────────────────────

@@ -167,12 +167,33 @@ export class ReclamosListado implements OnInit, OnDestroy {
       detail: 'Generando PDF del reclamo...',
       life: 3000,
     });
-    // TODO backend — descomentar cuando esté listo:
-    // const sub = this.claimService.imprimirReclamo(_reclamo.id).subscribe({
-    //   next: (blob) => { /* abrir PDF */ },
-    //   error: () => this.messageService.add({ severity: 'error', summary: 'Error', detail: 'No se pudo generar el PDF', life: 3000 }),
-    // });
-    // this.subscriptions.add(sub);
+
+    const sub = this.claimService.imprimirReclamo(_reclamo.id).subscribe({
+      next: (blob: Blob) => {
+        const url = window.URL.createObjectURL(blob);
+
+        window.open(url, '_blank');
+        setTimeout(() => window.URL.revokeObjectURL(url), 1000);
+
+        this.messageService.add({ 
+          severity: 'success', 
+          summary: 'Éxito', 
+          detail: 'PDF generado correctamente', 
+          life: 3000 
+        });
+      },
+      error: (err) => {
+        console.error('Error al descargar PDF:', err);
+        this.messageService.add({ 
+          severity: 'error', 
+          summary: 'Error', 
+          detail: 'No se pudo generar el PDF', 
+          life: 3000 
+        });
+      },
+    });
+
+    this.subscriptions.add(sub);
   }
 
   enviarCorreo(_reclamo: ClaimResponseDto): void {

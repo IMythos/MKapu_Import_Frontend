@@ -1,35 +1,34 @@
-import {
-  Component,
-  OnInit,
-  OnDestroy,
-  inject,
-  ChangeDetectorRef
-} from '@angular/core';
+import { Component, OnInit, OnDestroy, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 
-// PrimeNG
-import { Card }          from 'primeng/card';
-import { Button }        from 'primeng/button';
-import { Select }        from 'primeng/select';
-import { TableModule }   from 'primeng/table';
-import { Tag }           from 'primeng/tag';
-import { Toast }         from 'primeng/toast';
-import { InputText }     from 'primeng/inputtext';
-import { ConfirmDialog } from 'primeng/confirmdialog';
+import { CardModule } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
+import { SelectModule } from 'primeng/select';
+import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
+import { InputTextModule } from 'primeng/inputtext';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { InputNumberModule } from 'primeng/inputnumber';
+import { CheckboxModule } from 'primeng/checkbox';
 import { MessageService, ConfirmationService } from 'primeng/api';
-import { CreditNoteService } from '../../../services/nota-credito.service';
 
-// import { SalesReceiptService } from '../../../ventas/services/sales-receipt.service';
+import { VentasApiService } from '../../../../ventas/services/ventas-api.service';
+import { CreditNoteService, RegisterCreditNoteDto } from '../../../services/nota-credito.service';
+import { StockSocketService } from '../../../../ventas/services/stock-socket.service';
 
-// Interfaces locales para el DTO de envío (basado en el backend)
-export interface RegisterCreditNoteDto {
-  salesReceiptId: number;
-  reasonCode: string;       // Código SUNAT (Catálogo 09)
-  reasonDescription: string; // Sustento
-  items: any[];             // Ítems a devolver (RegisterCreditNoteItemDto)
+// 👇 Importa aquí tu nuevo servicio de Sockets
+
+interface VentaItemUI {
+  id_detalle: number;
+  descripcion: string;
+  cantidadOriginal: number;
+  precioUnitario: number;
+  cantidadADevolver: number;
+  seleccionado: boolean;
 }
 
 @Component({
@@ -38,43 +37,45 @@ export interface RegisterCreditNoteDto {
   imports: [
     CommonModule,
     FormsModule,
-    Card,
-    Button,
-    Select,
+    CardModule,
+    ButtonModule,
+    SelectModule,
     TableModule,
-    Tag,
-    Toast,
-    InputText,
-    ConfirmDialog
+    TagModule,
+    ToastModule,
+    InputTextModule,
+    ConfirmDialogModule,
+    InputNumberModule,
+    CheckboxModule,
   ],
   providers: [MessageService, ConfirmationService],
   templateUrl: './agregar-nota-credito.html',
-  styleUrl: './agregar-nota-credito.css', // Opcional si tienes estilos locales
+  styleUrl: './agregar-nota-credito.css',
 })
 export class AgregarNotaCreditoComponent implements OnInit, OnDestroy {
-  // ── Inyecciones ──────────────────────────────────────────────────
-  private readonly router              = inject(Router);
-  private readonly creditNoteService   = inject(CreditNoteService);
-  // private readonly salesService     = inject(SalesReceiptService);
-  private readonly messageService      = inject(MessageService);
+  private readonly router = inject(Router);
+  private readonly creditNoteService = inject(CreditNoteService);
+  private readonly ventasService = inject(VentasApiService);
+  private readonly messageService = inject(MessageService);
   private readonly confirmationService = inject(ConfirmationService);
-  private readonly cdr                 = inject(ChangeDetectorRef);
+  private readonly cdr = inject(ChangeDetectorRef);
+  
+  private readonly stockSocket = inject(StockSocketService);
 
   private subscriptions = new Subscription();
 
-  // ── Paso 1: Búsqueda de Comprobante ──────────────────────────────
   readonly tiposComprobante = [
     { label: 'Factura', value: '01' },
-    { label: 'Boleta',  value: '03' }
+    { label: 'Boleta', value: '03' },
   ];
 
   tipoComprobanteRef: string | null = null;
   serieCorrelativoRef: string = '';
   buscandoComprobante = false;
-  ventaReferencia: any = null; // Reemplazar 'any' por tu SalesReceiptDetailDto
 
-  // ── Paso 2: Motivo y Sustento (SUNAT Catálogo 09) ────────────────
-  // Códigos estándar SUNAT para Notas de Crédito Electrónicas
+  ventaReferenciaCabecera: any = null;
+  itemsVenta: VentaItemUI[] = [];
+
   readonly motivosSunat = [
     { label: 'Anulación de la operación', value: '01' },
     { label: 'Anulación por error en el RUC', value: '02' },
@@ -84,170 +85,243 @@ export class AgregarNotaCreditoComponent implements OnInit, OnDestroy {
     { label: 'Devolución total', value: '06' },
     { label: 'Devolución por ítem', value: '07' },
     { label: 'Bonificación', value: '08' },
-    { label: 'Disminución en el valor', value: '09' }
+    { label: 'Disminución en el valor', value: '09' },
   ];
 
   motivoSunatSeleccionado: string | null = null;
   sustentoDescripcion: string = '';
 
-  // ── Paso 3: Emisión ──────────────────────────────────────────────
   guardandoNota = false;
 
+  private stockListener = (data: any) => {
+    this.messageService.add({
+      severity: 'info',
+      summary: 'Inventario Actualizado',
+      detail: `Se devolvieron ${data.quantity} unidades del producto ID: ${data.productId} al almacén.`,
+      life: 6000
+    });
+    this.cdr.markForCheck();
+  };
+
   ngOnInit(): void {
-    // Inicialización si es requerida
+    this.stockSocket.onStockActualizado(this.stockListener);
   }
 
   ngOnDestroy(): void {
     this.subscriptions.unsubscribe();
+    this.stockSocket.offStockActualizado(this.stockListener);
   }
-
-  // ── Funciones Búsqueda (Paso 1) ──────────────────────────────────
 
   buscarComprobante(): void {
     if (!this.tipoComprobanteRef) {
-      this.messageService.add({ severity: 'warn', summary: 'Advertencia', detail: 'Seleccione el tipo de comprobante.' });
+      this.messageService.add({ severity: 'warn', summary: 'Atención', detail: 'Seleccione el tipo de comprobante.' });
       return;
     }
-
     if (!this.serieCorrelativoRef || !this.serieCorrelativoRef.includes('-')) {
-      this.messageService.add({ severity: 'warn', summary: 'Formato inválido', detail: 'Debe ingresar Serie y Correlativo separados por un guion (Ej: F001-000123).' });
+      this.messageService.add({ severity: 'error', summary: 'Formato inválido', detail: 'Use el formato Serie-Número (Ej: F001-123).' });
       return;
     }
 
     this.buscandoComprobante = true;
+    this.limpiarBuscadorBase();
+    
+    const correlativoLimpio = this.serieCorrelativoRef.trim().toUpperCase();
 
-    const [serie, correlativo] = this.serieCorrelativoRef.trim().split('-');
+    const sub = this.ventasService.getSaleReceiptByCorrelative(correlativoLimpio).subscribe({
+      next: (res: any) => {
+        const cabecera = res;
+        const listaProductos = res.detalles || [];
 
-    // Aquí llamarías a tu servicio de ventas para buscar la factura/boleta
-    /*
-    const sub = this.salesService.findBySerie(serie, correlativo).subscribe({
-      next: (res) => {
-        this.ventaReferencia = res;
+        const esFactura = correlativoLimpio.startsWith('F');
+        if (
+          (this.tipoComprobanteRef === '01' && !esFactura) ||
+          (this.tipoComprobanteRef === '03' && esFactura)
+        ) {
+          this.buscandoComprobante = false;
+          this.messageService.add({
+            severity: 'error',
+            summary: 'Error de Coherencia',
+            detail: 'El tipo seleccionado no coincide con la serie buscada.',
+          });
+          return;
+        }
+
+        const totalComprobante = Number(cabecera.total || 0);
+        const subtotalCalculado = totalComprobante / 1.18; 
+        const igvCalculado = totalComprobante - subtotalCalculado;
+
+        this.ventaReferenciaCabecera = {
+          id: cabecera.id,
+          clienteNombre: cabecera.nombre_cliente || 'Cliente sin nombre',
+          clienteDocumento: cabecera.cliente_documento || '—',
+          fechaEmision: cabecera.fec_emision,
+          total: totalComprobante,
+          subtotal: subtotalCalculado,
+          igv: igvCalculado            
+        };
+
+        this.itemsVenta = listaProductos.map((p: any) => {
+          const precio = Number(p.peso_unitario || p.precio_unitario || 0);
+          
+          return {
+            id_detalle: p.id_producto,
+            descripcion: p.descripcion || p.cod_prod || 'Producto Desconocido',
+            cantidadOriginal: Number(p.cantidad || 0),
+            precioUnitario: precio,
+            cantidadADevolver: 0,
+            seleccionado: false,
+          };
+        });
+
         this.buscandoComprobante = false;
+        this.cdr.markForCheck();
+
+        if (this.itemsVenta.length > 0) {
+          this.messageService.add({
+            severity: 'success',
+            summary: 'Éxito',
+            detail: 'Comprobante y productos cargados.',
+          });
+        } else {
+          this.messageService.add({
+            severity: 'warn',
+            summary: 'Atención',
+            detail: 'El comprobante no tiene productos vinculados.',
+          });
+        }
+      },
+      error: (err) => {
+        this.buscandoComprobante = false;
+        this.messageService.add({
+          severity: 'error',
+          summary: 'No encontrado',
+          detail: 'No se pudo localizar el comprobante.',
+        });
         this.cdr.markForCheck();
       },
-      error: () => {
-        this.buscandoComprobante = false;
-        this.messageService.add({ severity: 'error', summary: 'No encontrado', detail: 'No se encontró el comprobante indicado.' });
-        this.cdr.markForCheck();
-      }
     });
     this.subscriptions.add(sub);
-    */
-
-    // MOCK SIMULANDO RESPUESTA DEL BACKEND
-    setTimeout(() => {
-      this.ventaReferencia = {
-        id: 1045,
-        clienteNombre: 'INVERSIONES EL SOL S.A.C.',
-        clienteDocumento: '20123456789',
-        fechaEmision: new Date('2026-03-10'),
-        subTotal: 1000.00,
-        igvTotal: 180.00,
-        total: 1180.00,
-        items: [
-          { id: 1, descripcion: 'Monitor Teraware 24"', cantidad: 2, precioUnitario: 500.00, igv: 180.00, total: 1180.00 }
-        ]
-      };
-
-      this.buscandoComprobante = false;
-      this.messageService.add({ severity: 'success', summary: 'Encontrado', detail: 'Datos del comprobante cargados correctamente.' });
-      this.cdr.markForCheck();
-    }, 800);
   }
 
-  limpiarBuscador(): void {
-    this.ventaReferencia = null;
+  limpiarBuscadorBase(): void {
+    this.ventaReferenciaCabecera = null;
+    this.itemsVenta = [];
     this.motivoSunatSeleccionado = null;
     this.sustentoDescripcion = '';
-    // No limpiamos los inputs de búsqueda por si el usuario solo quiere corregir un dígito
   }
 
-  // ── Validaciones y Emisión (Paso 2 y 3) ──────────────────────────
+  onMotivoChange(): void {
+    if (this.motivoSunatSeleccionado === '01' || this.motivoSunatSeleccionado === '06') {
+      this.itemsVenta.forEach((item) => {
+        item.seleccionado = true;
+        item.cantidadADevolver = item.cantidadOriginal;
+      });
+    } else {
+      this.itemsVenta.forEach((item) => {
+        item.seleccionado = false;
+        item.cantidadADevolver = 0;
+      });
+    }
+  }
+
+  onCantidadChange(item: VentaItemUI): void {
+    if (item.cantidadADevolver > item.cantidadOriginal) {
+      item.cantidadADevolver = item.cantidadOriginal;
+    }
+    if (item.cantidadADevolver < 0) {
+      item.cantidadADevolver = 0;
+    }
+
+    item.seleccionado = item.cantidadADevolver > 0;
+  }
+
+  onCheckboxChange(item: VentaItemUI): void {
+    if (item.seleccionado && item.cantidadADevolver === 0) {
+      item.cantidadADevolver = 1;
+    } else if (!item.seleccionado) {
+      item.cantidadADevolver = 0;
+    }
+  }
+
 
   esFormularioValido(): boolean {
+    const hayItemsSeleccionados = this.itemsVenta.some(
+      (i) => i.seleccionado && i.cantidadADevolver > 0,
+    );
     return !!(
-      this.ventaReferencia &&
+      this.ventaReferenciaCabecera &&
       this.motivoSunatSeleccionado &&
-      this.sustentoDescripcion.trim().length >= 5 // Mínimo 5 caracteres de sustento
+      this.sustentoDescripcion.trim().length >= 5 &&
+      hayItemsSeleccionados
     );
   }
 
   confirmarEmision(): void {
-    if (!this.esFormularioValido()) return;
+    if (!this.esFormularioValido()) {
+      this.messageService.add({
+        severity: 'warn',
+        summary: 'Formulario Incompleto',
+        detail: 'Verifique motivo, sustento (mín. 5 chars) y que haya productos seleccionados.',
+      });
+      return;
+    }
 
     this.confirmationService.confirm({
-      header: 'Confirmar Emisión',
-      message: `¿Está seguro que desea emitir la Nota de Crédito por S/. ${this.ventaReferencia.total.toFixed(2)}? Este proceso notificará a SUNAT.`,
+      header: 'Confirmar Emisión a SUNAT',
+      message: `¿Está seguro que desea emitir la Nota de Crédito? Esta acción no se puede deshacer y el documento será enviado a SUNAT de inmediato.`,
       icon: 'pi pi-exclamation-triangle',
-      acceptLabel: 'Sí, Emitir',
+      acceptLabel: 'Sí, Emitir NC',
       rejectLabel: 'Cancelar',
       acceptButtonStyleClass: 'p-button-success',
       rejectButtonStyleClass: 'p-button-text p-button-secondary',
       accept: () => {
         this.emitirNotaCredito();
-      }
+      },
     });
   }
 
   private emitirNotaCredito(): void {
     this.guardandoNota = true;
 
-    // Construcción del Payload basado en el RegisterCreditNoteDto de tu backend
+    const itemsParaDevolver = this.itemsVenta.filter(
+      (i) => i.seleccionado && i.cantidadADevolver > 0,
+    );
+
     const payload: RegisterCreditNoteDto = {
-      salesReceiptId: this.ventaReferencia.id,
+      salesReceiptId: this.ventaReferenciaCabecera.id,
       reasonCode: this.motivoSunatSeleccionado!,
       reasonDescription: this.sustentoDescripcion.trim(),
-      // Mapeamos los ítems originales para enviarlos a la nota de crédito
-      items: this.ventaReferencia.items.map((item: any) => ({
-        salesReceiptItemId: item.id,
-        quantity: item.cantidad,
-      }))
+      items: itemsParaDevolver.map((item) => ({
+        itemId: item.id_detalle,
+        quantity: item.cantidadADevolver,
+      })),
     };
 
-    /* Descomentar cuando conectes el endpoint real
     const sub = this.creditNoteService.registrar(payload).subscribe({
       next: (res) => {
         this.guardandoNota = false;
         this.messageService.add({
           severity: 'success',
-          summary: 'Nota de Crédito Emitida',
-          detail: 'El documento fue generado y enviado correctamente a SUNAT.',
-          life: 4000
+          summary: 'Éxito',
+          detail: 'Nota de Crédito emitida correctamente',
+          life: 4000,
         });
-
-        // Retornar al listado tras éxito
-        setTimeout(() => this.volverListado(), 1500);
+        setTimeout(() => this.volverListado(), 2000); 
       },
       error: (err) => {
         this.guardandoNota = false;
         this.messageService.add({
           severity: 'error',
-          summary: 'Error de Emisión',
-          detail: err?.error?.message || 'Ocurrió un error al intentar emitir la nota de crédito.',
-          life: 5000
+          summary: 'Error',
+          detail: err?.error?.message || 'No se pudo emitir la nota de crédito',
+          life: 5000,
         });
-        this.cdr.markForCheck();
-      }
+      },
     });
     this.subscriptions.add(sub);
-    */
-
-    // MOCK SIMULANDO ÉXITO DE EMISIÓN
-    setTimeout(() => {
-      this.guardandoNota = false;
-      this.messageService.add({
-        severity: 'success',
-        summary: 'Nota de Crédito Emitida',
-        detail: 'El documento fue generado correctamente.'
-      });
-      setTimeout(() => this.volverListado(), 1500);
-    }, 1200);
   }
 
-  // ── Navegación ───────────────────────────────────────────────────
-
   volverListado(): void {
-    this.router.navigate(['/ventas/notas-credito']);
+    this.router.navigate(['/admin/nota-credito']);
   }
 }

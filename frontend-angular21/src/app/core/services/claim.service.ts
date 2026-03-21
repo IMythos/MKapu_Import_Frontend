@@ -232,4 +232,9 @@ export class ClaimService {
       { headers: this.headers }
     );
   }
+  imprimirReclamo(id: number | string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/${id}/pdf`, {
+      responseType: 'blob'
+    });
+  }
 }

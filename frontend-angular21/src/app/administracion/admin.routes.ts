@@ -181,11 +181,17 @@ export const ADMIN_ROUTES: Routes = [
   },
   {
     path: 'nota-credito',
-    loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent),
     //canActivate: [roleGuard],
-    data: { permiso: 'CREAR_NOTA_CREDITO' },
+    //data: { permiso: 'CREAR_NOTA_CREDITO' },
     children: [
-      { path: 'crear', loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent) }
+      { 
+      path: '', // 👇 Ruta por defecto: Renderiza el listado (Ej: /admin/nota-credito)
+      loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent) 
+    },
+    { 
+      path: 'crear', // 👇 Renderiza el formulario (Ej: /admin/nota-credito/crear)
+      loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent) 
+    }
     ]
   },
   {

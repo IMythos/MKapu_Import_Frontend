@@ -7,10 +7,8 @@ import {
   SalesReceiptSummaryListResponse,
   SalesReceiptWithHistoryDto,
   SalesReceiptKpiDto,
-  ClienteHistorialResponse,     // ← añadir esta interface (ver abajo)
+  ClienteHistorialResponse,
 } from '../interfaces';
-
-
 @Injectable({ providedIn: 'root' })
 export class VentasApiService {
   private readonly http = inject(HttpClient);
@@ -69,7 +67,6 @@ export class VentasApiService {
   }
 
 
-  // ─── Historial paginado del cliente (endpoint dedicado) ──────────
   obtenerHistorialCliente(
     documento: string,
     page = 1,
@@ -87,7 +84,6 @@ export class VentasApiService {
   }
 
 
-  // ─── KPI semanal ──────────────────────────────────────────────────
   getKpiSemanal(): Observable<SalesReceiptKpiDto> {
     let params = new HttpParams();
     const sede = this.sedeId;
@@ -97,5 +93,8 @@ export class VentasApiService {
       `${this.apiUrl}/receipts/kpi/semanal`,
       { params },
     );
+  }
+  getSaleReceiptByCorrelative(correlativo: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/receipts/correlativo/${correlativo}`);
   }
 }
