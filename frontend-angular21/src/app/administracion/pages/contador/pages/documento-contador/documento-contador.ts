@@ -20,6 +20,10 @@ import { Tooltip } from 'primeng/tooltip';
 import { AutoComplete } from 'primeng/autocomplete';
 import { Dialog } from 'primeng/dialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
+import { AuthService } from '../../../../../auth/services/auth.service';
+import { LoadingOverlayComponent } from '../../../../../shared/components/loading-overlay/loading-overlay.component';
+import { PaginadorComponent } from '../../../../../shared/components/paginador/paginador.components';
+import { getDomingoSemanaActualPeru, getLunesSemanaActualPeru } from '../../../../../shared/utils/date-peru.utils';
 
 // ─── Tipos locales ────────────────────────────────────────────────────────────
 
@@ -179,7 +183,7 @@ export class DocumentoContador implements OnInit {
 
   // ── Paginación ───────────────────────────────────────────────────
   paginaActual    = 1;
-  limitePorPagina = 10;
+  limitePorPagina = 5;
   totalRegistros  = 0;
   totalPaginas    = 1;
 
@@ -196,8 +200,8 @@ export class DocumentoContador implements OnInit {
   // ── Filtros ──────────────────────────────────────────────────────
   filtros: FiltrosComprobante = {
     busqueda:        '',
-    fechaInicio:     null,
-    fechaFin:        null,
+    fechaInicio:     getLunesSemanaActualPeru(),
+    fechaFin:        getDomingoSemanaActualPeru(),
     tipoComprobante: null,
     moneda:          null,
     estado:          null,
