@@ -4,7 +4,7 @@ export const environment = {
 
     //production: true,
     //apiUrl: 'https://mkapu.duckdns.org/api',
-    apiUrlSocket: 'https://mkapu.duckdns.org',
+    // apiUrlSocket: 'https://mkapu.duckdns.org',
 
 };
 

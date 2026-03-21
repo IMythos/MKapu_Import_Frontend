@@ -119,7 +119,7 @@ export class Sidebar implements OnInit {
 
     // ================= SECCIÓN PRINCIPAL =================
     {
-      label: 'PRINCIPAL', 
+      label: 'PRINCIPAL',
       icon: 'pi pi-shopping-cart',
       permisoSeccion: 'PRINCIPAL',
       items: [
@@ -155,7 +155,7 @@ export class Sidebar implements OnInit {
     this.loadUserInfo();
     this.loadMenu();
     this.iniciarSuscripcionReactiva();
-    this.cargarEmpresa(); 
+    this.cargarEmpresa();
 
   }
 
@@ -205,7 +205,7 @@ export class Sidebar implements OnInit {
     this.menuSections = this.SIDEBAR_ROUTES
       .map(section => {
         const itemsPermitidos = section.items.filter(item => permisos.includes(item.permiso));
-        
+
         return {
           ...section,
           label: section.permisoSeccion === 'PRINCIPAL' ? roleName : section.label,
