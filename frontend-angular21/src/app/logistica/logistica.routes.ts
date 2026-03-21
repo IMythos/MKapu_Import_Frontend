@@ -1,6 +1,14 @@
 import { Routes } from '@angular/router';
 import { roleGuard } from '../core/guards/role.guard'; 
 
+const loadMovimientosInventario = () =>
+  import('./pages/movimientos-inventario/movimientos-inventario').then((m) => m.MovimientosInventario);
+
+const loadDetalleMovimientoInventario = () =>
+  import('./pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(
+    (m) => m.DetalleMovimientoInventario,
+  );
+
 export const LOGISTICA_ROUTES: Routes = [
   {
     path: 'dashboard',
@@ -48,16 +56,28 @@ export const LOGISTICA_ROUTES: Routes = [
   },
 
   {
-    path: 'movimiento-inventario',
-    loadComponent: () => import('./pages/movimientos-inventario/movimientos-inventario').then((m) => m.MovimientosInventario),
+    path: 'movimiento-inventario/detalle/:id',
+    loadComponent: loadDetalleMovimientoInventario,
     canActivate: [roleGuard],
-    data: { permiso: ['CREAR_MOV_INVENTARIO', 'VER_MOVIMIENTOS'] } 
+    data: { permiso: ['CREAR_MOV_INVENTARIO', 'VER_MOVIMIENTOS'] },
   },
   {
     path: 'movimientos-inventario/detalle/:id',
-    loadComponent: () => import('./pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(m => m.DetalleMovimientoInventario),
+    loadComponent: loadDetalleMovimientoInventario,
     canActivate: [roleGuard],
-    data: { permiso: ['CREAR_MOV_INVENTARIO', 'VER_MOVIMIENTOS'] }
+    data: { permiso: ['CREAR_MOV_INVENTARIO', 'VER_MOVIMIENTOS'] },
+  },
+  {
+    path: 'movimiento-inventario',
+    loadComponent: loadMovimientosInventario,
+    canActivate: [roleGuard],
+    data: { permiso: ['CREAR_MOV_INVENTARIO', 'VER_MOVIMIENTOS'] },
+  },
+  {
+    path: 'movimientos-inventario',
+    loadComponent: loadMovimientosInventario,
+    canActivate: [roleGuard],
+    data: { permiso: ['CREAR_MOV_INVENTARIO', 'VER_MOVIMIENTOS'] },
   },
 
   {

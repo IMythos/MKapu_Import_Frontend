@@ -131,7 +131,15 @@ export class MovimientosInventario implements OnInit {
   }
 
   verDetalles(movimiento: any) {
-    this.router.navigate(['/logistica/movimientos-inventario/detalle', movimiento.id]);
+    const moduloBase = this.obtenerModuloBase();
+    this.router.navigate(
+      [moduloBase, 'movimiento-inventario', 'detalle', movimiento.id],
+      {
+        state: {
+          rutaRetorno: this.router.url,
+        },
+      },
+    );
   }
 
   getSeverity(tipo: string): 'success' | 'danger' | 'info' | 'warn' {
@@ -157,5 +165,9 @@ export class MovimientosInventario implements OnInit {
     const f = new Date(fecha);
     f.setHours(23, 59, 59, 999);
     return f.toISOString();
+  }
+
+  private obtenerModuloBase(): '/logistica' | '/ventas' {
+    return this.router.url.startsWith('/ventas') ? '/ventas' : '/logistica';
   }
 }

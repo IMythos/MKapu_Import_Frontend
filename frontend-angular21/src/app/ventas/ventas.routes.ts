@@ -2,6 +2,16 @@ import { Routes } from '@angular/router';
 import { CashboxGuard } from './guards/cashbox.guard';
 import { roleGuard } from '../core/guards/role.guard';
 
+const loadMovimientosInventario = () =>
+  import('../logistica/pages/movimientos-inventario/movimientos-inventario').then(
+    (m) => m.MovimientosInventario,
+  );
+
+const loadDetalleMovimientoInventario = () =>
+  import('../logistica/pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(
+    (m) => m.DetalleMovimientoInventario,
+  );
+
 export const VENTAS_ROUTES: Routes = [
   {
     path: '',
@@ -168,20 +178,26 @@ export const VENTAS_ROUTES: Routes = [
   },
 
   {
-    path: 'movimiento-inventario',
-    loadComponent: () =>
-      import('../logistica/pages/movimientos-inventario/movimientos-inventario').then(
-        (m) => m.MovimientosInventario,
-      ),
+    path: 'movimiento-inventario/detalle/:id',
+    loadComponent: loadDetalleMovimientoInventario,
     canActivate: [roleGuard],
     data: { permiso: 'VER_MOVIMIENTOS' },
   },
   {
     path: 'movimientos-inventario/detalle/:id',
-    loadComponent: () =>
-      import('../logistica/pages/movimientos-inventario-detalle/movimientos-inventario-detalle').then(
-        (m) => m.DetalleMovimientoInventario,
-      ),
+    loadComponent: loadDetalleMovimientoInventario,
+    canActivate: [roleGuard],
+    data: { permiso: 'VER_MOVIMIENTOS' },
+  },
+  {
+    path: 'movimiento-inventario',
+    loadComponent: loadMovimientosInventario,
+    canActivate: [roleGuard],
+    data: { permiso: 'VER_MOVIMIENTOS' },
+  },
+  {
+    path: 'movimientos-inventario',
+    loadComponent: loadMovimientosInventario,
     canActivate: [roleGuard],
     data: { permiso: 'VER_MOVIMIENTOS' },
   },
