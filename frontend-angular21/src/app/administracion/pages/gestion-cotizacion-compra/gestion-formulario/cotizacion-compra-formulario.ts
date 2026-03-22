@@ -64,22 +64,22 @@ interface DetalleItem {
   styleUrl: './cotizacion-compra-formulario.css',
 })
 export class CotizacionCompraFormulario implements OnInit {
-  public iconoCabecera   = 'pi pi-truck';
-  public tituloKicker    = 'ADMINISTRACIÓN';
+  public iconoCabecera = 'pi pi-truck';
+  public tituloKicker  = 'ADMINISTRACIÓN';
 
   get subtituloKicker(): string {
     return this.esModoEdicion() ? 'EDITAR COTIZACIÓN DE COMPRA' : 'NUEVA COTIZACIÓN DE COMPRA';
   }
 
-  private fb                        = inject(FormBuilder);
-  private router                    = inject(Router);
-  private route                     = inject(ActivatedRoute);
-  private quoteService              = inject(QuoteService);
-  private sedeService               = inject(SedeService);
-  private productoService           = inject(ProductoService);
-  private proveedorService          = inject(ProveedorService);
+  private fb                          = inject(FormBuilder);
+  private router                      = inject(Router);
+  private route                       = inject(ActivatedRoute);
+  private quoteService                = inject(QuoteService);
+  private sedeService                 = inject(SedeService);
+  private productoService             = inject(ProductoService);
+  private proveedorService            = inject(ProveedorService);
   private readonly sedeAlmacenService = inject(SedeAlmacenService);
-  private messageService            = inject(MessageService);
+  private messageService              = inject(MessageService);
 
   private getSedeUsuarioActual(): number | null {
     try {
@@ -103,14 +103,20 @@ export class CotizacionCompraFormulario implements OnInit {
   almacenSeleccionado   = signal<number | null>(null);
   almacenesOptions      = signal<{ label: string; value: number }[]>([]);
 
-  // Proveedor
+  // ── Proveedor signals ─────────────────────────────────────────────────────
   proveedorEncontrado   = signal<SupplierResponse | null>(null);
   busquedaProvSinResult = signal(false);
   cargandoProveedor     = signal(false);
+  rucQuery              = signal('');
+  sugerenciasRUC        = signal<SupplierResponse[]>([]);
+  mostrarSugerencias    = signal(false);
+  mostrarFormNuevo      = signal(false);
 
   busquedaProductoVal = '';
 
-  readonly manana: Date = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d; })();
+  readonly manana: Date = (() => {
+    const d = new Date(); d.setDate(d.getDate() + 1); return d;
+  })();
 
   estadoOptions = [
     { label: 'Pendiente', value: 'PENDIENTE' },
@@ -235,7 +241,7 @@ export class CotizacionCompraFormulario implements OnInit {
 
           if (cot.proveedor) {
             const p = cot.proveedor;
-            this.proveedorEncontrado.set({
+            const prov: SupplierResponse = {
               id_proveedor: Number(p.id),
               razon_social: p.razon_social,
               ruc:          p.ruc,
@@ -243,7 +249,10 @@ export class CotizacionCompraFormulario implements OnInit {
               email:        p.email    ?? undefined,
               telefono:     p.telefono ?? undefined,
               estado:       true,
-            });
+            };
+            this.proveedorEncontrado.set(prov);
+            this.rucQuery.set(p.ruc);
+            this.form.get('ruc')?.setValue(p.ruc, { emitEvent: false });
             this.form.get('id_proveedor')?.setValue(Number(p.id), { emitEvent: false });
           }
 
@@ -275,45 +284,73 @@ export class CotizacionCompraFormulario implements OnInit {
     }
   }
 
-  // ── Proveedor ─────────────────────────────────────────────────────────────
-  buscarProveedorPorRuc() {
-    const ruc = this.form.get('ruc')?.value?.trim();
-    if (!ruc || ruc.length < 11) return;
+  // ── Proveedor — Autocomplete ──────────────────────────────────────────────
+
+  /** Llamado en cada (input) del campo RUC */
+  onRucInput(event: Event) {
+    const val = (event.target as HTMLInputElement).value.trim();
+    this.rucQuery.set(val);
+    this.form.get('ruc')?.setValue(val, { emitEvent: false });
+    this.mostrarFormNuevo.set(false);
+    this.busquedaProvSinResult.set(false);
+
+    if (val.length < 3) {
+      this.sugerenciasRUC.set([]);
+      this.mostrarSugerencias.set(false);
+      this._limpiarProveedor();
+      return;
+    }
 
     this.cargandoProveedor.set(true);
-    this._limpiarProveedor();
-
-    this.proveedorService.listSuppliers({ search: ruc }).subscribe({
+    this.proveedorService.listSuppliers({ search: val }).subscribe({
       next: (resp) => {
         this.cargandoProveedor.set(false);
-        const match = resp.suppliers.find(s => s.ruc === ruc);
-        if (match) {
-          this.proveedorEncontrado.set(match);
-          this.busquedaProvSinResult.set(false);
-          this.form.get('id_proveedor')?.setValue(match.id_proveedor, { emitEvent: false });
-          this.messageService.add({
-            severity: 'success', summary: 'Proveedor encontrado',
-            detail: match.razon_social, life: 3000,
-          });
-        } else {
-          this._sinResultadoProv(ruc);
-          this.messageService.add({
-            severity: 'warn', summary: 'Proveedor no encontrado',
-            detail: `No existe un proveedor con RUC "${ruc}". Puedes registrarlo.`, life: 4000,
-          });
+        this.sugerenciasRUC.set(resp.suppliers.slice(0, 8));
+        this.mostrarSugerencias.set(resp.suppliers.length > 0);
+
+        // RUC completo sin resultados → ofrecer alta
+        if (resp.suppliers.length === 0 && val.length === 11) {
+          this.busquedaProvSinResult.set(true);
+          this.nuevoProveedorForm.patchValue({ ruc: val });
         }
       },
       error: () => {
         this.cargandoProveedor.set(false);
-        this._sinResultadoProv(this.form.get('ruc')?.value?.trim() ?? '');
-        this.messageService.add({
-          severity: 'error', summary: 'Error al buscar proveedor',
-          detail: 'Ocurrió un error en la búsqueda. Verifica tu conexión.', life: 5000,
-        });
+        this.sugerenciasRUC.set([]);
+        this.mostrarSugerencias.set(false);
       },
     });
   }
 
+  /** Selecciona un proveedor del dropdown */
+  seleccionarProveedor(prov: SupplierResponse) {
+    this.proveedorEncontrado.set(prov);
+    this.busquedaProvSinResult.set(false);
+    this.mostrarSugerencias.set(false);
+    this.mostrarFormNuevo.set(false);
+    this.sugerenciasRUC.set([]);
+    this.rucQuery.set(prov.ruc);
+    this.form.get('ruc')?.setValue(prov.ruc, { emitEvent: false });
+    this.form.get('id_proveedor')?.setValue(prov.id_proveedor, { emitEvent: false });
+    this.messageService.add({
+      severity: 'success', summary: 'Proveedor seleccionado',
+      detail: prov.razon_social, life: 2500,
+    });
+  }
+
+  /** Abre el mini-formulario de alta rápida */
+  abrirFormNuevoProveedor() {
+    this.mostrarSugerencias.set(false);
+    this.mostrarFormNuevo.set(true);
+    this.nuevoProveedorForm.patchValue({ ruc: this.rucQuery() });
+  }
+
+  /** Cierra el dropdown al salir del input (blur) */
+  cerrarSugerencias() {
+    setTimeout(() => this.mostrarSugerencias.set(false), 180);
+  }
+
+  /** Registra el nuevo proveedor y lo selecciona */
   registrarNuevoProveedor() {
     if (this.nuevoProveedorForm.invalid) {
       this.nuevoProveedorForm.markAllAsTouched();
@@ -324,15 +361,14 @@ export class CotizacionCompraFormulario implements OnInit {
       return;
     }
 
-    const ruc = this.form.get('ruc')?.value?.trim();
+    const ruc = this.rucQuery();
     const payload: CreateSupplierRequest = { ...this.nuevoProveedorForm.value, ruc };
 
     this.proveedorService.createSupplier(payload).subscribe({
       next: (prov) => {
-        this.proveedorEncontrado.set(prov);
-        this.busquedaProvSinResult.set(false);
+        this.seleccionarProveedor(prov);
+        this.mostrarFormNuevo.set(false);
         this.nuevoProveedorForm.reset();
-        this.form.get('id_proveedor')?.setValue(prov.id_proveedor, { emitEvent: false });
         this.messageService.add({
           severity: 'success', summary: 'Proveedor registrado',
           detail: 'El proveedor fue creado y cargado en la cotización.', life: 3000,
@@ -341,7 +377,8 @@ export class CotizacionCompraFormulario implements OnInit {
       error: (err) => {
         this.messageService.add({
           severity: 'error', summary: 'Error al registrar proveedor',
-          detail: err?.error?.message ?? err?.message ?? 'No se pudo registrar el proveedor.', life: 5000,
+          detail: err?.error?.message ?? err?.message ?? 'No se pudo registrar el proveedor.',
+          life: 5000,
         });
       },
     });
@@ -382,7 +419,6 @@ export class CotizacionCompraFormulario implements OnInit {
   agregarProducto(prod: ProductoAutocomplete) {
     const existe = this.detalles().find(d => d.id_prod_ref === prod.id_producto);
     if (existe) {
-      // En compras no hay límite de stock
       this.detalles.update(items =>
         items.map(d => d.id_prod_ref === prod.id_producto
           ? { ...d, cantidad: d.cantidad + 1, importe: (d.cantidad + 1) * d.precio }
@@ -454,12 +490,10 @@ export class CotizacionCompraFormulario implements OnInit {
     );
   }
 
-  // En compras no hay restricción de stock — cantidad libre
   actualizarCantidad(index: number, cantidad: number) {
     if (!cantidad || cantidad < 1) return;
     const detalle = this.detalles()[index];
     if (!detalle) return;
-
     this.detalles.update(items =>
       items.map((d, i) => i === index
         ? { ...d, cantidad, importe: cantidad * d.precio }
@@ -491,7 +525,6 @@ export class CotizacionCompraFormulario implements OnInit {
       });
       return;
     }
-
     if (!this.form.get('sede')?.value) {
       this.messageService.add({
         severity: 'warn', summary: 'Sede requerida',
@@ -499,7 +532,6 @@ export class CotizacionCompraFormulario implements OnInit {
       });
       return;
     }
-
     if (!this.form.get('fec_venc')?.value) {
       this.messageService.add({
         severity: 'warn', summary: 'Fecha de vencimiento requerida',
@@ -507,7 +539,6 @@ export class CotizacionCompraFormulario implements OnInit {
       });
       return;
     }
-
     if (this.detalles().length === 0) {
       this.messageService.add({
         severity: 'warn', summary: 'Sin productos',
@@ -568,19 +599,12 @@ export class CotizacionCompraFormulario implements OnInit {
   cancelar() { this.router.navigate(['/admin/cotizaciones-compra']); }
 
   // ── Helpers privados ──────────────────────────────────────────────────────
-  private _limpiarProveedor() {
+  _limpiarProveedor() {
     this.proveedorEncontrado.set(null);
     this.busquedaProvSinResult.set(false);
+    this.mostrarFormNuevo.set(false);
     this.nuevoProveedorForm.reset();
     this.form.get('id_proveedor')?.setValue(null, { emitEvent: false });
-  }
-
-  private _sinResultadoProv(ruc: string) {
-    this.proveedorEncontrado.set(null);
-    this.busquedaProvSinResult.set(true);
-    this.form.get('id_proveedor')?.setValue(null, { emitEvent: false });
-    this.nuevoProveedorForm.patchValue({ ruc });
-    this.nuevoProveedorForm.get('ruc')?.updateValueAndValidity();
   }
 
   soloNumeros(event: KeyboardEvent): boolean {

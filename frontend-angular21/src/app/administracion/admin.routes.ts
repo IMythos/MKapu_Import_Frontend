@@ -265,6 +265,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: '', loadComponent: () => import('./pages/comision/comision').then((m) => m.Comision) },
       { path: 'regla', loadComponent: () => import('./pages/comision/comision-regla/comisionregla').then((m) => m.ComisionRegla) },
       { path: 'reportes', loadComponent: () => import('./pages/comision/comision-reportes/comisionreportes').then((m) => m.ComisionReportes) },
+      { path: 'regla/:id', loadComponent: () => import('./pages/comision/editar-comision/comisionregla').then((m) => m.ComisionRegla) },
     ],
   },
   { path: 'comision-regla', redirectTo: 'comision/regla', pathMatch: 'full' },

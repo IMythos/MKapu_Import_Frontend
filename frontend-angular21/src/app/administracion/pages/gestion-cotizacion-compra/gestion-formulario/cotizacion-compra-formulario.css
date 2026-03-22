@@ -1216,3 +1216,98 @@
   .filtros-container { padding: 0.75rem; }
   :host ::ng-deep .p-paginator { padding: 0.75rem !important; }
 }
+
+/* ─── REEMPLAZA el bloque del autocomplete RUC al final del CSS ─────────── */
+
+/* Animación de entrada */
+.ruc-dropdown {
+  animation: rucDropIn 0.14s ease;
+  box-sizing: border-box;
+  background: var(--surface-card);   /* light mode: blanco/gris claro */
+}
+
+@keyframes rucDropIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Encabezado del dropdown */
+.ruc-dropdown-header {
+  padding: 6px 12px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-color-secondary);
+  border-bottom: 1px solid var(--surface-border);
+  background: transparent;
+}
+
+/* Fila de sugerencia */
+.ruc-suggestion-row {
+  transition: background 0.12s;
+}
+.ruc-suggestion-row:hover {
+  background: var(--gold-soft) !important;
+}
+
+/* Opción "Registrar nuevo" */
+.ruc-suggestion-new {
+  transition: background 0.12s;
+}
+.ruc-suggestion-new:hover {
+  background: var(--gold-soft) !important;
+}
+
+/* ── Fix: icono addon alineado con el input ───────────────────────────── */
+:host ::ng-deep .ruc-inputgroup.p-inputgroup {
+  display: flex;
+  align-items: stretch;
+}
+
+:host ::ng-deep .ruc-inputgroup .p-inputgroup-addon {
+  height: var(--field-h, 42px) !important;
+  min-height: var(--field-h, 42px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 0.75rem !important;
+  background: var(--surface-card) !important;
+  border: 1px solid var(--surface-border) !important;
+  border-left: none !important;
+  border-radius: 0 var(--r-field, 8px) var(--r-field, 8px) 0 !important;
+}
+
+/* ── Dark mode — colores del tema ────────────────────────────────────── */
+:host-context(.app-dark) .ruc-dropdown {
+  background: var(--surface-ground) !important;
+  border-color: var(--surface-border) !important;
+}
+
+:host-context(.app-dark) .ruc-dropdown-header {
+  color: var(--text-color-secondary);
+  border-bottom-color: var(--surface-border);
+}
+
+:host-context(.app-dark) .ruc-suggestion-row {
+  color: var(--text-color);
+}
+
+:host-context(.app-dark) .ruc-suggestion-row:hover {
+  background: rgba(246, 175, 51, 0.08) !important;
+}
+
+:host-context(.app-dark) .ruc-suggestion-new {
+  color: var(--gold) !important;
+  border-top-color: var(--surface-border) !important;
+}
+
+:host-context(.app-dark) .ruc-suggestion-new:hover {
+  background: rgba(246, 175, 51, 0.08) !important;
+}
+
+:host-context(.app-dark) :host ::ng-deep .ruc-inputgroup .p-inputgroup-addon {
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color-secondary) !important;
+}

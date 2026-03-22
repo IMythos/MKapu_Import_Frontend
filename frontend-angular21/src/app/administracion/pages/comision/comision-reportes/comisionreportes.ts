@@ -4,143 +4,206 @@ import { FormsModule } from '@angular/forms';
 import { CardModule } from 'primeng/card';
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
-import { AutoCompleteModule } from 'primeng/autocomplete';
+import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
-import { AvatarModule } from 'primeng/avatar';
-import { CommissionService, CommissionReport } from '../../../services/commission.service';
+import { TooltipModule } from 'primeng/tooltip';
 import { RouterModule } from '@angular/router';
+import { DatePickerModule } from 'primeng/datepicker';
+import { ToastModule } from 'primeng/toast';
+import { MessageService } from 'primeng/api';
+import { CommissionService, CommissionReport } from '../../../services/commission.service';
+import { SedeService } from '../../../services/sede.service';
+import { AuthService } from '../../../../auth/services/auth.service';
+import { SharedTableContainerComponent } from '../../../../shared/components/table.componente/shared-table-container.component';
+import {
+  getLunesSemanaActualPeru,
+  getDomingoSemanaActualPeru,
+} from '../../../../shared/utils/date-peru.utils';
 
 @Component({
   selector: 'app-comision-reportes',
   standalone: true,
   imports: [
-    CommonModule, FormsModule, CardModule, ButtonModule,
-    InputTextModule, AutoCompleteModule, TableModule, TagModule, AvatarModule, RouterModule
+    CommonModule,
+    FormsModule,
+    CardModule,
+    ButtonModule,
+    InputTextModule,
+    SelectModule,
+    TableModule,
+    TagModule,
+    TooltipModule,
+    RouterModule,
+    DatePickerModule,
+    ToastModule,
+    SharedTableContainerComponent,
   ],
   templateUrl: './comisionreportes.html',
   styleUrls: ['./comisionreportes.css'],
+  providers: [MessageService],
 })
 export class ComisionReportes implements OnInit {
   private readonly commissionService = inject(CommissionService);
+  private readonly sedeService       = inject(SedeService);
+  private readonly authService       = inject(AuthService);
+  private readonly messageService    = inject(MessageService);
 
   readonly loading = this.commissionService.loading;
   readonly error   = this.commissionService.error;
   readonly report  = this.commissionService.report;
 
-  // ── Filtros ────────────────────────────────────────────────────────────────
-  filtroBusqueda   = '';
-  fechaDesde       = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-                       .toISOString().split('T')[0];
-  fechaHasta       = new Date().toISOString().split('T')[0];
+  // ── Filtros ────────────────────────────────────────────────────────
+  readonly filtroBusqueda = signal('');
+  readonly filtroEstado   = signal<string | null>(null);
+  readonly filtroSede     = signal(
+    String(this.authService.getCurrentUser()?.idSede ?? '')
+  );
 
-  estadoSeleccionado: any  = null;
-  periodoSeleccionado: any = null;
+  fechaInicio = signal<Date | null>(getLunesSemanaActualPeru());
+  fechaFin    = signal<Date | null>(getDomingoSemanaActualPeru());
 
-  periodos = [
-    { nombre: 'Este Mes',      desde: () => new Date(new Date().getFullYear(), new Date().getMonth(), 1),      hasta: () => new Date() },
-    { nombre: 'Mes Anterior',  desde: () => new Date(new Date().getFullYear(), new Date().getMonth() - 1, 1),  hasta: () => new Date(new Date().getFullYear(), new Date().getMonth(), 0) },
-    { nombre: 'Este Año',      desde: () => new Date(new Date().getFullYear(), 0, 1),                          hasta: () => new Date() },
+  readonly sedesOpciones = computed(() => [
+    { label: 'Todas las sedes', value: '' },
+    ...this.sedeService.sedes().map(s => ({
+      label: s.nombre,
+      value: String(s.id_sede),
+    })),
+  ]);
+
+  estadosOpciones = [
+    { label: 'Todos',     value: null        },
+    { label: 'Pendiente', value: 'PENDIENTE' },
+    { label: 'Liquidada', value: 'LIQUIDADA' },
+    { label: 'Anulada',   value: 'ANULADA'   },
   ];
 
-  estados = [
-    { nombre: 'Todos',      value: null },
-    { nombre: 'Pendiente',  value: 'PENDIENTE' },
-    { nombre: 'Liquidada',  value: 'LIQUIDADA' },
-    { nombre: 'Cancelada',  value: 'CANCELADA' },
-  ];
+  // ── Estado botón atender ───────────────────────────────────────────
+  readonly atendiendo = signal<number | null>(null);
 
-  periodosFiltrados: any[] = [];
-  estadosFiltrados:  any[] = [];
-
-  // ── Reportes filtrados ─────────────────────────────────────────────────────
+  // ── Reportes filtrados ─────────────────────────────────────────────
   readonly reportesFiltrados = computed(() => {
-    let data = this.report();
+    let data     = this.report();
+    const q      = this.filtroBusqueda().trim().toLowerCase();
+    const estado = this.filtroEstado();
+    const sede   = this.filtroSede();
 
-    if (this.filtroBusqueda.trim()) {
-      const q = this.filtroBusqueda.toLowerCase();
+    if (q) {
       data = data.filter(r =>
-        r.id_vendedor_ref.toLowerCase().includes(q) ||
-        String(r.id_comprobante).includes(q)
+        r.nombre_vendedor?.toLowerCase().includes(q) ||
+        r.id_vendedor_ref.toLowerCase().includes(q)  ||
+        String(r.id_comprobante).includes(q),
       );
     }
-
-    if (this.estadoSeleccionado?.value) {
-      data = data.filter(r => r.estado === this.estadoSeleccionado.value);
-    }
+    if (estado) data = data.filter(r => r.estado === estado);
+    if (sede)   data = data.filter(r => String(r.id_sede) === sede);
 
     return data;
   });
 
-  // ── KPIs computed ──────────────────────────────────────────────────────────
+  // ── KPIs ───────────────────────────────────────────────────────────
   readonly totalPagar = computed(() =>
     this.reportesFiltrados()
       .filter(r => r.estado === 'PENDIENTE')
-      .reduce((acc, r) => acc + Number(r.monto), 0)
+      .reduce((acc, r) => acc + Number(r.monto), 0),
   );
 
   readonly totalComisiones = computed(() =>
-    this.reportesFiltrados().reduce((acc, r) => acc + Number(r.monto), 0)
+    this.reportesFiltrados().reduce((acc, r) => acc + Number(r.monto), 0),
   );
 
   readonly vendedorTop = computed(() => {
     const data = this.reportesFiltrados();
     if (!data.length) return { nombre: '—', comision: 0 };
-
     const grouped = data.reduce((acc, r) => {
-      acc[r.id_vendedor_ref] = (acc[r.id_vendedor_ref] ?? 0) + Number(r.monto);
+      const key = r.nombre_vendedor || r.id_vendedor_ref;
+      acc[key] = (acc[key] ?? 0) + Number(r.monto);
       return acc;
     }, {} as Record<string, number>);
-
     const top = Object.entries(grouped).sort((a, b) => b[1] - a[1])[0];
     return { nombre: top[0], comision: top[1] };
   });
 
   readonly totalVendedores = computed(() =>
-    new Set(this.reportesFiltrados().map(r => r.id_vendedor_ref)).size
+    new Set(this.reportesFiltrados().map(r => r.id_vendedor_ref)).size,
   );
 
-  // ── Lifecycle ──────────────────────────────────────────────────────────────
+  // ── Paginación ─────────────────────────────────────────────────────
+  readonly paginaActual = signal(1);
+  readonly limitePagina = signal(10);
+
+  readonly totalPaginas = computed(() =>
+    Math.ceil(this.reportesFiltrados().length / this.limitePagina()),
+  );
+
+  readonly reportesPaginados = computed(() => {
+    const inicio = (this.paginaActual() - 1) * this.limitePagina();
+    return this.reportesFiltrados().slice(inicio, inicio + this.limitePagina());
+  });
+
+  onPageChange(page: number)   { this.paginaActual.set(page); }
+  onLimitChange(limit: number) { this.limitePagina.set(limit); this.paginaActual.set(1); }
+
+  // ── Lifecycle ──────────────────────────────────────────────────────
   ngOnInit() {
-    this.calcular();
+    this.sedeService.loadSedes().subscribe();
+    this.cargar();
   }
 
-  // ── Acciones ───────────────────────────────────────────────────────────────
-  calcular() {
-    const desde = new Date(this.fechaDesde);
-    const hasta = new Date(this.fechaHasta);
-    this.commissionService.calculateCommissions(desde, hasta).subscribe();
+  onFechaChange() {
+    this.paginaActual.set(1);
+    this.cargar();
   }
 
-  onPeriodoSelect(event: any) {
-    if (!event?.value) return;
-    const p = event.value;
-    this.fechaDesde = p.desde().toISOString().split('T')[0];
-    this.fechaHasta = p.hasta().toISOString().split('T')[0];
-    this.calcular();
+  limpiarFiltros() {
+    this.filtroBusqueda.set('');
+    this.filtroEstado.set(null);
+    this.filtroSede.set(String(''));
+    this.fechaInicio.set(null);
+    this.fechaFin.set(null);
+    this.paginaActual.set(1);
+    this.cargar();
   }
 
-  filtrarPeriodos(event: any) {
-    const q = event.query.toLowerCase();
-    this.periodosFiltrados = this.periodos.filter(p =>
-      p.nombre.toLowerCase().includes(q)
-    );
+  private cargar() {
+    const desde = this.fechaInicio() ?? getLunesSemanaActualPeru()!;
+    const hasta = this.fechaFin()    ?? getDomingoSemanaActualPeru()!;
+    const d = new Date(desde); d.setHours(0, 0, 0, 0);
+    const h = new Date(hasta); h.setHours(23, 59, 59, 999);
+    this.commissionService.loadReport(d, h).subscribe();
   }
 
-  filtrarEstados(event: any) {
-    const q = event.query.toLowerCase();
-    this.estadosFiltrados = this.estados.filter(e =>
-      e.nombre.toLowerCase().includes(q)
-    );
+  // ── Atender ────────────────────────────────────────────────────────
+  atender(r: CommissionReport): void {
+    this.atendiendo.set(r.id_comision);
+    this.commissionService.atender(r.id_comision).subscribe({
+      next: () => {
+        this.atendiendo.set(null);
+        this.messageService.add({
+          severity: 'success',
+          summary: 'Liquidada',
+          detail: `Comisión #${r.id_comision} marcada como LIQUIDADA`,
+          life: 3000,
+        });
+      },
+      error: () => {
+        this.atendiendo.set(null);
+        this.messageService.add({
+          severity: 'error',
+          summary: 'Error',
+          detail: 'No se pudo liquidar la comisión',
+          life: 3000,
+        });
+      },
+    });
   }
 
   getSeverity(estado: string): 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast' {
     const map: Record<string, 'success' | 'secondary' | 'info' | 'warn' | 'danger' | 'contrast'> = {
       PENDIENTE: 'warn',
       LIQUIDADA: 'success',
-      CANCELADA: 'danger',
+      ANULADA:   'danger',
     };
     return map[estado] ?? 'info';
-
   }
 }

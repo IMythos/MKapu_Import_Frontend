@@ -1,0 +1,251 @@
+<div class="p-2">
+  <p-card class="sedes-header-card mb-4 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="sedes-title-icon">
+          <i class="pi pi-wallet"></i>
+        </span>
+        <div>
+          <p class="sedes-kicker mb-0">ADMINISTRADOR · ADMINISTRACIÓN · COMISIONES</p>
+          <h2 class="sedes-title mb-0">{{ tituloKicker }}</h2>
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <p-tag
+          [value]="esModoEdicion() ? 'EDITAR' : 'NUEVA'"
+          [severity]="esModoEdicion() ? 'warn' : 'info'"
+          icon="pi pi-wallet"
+          styleClass="mr-2" />
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          (click)="cancelar()"
+          styleClass="sedes-pill"
+          severity="secondary" />
+      </div>
+    </div>
+  </p-card>
+</div>
+
+<!-- Loading de datos en modo edición -->
+<div *ngIf="cargandoDatos()" class="p-2">
+  <p-card styleClass="tarjeta-principal">
+    <div class="flex align-items-center justify-content-center" style="min-height:200px; gap:1rem;">
+      <i class="pi pi-spin pi-spinner" style="font-size:1.5rem; color:var(--gold)"></i>
+      <span style="color:var(--text-color-secondary); font-size:.9rem;">Cargando regla de comisión...</span>
+    </div>
+  </p-card>
+</div>
+
+<div class="p-2" *ngIf="!cargandoDatos()">
+  <p-card styleClass="tarjeta-principal">
+    <form [formGroup]="form" (ngSubmit)="guardar()" class="formgrid grid">
+
+      <!-- ══ IDENTIFICACIÓN ══════════════════════════════════════ -->
+      <div class="col-12 mb-2">
+        <h3 class="form-section-title">
+          <i class="pi pi-tag"></i> Identificación
+        </h3>
+        <div class="section-divider"></div>
+      </div>
+
+      <div class="field col-12 md:col-8 mb-4">
+        <label class="form-label">
+          Nombre de la Regla <span class="text-red-400">*</span>
+        </label>
+        <input pInputText formControlName="nombre"
+          placeholder="Ej: Promo laptops Q1, Comisión Accesorios..."
+          class="w-full" maxlength="100" />
+        <small *ngIf="form.get('nombre')?.invalid && form.get('nombre')?.touched"
+               class="p-error">El nombre es obligatorio (máx. 100 caracteres)</small>
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">Meta de Unidades</label>
+        <p-inputNumber formControlName="meta_unidades"
+          [min]="1" [showButtons]="true" buttonLayout="horizontal"
+          incrementButtonIcon="pi pi-plus" decrementButtonIcon="pi pi-minus"
+          styleClass="w-full"
+          pTooltip="Cantidad mínima para que aplique la comisión"
+          tooltipPosition="top" />
+        <small style="font-size:.7rem; color:var(--text-color-secondary); margin-top:4px; display:block;">
+          Mínimo de unidades vendidas para activar la regla
+        </small>
+      </div>
+
+      <div class="field col-12 mb-4">
+        <label class="form-label">Descripción</label>
+        <input pInputText formControlName="descripcion"
+          placeholder="Descripción opcional de la regla..."
+          class="w-full" maxlength="255" />
+      </div>
+
+      <!-- ══ OBJETIVO ════════════════════════════════════════════ -->
+      <div class="col-12 mb-2">
+        <h3 class="form-section-title">
+          <i class="pi pi-bullseye"></i> Objetivo
+        </h3>
+        <div class="section-divider"></div>
+      </div>
+
+      <div class="field col-12 md:col-4 mb-4">
+        <label class="form-label">
+          Tipo de Objetivo <span class="text-red-400">*</span>
+        </label>
+        <p-select
+          formControlName="tipo_objetivo"
+          [options]="tiposObjetivo"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-12 md:col-8 mb-4">
+        <label class="form-label">
+          {{ labelObjetivo }} <span class="text-red-400">*</span>
+        </label>
+        <p-select
+          formControlName="id_objetivo"
+          [options]="objetivoOpciones()"
+          optionLabel="label"
+          optionValue="value"
+          [placeholder]="cargandoObjeto() ? 'Cargando...' : 'Seleccionar ' + labelObjetivo"
+          [disabled]="cargandoObjeto()"
+          [filter]="true"
+          filterPlaceholder="Buscar..."
+          class="w-full" styleClass="w-full" />
+        <small *ngIf="form.get('id_objetivo')?.invalid && form.get('id_objetivo')?.touched"
+               class="p-error">Selecciona un {{ labelObjetivo.toLowerCase() }}</small>
+      </div>
+
+      <!-- ══ COMISIÓN ════════════════════════════════════════════ -->
+      <div class="col-12 mb-2">
+        <h3 class="form-section-title">
+          <i class="pi pi-percentage"></i> Comisión
+        </h3>
+        <div class="section-divider"></div>
+      </div>
+
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">
+          Tipo de Recompensa <span class="text-red-400">*</span>
+        </label>
+        <p-select
+          formControlName="tipo_recompensa"
+          [options]="tiposRecompensa"
+          optionLabel="label"
+          optionValue="value"
+          class="w-full" styleClass="w-full" />
+      </div>
+
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">
+          {{ labelValor }} <span class="text-red-400">*</span>
+        </label>
+        <p-inputNumber
+          formControlName="valor_recompensa"
+          [min]="0.01"
+          [max]="maxValor"
+          [minFractionDigits]="2"
+          [maxFractionDigits]="2"
+          [showButtons]="false"
+          styleClass="w-full"
+          [placeholder]="form.get('tipo_recompensa')?.value === 'PORCENTAJE' ? '0.00 — máx 100%' : '0.00'" />
+        <small *ngIf="form.get('valor_recompensa')?.invalid && form.get('valor_recompensa')?.touched"
+               class="p-error">
+          Valor requerido
+          <span *ngIf="form.get('tipo_recompensa')?.value === 'PORCENTAJE'"> (máx. 100%)</span>
+        </small>
+      </div>
+
+      <!-- ══ VIGENCIA ════════════════════════════════════════════ -->
+      <div class="col-12 mb-2">
+        <h3 class="form-section-title">
+          <i class="pi pi-calendar"></i> Vigencia
+        </h3>
+        <div class="section-divider"></div>
+      </div>
+
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">
+          Fecha de Inicio <span class="text-red-400">*</span>
+        </label>
+        <p-datepicker
+          formControlName="fecha_inicio"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          appendTo="body"
+          class="w-full" styleClass="w-full" />
+        <small *ngIf="form.get('fecha_inicio')?.invalid && form.get('fecha_inicio')?.touched"
+               class="p-error">Fecha de inicio requerida</small>
+      </div>
+
+      <div class="field col-12 md:col-6 mb-4">
+        <label class="form-label">Fecha de Fin</label>
+        <p-datepicker
+          formControlName="fecha_fin"
+          dateFormat="dd/mm/yy"
+          [showIcon]="true"
+          [showClear]="true"
+          appendTo="body"
+          placeholder="Sin vencimiento"
+          class="w-full" styleClass="w-full" />
+        <small style="font-size:.7rem; color:var(--text-color-secondary); margin-top:4px; display:block;">
+          Opcional — si no se indica, la regla no tiene fecha de expiración
+        </small>
+      </div>
+
+      <!-- ══ RESUMEN PREVIO ══════════════════════════════════════ -->
+      <div *ngIf="form.valid" class="col-12 mb-4">
+        <p-card styleClass="cliente-info-card">
+          <div class="flex align-items-center gap-2 mb-3">
+            <i class="pi pi-check-circle" style="color:var(--gold); font-size:0.9rem;"></i>
+            <span style="font-size:0.72rem; font-weight:700; color:var(--gold);
+                          letter-spacing:0.1em; text-transform:uppercase;">
+              Resumen de la regla
+            </span>
+          </div>
+          <div class="flex flex-wrap gap-3">
+            <p-tag
+              [value]="form.get('tipo_objetivo')?.value === 'PRODUCTO' ? 'Producto' : 'Categoría'"
+              [severity]="form.get('tipo_objetivo')?.value === 'PRODUCTO' ? 'info' : 'success'" />
+            <p-tag
+              [value]="form.get('tipo_recompensa')?.value === 'PORCENTAJE'
+                ? (form.get('valor_recompensa')?.value || 0) + '%'
+                : 'S/ ' + (form.get('valor_recompensa')?.value || 0).toFixed(2)"
+              severity="warn" />
+            <p-tag
+              *ngIf="form.get('meta_unidades')?.value > 1"
+              [value]="'Lote ≥' + form.get('meta_unidades')?.value + ' uds.'"
+              severity="secondary" />
+            <p-tag
+              *ngIf="form.get('meta_unidades')?.value <= 1"
+              value="Por unidad"
+              severity="secondary" />
+          </div>
+        </p-card>
+      </div>
+
+      <!-- ══ ACCIONES ════════════════════════════════════════════ -->
+      <div class="col-12 flex gap-2 justify-content-end pt-2">
+        <p-button
+          type="button"
+          label="Cancelar"
+          icon="pi pi-times"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="sedes-pill"
+          (click)="cancelar()" />
+        <p-button
+          type="submit"
+          [label]="esModoEdicion() ? 'Guardar Cambios' : 'Guardar Regla'"
+          [icon]="isSubmitting() ? 'pi pi-spin pi-spinner' : 'pi pi-check'"
+          [disabled]="form.invalid || isSubmitting()"
+          styleClass="sedes-pill sedes-pill-warning" />
+      </div>
+
+    </form>
+  </p-card>
+</div>
+
+<p-toast />

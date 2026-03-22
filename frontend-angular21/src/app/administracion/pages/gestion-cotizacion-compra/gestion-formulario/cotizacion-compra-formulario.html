@@ -35,34 +35,152 @@
 
       <div class="col-12 mb-4">
         <p-card styleClass="cliente-buscador-card">
-          <div class="formgrid grid align-items-end">
-            <div class="field col-12 md:col-5 mb-0 flex align-items-end gap-2">
-              <div style="flex:1">
-                <label class="form-label">RUC del Proveedor <span class="text-red-400">*</span></label>
-                <input pInputText formControlName="ruc" placeholder="RUC (11 dígitos)"
-                  maxlength="11"
-                  (keydown)="soloNumeros($event)"
-                  (blur)="buscarProveedorPorRuc()"
-                  (keydown.enter)="buscarProveedorPorRuc()"
-                  class="w-full" />
+
+          <!-- Campo RUC con autocomplete -->
+          <div class="formgrid grid align-items-start">
+            <div class="field col-12 md:col-6 mb-0">
+              <label class="form-label">
+                RUC del Proveedor <span class="text-red-400">*</span>
+              </label>
+
+              <!-- Wrapper relativo para el dropdown absoluto -->
+              <div style="position:relative;">
+                <div class="p-inputgroup ruc-inputgroup">
+                  <input
+                    pInputText
+                    [value]="rucQuery()"
+                    placeholder="Escribe RUC o razón social…"
+                    maxlength="11"
+                    autocomplete="off"
+                    (input)="onRucInput($event)"
+                    (keydown)="soloNumeros($event)"
+                    (blur)="cerrarSugerencias()"
+                    (focus)="sugerenciasRUC().length && mostrarSugerencias.set(true)"
+                    class="w-full" />
+                  <span class="p-inputgroup-addon">
+                    <i [class]="cargandoProveedor()
+                         ? 'pi pi-spin pi-spinner'
+                         : proveedorEncontrado()
+                           ? 'pi pi-check-circle'
+                           : 'pi pi-search'"
+                       [style.color]="proveedorEncontrado() ? 'var(--gold)' : 'var(--text-color-secondary)'">
+                    </i>
+                  </span>
+                </div>
+
+                <!-- ── Dropdown con resultados ──────────────────── -->
+                <div *ngIf="mostrarSugerencias() && sugerenciasRUC().length > 0"
+                     class="ruc-dropdown"
+                     style="
+                       position: absolute;
+                       top: calc(100% + 4px);
+                       left: 0; right: 0;
+                       z-index: 9999;
+                       border: 1px solid var(--surface-border);
+                       border-radius: 8px;
+                       box-shadow: 0 8px 24px rgba(0,0,0,.35);
+                       overflow: hidden;
+                     ">
+
+                  <!-- Encabezado -->
+                  <div class="ruc-dropdown-header">
+                    Proveedores encontrados
+                  </div>
+
+                  <!-- Filas de sugerencia -->
+                  <div *ngFor="let prov of sugerenciasRUC()"
+                       class="ruc-suggestion-row"
+                       (mousedown)="seleccionarProveedor(prov)"
+                       style="
+                         display: flex; align-items: center;
+                         justify-content: space-between;
+                         padding: 10px 14px; cursor: pointer; gap: 12px;
+                         border-bottom: 1px solid var(--surface-border);
+                       ">
+                    <div style="min-width:0; flex:1;">
+                      <div style="font-size:.85rem; font-weight:600; white-space:nowrap;
+                                  overflow:hidden; text-overflow:ellipsis;
+                                  color: var(--text-color);">
+                        {{ prov.razon_social }}
+                      </div>
+                      <div style="font-size:.72rem; color:var(--text-color-secondary);
+                                  font-family:monospace; margin-top:2px;">
+                        {{ prov.ruc }}
+                        <span *ngIf="prov.contacto" style="margin-left:8px;">· {{ prov.contacto }}</span>
+                      </div>
+                    </div>
+                    <p-tag
+                      [value]="prov.estado ? 'Activo' : 'Inactivo'"
+                      [severity]="prov.estado ? 'success' : 'danger'"
+                      styleClass="text-xs" />
+                  </div>
+
+                  <!-- Opción "Registrar nuevo" -->
+                  <div
+                    (mousedown)="abrirFormNuevoProveedor()"
+                    class="ruc-suggestion-new"
+                    style="
+                      display: flex; align-items: center; gap: 8px;
+                      padding: 10px 14px; cursor: pointer;
+                      color: var(--gold);
+                      font-size: .82rem; font-weight: 600;
+                    ">
+                    <i class="pi pi-plus-circle"></i>
+                    Registrar nuevo proveedor con RUC "{{ rucQuery() }}"
+                  </div>
+                </div>
+
+                <!-- ── Dropdown vacío: RUC 11 dígitos sin resultados ── -->
+                <div *ngIf="mostrarSugerencias() && sugerenciasRUC().length === 0 && rucQuery().length === 11"
+                     class="ruc-dropdown"
+                     style="
+                       position: absolute;
+                       top: calc(100% + 4px);
+                       left: 0; right: 0;
+                       z-index: 9999;
+                       border: 1px solid var(--surface-border);
+                       border-radius: 8px;
+                       box-shadow: 0 8px 24px rgba(0,0,0,.35);
+                       overflow: hidden;
+                     ">
+                  <div
+                    (mousedown)="abrirFormNuevoProveedor()"
+                    class="ruc-suggestion-new"
+                    style="
+                      display: flex; align-items: center; gap: 8px;
+                      padding: 12px 14px; cursor: pointer;
+                      color: var(--gold); font-size: .82rem; font-weight: 600;
+                    ">
+                    <i class="pi pi-plus-circle"></i>
+                    No existe proveedor con ese RUC — Registrar nuevo
+                  </div>
+                </div>
               </div>
-              <p-button
-                [icon]="cargandoProveedor() ? 'pi pi-spin pi-spinner' : 'pi pi-search'"
-                label="Buscar"
-                (click)="buscarProveedorPorRuc()"
-                [disabled]="cargandoProveedor()"
-                styleClass="p-button-secondary ml-2" />
+
+              <small style="font-size:.7rem; color:var(--text-color-secondary); margin-top:4px; display:block;">
+                Escribe al menos 3 caracteres para buscar por RUC o razón social
+              </small>
             </div>
           </div>
 
-          <!-- Proveedor encontrado -->
-          <div *ngIf="proveedorEncontrado()" class="mt-3">
+          <!-- ── Proveedor seleccionado ───────────────────────────── -->
+          <div *ngIf="proveedorEncontrado() && !mostrarFormNuevo()" class="mt-3">
             <p-card styleClass="cliente-info-card">
-              <div class="flex align-items-center gap-2 mb-3">
-                <i class="pi pi-check-circle" style="color:var(--gold); font-size:1rem;"></i>
-                <span style="font-size:0.75rem; font-weight:700; color:var(--gold); letter-spacing:0.1em; text-transform:uppercase;">
-                  Proveedor encontrado
-                </span>
+              <div class="flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-check-circle" style="color:var(--gold); font-size:1rem;"></i>
+                  <span style="font-size:0.75rem; font-weight:700; color:var(--gold);
+                                letter-spacing:.1em; text-transform:uppercase;">
+                    Proveedor seleccionado
+                  </span>
+                </div>
+                <p-button
+                  label="Cambiar proveedor"
+                  icon="pi pi-refresh"
+                  [text]="true"
+                  severity="secondary"
+                  styleClass="p-button-xs"
+                  (click)="_limpiarProveedor(); rucQuery.set('')" />
               </div>
               <div class="grid">
                 <div class="field col-12 md:col-4">
@@ -93,23 +211,37 @@
             </p-card>
           </div>
 
-          <!-- Proveedor no encontrado — Registrar -->
-          <div *ngIf="busquedaProvSinResult()" class="mt-3">
+          <!-- ── Formulario de alta rápida inline ──────────────────── -->
+          <div *ngIf="mostrarFormNuevo()" class="mt-3">
             <p-card styleClass="cliente-nuevo-card">
-              <div class="flex align-items-center gap-2 mb-3">
-                <i class="pi pi-exclamation-triangle" style="color:#facc15; font-size:1rem"></i>
-                <span style="font-size:0.75rem; font-weight:700; color:#facc15; letter-spacing:0.1em; text-transform:uppercase;">
-                  Proveedor no encontrado — Registrar
-                </span>
+              <div class="flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+                <div class="flex align-items-center gap-2">
+                  <i class="pi pi-user-plus" style="color:#facc15; font-size:1rem"></i>
+                  <span style="font-size:.75rem; font-weight:700; color:#facc15;
+                                letter-spacing:.1em; text-transform:uppercase;">
+                    Registrar nuevo proveedor
+                  </span>
+                </div>
+                <p-button
+                  icon="pi pi-times"
+                  [text]="true"
+                  severity="secondary"
+                  styleClass="p-button-xs"
+                  pTooltip="Cancelar registro"
+                  (click)="mostrarFormNuevo.set(false); busquedaProvSinResult.set(false)" />
               </div>
+
               <div class="grid" [formGroup]="nuevoProveedorForm">
                 <div class="field col-12 md:col-4">
                   <label class="form-label">RUC</label>
-                  <input pInputText [value]="form.get('ruc')?.value" readonly class="w-full" />
+                  <input pInputText [value]="rucQuery()" readonly class="w-full" />
                 </div>
                 <div class="field col-12 md:col-8">
                   <label class="form-label">Razón Social <span class="text-red-400">*</span></label>
-                  <input pInputText formControlName="razon_social" placeholder="Razón social" class="w-full" />
+                  <input pInputText formControlName="razon_social"
+                    placeholder="Razón social de la empresa" class="w-full" />
+                  <small *ngIf="nuevoProveedorForm.get('razon_social')?.invalid && nuevoProveedorForm.get('razon_social')?.touched"
+                         class="p-error">Campo requerido</small>
                 </div>
                 <div class="field col-12 md:col-4">
                   <label class="form-label">Contacto</label>
@@ -118,6 +250,8 @@
                 <div class="field col-12 md:col-4">
                   <label class="form-label">Email</label>
                   <input pInputText formControlName="email" placeholder="correo@proveedor.com" class="w-full" />
+                  <small *ngIf="nuevoProveedorForm.get('email')?.invalid && nuevoProveedorForm.get('email')?.touched"
+                         class="p-error">Email inválido</small>
                 </div>
                 <div class="field col-12 md:col-4">
                   <label class="form-label">Teléfono</label>
@@ -129,12 +263,22 @@
                   <input pInputText formControlName="dir_fiscal" placeholder="Dirección fiscal" class="w-full" />
                 </div>
               </div>
-              <div class="flex justify-content-end mt-3">
-                <p-button label="Registrar Proveedor" icon="pi pi-truck"
-                  styleClass="ventas-pill" severity="success" (click)="registrarNuevoProveedor()" />
+
+              <div class="flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
+                <small style="font-size:.72rem; color:var(--text-color-secondary);">
+                  <i class="pi pi-info-circle mr-1"></i>
+                  El proveedor quedará registrado y se cargará automáticamente
+                </small>
+                <p-button
+                  label="Registrar y usar proveedor"
+                  icon="pi pi-check"
+                  styleClass="ventas-pill"
+                  severity="success"
+                  (click)="registrarNuevoProveedor()" />
               </div>
             </p-card>
           </div>
+
         </p-card>
       </div>
 
@@ -186,7 +330,8 @@
         <p-card styleClass="cliente-info-card">
           <div class="flex align-items-center gap-2 mb-3">
             <i class="pi pi-map-marker" style="color:var(--gold); font-size:0.9rem;"></i>
-            <span style="font-size:0.72rem; font-weight:700; color:var(--gold); letter-spacing:0.1em; text-transform:uppercase;">
+            <span style="font-size:0.72rem; font-weight:700; color:var(--gold);
+                          letter-spacing:0.1em; text-transform:uppercase;">
               Detalle de Sede
             </span>
           </div>
@@ -236,7 +381,7 @@
             </div>
           </div>
 
-          <!-- Autocomplete resultados -->
+          <!-- Autocomplete resultados de productos -->
           <div *ngIf="productosAutoComplete().length > 0" class="mb-3">
             <p-card styleClass="surface-card">
               <div class="flex flex-column gap-1">
@@ -245,7 +390,7 @@
                   (click)="agregarProducto(prod)">
                   <div class="flex flex-column gap-1">
                     <span style="font-size:0.88rem; font-weight:600;">{{ prod.nombre }}</span>
-                    <span style="font-size:0.75rem; color:var(--text-muted)">{{ prod.codigo }}</span>
+                    <span style="font-size:0.75rem; color:var(--text-color-secondary)">{{ prod.codigo }}</span>
                   </div>
                   <div class="flex align-items-center gap-3">
                     <p-tag [value]="'Stock actual: ' + prod.stock"
@@ -277,11 +422,11 @@
               </ng-template>
               <ng-template pTemplate="body" let-item let-i="rowIndex">
                 <tr>
-                  <td style="font-family:monospace; font-size:0.8rem; color:var(--text-muted)">{{ item.cod_prod }}</td>
+                  <td style="font-family:monospace; font-size:0.8rem; color:var(--text-color-secondary)">{{ item.cod_prod }}</td>
                   <td style="font-weight:500">{{ item.descripcion }}</td>
                   <td class="text-center">
                     <div class="flex flex-column align-items-center gap-1">
-                      <small style="font-size:0.72rem; color:var(--text-muted);">
+                      <small style="font-size:0.72rem; color:var(--text-color-secondary);">
                         <i class="pi pi-warehouse mr-1"></i>{{ item.almacen || '—' }}
                       </small>
                       <p-tag [value]="'Stock: ' + item.stock"
@@ -289,7 +434,7 @@
                         styleClass="text-xs" />
                     </div>
                   </td>
-                  <td class="text-center" style="font-size:0.78rem; color:var(--text-muted)">{{ item.uni_med || '-' }}</td>
+                  <td class="text-center" style="font-size:0.78rem; color:var(--text-color-secondary)">{{ item.uni_med || '-' }}</td>
                   <td>
                     <p-select [ngModel]="item.tipoPrecio" [ngModelOptions]="{ standalone: true }"
                       (ngModelChange)="cambiarTipoPrecio(i, $event)"
@@ -298,7 +443,6 @@
                       class="w-full" styleClass="w-full" />
                   </td>
                   <td>
-                    <!-- Sin [max] — en compras no hay límite de stock -->
                     <p-inputNumber [ngModel]="item.cantidad" [ngModelOptions]="{ standalone: true }"
                       (ngModelChange)="actualizarCantidad(i, $event)"
                       [min]="1" [showButtons]="true" buttonLayout="horizontal"
