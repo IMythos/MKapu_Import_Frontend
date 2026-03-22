@@ -58,7 +58,7 @@
       <i class="pi pi-percentage"></i>
       <div>
         <span class="contador-label">Promedio</span>
-        <span class="contador-valor">S/ {{ promedioComision() | number:'1.2-2' }}</span>
+        <span class="contador-valor">{{ promedioComision() | number:'1.2-2' }}%</span>
         <span class="contador-detalle"><i class="pi pi-arrow-up"></i> Por regla activa</span>
       </div>
     </div>
@@ -151,7 +151,6 @@
       (pageChange)="onPageChange($event)"
       (limitChange)="onLimitChange($event)"
     >
-    <!-- Tag contador en slot de acciones -->
     <div slot="acciones">
       <p-tag
         [value]="reglasFiltradas().length + ' reglas'"
@@ -160,7 +159,6 @@
       </p-tag>
     </div>
 
-    <!-- Tabla -->
     <p-table
       [value]="reglasPaginadas()"
       [paginator]="false"
@@ -168,13 +166,14 @@
 
       <ng-template pTemplate="header">
         <tr>
-          <th style="width:10%">ID</th>
-          <th style="width:25%">NOMBRE</th>
-          <th style="width:18%">FAMILIA</th>
-          <th style="width:10%">TIPO</th>
-          <th style="width:15%">CONDICIÓN</th>
-          <th style="width:12%">COMISIÓN</th>
-          <th style="width:10%" class="text-center">ACCIONES</th>
+          <th style="width:8%">ID</th>
+          <th style="width:20%">NOMBRE</th>
+          <th style="width:15%">FAMILIA</th>
+          <th style="width:9%">TIPO</th>
+          <th style="width:12%">CONDICIÓN</th>
+          <th style="width:10%">COMISIÓN</th>
+          <th style="width:18%">USO REAL</th>
+          <th style="width:8%" class="text-center">ACCIONES</th>
         </tr>
       </ng-template>
 
@@ -208,13 +207,37 @@
               {{ r.recompensa === '%' ? '' : 'S/ ' }}{{ r.comision.toFixed(2) }}{{ r.recompensa === '%' ? '%' : '' }}
             </span>
           </td>
+
+          <!-- ── Columna USO REAL ─────────────────────────────────────────── -->
+          <td>
+            <div class="uso-real-cell">
+              <div class="uso-bar-track">
+                <div class="uso-bar-fill"
+                     [style.width.%]="r.barWidth"
+                     [class.uso-bar-activo]="r.usos > 0"
+                     [class.uso-bar-vacio]="r.usos === 0">
+                </div>
+              </div>
+              <span class="uso-count" [class.uso-count-none]="r.usos === 0">
+                {{ r.usos }}
+              </span>
+              <span *ngIf="r.usos > 0" class="uso-monto"
+                    [pTooltip]="'S/ ' + (r.montoTotal | number:'1.2-2') + ' acumulado'"
+                    tooltipPosition="top">
+                S/ {{ r.montoTotal | number:'1.0-0' }}
+              </span>
+              <span *ngIf="r.usos === 0" class="uso-nunca">Sin uso</span>
+            </div>
+          </td>
+
           <td class="text-center">
             <div class="acciones-tabla">
-              <p-button
-                icon="pi pi-pencil"
-                [rounded]="true" [text]="true" severity="secondary"
-                pTooltip="Editar regla" tooltipPosition="top">
-              </p-button>
+            <p-button
+              icon="pi pi-pencil"
+              [rounded]="true" [text]="true" severity="secondary"
+              pTooltip="Editar regla" tooltipPosition="top"
+              [routerLink]="['/admin/comision/regla', r.raw.id_regla]">   
+            </p-button>
               <p-button
                 [icon]="r.activo ? 'pi pi-eye-slash' : 'pi pi-eye'"
                 [rounded]="true" [text]="true"
@@ -230,7 +253,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center">
+          <td colspan="8" class="text-center">
             <div class="mensaje-vacio">
               <i class="pi pi-inbox"></i>
               <p>No se encontraron reglas</p>
