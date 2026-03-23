@@ -1342,3 +1342,60 @@
   position: relative;
   min-height: 150px;
 }
+
+/* Agregar al archivo detalles-ventas-administracion.css */
+
+.detalle-remate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  background: #e65100;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+}
+
+.detalle-remate-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.detalle-remate-cod {
+  font-size: 11px;
+  font-weight: 600;
+  color: #bf360c;
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 3px;
+  padding: 1px 6px;
+}
+
+.detalle-remate-precios {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.detalle-remate-original {
+  color: #9e9e9e;
+  text-decoration: line-through;
+}
+
+.detalle-remate-precio {
+  font-weight: 700;
+  color: #e65100;
+}
+
+/* Fila con remate — fondo sutil */
+.p-datatable .p-datatable-tbody > tr.fila-remate {
+  background: #fffde7 !important;
+}

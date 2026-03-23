@@ -134,32 +134,27 @@ export class DetallesVentasAdministracion implements OnInit, OnDestroy {
     this.subs.add(sub);
   }
 
-  // Determina si el item califica para la promo según las reglas
+  esProductoDeRemate(item: ProductoDetalleAdmin): boolean {
+    return item.remate != null;
+  }
+
   itemCalificaPromocion(item: ProductoDetalleAdmin): boolean {
     const promo = this.detalle?.promocion;
     if (!promo) return false;
-
-    // Si el backend ya lo marcó, respetamos eso
     if (item.promocion_aplicada) return true;
-
-    const reglaProducto = promo.reglas?.find(
-      (r: any) => r.tipoCondicion === 'PRODUCTO',
-    );
+    const reglaProducto = promo.reglas?.find((r: any) => r.tipoCondicion === 'PRODUCTO');
     if (!reglaProducto) return false;
-
     return (
       item.cod_prod === reglaProducto.valorCondicion ||
       item.id_prod_ref === reglaProducto.valorCondicion
     );
   }
 
-  // Qué mostrar en la columna "Descuento" por cada item
   getDescuentoItemDisplay(item: ProductoDetalleAdmin): {
     tipo: 'item' | 'promo' | 'none';
     label: string;
     monto: number;
   } {
-    // 1) Descuento propio del ítem
     if (this.tieneDescuentoReal(item.descuento_nombre, item.descuento_porcentaje)) {
       return {
         tipo: 'item',
@@ -171,53 +166,28 @@ export class DetallesVentasAdministracion implements OnInit, OnDestroy {
     const promo = this.detalle?.promocion;
     if (!promo) return { tipo: 'none', label: '', monto: 0 };
 
-    // 2) Si el backend calculó monto de promo por ítem, usarlo
     if (item.promocion_aplicada && (item.descuento_promo_monto ?? 0) > 0) {
-      const porcentaje =
-        item.descuento_promo_porcentaje ??
-        promo.descuento_porcentaje ??
-        0;
-
-      const label =
-        porcentaje > 0
-          ? `${promo.nombre} (${porcentaje}%)`
-          : promo.nombre;
-
-      return {
-        tipo: 'promo',
-        label,
-        monto: item.descuento_promo_monto!,
-      };
+      const porcentaje = item.descuento_promo_porcentaje ?? promo.descuento_porcentaje ?? 0;
+      const label = porcentaje > 0 ? `${promo.nombre} (${porcentaje}%)` : promo.nombre;
+      return { tipo: 'promo', label, monto: item.descuento_promo_monto! };
     }
 
-    // 3) Si no hay monto por ítem, usar solo la regla para marcar el producto correcto
     if (this.itemCalificaPromocion(item)) {
       const porcentaje = promo.descuento_porcentaje ?? 0;
-      const label =
-        porcentaje > 0
-          ? `${promo.nombre} (${porcentaje}%)`
-          : promo.nombre;
-
-      return {
-        tipo: 'promo',
-        label,
-        monto: 0,
-      };
+      const label = porcentaje > 0 ? `${promo.nombre} (${porcentaje}%)` : promo.nombre;
+      return { tipo: 'promo', label, monto: 0 };
     }
 
     return { tipo: 'none', label: '', monto: 0 };
   }
 
   calcularTotalItem(item: ProductoDetalleAdmin): number {
-    // Usamos el total que viene del backend
     return item.total;
   }
 
   volver(): void {
     const state = history.state as { rutaRetorno?: string };
-    state?.rutaRetorno
-      ? this.router.navigateByUrl(state.rutaRetorno)
-      : this.location.back();
+    state?.rutaRetorno ? this.router.navigateByUrl(state.rutaRetorno) : this.location.back();
   }
 
   irHistorialVentas(): void {
@@ -226,52 +196,39 @@ export class DetallesVentasAdministracion implements OnInit, OnDestroy {
 
   verDetalleHistorial(idComprobante: number): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    this.router.navigate(
-      ['/admin/detalles-ventas-administracion', idComprobante],
-      {
-        state: {
-          rutaRetorno: `/admin/detalles-ventas-administracion/${this.detalle?.id_comprobante}`,
-        },
+    this.router.navigate(['/admin/detalles-ventas-administracion', idComprobante], {
+      state: {
+        rutaRetorno: `/admin/detalles-ventas-administracion/${this.detalle?.id_comprobante}`,
       },
-    );
+    });
   }
 
   imprimirComprobante(): void {
     if (!this.detalle) return;
-    this.router.navigate(
-      ['/admin/imprimir-comprobante-administracion'],
-      {
-        state: {
-          comprobante: this.detalle,
-          rutaRetorno: `/admin/detalles-ventas-administracion/${this.detalle.id_comprobante}`,
-        },
+    this.router.navigate(['/admin/imprimir-comprobante-administracion'], {
+      state: {
+        comprobante: this.detalle,
+        rutaRetorno: `/admin/detalles-ventas-administracion/${this.detalle.id_comprobante}`,
       },
-    );
+    });
   }
 
   imprimirHistorial(item: any): void {
-    this.router.navigate(
-      ['/admin/imprimir-comprobante-administracion'],
-      {
-        state: {
-          comprobante: item,
-          rutaRetorno: `/admin/detalles-ventas-administracion/${this.detalle?.id_comprobante}`,
-        },
+    this.router.navigate(['/admin/imprimir-comprobante-administracion'], {
+      state: {
+        comprobante: item,
+        rutaRetorno: `/admin/detalles-ventas-administracion/${this.detalle?.id_comprobante}`,
       },
-    );
+    });
   }
 
   getTipoComprobanteLabel(): string {
     const tipo = this.detalle?.tipo_comprobante ?? '';
-    return tipo.toUpperCase().includes('BOLETA') || tipo === '03'
-      ? 'BOLETA'
-      : 'FACTURA';
+    return tipo.toUpperCase().includes('BOLETA') || tipo === '03' ? 'BOLETA' : 'FACTURA';
   }
 
   getTipoComprobanteIcon(): string {
-    return this.getTipoComprobanteLabel() === 'BOLETA'
-      ? 'pi pi-file'
-      : 'pi pi-file-edit';
+    return this.getTipoComprobanteLabel() === 'BOLETA' ? 'pi pi-file' : 'pi pi-file-edit';
   }
 
   getSeverityEstado(estado: string): 'success' | 'danger' | 'warn' | 'info' {

@@ -1,5 +1,3 @@
-/* sales/src/app/services/ventas-admin.service.ts */
-
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
@@ -33,6 +31,9 @@ import {
   SendNotificationResponse,
   BancoAdmin,
   TipoServicioAdmin,
+  AuctionAutocompleteItemAdmin,
+  AuctionAutocompleteResponseAdmin,
+  RemateUIAdmin,
 } from '../interfaces/ventas.interface';
 
 @Injectable({ providedIn: 'root' })
@@ -46,8 +47,6 @@ export class VentasAdminService {
   private get headers(): HttpHeaders {
     return new HttpHeaders({ 'x-role': 'Administrador' });
   }
-
-  // ─── COMPROBANTES ──────────────────────────────────────────────────────────
 
   listarHistorialVentas(
     query: SalesReceiptsQueryAdmin = {},
@@ -176,8 +175,6 @@ export class VentasAdminService {
       .pipe(catchError(() => of([])));
   }
 
-  // ─── PDF DEL COMPROBANTE ───────────────────────────────────────────────────
-
   descargarComprobantePdf(id: number, nombreArchivo?: string): Observable<void> {
     return this.http
       .get(`${this.salesUrl}/receipts/${id}/pdf`, {
@@ -214,8 +211,6 @@ export class VentasAdminService {
       );
   }
 
-  // ─── EMAIL ─────────────────────────────────────────────────────────────────
-
   enviarComprobantePorEmail(id: number): Observable<SendNotificationResponse> {
     return this.http
       .post<SendNotificationResponse>(
@@ -225,8 +220,6 @@ export class VentasAdminService {
       )
       .pipe(catchError((err) => throwError(() => err)));
   }
-
-  // ─── WHATSAPP ──────────────────────────────────────────────────────────────
 
   obtenerEstadoWhatsApp(): Observable<WhatsAppStatusResponse> {
     return this.http
@@ -246,8 +239,6 @@ export class VentasAdminService {
       .pipe(catchError((err) => throwError(() => err)));
   }
 
-  // ─── PROMOCIONES ───────────────────────────────────────────────────────────
-
   obtenerPromocionesActivas(): Observable<PromocionAdmin[]> {
     return this.http
       .get<PromocionAdmin[]>(`${this.salesUrl}/promotions/active`, {
@@ -256,15 +247,11 @@ export class VentasAdminService {
       .pipe(catchError(() => of([])));
   }
 
-  // ─── SEDES ─────────────────────────────────────────────────────────────────
-
   obtenerSedes(): Observable<SedeAdmin[]> {
     return this.http
       .get<any>(`${this.adminUrl}/headquarters`, { headers: this.headers })
       .pipe(map((res) => res.data ?? res.headquarters ?? res ?? []));
   }
-
-  // ─── PRODUCTOS ─────────────────────────────────────────────────────────────
 
   obtenerProductosConStock(
     idSede?: number,
@@ -295,6 +282,27 @@ export class VentasAdminService {
       `${this.logisticsUrl}/products/ventas/autocomplete`,
       { headers: this.headers, params },
     );
+  }
+
+  buscarRematesAutocomplete(
+    search: string,
+    idSede?: number,
+  ): Observable<AuctionAutocompleteItemAdmin[]> {
+    let params = new HttpParams().set('search', search);
+    if (idSede != null) params = params.set('id_sede', String(idSede));
+    return this.http
+      .get<any>(`${this.logisticsUrl}/auctions/autocomplete`, {
+        headers: this.headers,
+        params,
+      })
+      .pipe(
+        map((res) => {
+          if (Array.isArray(res)) return res as AuctionAutocompleteItemAdmin[];
+          if (res?.data && Array.isArray(res.data)) return res.data as AuctionAutocompleteItemAdmin[];
+          return [];
+        }),
+        catchError(() => of([])),
+      );
   }
 
   obtenerCategoriasConStock(idSede?: number): Observable<CategoriaConStockAdmin[]> {
@@ -352,7 +360,18 @@ export class VentasAdminService {
     };
   }
 
-  // ─── CLIENTES ──────────────────────────────────────────────────────────────
+  mapearAuctionItem(item: AuctionAutocompleteItemAdmin): RemateUIAdmin {
+    return {
+      idDetalleRemate: item.id_detalle_remate,
+      idRemate: item.id_remate,
+      codRemate: item.cod_remate,
+      idProducto: item.id_producto,
+      preOriginal: Number(item.pre_original),
+      preRemate: Number(item.pre_remate),
+      stockRemate: Number(item.stock_remate),
+      descripcionRemate: item.descripcion_remate,
+    };
+  }
 
   buscarCliente(documentValue: string): Observable<ClienteBusquedaAdminResponse> {
     return this.http
@@ -451,8 +470,6 @@ export class VentasAdminService {
         catchError((err) => throwError(() => err)),
       );
   }
-
-  // ─── BANCOS ────────────────────────────────────────────────────────────────
 
   obtenerBancos(): Observable<BancoAdmin[]> {
     return this.http

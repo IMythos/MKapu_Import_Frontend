@@ -95,15 +95,11 @@
             <h3><i class="pi pi-file-edit"></i> Comprobante</h3>
             <div class="info-row">
               <span class="label">Fecha emisión:</span>
-              <span class="value">{{
-                detalle.fec_emision | date: 'dd/MM/yyyy HH:mm'
-              }}</span>
+              <span class="value">{{ detalle.fec_emision | date: 'dd/MM/yyyy HH:mm' }}</span>
             </div>
             <div class="info-row" *ngIf="detalle.fec_venc">
               <span class="label">Fecha vencimiento:</span>
-              <span class="value">{{
-                detalle.fec_venc | date: 'dd/MM/yyyy'
-              }}</span>
+              <span class="value">{{ detalle.fec_venc | date: 'dd/MM/yyyy' }}</span>
             </div>
             <div class="info-row">
               <span class="label">Responsable:</span>
@@ -128,9 +124,7 @@
               </div>
               <div class="info-row">
                 <span class="label">Total pagado:</span>
-                <span class="value amount">
-                  S/. {{ detalle.total | number: '1.2-2' }}
-                </span>
+                <span class="value amount">S/. {{ detalle.total | number: '1.2-2' }}</span>
               </div>
             </div>
 
@@ -142,15 +136,13 @@
               <div class="promocion-body">
                 <div class="promocion-info-row">
                   <span class="promocion-label">Promoción:</span>
-                  <span class="promocion-codigo-badge">
-                    {{ detalle.promocion.nombre }}
-                  </span>
+                  <span class="promocion-codigo-badge">{{ detalle.promocion.nombre }}</span>
                 </div>
                 <div class="promocion-info-row">
                   <span class="promocion-label">Tipo:</span>
-                  <span class="promocion-text">
-                    {{ getTipoPromocionLabel(detalle.promocion.tipo) }}
-                  </span>
+                  <span class="promocion-text">{{
+                    getTipoPromocionLabel(detalle.promocion.tipo)
+                  }}</span>
                 </div>
                 <div
                   class="promocion-info-row"
@@ -170,9 +162,7 @@
                 <div class="promocion-info-row">
                   <span class="promocion-label">Monto descontado:</span>
                   <span class="promocion-descuento">
-                    -S/. {{
-                      detalle.promocion.monto_descuento | number: '1.2-2'
-                    }}
+                    -S/. {{ detalle.promocion.monto_descuento | number: '1.2-2' }}
                   </span>
                 </div>
               </div>
@@ -188,9 +178,7 @@
       <ng-template pTemplate="header">
         <div class="card-header">
           <h3>
-            <span class="icon-shopping">
-              <i class="pi pi-shopping-cart"></i>
-            </span>
+            <span class="icon-shopping"><i class="pi pi-shopping-cart"></i></span>
             Productos Vendidos
           </h3>
           <p-tag
@@ -219,19 +207,37 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-item>
-          <tr>
+          <tr [class.fila-remate]="esProductoDeRemate(item)">
             <td>
               <span class="codigo-producto">{{ item.cod_prod }}</span>
             </td>
+
+            <!-- Descripción con badge de remate si aplica -->
             <td>
-              <strong>{{ item.descripcion }}</strong>
+              <div class="descripcion-producto-cell">
+                <strong>{{ item.descripcion }}</strong>
+                <span *ngIf="esProductoDeRemate(item)" class="detalle-remate-badge">
+                  <i class="pi pi-tag"></i> Remate
+                </span>
+              </div>
+              <div *ngIf="esProductoDeRemate(item)" class="detalle-remate-info">
+                <span class="detalle-remate-cod">{{ item.remate!.cod_remate }}</span>
+                <span class="detalle-remate-precios">
+                  <span class="detalle-remate-original">
+                    S/. {{ item.remate!.pre_original | number: '1.2-2' }}
+                  </span>
+                  <i class="pi pi-arrow-right" style="font-size: 9px; color: #9e9e9e"></i>
+                  <span class="detalle-remate-precio">
+                    S/. {{ item.remate!.pre_remate | number: '1.2-2' }}
+                  </span>
+                </span>
+              </div>
             </td>
-            <td style="text-align: center">
-              {{ item.cantidad }}
-            </td>
-            <td style="text-align: right">
-              S/. {{ item.precio_unit | number: '1.2-2' }}
-            </td>
+
+            <td style="text-align: center">{{ item.cantidad }}</td>
+
+            <td style="text-align: right">S/. {{ item.precio_unit | number: '1.2-2' }}</td>
+
             <td style="text-align: center">
               <ng-container [ngSwitch]="getDescuentoItemDisplay(item).tipo">
                 <div *ngSwitchCase="'item'">
@@ -241,32 +247,22 @@
                     [rounded]="true"
                   ></p-tag>
                 </div>
-
                 <div *ngSwitchCase="'promo'" class="promo-item-descuento">
                   <p-tag
                     [value]="getDescuentoItemDisplay(item).label"
                     severity="success"
                     [rounded]="true"
                   ></p-tag>
-                  <span
-                    *ngIf="getDescuentoItemDisplay(item).monto > 0"
-                    class="promo-monto-item"
-                  >
-                    -S/. {{
-                      getDescuentoItemDisplay(item).monto | number: '1.2-2'
-                    }}
+                  <span *ngIf="getDescuentoItemDisplay(item).monto > 0" class="promo-monto-item">
+                    -S/. {{ getDescuentoItemDisplay(item).monto | number: '1.2-2' }}
                   </span>
                 </div>
-
-                <span *ngSwitchDefault class="text-color-secondary">
-                  —
-                </span>
+                <span *ngSwitchDefault class="text-color-secondary">—</span>
               </ng-container>
             </td>
+
             <td style="text-align: right">
-              <strong>
-                S/. {{ calcularTotalItem(item) | number: '1.2-2' }}
-              </strong>
+              <strong>S/. {{ calcularTotalItem(item) | number: '1.2-2' }}</strong>
             </td>
           </tr>
         </ng-template>
@@ -278,11 +274,7 @@
             <span class="label">Subtotal (Base imponible):</span>
             <span class="value">
               S/.
-              {{
-                detalle.subtotal +
-                  (detalle.promocion?.monto_descuento ?? 0)
-                  | number: '1.2-2'
-              }}
+              {{ detalle.subtotal + (detalle.promocion?.monto_descuento ?? 0) | number: '1.2-2' }}
             </span>
           </div>
           <div class="total-row descuento-row" *ngIf="detalle.promocion">
@@ -291,23 +283,16 @@
               Descuento ({{ detalle.promocion.nombre }}):
             </span>
             <span class="value descuento-valor">
-              -S/.
-              {{
-                detalle.promocion.monto_descuento | number: '1.2-2'
-              }}
+              -S/. {{ detalle.promocion.monto_descuento | number: '1.2-2' }}
             </span>
           </div>
           <div class="total-row">
             <span class="label">IGV (18%):</span>
-            <span class="value">
-              S/. {{ detalle.igv | number: '1.2-2' }}
-            </span>
+            <span class="value">S/. {{ detalle.igv | number: '1.2-2' }}</span>
           </div>
           <div class="total-row total-final">
             <span class="label">TOTAL A PAGAR:</span>
-            <span class="value">
-              S/. {{ detalle.total | number: '1.2-2' }}
-            </span>
+            <span class="value">S/. {{ detalle.total | number: '1.2-2' }}</span>
           </div>
         </div>
       </div>
@@ -319,9 +304,7 @@
       <ng-template pTemplate="header">
         <div class="card-header">
           <h3>
-            <span class="icon-history">
-              <i class="pi pi-history"></i>
-            </span>
+            <span class="icon-history"><i class="pi pi-history"></i></span>
             Historial de Compras del Cliente
           </h3>
         </div>
@@ -331,31 +314,23 @@
         <div class="stat-card">
           <i class="pi pi-shopping-bag"></i>
           <div class="stat-content">
-            <span class="stat-value">
-              {{ detalle.cliente.cantidad_compras }}
-            </span>
+            <span class="stat-value">{{ detalle.cliente.cantidad_compras }}</span>
             <span class="stat-label">Compras realizadas</span>
           </div>
         </div>
         <div class="stat-card">
           <i class="pi pi-dollar"></i>
           <div class="stat-content">
-            <span class="stat-value">
-              S/.
-              {{
-                detalle.cliente.total_gastado_cliente
-                  | number: '1.2-2'
-              }}
-            </span>
+            <span class="stat-value"
+              >S/. {{ detalle.cliente.total_gastado_cliente | number: '1.2-2' }}</span
+            >
             <span class="stat-label">Total gastado</span>
           </div>
         </div>
         <div class="stat-card">
           <i class="pi pi-map-marker"></i>
           <div class="stat-content">
-            <span class="stat-value">
-              {{ detalle.historial_pagination.total }}
-            </span>
+            <span class="stat-value">{{ detalle.historial_pagination.total }}</span>
             <span class="stat-label">Compras en historial</span>
           </div>
         </div>
@@ -382,9 +357,7 @@
                 <th style="width: 18%">Comprobante</th>
                 <th style="width: 13%">Fecha</th>
                 <th style="width: 20%">Responsable</th>
-                <th style="width: 14%; text-align: center">
-                  Método Pago
-                </th>
+                <th style="width: 14%; text-align: center">Método Pago</th>
                 <th style="width: 10%; text-align: center">Estado</th>
                 <th style="width: 12%; text-align: right">Total</th>
                 <th style="width: 13%; text-align: center">Acciones</th>
@@ -396,9 +369,7 @@
                 <td>
                   <strong>{{ venta.numero_completo }}</strong>
                 </td>
-                <td>
-                  {{ venta.fec_emision | date: 'dd/MM/yyyy' }}
-                </td>
+                <td>{{ venta.fec_emision | date: 'dd/MM/yyyy' }}</td>
                 <td>
                   <div class="responsable-cell">
                     <i class="pi pi-user"></i>
@@ -418,14 +389,10 @@
                   ></p-tag>
                 </td>
                 <td style="text-align: right">
-                  <strong>
-                    S/. {{ venta.total | number: '1.2-2' }}
-                  </strong>
+                  <strong>S/. {{ venta.total | number: '1.2-2' }}</strong>
                 </td>
                 <td style="text-align: center">
-                  <div
-                    class="flex gap-1 justify-content-center align-items-center"
-                  >
+                  <div class="flex gap-1 justify-content-center align-items-center">
                     <p-button
                       type="button"
                       icon="pi pi-eye"
@@ -463,13 +430,8 @@
             </ng-template>
           </p-table>
 
-          <div
-            class="historial-paginacion"
-            *ngIf="totalPaginasHistorial > 1"
-          >
-            <div
-              class="flex gap-2 justify-content-center align-items-center mt-3"
-            >
+          <div class="historial-paginacion" *ngIf="totalPaginasHistorial > 1">
+            <div class="flex gap-2 justify-content-center align-items-center mt-3">
               <p-button
                 icon="pi pi-angle-double-left"
                 [text]="true"
@@ -479,7 +441,6 @@
                 pTooltip="Primera página"
                 tooltipPosition="top"
               ></p-button>
-
               <p-button
                 icon="pi pi-chevron-left"
                 [text]="true"
@@ -487,34 +448,22 @@
                 [disabled]="historialPage === 1"
                 (click)="cambiarPaginaHistorial(historialPage - 1)"
               ></p-button>
-
-              <span
-                *ngIf="paginasHistorialVisibles[0] > 1"
-                class="pagina-ellipsis"
-              >
-                ...
-              </span>
-
+              <span *ngIf="paginasHistorialVisibles[0] > 1" class="pagina-ellipsis">...</span>
               <span
                 *ngFor="let p of paginasHistorialVisibles"
                 class="pagina-btn"
                 [class.activa]="p === historialPage"
                 (click)="cambiarPaginaHistorial(p)"
+                >{{ p }}</span
               >
-                {{ p }}
-              </span>
-
               <span
                 *ngIf="
-                  paginasHistorialVisibles[
-                    paginasHistorialVisibles.length - 1
-                  ] < totalPaginasHistorial
+                  paginasHistorialVisibles[paginasHistorialVisibles.length - 1] <
+                  totalPaginasHistorial
                 "
                 class="pagina-ellipsis"
+                >...</span
               >
-                ...
-              </span>
-
               <p-button
                 icon="pi pi-chevron-right"
                 [text]="true"
@@ -522,7 +471,6 @@
                 [disabled]="historialPage === totalPaginasHistorial"
                 (click)="cambiarPaginaHistorial(historialPage + 1)"
               ></p-button>
-
               <p-button
                 icon="pi pi-angle-double-right"
                 [text]="true"
@@ -536,10 +484,7 @@
           </div>
         </div>
 
-        <div
-          *ngIf="!loadingHistorial && detalle.historial_cliente.length === 0"
-          class="no-data"
-        >
+        <div *ngIf="!loadingHistorial && detalle.historial_cliente.length === 0" class="no-data">
           <i class="pi pi-info-circle"></i>
           <span>Este cliente no tiene compras anteriores</span>
         </div>

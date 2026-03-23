@@ -1513,3 +1513,250 @@
   color: #e67e22;
   font-weight: 600;
 }
+
+/* ════════════════════════════════════════════════════════════════════════════
+   REMATES — estilos nuevos para agregar al archivo .css existente
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* ── Toggle modo búsqueda ───────────────────────────────────────────────── */
+.pos-search-mode-toggle {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--surface-300);
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+  height: 36px;
+  align-self: center;
+}
+
+.pos-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--surface-0);
+  border: none;
+  cursor: pointer;
+  color: var(--text-color-secondary);
+  transition: background 0.15s, color 0.15s;
+  white-space: nowrap;
+}
+
+.pos-mode-btn:hover {
+  background: var(--surface-100);
+}
+
+.pos-mode-btn.active {
+  background: var(--primary-color);
+  color: #fff;
+}
+
+.pos-mode-btn-remate.active {
+  background: #e65100;
+  color: #fff;
+}
+
+/* separador entre botones del toggle */
+.pos-mode-btn:not(:last-child) {
+  border-right: 1px solid var(--surface-300);
+}
+
+/* ── Input en modo remate ───────────────────────────────────────────────── */
+.pos-search-input-remate {
+  border-color: #e65100 !important;
+  border-width: 2px !important;
+  background: rgba(230, 81, 0, 0.04) !important;
+  color: inherit;
+}
+
+.pos-search-input-remate:focus {
+  box-shadow: 0 0 0 2px rgba(230, 81, 0, 0.2) !important;
+}
+
+/* ── Banner de modo remate activo ───────────────────────────────────────── */
+.pos-remate-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #bf360c;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+
+.pos-remate-mode-banner i {
+  font-size: 13px;
+  color: #e65100;
+}
+
+.pos-remate-mode-banner-switch {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #1565c0;
+  background: none;
+  border: 1px solid #1565c0;
+  border-radius: 4px;
+  padding: 2px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.pos-remate-mode-banner-switch:hover {
+  background: #e3f2fd;
+}
+
+/* ── Indicador de modo inline dentro del input (icono a la derecha) ─────── */
+.pos-search-mode-indicator {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: var(--text-color-secondary);
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.pos-search-mode-indicator.remate {
+  color: #e65100;
+  opacity: 1;
+}
+
+/* ── Panel de remates ───────────────────────────────────────────────────── */
+.pos-search-panel-remate {
+  border-top: 3px solid #e65100;
+}
+
+.pos-remate-panel-header {
+  padding: 6px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #e65100;
+  background: #fff3e0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Sugerido de remate ─────────────────────────────────────────────────── */
+.pos-sugg-remate {
+  border-left: 3px solid #e65100;
+}
+
+.pos-sugg-remate.pos-sugg-checked {
+  background: #fff3e0;
+  border-left-color: #bf360c;
+}
+
+.pos-remate-cod {
+  color: #bf360c !important;
+  font-weight: 700;
+}
+
+.pos-remate-precios {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.pos-remate-original {
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  text-decoration: line-through;
+}
+
+.pos-remate-precio {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e65100;
+}
+
+/* ── Badge remate en carrito ────────────────────────────────────────────── */
+.pos-remate-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  background: #e65100;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: 0.03em;
+}
+
+/* ── Badge mini en pendientes ───────────────────────────────────────────── */
+.pos-remate-badge-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #e65100;
+  background: #fff3e0;
+  border: 1px solid #ff9800;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+
+.pos-remate-original-mini {
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  text-decoration: line-through;
+  margin-left: 4px;
+}
+
+/* Descripción técnica debajo del nombre comercial */
+.pos-remate-desc-tecnica {
+  display: block;
+  font-size: 11px;
+  color: var(--text-color-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Etiqueta precio fijo en pendientes de remate ───────────────────────── */
+.pos-pending-tipo-remate {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e65100;
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+  border-radius: 4px;
+  padding: 3px 10px;
+  white-space: nowrap;
+}
+
+/* ── Fila del carrito con remate — resalte sutil ────────────────────────── */
+.pos-row-remate {
+  background: #fffde7;
+}
+
+.pos-row-remate:hover {
+  background: #fff9c4 !important;
+}

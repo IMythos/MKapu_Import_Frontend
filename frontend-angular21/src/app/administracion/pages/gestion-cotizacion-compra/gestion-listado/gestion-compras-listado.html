@@ -29,42 +29,31 @@
       <div>
         <span class="contador-label">Total Cotizaciones Compra</span>
         <span class="contador-valor">{{ totalRecords() }}</span>
-        <span class="contador-detalle">
-          <i class="pi pi-list"></i> registros
-        </span>
+        <span class="contador-detalle"><i class="pi pi-list"></i> registros</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-check-circle"></i>
       <div>
         <span class="contador-label">Aprobadas</span>
         <span class="contador-valor">{{ totalAprobadas() }}</span>
-        <span class="contador-detalle">
-          <i class="pi pi-check"></i> completadas
-        </span>
+        <span class="contador-detalle"><i class="pi pi-check"></i> completadas</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-clock"></i>
       <div>
         <span class="contador-label">Pendientes</span>
         <span class="contador-valor">{{ totalPendientes() }}</span>
-        <span class="contador-detalle">
-          <i class="pi pi-hourglass"></i> por aprobar
-        </span>
+        <span class="contador-detalle"><i class="pi pi-hourglass"></i> por aprobar</span>
       </div>
     </div>
-
     <div class="contador-card">
       <i class="pi pi-users"></i>
       <div>
         <span class="contador-label">Proveedores</span>
         <span class="contador-valor">{{ proveedoresUnicos() }}</span>
-        <span class="contador-detalle">
-          <i class="pi pi-building"></i> en este período
-        </span>
+        <span class="contador-detalle"><i class="pi pi-building"></i> en este período</span>
       </div>
     </div>
   </div>
@@ -93,7 +82,6 @@
                 <div class="flex flex-column gap-1">
                   <span class="font-bold text-900">{{ item.codigo }}</span>
                   <small class="text-600 flex align-items-center gap-2">
-                    <!-- ↓ usa getNombreProveedor en lugar de item.cliente_nombre -->
                     <span><i class="pi pi-truck mr-1 text-primary"></i>{{ getNombreProveedor(item) }}</span>
                     <span><i class="pi pi-calendar mr-1 text-primary"></i>{{ item.fec_emision | date:'shortDate' }}</span>
                     <span><i class="pi pi-money-bill mr-1 text-primary"></i>{{ item.total | currency:'PEN' }}</span>
@@ -137,7 +125,6 @@
             placeholder="Todas" [showClear]="true" styleClass="w-full">
           </p-select>
         </div>
-
         <div class="filtro-item filtro-compacto">
           <label>Estado</label>
           <p-select
@@ -148,7 +135,6 @@
             placeholder="Todos" [showClear]="true" styleClass="w-full">
           </p-select>
         </div>
-
         <div class="filtro-item filtro-boton-limpiar">
           <label>&nbsp;</label>
           <p-button
@@ -190,32 +176,36 @@
       [value]="cotizacionesFiltradas()"
       [paginator]="false"
       styleClass="p-datatable-striped"
-      [tableStyle]="{ 'min-width': '55rem' }">
+      [tableStyle]="{ 'min-width': '60rem' }">
 
       <ng-template pTemplate="header">
         <tr>
-          <th style="width:10%">Código</th>
-          <th style="width:20%">Proveedor</th>
-          <th style="width:15%">Fechas</th>
-          <th style="width:12%">Sede</th>
-          <th style="width:10%">Estado</th>
-          <th style="width:10%">Total</th>
-          <th style="width:25%" class="text-center">Acciones</th>
+          <th style="width:9%">Código</th>
+          <th style="width:17%">Proveedor</th>
+          <th style="width:13%">Responsable</th>
+          <th style="width:13%">Fechas</th>
+          <th style="width:10%">Sede</th>
+          <th style="width:9%">Estado</th>
+          <th style="width:9%">Total</th>
+          <th style="width:20%" class="text-center">Acciones</th>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="body" let-c>
         <tr>
           <td class="font-semibold">{{ c.codigo }}</td>
-
-          <!-- ↓ COLUMNA PROVEEDOR CORREGIDA -->
           <td>
             <div class="flex align-items-center gap-2">
               <i class="pi pi-truck" style="font-size:0.75rem; color:var(--text-muted)"></i>
               <span>{{ getNombreProveedor(c) }}</span>
             </div>
           </td>
-
+         <td>
+          <div class="flex align-items-center gap-1">
+            <i class="pi pi-user" style="font-size:0.7rem; color:var(--text-muted)"></i>
+            <span class="text-sm">{{ c.nombre_responsable ?? c.id_responsable_ref ?? '—' }}</span>
+          </div>
+        </td>
           <td>
             <div class="flex flex-column gap-1">
               <div class="flex align-items-center gap-1">
@@ -239,7 +229,6 @@
               </div>
             </div>
           </td>
-
           <td>{{ c.sede_nombre }}</td>
           <td>
             <p-tag [value]="c.estado" [severity]="mapEstadoTag(c.estado)" />
@@ -253,14 +242,12 @@
                 pTooltip="Ver Detalles" tooltipPosition="top"
                 (onClick)="irDetalle(c.id_cotizacion)">
               </p-button>
-
               <p-button
                 icon="pi pi-file-pdf"
                 [rounded]="true" [text]="true" severity="secondary"
                 pTooltip="Documentos" tooltipPosition="top"
                 (onClick)="abrirAcciones(c)">
               </p-button>
-
               <ng-container *ngIf="c.estado === 'PENDIENTE'">
                 <p-button
                   icon="pi pi-times"
@@ -269,7 +256,6 @@
                   (onClick)="rechazarCotizacion(c.id_cotizacion)">
                 </p-button>
               </ng-container>
-
               <ng-container *ngIf="c.estado === 'RECHAZADA'">
                 <p-button
                   icon="pi pi-refresh"
@@ -291,7 +277,7 @@
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="7" class="text-center">
+          <td colspan="8" class="text-center">
             <div class="mensaje-vacio">
               <i class="pi pi-inbox"></i>
               <p>No se encontraron cotizaciones de compra</p>
@@ -322,7 +308,6 @@
   [draggable]="false"
   (onHide)="cerrarDialogWsp()"
   header="Enviar Cotización por WhatsApp">
-
   <div class="flex flex-column align-items-center gap-4 py-3">
     <ng-container *ngIf="!wspReady && !wspQr">
       <i class="pi pi-spin pi-spinner" style="font-size:2.5rem; color:var(--gold)"></i>
@@ -350,7 +335,6 @@
       </p>
     </ng-container>
   </div>
-
   <ng-template pTemplate="footer">
     <div class="flex justify-content-end gap-2">
       <p-button label="Cancelar" icon="pi pi-times"

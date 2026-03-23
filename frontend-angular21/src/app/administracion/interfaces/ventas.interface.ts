@@ -49,6 +49,15 @@ export interface SalesReceiptsQueryAdmin {
   _t?: number;
 }
 
+export interface RemateDetalleProductoDto {
+  id_detalle_remate: number;
+  id_remate:         number;
+  cod_remate:        string;
+  descripcion:       string;
+  pre_original:      number;
+  pre_remate:        number;
+}
+
 export interface ProductoDetalleAdmin {
   id_prod_ref: string;
   cod_prod: string;
@@ -62,6 +71,8 @@ export interface ProductoDetalleAdmin {
   promocion_aplicada: boolean;
   descuento_promo_monto: number | null;
   descuento_promo_porcentaje: number | null;
+  /** Presente si el ítem fue vendido desde un remate activo. Null = venta normal */
+  remate: RemateDetalleProductoDto | null;
 }
 
 export interface PromocionDetalleAdmin {
@@ -148,6 +159,18 @@ export interface SalesReceiptKpiDto {
   semana_hasta?: string;
 }
 
+export interface ItemVentaRequest {
+  productId: string;
+  quantity: number;
+  unitPrice: number;
+  description: string;
+  total: number;
+  codigo?: string;
+  categoriaId?: number;
+  /** Presente solo cuando el ítem proviene de un remate activo */
+  id_detalle_remate?: number | null;
+}
+
 export interface RegistroVentaAdminRequest {
   customerId: string;
   receiptTypeId: number;
@@ -168,15 +191,7 @@ export interface RegistroVentaAdminRequest {
   dueDate?: string;
   operationType?: string;
   currencyCode?: string;
-  items: {
-    productId: string;
-    quantity: number;
-    unitPrice: number;
-    description: string;
-    total: number;
-    codigo?: string;
-    categoriaId?: number;
-  }[];
+  items: ItemVentaRequest[];
 }
 
 export interface RegistroVentaItemResponseAdmin {
@@ -363,6 +378,8 @@ export interface ItemVentaUIAdmin {
   total: number;
   igvUnitario: number;
   categoriaId?: number;
+  /** Solo presente si el ítem viene de un remate */
+  idDetalleRemate?: number | null;
 }
 
 export interface PromocionAdmin {
@@ -411,7 +428,6 @@ export interface Quote {
   detalles?: QuoteDetalleItem[];
 }
 
-
 export interface WhatsAppStatusResponse {
   ready: boolean;
   qr: string | null;
@@ -421,7 +437,6 @@ export interface SendNotificationResponse {
   message: string;
   sentTo: string;
 }
-
 
 export interface BancoAdmin {
   id_banco: number;
@@ -433,4 +448,50 @@ export interface TipoServicioAdmin {
   id_banco: number;
   nombre_servicio: string;
   descripcion?: string;
+}
+
+export interface AuctionAutocompleteItemAdmin {
+  id_detalle_remate:  number;
+  id_remate:          number;
+  cod_remate:         string;
+  id_producto:        number;
+  codigo_producto:    string;
+  nombre_producto:    string;
+  descripcion_remate: string;
+  id_categoria:       number;
+  familia:            string;
+  pre_original:       number;
+  pre_remate:         number;
+  stock_remate:       number;
+}
+
+export interface AuctionAutocompleteResponseAdmin {
+  data: AuctionAutocompleteItemAdmin[];
+}
+
+/** Versión UI del ítem de remate listo para el carrito */
+export interface RemateUIAdmin {
+  idDetalleRemate:  number;
+  idRemate:         number;
+  codRemate:        string;
+  idProducto:       number;
+  preOriginal:      number;
+  preRemate:        number;
+  stockRemate:      number;
+  descripcionRemate: string;
+}
+
+
+export interface CarritoItemUIAdmin {
+  tipo: 'PRODUCTO' | 'REMANTE';
+  id: string | number;  // id_producto o id_detalle_remate
+  codigo: string;
+  descripcion: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioVenta: number;   // total parcial
+  igvUnitario: number;
+  subtotal: number;
+  // Solo para remates
+  remate?: RemateUIAdmin;
 }

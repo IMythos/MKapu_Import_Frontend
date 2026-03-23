@@ -39,6 +39,8 @@
   <div class="pos-body">
     <div class="pos-search-card">
       <div class="pos-filters-row">
+
+        <!-- Sede admin -->
         <div class="pos-sede-wrap" *ngIf="esAdmin">
           <p-select
             [ngModel]="sedeSeleccionada()"
@@ -56,24 +58,76 @@
           <span>{{ sedeNombreVentas }}</span>
         </div>
 
-        <div class="pos-autocomplete-wrap" style="position: relative">
+        <!-- Autocomplete con toggle Producto / Remate -->
+        <div
+          class="pos-autocomplete-wrap"
+          [class.pos-autocomplete-wrap-remate]="modoRemate()"
+          style="position: relative"
+        >
+
+          <!-- Toggle modo búsqueda -->
+          <div class="pos-search-mode-toggle">
+            <button
+              class="pos-mode-btn"
+              [class.active]="!modoRemate()"
+              (click)="modoRemate.set(false); queryBusqueda.set(''); productosSugeridos.set([]); rematesSugeridos.set([]); panelVisible.set(false)"
+            >
+              <i class="pi pi-box"></i> Producto
+            </button>
+            <button
+              class="pos-mode-btn pos-mode-btn-remate"
+              [class.active]="modoRemate()"
+              (click)="modoRemate.set(true); queryBusqueda.set(''); productosSugeridos.set([]); rematesSugeridos.set([]); panelVisible.set(false)"
+            >
+              <i class="pi pi-tag"></i> Remate
+            </button>
+          </div>
+
+          <!-- Banner de modo remate activo -->
+          <div class="pos-remate-mode-banner" *ngIf="modoRemate()">
+            <i class="pi pi-tag"></i>
+            Modo <strong>Remate</strong> activo — buscando solo en productos de remate.
+            <button
+              class="pos-remate-mode-banner-switch"
+              (click)="modoRemate.set(false); queryBusqueda.set(''); rematesSugeridos.set([]); panelVisible.set(false)"
+            >
+              Cambiar a Producto <i class="pi pi-arrow-right"></i>
+            </button>
+          </div>
+
+          <!-- Input de búsqueda compartido -->
           <input
             #searchInput
             pInputText
             [value]="queryBusqueda()"
             (input)="onQueryChange($any($event.target).value)"
-            (focus)="panelVisible.set(productosSugeridos().length > 0)"
+            (focus)="panelVisible.set((modoRemate() ? rematesSugeridos() : productosSugeridos()).length > 0)"
             (blur)="cerrarPanelConDelay()"
-            placeholder="Buscar producto por nombre o código (mín. 3 caracteres)…"
+            [placeholder]="modoRemate()
+              ? '🏷️ Buscar en remates activos (mín. 3 caracteres)…'
+              : 'Buscar producto por nombre o código (mín. 3 caracteres)…'"
             class="pos-search-input"
+            [class.pos-search-input-remate]="modoRemate()"
             [disabled]="!sedeSeleccionada()"
             autocomplete="off"
           />
-          <i class="pi pi-spin pi-spinner pos-search-spinner" *ngIf="buscandoProductos()"></i>
+          <i
+            class="pi pi-spin pi-spinner pos-search-spinner"
+            *ngIf="buscandoProductos() || buscandoRemates()"
+          ></i>
+          <!-- Indicador inline de modo cuando no hay spinner -->
+          <span
+            class="pos-search-mode-indicator"
+            *ngIf="!buscandoProductos() && !buscandoRemates()"
+            [class.remate]="modoRemate()"
+          >
+            <i [class]="modoRemate() ? 'pi pi-tag' : 'pi pi-box'"></i>
+          </span>
 
+          <!-- Panel sugeridos — productos normales -->
           <div
             class="pos-search-panel"
-            *ngIf="panelVisible() && productosSugeridos().length > 0"
+            *ngIf="panelVisible() && !modoRemate() && productosSugeridos().length > 0"
             (mousedown)="$event.preventDefault()"
           >
             <div
@@ -135,9 +189,89 @@
               </button>
             </div>
           </div>
-        </div>
 
+          <!-- Panel sugeridos — remates -->
+          <div
+            class="pos-search-panel pos-search-panel-remate"
+            *ngIf="panelVisible() && modoRemate() && rematesSugeridos().length > 0"
+            (mousedown)="$event.preventDefault()"
+          >
+            <div class="pos-remate-panel-header">
+              <i class="pi pi-tag"></i> Productos en remate
+            </div>
+
+            <div
+              *ngFor="let r of rematesSugeridos()"
+              class="pos-sugg pos-sugg-remate"
+              [class.pos-sugg-checked]="estaEnPendientesRemate(r.id_detalle_remate)"
+              [class.pos-sugg-sin-stock]="r.stock_remate <= 0"
+              (click)="r.stock_remate > 0 ? onRemateToggle(r) : null"
+            >
+              <div class="pos-sugg-check">
+                <i
+                  [class]="
+                    estaEnPendientesRemate(r.id_detalle_remate)
+                      ? 'pi pi-check-circle'
+                      : r.stock_remate <= 0
+                        ? 'pi pi-ban'
+                        : 'pi pi-circle'
+                  "
+                ></i>
+              </div>
+              <div class="pos-sugg-content">
+                <div class="pos-sugg-row1">
+                  <span class="pos-sugg-codigo pos-remate-cod">{{ r.cod_remate }}</span>
+                  <p-tag value="REMATE" severity="warn" styleClass="pos-sugg-fam" />
+                  <p-tag
+                    [value]="r.stock_remate <= 0 ? 'Sin stock' : 'Stock: ' + r.stock_remate"
+                    [severity]="r.stock_remate <= 0 ? 'danger' : obtenerSeveridadStock(r.stock_remate)"
+                    styleClass="pos-sugg-stock"
+                  />
+                  <span class="pos-remate-precios" *ngIf="r.stock_remate > 0">
+                    <span class="pos-remate-original">S/. {{ r.pre_original | number: '1.2-2' }}</span>
+                    <span class="pos-remate-precio">S/. {{ r.pre_remate | number: '1.2-2' }}</span>
+                  </span>
+                </div>
+                <!-- Nombre comercial del producto -->
+                <div class="pos-sugg-nombre">{{ r.nombre_producto || r.descripcion_remate }}</div>
+                <!-- Descripción técnica como subtítulo si hay nombre_producto -->
+                <small *ngIf="r.nombre_producto && r.descripcion_remate !== r.nombre_producto" class="pos-remate-desc-tecnica">
+                  {{ r.descripcion_remate }}
+                </small>
+                <small *ngIf="r.stock_remate <= 0" class="pos-sugg-no-stock-msg"
+                  >Sin stock en remate</small
+                >
+              </div>
+            </div>
+
+            <div class="pos-panel-footer" *ngIf="productosPendientes().length > 0">
+              <span class="pos-panel-counter">
+                <i class="pi pi-check-circle"></i>
+                {{ productosPendientes().length }} seleccionado{{
+                  productosPendientes().length > 1 ? 's' : ''
+                }}
+              </span>
+              <button
+                class="pos-panel-add-btn"
+                (click)="
+                  agregarTodosAlCarrito();
+                  panelVisible.set(false);
+                  queryBusqueda.set('');
+                  rematesSugeridos.set([])
+                "
+              >
+                <i class="pi pi-shopping-cart"></i>
+                Agregar al carrito
+              </button>
+            </div>
+          </div>
+
+        </div>
+        <!-- /pos-autocomplete-wrap -->
+
+        <!-- Filtro categoría — solo en modo producto normal -->
         <p-select
+          *ngIf="!modoRemate()"
           [ngModel]="familiaSeleccionada()"
           (ngModelChange)="onFamiliaChange($event)"
           [options]="familiasDisponibles()"
@@ -166,6 +300,7 @@
         </button>
       </div>
 
+      <!-- Pendientes -->
       <div class="pos-pending-wrap" *ngIf="productosPendientes().length > 0">
         <div class="pos-pending-header">
           <span class="pos-pending-title">
@@ -181,11 +316,21 @@
           <div *ngFor="let p of productosPendientes(); let i = index" class="pos-pending-item">
             <div class="pos-pending-item-info">
               <span class="pos-pending-codigo">{{ p.codigo }}</span>
-              <span class="pos-pending-nombre">{{ p.nombre }}</span>
+              <span class="pos-pending-nombre">
+                {{ p.nombre }}
+                <span *ngIf="p.esRemate" class="pos-remate-badge-mini">
+                  <i class="pi pi-tag"></i> Remate
+                </span>
+              </span>
               <span class="pos-pending-stock">Stock: {{ p.stock }}</span>
+              <span *ngIf="p.esRemate && p.preOriginal" class="pos-remate-original-mini">
+                Orig: S/. {{ p.preOriginal | number: '1.2-2' }}
+              </span>
             </div>
             <div class="pos-pending-item-controls">
+              <!-- Selector de tipo precio solo para productos normales -->
               <select
+                *ngIf="!p.esRemate"
                 class="pos-pending-tipo"
                 [(ngModel)]="p.tipoPrecio"
                 (change)="actualizarPrecioPendiente(i)"
@@ -196,6 +341,11 @@
                   Mayor. S/. {{ p.precioMayorista | number: '1.2-2' }}
                 </option>
               </select>
+              <!-- Etiqueta precio fijo para remates -->
+              <span *ngIf="p.esRemate" class="pos-pending-tipo-remate">
+                <i class="pi pi-tag"></i> S/. {{ p.precioUnidad | number: '1.2-2' }}
+              </span>
+
               <div class="pos-pending-qty-wrap">
                 <button
                   class="pos-qty-btn"
@@ -256,6 +406,7 @@
       <p>Busca y selecciona productos desde el campo de arriba</p>
     </div>
 
+    <!-- Comprobante generado -->
     <div *ngIf="comprobanteGenerado()" class="pos-success-card">
       <div class="pos-success-icon"><i class="pi pi-check-circle"></i></div>
       <div class="pos-success-info">
@@ -314,6 +465,7 @@
       </div>
     </div>
 
+    <!-- Carrito -->
     <div
       *ngIf="productosSeleccionados().length > 0 && !comprobanteGenerado()"
       class="pos-cart-card"
@@ -359,11 +511,19 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of productosSeleccionados(); let i = index">
+          <tr
+            *ngFor="let item of productosSeleccionados(); let i = index"
+            [class.pos-row-remate]="item.idDetalleRemate"
+          >
             <td>
               <span class="pos-codigo">{{ item.codigo }}</span>
             </td>
-            <td class="pos-td-nombre">{{ item.description }}</td>
+            <td class="pos-td-nombre">
+              {{ item.description }}
+              <span *ngIf="item.idDetalleRemate" class="pos-remate-badge">
+                <i class="pi pi-tag"></i> Remate
+              </span>
+            </td>
             <td class="ta-r">
               <span class="pos-qty-badge">{{ item.quantity }}</span>
             </td>
@@ -458,7 +618,9 @@
                 styleClass="w-full pos-banco-select"
               />
               <ng-container *ngIf="bancoSeleccionado()">
-                <p class="pos-section-label mt-2"><i class="pi pi-credit-card"></i> Tipo de servicio</p>
+                <p class="pos-section-label mt-2">
+                  <i class="pi pi-credit-card"></i> Tipo de servicio
+                </p>
                 <ng-container *ngIf="!tiposServicioLoading()">
                   <p-select
                     *ngIf="tiposServicioOptions().length > 0"
@@ -471,9 +633,13 @@
                     [showClear]="true"
                     styleClass="w-full pos-banco-select"
                   />
-                  <div *ngIf="tiposServicioOptions().length === 0" class="pos-banco-sin-servicio">
+                  <div
+                    *ngIf="tiposServicioOptions().length === 0"
+                    class="pos-banco-sin-servicio"
+                  >
                     <i class="pi pi-exclamation-triangle"></i>
-                    Este banco no tiene servicios registrados para este tipo de tarjeta. Contacta al administrador.
+                    Este banco no tiene servicios registrados para este tipo de tarjeta. Contacta
+                    al administrador.
                   </div>
                 </ng-container>
                 <div *ngIf="tiposServicioLoading()" class="pos-banco-sin-servicio">
@@ -526,7 +692,8 @@
           <div class="pos-section pos-credito-box" *ngIf="tipoPagoOrigen() === 'credito'">
             <i class="pi pi-credit-card"></i>
             <div>
-              <strong>Venta a Crédito</strong><small>Se registrará como cuenta por cobrar</small>
+              <strong>Venta a Crédito</strong>
+              <small>Se registrará como cuenta por cobrar</small>
             </div>
           </div>
 
@@ -570,7 +737,9 @@
                   (click)="buscarYAplicarPromocion()"
                   [disabled]="!codigoPromocionInput().trim() || promocionesLoading()"
                 >
-                  <i [class]="promocionesLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-search'"></i>
+                  <i
+                    [class]="promocionesLoading() ? 'pi pi-spin pi-spinner' : 'pi pi-search'"
+                  ></i>
                 </button>
               </div>
               <div
@@ -631,13 +800,16 @@
               <span>+S/. {{ comisionMonto() | number: '1.2-2' }}</span>
             </div>
             <div class="pos-total-final">
-              <span>TOTAL A PAGAR</span><strong>S/. {{ totalFinal() | number: '1.2-2' }}</strong>
+              <span>TOTAL A PAGAR</span
+              ><strong>S/. {{ totalFinal() | number: '1.2-2' }}</strong>
             </div>
           </div>
           <button
             class="pos-btn-submit"
             (click)="generarVenta()"
-            [disabled]="productosSeleccionados().length === 0 || !clienteEncontrado() || loading()"
+            [disabled]="
+              productosSeleccionados().length === 0 || !clienteEncontrado() || loading()
+            "
             [class.pos-btn-loading]="loading()"
           >
             <i [class]="loading() ? 'pi pi-spin pi-spinner' : 'pi pi-check-circle'"></i>
@@ -652,6 +824,7 @@
   </div>
 </div>
 
+<!-- Sidebar cliente -->
 <p-drawer
   [(visible)]="sidebarClienteVisible"
   position="right"
@@ -771,16 +944,16 @@
       <p class="pos-sb-label"><i class="pi pi-pencil"></i> Editar Cliente</p>
       <div class="pos-sb-form">
         <div class="pos-sb-field">
-          <label>Nombre *</label
-          ><input pInputText [(ngModel)]="editarClienteForm.name" class="w-full" />
+          <label>Nombre *</label>
+          <input pInputText [(ngModel)]="editarClienteForm.name" class="w-full" />
         </div>
         <div class="pos-sb-field">
-          <label>Dirección</label
-          ><input pInputText [(ngModel)]="editarClienteForm.address" class="w-full" />
+          <label>Dirección</label>
+          <input pInputText [(ngModel)]="editarClienteForm.address" class="w-full" />
         </div>
         <div class="pos-sb-field">
-          <label>Teléfono</label
-          ><input
+          <label>Teléfono</label>
+          <input
             pInputText
             [(ngModel)]="editarClienteForm.phone"
             class="w-full"
@@ -789,8 +962,8 @@
           />
         </div>
         <div class="pos-sb-field">
-          <label>Email</label
-          ><input pInputText [(ngModel)]="editarClienteForm.email" class="w-full" type="email" />
+          <label>Email</label>
+          <input pInputText [(ngModel)]="editarClienteForm.email" class="w-full" type="email" />
         </div>
         <div class="pos-sb-form-actions">
           <p-button
@@ -857,12 +1030,12 @@
           </div>
         </div>
         <div class="pos-sb-field">
-          <label>Dirección</label
-          ><input pInputText [(ngModel)]="nuevoClienteForm.address" class="w-full" />
+          <label>Dirección</label>
+          <input pInputText [(ngModel)]="nuevoClienteForm.address" class="w-full" />
         </div>
         <div class="pos-sb-field">
-          <label>Teléfono</label
-          ><input
+          <label>Teléfono</label>
+          <input
             pInputText
             [(ngModel)]="nuevoClienteForm.phone"
             class="w-full"
@@ -871,8 +1044,8 @@
           />
         </div>
         <div class="pos-sb-field">
-          <label>Email (opcional)</label
-          ><input pInputText [(ngModel)]="nuevoClienteForm.email" class="w-full" type="email" />
+          <label>Email (opcional)</label>
+          <input pInputText [(ngModel)]="nuevoClienteForm.email" class="w-full" type="email" />
         </div>
         <div class="pos-sb-form-actions">
           <p-button
