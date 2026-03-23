@@ -21,7 +21,7 @@ import { AutoComplete } from 'primeng/autocomplete';
 import { Dialog } from 'primeng/dialog';
 import { MessageService, ConfirmationService } from 'primeng/api';
 
-// ─── Tipos locales ────────────────────────────────────────────────────────────
+// ─── Tipos locales ────────────────────────────────────────────────────────────r
 
 type TipoComprobante = 'Boleta' | 'Factura' | 'Nota de Crédito';
 type EstadoComprobante = 'EMITIDO' | 'ANULADO' | 'PENDIENTE' | 'RECHAZADO';
