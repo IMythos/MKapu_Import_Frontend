@@ -10,84 +10,63 @@ import { CashboxSocketService } from '../../ventas/services/cashbox-socket.servi
 import { ThemeService } from '../../core/services/theme.service';
 import { CommonModule } from '@angular/common';
 import { TransferNotificationRuntimeService } from '../../administracion/services/transfer-notification-runtime.service';
-
 import { TooltipModule } from 'primeng/tooltip';
 
 @Component({
   selector: 'app-header',
-  imports: [
-    CommonModule,
-    ToolbarModule,
-    ButtonModule,
-    InputTextModule,
-    RouterLink,
-    ToastModule,
-    TooltipModule,
-  ],
+  imports: [CommonModule, ToolbarModule, ButtonModule, InputTextModule,
+            RouterLink, ToastModule, TooltipModule],
   templateUrl: './header.html',
   styleUrl: './header.css',
   standalone: true,
 })
 export class Header implements OnInit, OnDestroy {
-  private router = inject(Router);
-  private roleService = inject(RoleService);
+  private router          = inject(Router);
+  private roleService     = inject(RoleService);
   protected cashboxSocket = inject(CashboxSocketService);
-  protected themeService = inject(ThemeService);
-  private readonly transferNotificationRuntime = inject(
-    TransferNotificationRuntimeService,
-  );
+  protected themeService  = inject(ThemeService);
+  private readonly transferNotificationRuntime = inject(TransferNotificationRuntimeService);
+
+  @Output() toggleSidebar = new EventEmitter<void>();
+
+  // Getter para que se re-evalúe cada vez que el template lo consulta
+  get showCaja(): boolean {
+    return this.roleService.hasPermiso('VER_CAJA');
+  }
+
+  notifCount = this.loadNotifCount();
+  readonly caja = this.cashboxSocket.caja;
+  sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';
+
   private readonly handleNotificationCountUpdate = (event: Event): void => {
     const customEvent = event as CustomEvent<number>;
     const count = Number(customEvent.detail ?? 0);
     this.notifCount = Number.isFinite(count) && count > 0 ? count : 0;
   };
 
-  @Output() toggleSidebar = new EventEmitter<void>();
-
-  private readonly permisos = this.roleService.getPermisos();
-
-  readonly isVentas = this.permisos.includes('PRINCIPAL');
-  readonly isAdmin = this.permisos.includes('ADMINISTRACION');
-  readonly showCaja = this.isVentas || this.isAdmin;
-
-  notifCount = this.loadNotifCount();
-  readonly caja = this.cashboxSocket.caja;
-  sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';
-
   ngOnInit(): void {
     this.transferNotificationRuntime.start();
 
     this.router.events
-      .pipe(filter((e) => e instanceof NavigationEnd))
+      .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe(() => (this.notifCount = this.loadNotifCount()));
 
     if (typeof window !== 'undefined') {
-      window.addEventListener(
-        'transfer-notification-count-updated',
-        this.handleNotificationCountUpdate,
-      );
+      window.addEventListener('transfer-notification-count-updated', this.handleNotificationCountUpdate);
     }
 
     if (this.showCaja) {
-      const user = this.roleService.getCurrentUser();
+      const user    = this.roleService.getCurrentUser();
       const id_sede = user?.idSede;
-
       if (id_sede) {
-        this.cashboxSocket.checkActiveSession(id_sede).then((data) => {
-          console.log('checkActiveSession response:', data);
-        });
-      } else {
-        console.warn('Usuario no tiene idSede asignado');
+        this.cashboxSocket.checkActiveSession(id_sede);
       }
     }
   }
 
   ngOnDestroy(): void {
     if (typeof window !== 'undefined') {
-      window.removeEventListener(
-        'transfer-notification-count-updated',
-        this.handleNotificationCountUpdate,
-      );
+      window.removeEventListener('transfer-notification-count-updated', this.handleNotificationCountUpdate);
     }
   }
 
@@ -96,11 +75,8 @@ export class Header implements OnInit, OnDestroy {
   }
 
   private loadNotifCount(): number {
-    if (typeof localStorage === 'undefined') {
-      return 0;
-    }
-
-    const raw = localStorage.getItem('transferencia_notif_count');
+    if (typeof localStorage === 'undefined') return 0;
+    const raw   = localStorage.getItem('transferencia_notif_count');
     const count = raw ? Number(raw) : 0;
     return Number.isFinite(count) && count > 0 ? count : 0;
   }
