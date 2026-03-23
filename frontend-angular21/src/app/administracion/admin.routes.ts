@@ -184,11 +184,11 @@ export const ADMIN_ROUTES: Routes = [
     //data: { permiso: 'CREAR_NOTA_CREDITO' },
     children: [
       { 
-      path: '', // 👇 Ruta por defecto: Renderiza el listado (Ej: /admin/nota-credito)
+      path: '',
       loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent) 
     },
     { 
-      path: 'crear', // 👇 Renderiza el formulario (Ej: /admin/nota-credito/crear)
+      path: 'crear',
       loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent) 
     }
     ]
