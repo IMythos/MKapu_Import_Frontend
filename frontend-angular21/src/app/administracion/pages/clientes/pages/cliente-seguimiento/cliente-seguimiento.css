@@ -1,0 +1,343 @@
+.seg-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f6af33, #e09520);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #111;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(246, 175, 51, 0.3);
+}
+
+.seg-kicker {
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-color-secondary);
+  margin: 0 0 2px;
+}
+
+.seg-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0 0 4px;
+}
+
+.seg-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+}
+
+.seg-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.seg-meta-item i {
+  font-size: 0.65rem;
+}
+
+.seg-meta-sep {
+  opacity: 0.4;
+}
+
+.seg-pill {
+  border-radius: 20px !important;
+}
+
+.seg-pill-gold {
+  background: linear-gradient(135deg, #f6af33, #e09520) !important;
+  border: none !important;
+  color: #111 !important;
+  font-weight: 600 !important;
+}
+
+:host ::ng-deep .seg-filtros-card.p-card {
+  border-radius: 12px !important;
+}
+
+:host ::ng-deep .seg-filtros-card .p-card-body {
+  padding: 1rem 1.25rem !important;
+}
+
+.seg-filtros-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.seg-filtros-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-color-secondary);
+  white-space: nowrap;
+}
+
+.seg-filtros-label i {
+  color: #f6af33;
+}
+
+.seg-filtros-controles {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.seg-filtros-sep {
+  color: var(--text-color-secondary);
+  font-size: 0.9rem;
+}
+
+:host ::ng-deep .seg-date-input {
+  width: 160px !important;
+}
+
+.seg-filtros-rango {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-color-secondary);
+  padding: 4px 10px;
+  border-radius: 20px;
+  background: var(--surface-ground);
+  border: 1px solid var(--surface-border);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.seg-filtros-rango i {
+  font-size: 0.65rem;
+  color: #f6af33;
+}
+
+.seg-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.875rem;
+}
+
+@media (max-width: 700px) {
+  .seg-kpis {
+    grid-template-columns: 1fr;
+  }
+}
+
+.seg-kpi-card {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 1rem 1.1rem;
+  border-radius: 12px;
+  background: var(--surface-card);
+  border: 1px solid var(--surface-border);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.seg-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+.seg-kpi-icono {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.seg-kpi-icono--ventas {
+  background: rgba(246, 175, 51, 0.15);
+  color: #f6af33;
+}
+
+.seg-kpi-icono--cot {
+  background: rgba(99, 179, 237, 0.15);
+  color: #63b3ed;
+}
+
+.seg-kpi-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.seg-kpi-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-color);
+  line-height: 1;
+}
+
+.seg-kpi-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-color-secondary);
+}
+
+.seg-kpi-sub {
+  font-size: 0.72rem;
+  color: var(--text-color-secondary);
+  opacity: 0.75;
+}
+
+:host ::ng-deep .seg-card.p-card {
+  border-radius: 14px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+:host ::ng-deep .seg-card .p-card-body {
+  padding: 1.25rem !important;
+}
+
+.seg-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.875rem;
+  border-bottom: 1px solid var(--surface-border);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-color-secondary);
+}
+
+.seg-section-header i {
+  color: #f6af33;
+}
+
+.seg-legend {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.seg-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: var(--text-color-secondary);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.seg-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.seg-periodo-badge {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.72rem;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-color-secondary);
+  background: var(--surface-ground);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--surface-border);
+}
+
+.seg-periodo-badge i {
+  font-size: 0.65rem;
+  color: #f6af33;
+}
+
+.seg-tab-header {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.82rem;
+}
+
+.seg-tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: rgba(246, 175, 51, 0.18);
+  color: #f6af33;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.seg-tabla-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.76rem;
+  color: var(--text-color-secondary);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-ground);
+  border-left: 3px solid #f6af33;
+}
+
+.seg-tabla-info i {
+  color: #f6af33;
+  font-size: 0.7rem;
+}
+
+.seg-tabla-info strong {
+  color: var(--text-color);
+}
+
+.seg-codigo {
+  font-family: monospace;
+  font-size: 0.8rem;
+  background: var(--surface-ground);
+  padding: 2px 7px;
+  border-radius: 5px;
+  color: #f6af33;
+}
+
+.seg-monto {
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.mensaje-vacio {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 1rem 0;
+  color: var(--text-color-secondary);
+}

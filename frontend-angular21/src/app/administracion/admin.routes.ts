@@ -15,12 +15,12 @@ export const ADMIN_ROUTES: Routes = [
       import('./pages/empresa/empresa-configuracion')
         .then(m => m.EmpresaConfiguracion),
     canActivate: [roleGuard],
-    data: { permiso: 'ADMINISTRACION' }, 
+    data: { permiso: 'ADMINISTRACION' },
   },
   {
     path: 'empleados/:id/seguimiento',
     loadComponent: () =>
-      import('./pages/usuarios/pages/empleado-seguimiento/seguimiento-empleado') 
+      import('./pages/usuarios/pages/empleado-seguimiento/seguimiento-empleado')
         .then(m => m.SeguimientoEmpleado),
     canActivate: [roleGuard],
     data: { permiso: 'ADMINISTRACION' },
@@ -113,6 +113,7 @@ export const ADMIN_ROUTES: Routes = [
       { path: '', loadComponent: () => import('./pages/clientes/pages/clientes/clientes').then((m) => m.Clientes) },
       { path: 'agregar-cliente', loadComponent: () => import('./pages/clientes/pages/agregar-cliente/agregar-cliente').then((m) => m.AgregarCliente) },
       { path: 'editar-cliente/:id', loadComponent: () => import('./pages/clientes/pages/editar-cliente/editar-cliente').then((m) => m.EditarCliente) },
+      { path: 'seguimiento-cliente/:id', loadComponent: () => import('./pages/clientes/pages/cliente-seguimiento/cliente-seguimiento').then((m) => m.ClienteSeguimiento) },
     ],
   },
 
@@ -184,13 +185,13 @@ export const ADMIN_ROUTES: Routes = [
     //canActivate: [roleGuard],
     //data: { permiso: 'CREAR_NOTA_CREDITO' },
     children: [
-      { 
+      {
       path: '', // 👇 Ruta por defecto: Renderiza el listado (Ej: /admin/nota-credito)
-      loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent) 
+      loadComponent: () => import('./pages/nota-credito/nota-credito').then((m) => m.NotasCreditoComponent)
     },
-    { 
+    {
       path: 'crear', // 👇 Renderiza el formulario (Ej: /admin/nota-credito/crear)
-      loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent) 
+      loadComponent: () => import('./pages/nota-credito/agregar-nota-credito/agregar-nota-credito').then((m) => m.AgregarNotaCreditoComponent)
     }
     ]
   },

@@ -1,0 +1,258 @@
+<div class="p-2">
+  <p-card styleClass="seg-header-card mb-3 ventas-header-bordered">
+    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex align-items-center gap-3">
+        <span class="seg-avatar">
+          {{ inicialesCliente() }}
+        </span>
+        <div>
+          <p class="seg-kicker">ADMINISTRACION - CLIENTES - SEGUIMIENTO</p>
+          <h2 class="seg-title">{{ nombreCompleto() }}</h2>
+          <div class="seg-meta">
+            <span class="seg-meta-item"><i class="pi pi-id-card"></i>{{ cliente().documento }}</span>
+            <span class="seg-meta-sep">-</span>
+            <span class="seg-meta-item"><i class="pi pi-envelope"></i>{{ cliente().email }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="flex align-items-center gap-2 flex-wrap">
+        <p-tag [value]="cliente().segmento" severity="info"></p-tag>
+        <p-tag [value]="estadoClienteLabel()" [severity]="estadoClienteSeverity()"></p-tag>
+        <p-button
+          icon="pi pi-file-pdf"
+          label="Exportar PDF"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="seg-pill"
+          [loading]="exportando()"
+          pTooltip="Exportar reporte completo"
+          tooltipPosition="bottom"
+          (onClick)="exportarPDF()">
+        </p-button>
+        <p-button
+          label="Volver"
+          icon="pi pi-arrow-left"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="seg-pill"
+          (onClick)="volver()">
+        </p-button>
+      </div>
+    </div>
+  </p-card>
+
+  <p-card styleClass="seg-filtros-card mb-3">
+    <div class="seg-filtros-row">
+      <div class="seg-filtros-label">
+        <i class="pi pi-calendar"></i>
+        <span>Periodo de consulta</span>
+      </div>
+      <div class="seg-filtros-controles">
+        <p-datepicker
+          [ngModel]="fechaInicio()"
+          (ngModelChange)="fechaInicio.set($event)"
+          dateFormat="dd/mm/yy"
+          placeholder="Fecha inicio"
+          [showClear]="true"
+          [showIcon]="true"
+          styleClass="seg-date-input">
+        </p-datepicker>
+        <span class="seg-filtros-sep">-</span>
+        <p-datepicker
+          [ngModel]="fechaFin()"
+          (ngModelChange)="fechaFin.set($event)"
+          dateFormat="dd/mm/yy"
+          placeholder="Fecha fin"
+          [showClear]="true"
+          [showIcon]="true"
+          styleClass="seg-date-input">
+        </p-datepicker>
+        <p-button
+          label="Filtrar"
+          icon="pi pi-search"
+          size="small"
+          styleClass="seg-pill seg-pill-gold"
+          [loading]="loading()"
+          (onClick)="aplicarFiltroFechas()">
+        </p-button>
+        <p-button
+          icon="pi pi-filter-slash"
+          size="small"
+          severity="secondary"
+          [outlined]="true"
+          styleClass="seg-pill"
+          pTooltip="Limpiar filtros"
+          (onClick)="limpiarFiltros()">
+        </p-button>
+      </div>
+      <div class="seg-filtros-rango">
+        <i class="pi pi-clock"></i>
+        {{ rangoFechaLabel() }}
+      </div>
+    </div>
+  </p-card>
+
+  <div class="seg-kpis mb-3">
+    <div class="seg-kpi-card">
+      <div class="seg-kpi-icono seg-kpi-icono--ventas">
+        <i class="pi pi-shopping-bag"></i>
+      </div>
+      <div class="seg-kpi-info">
+        <span class="seg-kpi-num">{{ compras().length }}</span>
+        <span class="seg-kpi-label">Compras</span>
+        <span class="seg-kpi-sub">S/ {{ totalMontoCompras() | number:'1.2-2' }}</span>
+      </div>
+    </div>
+
+    <div class="seg-kpi-card">
+      <div class="seg-kpi-icono seg-kpi-icono--cot">
+        <i class="pi pi-file-edit"></i>
+      </div>
+      <div class="seg-kpi-info">
+        <span class="seg-kpi-num">{{ cotizaciones().length }}</span>
+        <span class="seg-kpi-label">Cotizaciones</span>
+        <span class="seg-kpi-sub">{{ cotizacionesAprobadas() }} aprobadas</span>
+      </div>
+    </div>
+  </div>
+
+  <p-card styleClass="seg-card mb-3">
+    <div class="seg-section-header">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-chart-line"></i>
+        <span>Evolucion mensual</span>
+      </div>
+      <div class="seg-legend">
+        <span class="seg-legend-item">
+          <span class="seg-legend-dot" style="background:#f6af33"></span>
+          Compras
+        </span>
+        <span class="seg-legend-item">
+          <span class="seg-legend-dot" style="background:#63b3ed"></span>
+          Cotizaciones
+        </span>
+      </div>
+    </div>
+    <div style="height:240px; position:relative">
+      <p-chart
+        type="line"
+        [data]="chartData()"
+        [options]="chartOptions()"
+        height="240px">
+      </p-chart>
+    </div>
+  </p-card>
+
+  <p-card styleClass="seg-card">
+    <div class="seg-section-header mb-3">
+      <div class="flex align-items-center gap-2">
+        <i class="pi pi-list"></i>
+        <span>Movimientos del cliente</span>
+      </div>
+      <span class="seg-periodo-badge">
+        <i class="pi pi-calendar"></i>
+        {{ rangoFechaLabel() }}
+      </span>
+    </div>
+
+    <p-tabs>
+      <p-tabpanel>
+        <ng-template pTemplate="header">
+          <div class="seg-tab-header">
+            <i class="pi pi-shopping-bag"></i>
+            <span>Compras</span>
+            <span class="seg-tab-count">{{ compras().length }}</span>
+          </div>
+        </ng-template>
+
+        <div class="seg-tabla-info mb-2">
+          <i class="pi pi-info-circle"></i>
+          Mostrando {{ compras().length }} compras -
+          Total: <strong>S/ {{ totalMontoCompras() | number:'1.2-2' }}</strong>
+        </div>
+
+        <p-table
+          [value]="compras()"
+          styleClass="p-datatable-striped p-datatable-sm"
+          [paginator]="true"
+          [rows]="5"
+          [rowsPerPageOptions]="[5,10,20]"
+          [loading]="loading()">
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width:18%">Codigo</th>
+              <th style="width:22%">Fecha</th>
+              <th style="width:25%">Total</th>
+              <th style="width:20%">Estado</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-compra>
+            <tr>
+              <td><span class="seg-codigo">{{ compra.codigo }}</span></td>
+              <td>{{ compra.fecha | date:'dd/MM/yyyy' }}</td>
+              <td class="seg-monto">S/ {{ compra.total | number:'1.2-2' }}</td>
+              <td><p-tag [value]="compra.estado" [severity]="getCompraSeverity(compra.estado)"></p-tag></td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="4" class="text-center">
+                <div class="mensaje-vacio"><i class="pi pi-inbox"></i><p>Sin compras en el periodo</p></div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-tabpanel>
+
+      <p-tabpanel>
+        <ng-template pTemplate="header">
+          <div class="seg-tab-header">
+            <i class="pi pi-file-edit"></i>
+            <span>Cotizaciones</span>
+            <span class="seg-tab-count">{{ cotizaciones().length }}</span>
+          </div>
+        </ng-template>
+
+        <div class="seg-tabla-info mb-2">
+          <i class="pi pi-info-circle"></i>
+          Mostrando {{ cotizaciones().length }} cotizaciones -
+          Total: <strong>S/ {{ totalMontoCotizaciones() | number:'1.2-2' }}</strong>
+        </div>
+
+        <p-table
+          [value]="cotizaciones()"
+          styleClass="p-datatable-striped p-datatable-sm"
+          [paginator]="true"
+          [rows]="5"
+          [rowsPerPageOptions]="[5,10,20]"
+          [loading]="loading()">
+          <ng-template pTemplate="header">
+            <tr>
+              <th style="width:18%">Codigo</th>
+              <th style="width:22%">Fecha</th>
+              <th style="width:25%">Total</th>
+              <th style="width:20%">Estado</th>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="body" let-cotizacion>
+            <tr>
+              <td><span class="seg-codigo">{{ cotizacion.codigo }}</span></td>
+              <td>{{ cotizacion.fecha | date:'dd/MM/yyyy' }}</td>
+              <td class="seg-monto">S/ {{ cotizacion.total | number:'1.2-2' }}</td>
+              <td><p-tag [value]="cotizacion.estado" [severity]="getCotizacionSeverity(cotizacion.estado)"></p-tag></td>
+            </tr>
+          </ng-template>
+          <ng-template pTemplate="emptymessage">
+            <tr>
+              <td colspan="4" class="text-center">
+                <div class="mensaje-vacio"><i class="pi pi-inbox"></i><p>Sin cotizaciones en el periodo</p></div>
+              </td>
+            </tr>
+          </ng-template>
+        </p-table>
+      </p-tabpanel>
+    </p-tabs>
+  </p-card>
+
+  <p-toast></p-toast>
+</div>
