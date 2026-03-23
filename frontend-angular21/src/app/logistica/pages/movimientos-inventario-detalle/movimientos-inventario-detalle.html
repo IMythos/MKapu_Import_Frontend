@@ -85,7 +85,7 @@
             <strong class="summary-value">{{ items.length }}</strong>
           </article>
         </div>
-        <p-tag [value]="(detalleActivo.detalles?.length || 0) + ' ítems'" severity="info" [rounded]="true"></p-tag>
+        <p-tag [value]="items.length + ' ítems'" severity="info" [rounded]="true"></p-tag>
       </div>
 
       <div class="section-block">
@@ -196,3 +196,4 @@
     </p-card>
   }
 </div>
+
