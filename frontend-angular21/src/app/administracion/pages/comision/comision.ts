@@ -10,8 +10,6 @@ import { SelectModule } from 'primeng/select';
 import { RouterModule } from '@angular/router';
 import { CommissionService, CommissionRule } from '../../services/commission.service';
 import { CategoriaService } from '../../services/categoria.service';
-import { LoadingOverlayComponent } from '../../../shared/components/loading-overlay/loading-overlay.component';
-import { PaginadorComponent } from '../../../shared/components/paginador/paginador.components';
 import { SharedTableContainerComponent } from '../../../shared/components/table.componente/shared-table-container.component';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -22,7 +20,7 @@ import { TooltipModule } from 'primeng/tooltip';
     CommonModule, FormsModule, ButtonModule,
     InputTextModule, TableModule, TagModule,
     SelectModule, CardModule, RouterModule,
-    TooltipModule,                 
+    TooltipModule,
     SharedTableContainerComponent,
   ],
   templateUrl: './comision.html',
@@ -41,9 +39,8 @@ export class Comision implements OnInit {
   readonly filtroTipo       = signal<string | null>(null);
   readonly filtroRecompensa = signal<string | null>(null);
   readonly filtroActivo     = signal<boolean | null>(true);
-
-  readonly paginaActual = signal<number>(1);
-  readonly limitePagina = signal<number>(5);
+  readonly paginaActual     = signal<number>(1);
+  readonly limitePagina     = signal<number>(5);
 
   tiposObjetivo = [
     { label: 'Categoría', value: 'CATEGORIA' },
@@ -51,8 +48,8 @@ export class Comision implements OnInit {
   ];
 
   tiposRecompensa = [
-    { label: 'Monto Fijo', value: 'MONTO_FIJO'  },
-    { label: 'Porcentaje', value: 'PORCENTAJE'  },
+    { label: 'Monto Fijo', value: 'MONTO_FIJO' },
+    { label: 'Porcentaje', value: 'PORCENTAJE' },
   ];
 
   estadosFiltro = [
@@ -69,28 +66,47 @@ export class Comision implements OnInit {
     this.paginaActual.set(1);
   }
 
+  // ── Computed: mapa de uso indexado por id_regla ────────────────────────────
+  private readonly usageMap = computed(() => {
+    const map = new Map<number, { usos: number; monto_total: number }>();
+    this.commissionService.usageByRule().forEach(u => map.set(u.id_regla, u));
+    return map;
+  });
+
+  private readonly maxUsos = computed(() => {
+    const usage = this.commissionService.usageByRule();
+    return usage.length ? Math.max(...usage.map(u => u.usos), 1) : 1;
+  });
+
   // ── Computed rows ──────────────────────────────────────────────────────────
   readonly reglas = computed(() => {
-    const catMap = new Map(
-      this.categorias().map(c => [c.id_categoria, c.nombre])
-    );
-    return this.commissionService.rules().map(r => ({
-      id:           `RC-${String(r.id_regla).padStart(3, '0')}`,
-      nombre:       r.nombre,
-      descripcion:  r.descripcion ?? '',
-      familia:      catMap.get(r.id_objetivo) ?? `ID: ${r.id_objetivo}`,
-      tipo:         r.tipo_objetivo === 'PRODUCTO' ? 'Producto' : 'Categoría',
-      tipoSeverity: (r.tipo_objetivo === 'PRODUCTO' ? 'info' : 'success') as any,
-      condicion:    r.meta_unidades > 1 ? `Lote (≥${r.meta_unidades} uds.)` : 'Por Unidad',
-      recompensa:   r.tipo_recompensa === 'PORCENTAJE' ? '%' : 'S/',
-      comision:     Number(r.valor_recompensa),
-      activo:       r.activo,
-      raw:          r,
-    }));
+    const catMap   = new Map(this.categorias().map(c => [c.id_categoria, c.nombre]));
+    const usageMap = this.usageMap();
+    const maxUsos  = this.maxUsos();
+
+    return this.commissionService.rules().map(r => {
+      const uso = usageMap.get(r.id_regla) ?? { usos: 0, monto_total: 0 };
+      return {
+        id:           `RC-${String(r.id_regla).padStart(3, '0')}`,
+        nombre:       r.nombre,
+        descripcion:  r.descripcion ?? '',
+        familia:      catMap.get(r.id_objetivo) ?? `ID: ${r.id_objetivo}`,
+        tipo:         r.tipo_objetivo === 'PRODUCTO' ? 'Producto' : 'Categoría',
+        tipoSeverity: (r.tipo_objetivo === 'PRODUCTO' ? 'info' : 'success') as any,
+        condicion:    r.meta_unidades > 1 ? `Lote (≥${r.meta_unidades} uds.)` : 'Por Unidad',
+        recompensa:   r.tipo_recompensa === 'PORCENTAJE' ? '%' : 'S/',
+        comision:     Number(r.valor_recompensa),
+        activo:       r.activo,
+        usos:         uso.usos,
+        montoTotal:   uso.monto_total,
+        barWidth:     Math.round((uso.usos / maxUsos) * 100),
+        raw:          r,
+      };
+    });
   });
 
   readonly reglasFiltradas = computed(() => {
-    let data       = this.reglas();
+    let data         = this.reglas();
     const activo     = this.filtroActivo();
     const busqueda   = this.filtroBusqueda().trim().toLowerCase();
     const tipo       = this.filtroTipo();
@@ -135,6 +151,7 @@ export class Comision implements OnInit {
   // ── Lifecycle ──────────────────────────────────────────────────────────────
   ngOnInit() {
     this.commissionService.loadRules().subscribe();
+    this.commissionService.loadUsageByRule().subscribe();
     this.categoriaService.loadCategorias().subscribe();
   }
 

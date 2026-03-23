@@ -194,6 +194,12 @@
                 pTooltip="Editar cliente" tooltipPosition="top"
                 [routerLink]="['editar-cliente', cliente.customerId]">
               </p-button>
+               <p-button
+                icon="pi pi-chart-line"
+                [rounded]="true" [text]="true" severity="info"
+                pTooltip="Ver seguimiento" tooltipPosition="top"
+                >
+              </p-button>
               <p-button
                 [icon]="cliente.status ? 'pi pi-times' : 'pi pi-check'"
                 [rounded]="true" [text]="true"

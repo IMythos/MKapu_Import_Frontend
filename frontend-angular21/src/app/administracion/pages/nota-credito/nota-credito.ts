@@ -79,7 +79,7 @@ export class NotasCreditoComponent implements OnInit, OnDestroy {
   loading = false;
 
   paginaActual    = 1;
-  limitePorPagina = 10;
+  limitePorPagina = 5;
   totalRegistros  = 0;
   totalPaginas    = 0;
 

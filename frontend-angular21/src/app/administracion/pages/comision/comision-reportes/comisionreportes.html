@@ -1,5 +1,6 @@
-<div class="p-2">
+<p-toast />
 
+<div class="p-2">
   <p-card class="sedes-header-card mb-4 ventas-header-bordered">
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex align-items-center gap-3">
@@ -7,193 +8,251 @@
           <i class="pi pi-chart-line"></i>
         </span>
         <div>
-          <p class="sedes-kicker">ADMINISTRADOR · ADMINISTRACIÓN · COMISIONES</p>
-          <h2 class="sedes-title">REPORTES DE COMISIONES</h2>
+          <p class="sedes-kicker mb-0">ADMINISTRADOR · ADMINISTRACIÓN · COMISIONES</p>
+          <h2 class="sedes-title mb-0">REPORTES DE COMISIONES</h2>
         </div>
       </div>
-      <p-button icon="pi pi-arrow-left" text severity="secondary"
-          [routerLink]="['/admin/comision']" />
-    </div>
-  </p-card>
-
-  <!-- FILTRO DE FECHAS -->
-  <p-card class="mb-3">
-    <div class="flex flex-wrap gap-3 align-items-end">
-
-      <div class="flex flex-column gap-1">
-        <label class="field-label">DESDE</label>
-        <input pInputText type="date" [(ngModel)]="fechaDesde" />
-      </div>
-
-      <div class="flex flex-column gap-1">
-        <label class="field-label">HASTA</label>
-        <input pInputText type="date" [(ngModel)]="fechaHasta" />
-      </div>
-
-      <div class="flex flex-column gap-1">
-        <label class="field-label">PERÍODO RÁPIDO</label>
-        <p-autoComplete
-          [(ngModel)]="periodoSeleccionado"
-          [suggestions]="periodosFiltrados"
-          (completeMethod)="filtrarPeriodos($event)"
-          (onSelect)="onPeriodoSelect($event)"
-          field="nombre"
-          placeholder="Este mes..." />
-      </div>
-
       <p-button
-        label="Calcular"
-        icon="pi pi-refresh"
-        [loading]="loading()"
-        (onClick)="calcular()" />
-
+        label="Volver"
+        icon="pi pi-arrow-left"
+        severity="secondary"
+        styleClass="sedes-pill"
+        [routerLink]="['/admin/comision']" />
     </div>
   </p-card>
+</div>
+
+<div class="p-2">
+
+  <!-- KPIs -->
+  <div class="contadores-productos mb-4">
+    <div class="contador-card">
+      <i class="pi pi-money-bill"></i>
+      <div>
+        <span class="contador-label">Total a Pagar</span>
+        <span class="contador-valor">S/ {{ totalPagar() | number:'1.2-2' }}</span>
+        <span class="contador-detalle"><i class="pi pi-clock"></i> Comisiones pendientes</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-wallet"></i>
+      <div>
+        <span class="contador-label">Total Acumulado</span>
+        <span class="contador-valor">S/ {{ totalComisiones() | number:'1.2-2' }}</span>
+        <span class="contador-detalle"><i class="pi pi-calendar"></i> En el período</span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-trophy"></i>
+      <div>
+        <span class="contador-label">Vendedor Top</span>
+        <span class="contador-valor" style="font-size:1rem; letter-spacing:0;">
+          {{ vendedorTop().nombre }}
+        </span>
+        <span class="contador-detalle">
+          <i class="pi pi-star"></i> S/ {{ vendedorTop().comision | number:'1.2-2' }}
+        </span>
+      </div>
+    </div>
+    <div class="contador-card">
+      <i class="pi pi-users"></i>
+      <div>
+        <span class="contador-label">Vendedores</span>
+        <span class="contador-valor">{{ totalVendedores() }}</span>
+        <span class="contador-detalle"><i class="pi pi-chart-bar"></i> Con comisiones</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filtros-container mb-4">
+    <div class="seccion-filtros">
+      <h3><i class="pi pi-filter"></i> Filtros de búsqueda</h3>
+
+      <div class="filtros-linea-1">
+        <div class="filtro-item filtro-cliente-50">
+          <label>Buscar vendedor o comprobante</label>
+          <input pInputText
+            [ngModel]="filtroBusqueda()"
+            (ngModelChange)="filtroBusqueda.set($event)"
+            placeholder="Nombre, ID vendedor o N° comprobante..."
+            class="w-full" />
+        </div>
+      </div>
+
+      <div class="filtros-linea-2">
+
+        <div class="filtro-item filtro-compacto">
+          <label>Desde</label>
+          <p-datepicker
+            [ngModel]="fechaInicio()"
+            (ngModelChange)="fechaInicio.set($event); onFechaChange()"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            styleClass="w-full" />
+        </div>
+
+        <div class="filtro-item filtro-compacto">
+          <label>Hasta</label>
+          <p-datepicker
+            [ngModel]="fechaFin()"
+            (ngModelChange)="fechaFin.set($event); onFechaChange()"
+            dateFormat="dd/mm/yy"
+            [showIcon]="true"
+            styleClass="w-full" />
+        </div>
+
+        <div class="filtro-item filtro-compacto">
+          <label>Sede</label>
+          <p-select
+            [options]="sedesOpciones()"
+            [ngModel]="filtroSede()"
+            (ngModelChange)="filtroSede.set($event); paginaActual.set(1)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todas las sedes"
+            [showClear]="true"
+            styleClass="w-full" />
+        </div>
+
+        <div class="filtro-item filtro-compacto">
+          <label>Estado</label>
+          <p-select
+            [options]="estadosOpciones"
+            [ngModel]="filtroEstado()"
+            (ngModelChange)="filtroEstado.set($event); paginaActual.set(1)"
+            optionLabel="label"
+            optionValue="value"
+            placeholder="Todos"
+            [showClear]="true"
+            styleClass="w-full" />
+        </div>
+
+        <div class="filtro-item filtro-boton-limpiar">
+          <label>&nbsp;</label>
+          <p-button
+            label="Limpiar Filtros"
+            icon="pi pi-filter-slash"
+            severity="danger"
+            styleClass="btn-limpiar-filtros"
+            type="button"
+            (onClick)="limpiarFiltros()">
+          </p-button>
+        </div>
+
+      </div>
+    </div>
+  </div>
 
   <!-- ERROR -->
   @if (error()) {
-    <p-card class="mb-3">
-      <span class="text-red-500">{{ error() }}</span>
-    </p-card>
+    <div class="filtros-container mb-4">
+      <span class="text-red-500">
+        <i class="pi pi-exclamation-triangle mr-2"></i>{{ error() }}
+      </span>
+    </div>
   }
 
-  <!-- MÉTRICAS -->
-  <div class="comision-metrics grid mt-2">
-
-    <div class="col-12 md:col-6 xl:col-3">
-      <p-card class="metric-card metric-info">
-        <div class="metric-header">
-          <span class="metric-icon metric-icon-info"><i class="pi pi-money-bill"></i></span>
-          <span class="metric-title">Total a Pagar</span>
-        </div>
-        <div class="metric-value">S/ {{ totalPagar() | number:'1.2-2' }}</div>
-        <div class="metric-sub">Comisiones pendientes</div>
-      </p-card>
-    </div>
-
-    <div class="col-12 md:col-6 xl:col-3">
-      <p-card class="metric-card metric-success">
-        <div class="metric-header">
-          <span class="metric-icon metric-icon-success"><i class="pi pi-wallet"></i></span>
-          <span class="metric-title">Total Comisiones</span>
-        </div>
-        <div class="metric-value">S/ {{ totalComisiones() | number:'1.2-2' }}</div>
-        <div class="metric-sub">Acumulado del período</div>
-      </p-card>
-    </div>
-
-    <div class="col-12 md:col-6 xl:col-3">
-      <p-card class="metric-card metric-warning">
-        <div class="metric-header">
-          <span class="metric-icon metric-icon-warning"><i class="pi pi-trophy"></i></span>
-          <span class="metric-title">Vendedor Top</span>
-        </div>
-        <div class="metric-value text-base">{{ vendedorTop().nombre }}</div>
-        <div class="metric-sub">S/ {{ vendedorTop().comision | number:'1.2-2' }} en comisiones</div>
-      </p-card>
-    </div>
-
-    <div class="col-12 md:col-6 xl:col-3">
-      <p-card class="metric-card metric-info">
-        <div class="metric-header">
-          <span class="metric-icon metric-icon-info"><i class="pi pi-users"></i></span>
-          <span class="metric-title">Vendedores</span>
-        </div>
-        <div class="metric-value">{{ totalVendedores() }}</div>
-        <div class="metric-sub">Con comisiones en el período</div>
-      </p-card>
-    </div>
-
-  </div>
-
   <!-- TABLA -->
-  <p-card class="mt-3">
+  <app-shared-table-container
+    titulo="Comisiones del período"
+    iconoTitulo="pi pi-chart-line"
+    mensajeCarga="Cargando comisiones..."
+    [loading]="loading()"
+    [paginaActual]="paginaActual()"
+    [totalPaginas]="totalPaginas()"
+    [totalRegistros]="reportesFiltrados().length"
+    [limitePorPagina]="limitePagina()"
+    [mostrarExportar]="false"
+    (pageChange)="onPageChange($event)"
+    (limitChange)="onLimitChange($event)">
 
-    <div class="flex flex-wrap gap-3 align-items-center mb-3">
-
-      <span class="flex-1">
-        <input pInputText type="text" placeholder="Buscar por vendedor o comprobante..."
-          [(ngModel)]="filtroBusqueda" class="w-full" />
-      </span>
-
-      <p-autoComplete
-        [(ngModel)]="estadoSeleccionado"
-        [suggestions]="estadosFiltrados"
-        (completeMethod)="filtrarEstados($event)"
-        field="nombre"
-        placeholder="Filtrar estado..." />
-
-      <p-tag [value]="reportesFiltrados().length + ' resultados'" severity="info" />
-
+    <div slot="acciones">
+      <p-tag
+        [value]="reportesFiltrados().length + ' resultados'"
+        severity="info">
+      </p-tag>
     </div>
 
-    @if (loading()) {
-      <div class="flex justify-content-center p-4">
-        <i class="pi pi-spin pi-spinner text-2xl"></i>
-      </div>
-    }
+    <p-table
+      [value]="reportesPaginados()"
+      [paginator]="false"
+      styleClass="p-datatable-striped productos-table-hover"
+      [tableStyle]="{ 'min-width': '65rem' }">
 
-    @if (!loading() && reportesFiltrados().length === 0) {
-      <div class="sedes-empty-state">
-        <div class="sedes-empty-icon"><i class="pi pi-inbox"></i></div>
-        <div class="sedes-empty-title">Sin comisiones en el período</div>
-        <div class="sedes-empty-subtitle">Ajusta las fechas y presiona Calcular.</div>
-      </div>
-    }
+      <ng-template pTemplate="header">
+        <tr>
+          <th style="width:20%">VENDEDOR</th>
+          <th style="width:15%">SEDE</th>
+          <th style="width:10%">COMPROBANTE</th>
+          <th style="width:10%" class="text-right">MONTO</th>
+          <th style="width:8%" class="text-right">%</th>
+          <th style="width:15%">FECHA</th>
+          <th style="width:10%">ESTADO</th>
+          <th style="width:12%" class="text-center">ACCIONES</th>
+        </tr>
+      </ng-template>
 
-    @if (reportesFiltrados().length > 0) {
-      <p-table
-        [value]="reportesFiltrados()"
-        [paginator]="true"
-        [rows]="10"
-        [rowsPerPageOptions]="[5, 10, 20]"
-        styleClass="sedes-table"
-        [tableStyle]="{ 'min-width': '55rem' }">
-
-        <ng-template pTemplate="header">
-          <tr>
-            <th>VENDEDOR</th>
-            <th>COMPROBANTE</th>
-            <th class="text-right">MONTO</th>
-            <th class="text-right">PORCENTAJE</th>
-            <th>FECHA</th>
-            <th>ESTADO</th>
-          </tr>
-        </ng-template>
-
-        <ng-template pTemplate="body" let-r>
-          <tr>
-            <td>
-              <div class="flex align-items-center gap-2">
-                <span class="vendedor-avatar">
-                  {{ r.id_vendedor_ref.charAt(0).toUpperCase() }}
-                </span>
-                <span>{{ r.id_vendedor_ref }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="font-mono text-xs">#{{ r.id_comprobante }}</span>
-            </td>
-            <td class="text-right font-bold text-yellow-400">
-              S/ {{ r.monto | number:'1.2-2' }}
-            </td>
-            <td class="text-right">
-              <span class="porcentaje-chip">{{ r.porcentaje }}%</span>
-            </td>
-            <td>
-              <span class="text-sm">
-                {{ r.fecha_registro | date:'dd/MM/yyyy' }}
+      <ng-template pTemplate="body" let-r>
+        <tr>
+          <td>
+            <div class="flex align-items-center gap-2">
+              <span class="vendedor-avatar">
+                {{ (r.nombre_vendedor || r.id_vendedor_ref).charAt(0).toUpperCase() }}
               </span>
-            </td>
-            <td>
-              <p-tag [value]="r.estado" [severity]="getSeverity(r.estado)" />
-            </td>
-          </tr>
-        </ng-template>
+              <div class="flex flex-column">
+                <span class="font-semibold text-sm">{{ r.nombre_vendedor }}</span>
+                <span class="text-xs text-color-secondary">ID: {{ r.id_vendedor_ref }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="text-sm">{{ r.nombre_sede }}</span>
+          </td>
+          <td>
+            <span class="font-mono text-xs text-color-secondary">#{{ r.id_comprobante }}</span>
+          </td>
+          <td class="text-right">
+            <span class="font-bold text-yellow-400">S/ {{ r.monto | number:'1.2-2' }}</span>
+          </td>
+          <td class="text-right">
+            <span class="porcentaje-chip">{{ r.porcentaje }}%</span>
+          </td>
+          <td>
+            <span class="text-sm">{{ r.fecha_registro | date:'dd/MM/yyyy HH:mm' }}</span>
+          </td>
+          <td>
+            <p-tag [value]="r.estado" [severity]="getSeverity(r.estado)" />
+          </td>
+          <td class="text-center">
+            @if (r.estado === 'PENDIENTE') {
+              <p-button
+                label="Atender"
+                icon="pi pi-check"
+                severity="success"
+                size="small"
+                [loading]="atendiendo() === r.id_comision"
+                (onClick)="atender(r)" />
+            } @else {
+              <span class="text-xs text-color-secondary">—</span>
+            }
+          </td>
+        </tr>
+      </ng-template>
 
-      </p-table>
-    }
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="8" class="text-center">
+            <div class="mensaje-vacio">
+              <i class="pi pi-inbox"></i>
+              <p>Sin comisiones en el período seleccionado</p>
+            </div>
+          </td>
+        </tr>
+      </ng-template>
 
-  </p-card>
+    </p-table>
+
+  </app-shared-table-container>
 
 </div>

@@ -3945,3 +3945,231 @@
 .rdm-btn-close { min-width: 100px; }
 .rdm-btn-toggle { min-width: 150px; }
 .rdm-btn-edit   { min-width: 150px; }
+
+/* ══════════════════════════════════════════════════════════════
+   comisionregla.css  —  Formulario de regla de comisión
+   Reutiliza las variables y clases del CSS compartido.
+   Solo agrega lo que falta para este formulario específico.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Variables locales (coherentes con el resto del sistema) ── */
+:host {
+  --gold:      #F6AF33;
+  --gold-dark: #e8a424;
+  --gold-soft: rgba(246, 175, 51, 0.08);
+  --gold-ring: rgba(246, 175, 51, 0.22);
+  --field-h:   42px;
+  --r-field:   8px;
+  --r-card:    12px;
+}
+
+/* ── Tarjeta principal ─────────────────────────────────────── */
+:host ::ng-deep .tarjeta-principal > .p-card-body {
+  padding: 2rem !important;
+}
+
+/* ── Botón pill dorado (igual que ventas-pill-warning) ──────── */
+:host ::ng-deep .sedes-pill {
+  border-radius: var(--r-field) !important;
+  border: none !important;
+  padding: 0 1.5rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 600 !important;
+  height: var(--field-h) !important;
+  min-height: var(--field-h) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem !important;
+  transition: transform 0.15s, box-shadow 0.15s !important;
+}
+
+:host ::ng-deep .sedes-pill:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12) !important;
+}
+
+:host ::ng-deep .sedes-pill-warning {
+  background: var(--gold) !important;
+  color: #1f2937 !important;
+}
+
+:host ::ng-deep .sedes-pill-warning:hover:not(:disabled) {
+  background: var(--gold-dark) !important;
+}
+
+:host ::ng-deep .sedes-pill:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* ── Section title con acento izquierdo dorado ─────────────── */
+.form-section-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-color-secondary);
+  margin: 0 0 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-left: 0.6rem;
+  border-left: 2.5px solid var(--gold);
+}
+
+.form-section-title i {
+  font-size: 0.82rem;
+  color: var(--gold);
+}
+
+.section-divider {
+  height: 1px;
+  background: var(--surface-border);
+  margin-bottom: 1.5rem;
+  opacity: 0.6;
+}
+
+/* ── Labels uniformes ──────────────────────────────────────── */
+.form-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-color-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+}
+
+/* ── Inputs y selects — altura uniforme con foco dorado ─────── */
+:host ::ng-deep .p-inputtext {
+  height: var(--field-h) !important;
+  min-height: var(--field-h) !important;
+  border-radius: var(--r-field) !important;
+  font-size: 0.875rem !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+:host ::ng-deep .p-select {
+  height: var(--field-h) !important;
+  min-height: var(--field-h) !important;
+  border-radius: var(--r-field) !important;
+  font-size: 0.875rem !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+:host ::ng-deep .p-select .p-select-label {
+  display: flex !important;
+  align-items: center !important;
+  height: 100% !important;
+  padding: 0 0.75rem !important;
+  font-size: 0.875rem !important;
+}
+
+:host ::ng-deep .p-inputtext:hover:not([readonly]):not(:disabled),
+:host ::ng-deep .p-select:hover:not(.p-disabled) {
+  border-color: var(--gold) !important;
+}
+
+:host ::ng-deep .p-inputtext:focus,
+:host ::ng-deep .p-inputtext.p-focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px var(--gold-ring) !important;
+  outline: none !important;
+}
+
+:host ::ng-deep .p-select.p-focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px var(--gold-ring) !important;
+  outline: none !important;
+}
+
+/* ── InputNumber — width y altura ──────────────────────────── */
+:host ::ng-deep .p-inputnumber {
+  width: 100%;
+}
+
+:host ::ng-deep .p-inputnumber-input {
+  height: var(--field-h) !important;
+  min-height: var(--field-h) !important;
+  border-radius: var(--r-field) !important;
+  font-size: 0.875rem !important;
+  width: 100%;
+}
+
+:host ::ng-deep .p-inputnumber-input:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px var(--gold-ring) !important;
+  outline: none !important;
+}
+
+/* Botones +/− del inputNumber */
+:host ::ng-deep .p-inputnumber-button {
+  height: var(--field-h) !important;
+  width: 2.5rem !important;
+  background: var(--surface-card) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color-secondary) !important;
+  transition: background 0.15s, color 0.15s !important;
+}
+
+:host ::ng-deep .p-inputnumber-button:hover {
+  background: var(--gold-soft) !important;
+  border-color: var(--gold) !important;
+  color: var(--gold) !important;
+}
+
+/* ── Datepicker ─────────────────────────────────────────────── */
+:host ::ng-deep .p-datepicker {
+  border-radius: var(--r-field) !important;
+}
+
+:host ::ng-deep .p-datepicker .p-inputtext:focus {
+  border-color: var(--gold) !important;
+  box-shadow: 0 0 0 3px var(--gold-ring) !important;
+}
+
+/* ── Card de resumen (cliente-info-card ya viene del CSS global) */
+:host ::ng-deep .cliente-info-card {
+  border: 1px solid rgba(246,175,51,0.3) !important;
+  border-radius: var(--r-card) !important;
+  background: var(--gold-soft) !important;
+}
+
+:host ::ng-deep .cliente-info-card > .p-card-body {
+  padding: 1rem 1.25rem !important;
+}
+
+/* ── Mensaje de error ───────────────────────────────────────── */
+.p-error {
+  font-size: 0.72rem;
+  color: #f87171;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* ── Dark mode ──────────────────────────────────────────────── */
+:host-context(.app-dark) {
+  --gold-soft: rgba(246, 175, 51, 0.07);
+  --gold-ring: rgba(246, 175, 51, 0.18);
+}
+
+:host-context(.app-dark) ::ng-deep .tarjeta-principal {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+}
+
+:host-context(.app-dark) ::ng-deep .p-inputnumber-button {
+  background: var(--surface-ground) !important;
+  border-color: var(--surface-border) !important;
+  color: var(--text-color-secondary) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .p-inputnumber-button:hover {
+  background: rgba(246,175,51,0.1) !important;
+  border-color: var(--gold) !important;
+  color: var(--gold) !important;
+}
+
+:host-context(.app-dark) ::ng-deep .cliente-info-card {
+  background: rgba(246,175,51,0.05) !important;
+  border-color: rgba(246,175,51,0.18) !important;
+}
