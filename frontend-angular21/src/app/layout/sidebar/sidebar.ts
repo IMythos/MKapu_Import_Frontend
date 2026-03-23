@@ -49,6 +49,7 @@ export class Sidebar implements OnInit {
   // ── Mapa permiso → datos del item (única fuente de verdad) ────────────────
   private readonly ITEM: Record<string, Omit<MenuItem, 'permiso'>> = {
     // Ventas Admin
+    
     VER_DASHBOARD_ADMIN:     { path: '/admin/dashboard-admin',                 label: 'Dashboard',         icon: 'pi pi-home' },
     VER_CAJA:                { path: '/admin/caja',                            label: 'Caja',              icon: 'pi pi-money-bill' },
     CREAR_VENTA_ADMIN:       { path: '/admin/generar-ventas-administracion',   label: 'Crear Venta',       icon: 'pi pi-plus-circle' },
@@ -93,7 +94,7 @@ export class Sidebar implements OnInit {
     {
       label: 'VENTAS', icon: 'pi pi-shopping-cart', permisoSeccion: 'VENTAS',
       permisos: ['VER_DASHBOARD_ADMIN','VER_CAJA','CREAR_VENTA_ADMIN','VER_VENTAS_ADMIN',
-                 'CREAR_NC','CREAR_DESCUENTO','CREAR_PROMOCION','CREAR_VENTA_POR_COBRAR',
+                 'CREAR_NC','CREAR_PROMOCION','CREAR_VENTA_POR_COBRAR',
                  'CREAR_CLIENTE','CREAR_COTIZACIONES','CREAR_COTIZACIONES_COMPRA','CREAR_RECLAMO'],
     },
     {
@@ -103,8 +104,8 @@ export class Sidebar implements OnInit {
     },
     {
       label: 'ADMINISTRADOR', icon: 'pi pi-cog', permisoSeccion: 'ADMINISTRACION',
-      permisos: ['CREAR_TRANSFERENCIA','CREAR_DESPACHO','CREAR_USUARIOS','CREAR_PRODUCTOS',
-                 'CREAR_CATEGORIAS','CREAR_SEDES','CREAR_COMISIONES','CREAR_MERMAS',
+      permisos: ['CREAR_TRANSFERENCIA','CREAR_DESPACHO','CREAR_PRODUCTOS',
+                 'CREAR_CATEGORIAS','CREAR_SEDES','CREAR_MERMAS',
                  'CREAR_REMATES','CREAR_PROVEEDORES','ADMINISTRACION'],
     },
     {
@@ -117,7 +118,7 @@ export class Sidebar implements OnInit {
     },
     {
       label: 'RRHH', icon: 'pi pi-users', permisoSeccion: 'ADMINISTRACION',
-      permisos: ['CREAR_USUARIOS'],
+      permisos: ['CREAR_USUARIOS','CREAR_COMISIONES','CREAR_DESCUENTO'],
     },
   ];
 

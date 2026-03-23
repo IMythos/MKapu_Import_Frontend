@@ -15,7 +15,6 @@ export const ADMIN_ROUTES: Routes = [
       import('./pages/empresa/empresa-configuracion')
         .then(m => m.EmpresaConfiguracion),
     canActivate: [roleGuard],
-    data: { permiso: 'ADMINISTRACION' }, 
   },
   {
     path: 'empleados/:id/seguimiento',
@@ -358,7 +357,5 @@ export const ADMIN_ROUTES: Routes = [
   {
     path: 'terminos-condiciones',
     loadComponent: () => import('./pages/reportes/pages/terminos-condiciones/terminos-condiciones').then((m) => m.TerminosCondicionesComponent),
-    canActivate: [roleGuard],
-    data: { permiso: 'ADMINISTRACION' }
   },
 ];

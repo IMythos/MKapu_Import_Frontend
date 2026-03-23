@@ -34,6 +34,11 @@ export class Header implements OnInit, OnDestroy {
     return this.roleService.hasPermiso('VER_CAJA');
   }
 
+  // Solo el administrador ve configuración de empresa y términos
+  get isAdmin(): boolean {
+    return this.roleService.getRoleName().toUpperCase() === 'ADMINISTRADOR';
+  }
+
   notifCount = this.loadNotifCount();
   readonly caja = this.cashboxSocket.caja;
   sedeNombre: string = this.roleService.getCurrentUser()?.sedeNombre ?? '';

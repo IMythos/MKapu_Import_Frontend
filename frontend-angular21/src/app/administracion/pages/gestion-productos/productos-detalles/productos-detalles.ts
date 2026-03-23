@@ -20,7 +20,7 @@ import { SharedTableContainerComponent } from '../../../../shared/components/tab
   imports: [
     CommonModule, CardModule, ButtonModule, TagModule,
     DividerModule, ToastModule, ConfirmDialog, ConfirmDialogModule,
-    TableModule, SharedTableContainerComponent,
+    TableModule,
   ],
   templateUrl: './productos-detalles.html',
   styleUrl: './productos-detalles.css',
