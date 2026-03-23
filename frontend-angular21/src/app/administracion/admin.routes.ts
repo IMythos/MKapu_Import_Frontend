@@ -23,7 +23,7 @@ export const ADMIN_ROUTES: Routes = [
       import('./pages/usuarios/pages/empleado-seguimiento/seguimiento-empleado')
         .then(m => m.SeguimientoEmpleado),
     canActivate: [roleGuard],
-    data: { permiso: 'ADMINISTRACION' },
+    data: { permiso: 'SEGUIMIENTO_EMPLEADO' },
   },
   {
     path: 'dashboard-admin',

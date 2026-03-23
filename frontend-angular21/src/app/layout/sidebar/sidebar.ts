@@ -106,7 +106,7 @@ export class Sidebar implements OnInit {
       label: 'ADMINISTRADOR', icon: 'pi pi-cog', permisoSeccion: 'ADMINISTRACION',
       permisos: [ 'CREAR_PERMISOS','CREAR_TRANSFERENCIA','CREAR_DESPACHO','CREAR_PRODUCTOS',
                  'CREAR_CATEGORIAS','CREAR_SEDES','CREAR_MERMAS',
-                 'CREAR_REMATES','CREAR_PROVEEDORES','ADMINISTRACION'],
+                 'CREAR_REMATES','SEGUIMIENTO_EMPLEADO','CREAR_PROVEEDORES','ADMINISTRACION'],
     },
     {
       label: 'DELIVERY', icon: 'pi pi-truck', permisoSeccion: 'ADMINISTRACION',
