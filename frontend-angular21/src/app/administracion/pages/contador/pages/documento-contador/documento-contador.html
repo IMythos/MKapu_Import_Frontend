@@ -10,11 +10,7 @@
           <h2 class="ventas-title mb-0">GESTIÓN DE COMPROBANTES</h2>
         </div>
       </div>
-      <p-button
-        label="Nuevo Comprobante"
-        icon="pi pi-plus"
-        (onClick)="nuevoComprobante()"
-      ></p-button>
+      
     </div>
   </p-card>
 </div>
@@ -294,27 +290,6 @@
                     [text]="true"
                     severity="secondary"
                     pTooltip="Descargar PDF"
-                    tooltipPosition="top"
-                  />
-                  <p-button
-                    *ngIf="comprobante.tipoComprobante !== 'Nota de Crédito'"
-                    icon="pi pi-replay"
-                    (onClick)="generarNotaCredito(comprobante)"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="info"
-                    [disabled]="comprobante.estado !== 'EMITIDO'"
-                    pTooltip="Generar Nota de Crédito"
-                    tooltipPosition="top"
-                  />
-                  <p-button
-                    icon="pi pi-trash"
-                    (onClick)="anularComprobante(comprobante)"
-                    [rounded]="true"
-                    [text]="true"
-                    severity="danger"
-                    [disabled]="comprobante.estado !== 'EMITIDO'"
-                    pTooltip="Anular comprobante"
                     tooltipPosition="top"
                   />
                 </div>
