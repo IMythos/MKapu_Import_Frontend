@@ -51,11 +51,11 @@ export interface SalesReceiptsQueryAdmin {
 
 export interface RemateDetalleProductoDto {
   id_detalle_remate: number;
-  id_remate:         number;
-  cod_remate:        string;
-  descripcion:       string;
-  pre_original:      number;
-  pre_remate:        number;
+  id_remate: number;
+  cod_remate: string;
+  descripcion: string;
+  pre_original: number;
+  pre_remate: number;
 }
 
 export interface ProductoDetalleAdmin {
@@ -451,18 +451,18 @@ export interface TipoServicioAdmin {
 }
 
 export interface AuctionAutocompleteItemAdmin {
-  id_detalle_remate:  number;
-  id_remate:          number;
-  cod_remate:         string;
-  id_producto:        number;
-  codigo_producto:    string;
-  nombre_producto:    string;
+  id_detalle_remate: number;
+  id_remate: number;
+  cod_remate: string;
+  id_producto: number;
+  codigo_producto: string;
+  nombre_producto: string;
   descripcion_remate: string;
-  id_categoria:       number;
-  familia:            string;
-  pre_original:       number;
-  pre_remate:         number;
-  stock_remate:       number;
+  id_categoria: number;
+  familia: string;
+  pre_original: number;
+  pre_remate: number;
+  stock_remate: number;
 }
 
 export interface AuctionAutocompleteResponseAdmin {
@@ -471,25 +471,24 @@ export interface AuctionAutocompleteResponseAdmin {
 
 /** Versión UI del ítem de remate listo para el carrito */
 export interface RemateUIAdmin {
-  idDetalleRemate:  number;
-  idRemate:         number;
-  codRemate:        string;
-  idProducto:       number;
-  preOriginal:      number;
-  preRemate:        number;
-  stockRemate:      number;
+  idDetalleRemate: number;
+  idRemate: number;
+  codRemate: string;
+  idProducto: number;
+  preOriginal: number;
+  preRemate: number;
+  stockRemate: number;
   descripcionRemate: string;
 }
 
-
 export interface CarritoItemUIAdmin {
   tipo: 'PRODUCTO' | 'REMANTE';
-  id: string | number;  // id_producto o id_detalle_remate
+  id: string | number; // id_producto o id_detalle_remate
   codigo: string;
   descripcion: string;
   cantidad: number;
   precioUnitario: number;
-  precioVenta: number;   // total parcial
+  precioVenta: number; // total parcial
   igvUnitario: number;
   subtotal: number;
   // Solo para remates
